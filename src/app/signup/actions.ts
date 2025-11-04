@@ -58,7 +58,8 @@ export async function signup(formData: FormData) {
     }
   }
 
-  return { error: null };
+  revalidatePath('/welcome');
+  return { error: null, success: true };
 }
 
 
