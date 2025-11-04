@@ -11,11 +11,10 @@ export async function signup(formData: FormData) {
   const planPurchased = formData.get('plan_purchased') as string;
   const transactionId = formData.get('transaction_id') as string;
   
-  // Temporarily removing these until the DB schema is updated.
-  // const planPrice = parseFloat(formData.get('plan_price') as string);
-  // const couponCode = formData.get('coupon_code') as string;
-  // const discountAmount = parseFloat(formData.get('discount_amount') as string);
-  // const finalAmountPaid = parseFloat(formData.get('final_amount_paid') as string);
+  const planPrice = parseFloat(formData.get('plan_price') as string);
+  const couponCode = formData.get('coupon_code') as string;
+  const discountAmount = parseFloat(formData.get('discount_amount') as string);
+  const finalAmountPaid = parseFloat(formData.get('final_amount_paid') as string);
 
   const supabase = createClient();
 
@@ -41,10 +40,10 @@ export async function signup(formData: FormData) {
         plan_purchased: planPurchased,
         transaction_id: transactionId,
         is_approved: false, // Explicitly set to not approved
-        // plan_price: planPrice,
-        // coupon_code: couponCode,
-        // discount_amount: discountAmount,
-        // final_amount_paid: finalAmountPaid,
+        plan_price: planPrice,
+        coupon_code: couponCode,
+        discount_amount: discountAmount,
+        final_amount_paid: finalAmountPaid,
       })
       .eq('id', user.id);
 
