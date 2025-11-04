@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -48,7 +47,7 @@ export default function KycPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 md:p-8">
+    <main className="flex min-h-screen items-start justify-center p-4 md:p-8 bg-gray-50">
       <Card className="w-full max-w-3xl">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">KYC Verification</CardTitle>
@@ -61,88 +60,95 @@ export default function KycPage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name (as per PAN) *</Label>
-                    <Input id="full_name" name="full_name" required />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
-                    <Input id="email" name="email" type="email" required />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="mobile_number">Mobile Number *</Label>
-                    <Input id="mobile_number" name="mobile_number" required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="city_state">City & State *</Label>
-                    <Input id="city_state" name="city_state" required />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="pan_number">PAN Card Number *</Label>
-                    <Input id="pan_number" name="pan_number" required />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="aadhar_number">Aadhar Card Number *</Label>
-                    <Input id="aadhar_number" name="aadhar_number" required />
-                </div>
-            </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                    <Label htmlFor="pan_card">Upload PAN Card *</Label>
-                    <Input id="pan_card" name="pan_card" type="file" required accept="image/*" />
-                    <p className="text-xs text-muted-foreground">Max 10 MB.</p>
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="aadhar_card">Upload Aadhar Card *</Label>
-                    <Input id="aadhar_card" name="aadhar_card" type="file" required accept="image/*"/>
-                     <p className="text-xs text-muted-foreground">Max 10 MB.</p>
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="selfie">Submit Selfie With Your Aadhar Card *</Label>
-                    <Input id="selfie" name="selfie" type="file" required accept="image/*"/>
-                     <p className="text-xs text-muted-foreground">Max 10 MB.</p>
-                </div>
-            </div>
-
-            <div className="space-y-4">
-                <Label>Have you traded in a Prop Firm before? *</Label>
-                <RadioGroup name="traded_before" required className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="yes" id="traded_yes" />
-                        <Label htmlFor="traded_yes">Yes</Label>
+            <div className="space-y-6 border-b pb-8">
+                <h3 className="font-semibold text-lg">Personal Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="full_name">Full Name (as per PAN) *</Label>
+                        <Input id="full_name" name="full_name" required />
                     </div>
-                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="no" id="traded_no" />
-                        <Label htmlFor="traded_no">No</Label>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email Address *</Label>
+                        <Input id="email" name="email" type="email" required />
                     </div>
-                </RadioGroup>
+                    <div className="space-y-2">
+                        <Label htmlFor="mobile_number">Mobile Number *</Label>
+                        <Input id="mobile_number" name="mobile_number" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="city_state">City & State *</Label>
+                        <Input id="city_state" name="city_state" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="pan_number">PAN Card Number *</Label>
+                        <Input id="pan_number" name="pan_number" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="aadhar_number">Aadhar Card Number *</Label>
+                        <Input id="aadhar_number" name="aadhar_number" required />
+                    </div>
+                </div>
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="trading_experience">Trading Experience (in brief) *</Label>
-                <Textarea id="trading_experience" name="trading_experience" required />
-            </div>
-            
-            <div className="space-y-2">
-                <Label htmlFor="comments">Any Comments / Special Notes</Label>
-                <Textarea id="comments" name="comments" />
+            <div className="space-y-6 border-b pb-8">
+                <h3 className="font-semibold text-lg">Document Upload</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="pan_card">Upload PAN Card *</Label>
+                        <Input id="pan_card" name="pan_card" type="file" required accept="image/*" />
+                        <p className="text-xs text-muted-foreground">Max 10 MB.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="aadhar_card">Upload Aadhar Card *</Label>
+                        <Input id="aadhar_card" name="aadhar_card" type="file" required accept="image/*"/>
+                        <p className="text-xs text-muted-foreground">Max 10 MB.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="selfie">Submit Selfie With Your Aadhar Card *</Label>
+                        <Input id="selfie" name="selfie" type="file" required accept="image/*"/>
+                        <p className="text-xs text-muted-foreground">Max 10 MB.</p>
+                    </div>
+                </div>
             </div>
 
-            <div className="space-y-4">
-                <Label>Preferred Trading Style *</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {tradingStyleOptions.map(style => (
-                        <div key={style.id} className="flex items-center space-x-2">
-                            <Checkbox id={style.id} name="trading_style" value={style.id} />
-                            <Label htmlFor={style.id}>{style.label}</Label>
+            <div className="space-y-6 border-b pb-8">
+                <h3 className="font-semibold text-lg">Trading Background</h3>
+                 <div className="space-y-4">
+                    <Label>Have you traded in a Prop Firm before? *</Label>
+                    <RadioGroup name="traded_before" required className="flex gap-4">
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="traded_yes" />
+                            <Label htmlFor="traded_yes">Yes</Label>
                         </div>
-                    ))}
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="traded_no" />
+                            <Label htmlFor="traded_no">No</Label>
+                        </div>
+                    </RadioGroup>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="trading_experience">Trading Experience (in brief) *</Label>
+                    <Textarea id="trading_experience" name="trading_experience" required />
+                </div>
+                <div className="space-y-4">
+                    <Label>Preferred Trading Style *</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {tradingStyleOptions.map(style => (
+                            <div key={style.id} className="flex items-center space-x-2">
+                                <Checkbox id={style.id} name="trading_style" value={style.id} />
+                                <Label htmlFor={style.id}>{style.label}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="comments">Any Comments / Special Notes</Label>
+                    <Textarea id="comments" name="comments" />
                 </div>
             </div>
 
-            <div className="space-y-6 rounded-md border p-4">
+            <div className="space-y-6 rounded-md border p-6">
+                 <h3 className="font-semibold text-lg">Agreements</h3>
                  <div className="space-y-4">
                     <Label>Are You Comfortable With Daily and Overall Drawdown Rules? *</Label>
                     <RadioGroup name="drawdown_rules_accepted" required className="flex gap-4">
@@ -157,7 +163,7 @@ export default function KycPage() {
                         <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="risk_no" /><Label htmlFor="risk_no">No</Label></div>
                     </RadioGroup>
                 </div>
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start space-x-2 pt-4">
                     <Checkbox id="terms" name="terms_accepted" value="yes" required />
                     <Label htmlFor="terms" className="text-sm">
                        I'm Accepting the All Trading Rules & Regulations & Terms & Conditions & Privacy Policy. [ All Details are mentioned In website www.fundedstock.live ] *
@@ -170,7 +176,7 @@ export default function KycPage() {
                <Button type="button" variant="outline" asChild>
                     <Link href="/welcome">Cancel</Link>
                 </Button>
-                <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
+                <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit for Verification
                 </Button>

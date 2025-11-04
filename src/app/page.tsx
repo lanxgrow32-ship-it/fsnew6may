@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Mountain } from 'lucide-react';
 
 export default async function HomePage() {
   const supabase = createClient();
@@ -18,21 +19,22 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Welcome to PropStar</CardTitle>
-          <CardDescription className="text-center">Your trading account management solution.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Button asChild>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-8">
+      <div className="flex flex-col items-center justify-center space-y-6">
+        <Mountain className="h-12 w-12 text-primary" />
+        <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome to PropStar</h1>
+            <p className="mt-2 text-muted-foreground">Your trading account management solution.</p>
+        </div>
+        <div className="flex flex-col gap-4 w-full max-w-xs">
+          <Button asChild size="lg">
             <Link href="/login">Login</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" size="lg">
             <Link href="/pricing">View Plans & Sign Up</Link>
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </main>
   );
 }

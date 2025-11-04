@@ -1,8 +1,8 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket } from 'lucide-react';
+import { Home, Ticket, Mountain, LogOut } from 'lucide-react';
 import { CouponClientPage } from './coupon-client-page';
+import Link from 'next/link';
 
 export default async function CouponsPage() {
   const supabase = createClient();
@@ -11,8 +11,13 @@ export default async function CouponsPage() {
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader>
-           <h2 className="text-xl font-bold">PropStar Admin</h2>
+        <SidebarHeader className="border-b">
+           <div className="h-14 flex items-center px-4">
+                <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
+                    <Mountain className="w-6 h-6 text-primary" />
+                    <span className="text-foreground">PropStar</span>
+                </Link>
+           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -30,15 +35,23 @@ export default async function CouponsPage() {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter />
+        <SidebarFooter className="border-t">
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton>
+                        <LogOut />
+                        Logout
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-         <header className="flex items-center justify-between p-4 border-b">
-           <div>
-            <h1 className="text-2xl font-bold">Coupon Management</h1>
-            <p className="text-muted-foreground">Create and manage promotional coupons.</p>
-          </div>
-          <SidebarTrigger className="md:hidden" />
+         <header className="flex h-14 items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
+           <div className="flex items-center gap-4">
+             <SidebarTrigger className="md:hidden" />
+             <h1 className="text-xl font-semibold">Coupon Management</h1>
+           </div>
         </header>
         <CouponClientPage coupons={coupons || []} />
       </SidebarInset>

@@ -1,8 +1,7 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/componentsui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createCoupon } from './actions';
@@ -46,7 +45,7 @@ function CreateCouponForm() {
     }, [state, toast, router]);
 
     return (
-        <Card>
+        <Card className="shadow-md">
             <form ref={ref} action={formAction}>
                 <CardHeader>
                     <CardTitle>Create New Coupon</CardTitle>
@@ -72,18 +71,18 @@ function CreateCouponForm() {
 
 function CreateCouponFormSkeleton() {
     return (
-        <Card>
+        <Card className="shadow-md">
             <CardHeader>
-                <CardTitle>Create New Coupon</CardTitle>
-                <CardDescription>Add a new promotional code.</CardDescription>
+                <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-4 w-64" />
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="code">Coupon Code</Label>
+                    <Skeleton className="h-5 w-24" />
                     <Skeleton className="h-10 w-full" />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="discount_value">Discount Value (₹)</Label>
+                    <Skeleton className="h-5 w-40" />
                     <Skeleton className="h-10 w-full" />
                 </div>
             </CardContent>
@@ -98,7 +97,7 @@ function CreateCouponFormSkeleton() {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" disabled={pending} size="lg">
         {pending ? 'Creating...' : 'Create Coupon'}
     </Button>
   );
