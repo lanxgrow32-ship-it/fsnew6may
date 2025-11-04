@@ -194,7 +194,9 @@ function SignupForm() {
                            <p className="text-sm text-muted-foreground">Scan the QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
                            {paymentDetails?.qr_code_url && (
                              <div className="flex justify-center">
-                               <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
+                                <a href={paymentDetails.qr_code_url} download="qr-code.png" title="Download QR Code">
+                                   <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
+                                </a>
                              </div>
                            )}
                       </CardContent>
