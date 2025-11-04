@@ -16,9 +16,6 @@ export default async function AdminDashboard() {
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage all users and their details.</p>
         </div>
-        <Button asChild>
-          <Link href="/admin/create-user">Create New User</Link>
-        </Button>
       </div>
 
       <Card>
