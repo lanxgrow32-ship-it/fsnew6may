@@ -19,7 +19,7 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
       <div className="flex flex-col items-center justify-center space-y-6 text-center">
         <Mountain className="h-12 w-12 text-primary" />
         <div className="text-center">
@@ -28,7 +28,7 @@ export default async function HomePage() {
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
           <Button asChild size="lg">
-            <Link href="/login">Login</Link>
+            <a href="https://fundedstock.live/">Login</a>
           </Button>
           <Button asChild variant="outline" size="lg">
             <Link href="/pricing">View Plans & Sign Up</Link>

@@ -75,7 +75,7 @@ function SignupForm() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-4xl space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
             <Mountain className="h-8 w-8 text-primary" />
@@ -86,7 +86,7 @@ function SignupForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 gap-4">
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
                     <CardTitle>Registration Details</CardTitle>
                 </CardHeader>
@@ -125,7 +125,7 @@ function SignupForm() {
             </Card>
 
             <div className="space-y-6">
-                <Card>
+                <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>
                         <CardTitle className="text-lg">Order Summary</CardTitle>
                     </CardHeader>
@@ -146,7 +146,7 @@ function SignupForm() {
                         </div>
                     </CardContent>
                 </Card>
-                 <Card>
+                 <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>
                         <CardTitle className="text-lg">Payment Details</CardTitle>
                     </CardHeader>
@@ -156,7 +156,7 @@ function SignupForm() {
                     </CardContent>
                 </Card>
 
-                 <Card>
+                 <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
                     </CardHeader>

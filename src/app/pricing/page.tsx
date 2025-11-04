@@ -27,11 +27,11 @@ const twoStepPlans = [
     { size: '5,00,000', title: '5L 2-Step', price: '7,999' },
     { size: '10,00,000', title: '10L 2-Step', price: '12,999' },
     { size: '25,00,000', title: '25L 2-Step', price: '21,999' },
-    { size: '50,00,000', title: '50L 2-Step', price: '35,999' },
+    { size: '50,00_000', title: '50L 2-Step', price: '35,999' },
 ];
 
 const PlanCard = ({ size, title, price }: { size: string; title: string; price: string }) => (
-  <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300">
+  <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border">
     <CardHeader className="pb-4">
       <CardDescription className="text-primary text-sm font-semibold">POPULAR</CardDescription>
       <CardTitle className="text-3xl font-bold">₹{size}</CardTitle>
@@ -49,7 +49,7 @@ const PlanCard = ({ size, title, price }: { size: string; title: string; price: 
             </div>
         </div>
       <Button asChild className="w-full mt-auto" size="lg">
-        <Link href={`/signup?plan=${encodeURIComponent(title)}&price=${price}`}>Buy for ₹{price}</Link>
+        <Link href={`/signup?plan=${encodeURIComponent(title)}&price=${price}`}>Get Funded for ₹{price}</Link>
       </Button>
     </CardContent>
   </Card>
@@ -58,7 +58,7 @@ const PlanCard = ({ size, title, price }: { size: string; title: string; price: 
 
 export default function PricingPage() {
   return (
-    <div className="bg-muted/40 min-h-screen">
+    <div className="bg-background min-h-screen">
       <header className="p-4 flex justify-start">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
             <Mountain className="w-6 h-6 text-primary" />
@@ -74,7 +74,7 @@ export default function PricingPage() {
         </div>
 
         <Tabs defaultValue="instant" className="w-full max-w-6xl mx-auto">
-            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-2xl mx-auto h-auto p-1.5">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-2xl mx-auto h-auto p-1.5 bg-muted/50 border-border">
                 <TabsTrigger value="instant" className="py-2 text-base">Instant Funding</TabsTrigger>
                 <TabsTrigger value="1-step" className="py-2 text-base">1-Step Evaluation</TabsTrigger>
                 <TabsTrigger value="2-step" className="py-2 text-base">2-Step Evaluation</TabsTrigger>
