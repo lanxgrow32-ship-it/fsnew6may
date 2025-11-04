@@ -62,12 +62,6 @@ export default function PricingPage() {
   return (
     <div className="dark-theme">
       <div className="bg-background min-h-screen text-foreground">
-        <header className="p-4 flex justify-start">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-              <FundedStockLogo className="w-6 h-6 text-primary" />
-              <span>FundedStock 2.0</span>
-          </Link>
-        </header>
         <main className="p-4 md:p-8">
           <div className="text-center mb-12">
               <h1 className="text-4xl font-extrabold tracking-tight">Choose Your Funding Plan</h1>

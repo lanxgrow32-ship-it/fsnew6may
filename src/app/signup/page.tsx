@@ -80,7 +80,6 @@ function SignupForm() {
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-4xl space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
-            <FundedStockLogo className="h-10 w-10 text-primary" />
             <h1 className="text-3xl font-bold mt-4">Create an Account</h1>
             <p className="text-muted-foreground">
                  {plan && price ? `You are purchasing the ${plan} plan.` : 'Enter your details to get started.'}
