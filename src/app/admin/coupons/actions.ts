@@ -1,14 +1,15 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
-export async function createCoupon(formData: FormData) {
+export async function createCoupon(prevState: any, formData: FormData) {
   const code = formData.get('code') as string;
   const discountValue = formData.get('discount_value') as string;
 
   if (!code || !discountValue) {
-    return { error: 'Coupon code and discount value are required.' };
+    return { error: 'Coupon code and discount value are required.', success: false };
   }
 
   const { error } = await supabaseAdmin
@@ -20,11 +21,14 @@ export async function createCoupon(formData: FormData) {
 
   if (error) {
     console.error('Error creating coupon:', error);
-    return { error: `Failed to create coupon: ${error.message}` };
+    if (error.code === '23505') { // Unique constraint violation
+        return { error: 'This coupon code already exists.', success: false };
+    }
+    return { error: `Failed to create coupon: ${error.message}`, success: false };
   }
 
   revalidatePath('/admin/coupons');
-  return { error: null };
+  return { error: null, success: true };
 }
 
 export async function deleteCoupon(couponId: number) {
@@ -42,7 +46,6 @@ export async function deleteCoupon(couponId: number) {
     return { error: `Failed to delete coupon: ${error.message}` };
   }
   
-  // This revalidation is handled by the component calling this action.
-  // revalidatePath('/admin/coupons');
+  revalidatePath('/admin/coupons');
   return { error: null };
 }
