@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +8,8 @@ import { Home, Ticket, User, Mountain, LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
+import { ClientOnly } from '@/components/ui/client-only';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function AdminNav() {
     return (
@@ -35,6 +38,33 @@ function AdminNav() {
         </DropdownMenu>
     )
 }
+
+function UserTableSkeleton() {
+    return (
+        <Card className="shadow-sm">
+            <CardHeader className="flex-row items-center justify-between">
+              <div>
+                <Skeleton className="h-7 w-32" />
+                <Skeleton className="h-4 w-64 mt-2" />
+              </div>
+              <div className="relative w-full max-w-sm">
+                <Skeleton className="h-10 w-full" />
+               </div>
+            </CardHeader>
+            <CardContent>
+                <div className="overflow-x-auto">
+                   <div className="space-y-4">
+                       <Skeleton className="h-12 w-full" />
+                       <Skeleton className="h-12 w-full" />
+                       <Skeleton className="h-12 w-full" />
+                       <Skeleton className="h-12 w-full" />
+                   </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 
 export default async function AdminDashboard() {
   const supabase = createClient();
@@ -90,7 +120,9 @@ export default async function AdminDashboard() {
                 <SidebarTrigger className="md:hidden" />
                 <h1 className="text-xl font-semibold">User Management</h1>
            </div>
-           <AdminNav />
+           <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
+            <AdminNav />
+           </ClientOnly>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
@@ -106,8 +138,9 @@ export default async function AdminDashboard() {
                     </Card>
                 ))}
             </div>
-
-          <UserTable profiles={profiles || []} />
+            <ClientOnly fallback={<UserTableSkeleton />}>
+                <UserTable profiles={profiles || []} />
+            </ClientOnly>
         </main>
       </SidebarInset>
     </SidebarProvider>
