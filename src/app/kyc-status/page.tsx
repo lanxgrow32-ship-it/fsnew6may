@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, CheckCircle, Loader2, XCircle, BookUser } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { FundedStockLogo } from '@/components/ui/logo';
@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 function KycStatusCard({ title, status }: { title: string, status: 'pending' | 'submitted' | 'verified' | 'rejected' }) {
     const statusConfig = {
         pending: { text: 'Pending', icon: <Loader2 className="h-4 w-4 animate-spin text-gray-500" />, color: 'bg-gray-100 text-gray-800' },
-        submitted: { text: 'Submitted', icon: <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />, color: 'bg-yellow-100 text-yellow-800' },
+        submitted: { text: 'Submitted for Review', icon: <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />, color: 'bg-yellow-100 text-yellow-800' },
         verified: { text: 'Verified', icon: <CheckCircle className="h-4 w-4 text-green-500" />, color: 'bg-green-100 text-green-800' },
         rejected: { text: 'Rejected', icon: <XCircle className="h-4 w-4 text-red-500" />, color: 'bg-red-100 text-red-800' },
     };
@@ -92,9 +92,9 @@ export default async function KycStatusPage() {
         // For 'submitted' and 'verified'
         return (
              <div className="space-y-4">
-                <KycStatusCard title="Aadhar Card" status={profile.kyc_status} />
-                <KycStatusCard title="PAN Card" status={profile.kyc_status} />
-                <KycStatusCard title="Selfie" status={profile.kyc_status} />
+                <KycStatusCard title="Aadhar Card Verification" status={profile.kyc_status} />
+                <KycStatusCard title="PAN Card Verification" status={profile.kyc_status} />
+                <KycStatusCard title="Selfie Verification" status={profile.kyc_status} />
             </div>
         )
     }
@@ -126,6 +126,12 @@ export default async function KycStatusPage() {
                             <SidebarMenuButton href="/kyc-status" isActive tooltip="KYC Verification">
                                 <FileCheck />
                                 KYC Verification
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/guide" tooltip="Trading Guide">
+                                <BookUser />
+                                Trading Guide
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>

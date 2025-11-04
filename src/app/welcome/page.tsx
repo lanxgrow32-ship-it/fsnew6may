@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function OnboardingGuide({ profile }: { profile: any }) {
   const getStepStatus = (step: number) => {
+    // Step 1: Payment is always approved to see this page
     if (step === 1) return 'completed';
     
     // Step 2: KYC
@@ -98,7 +99,7 @@ function KycUnderReview() {
 
 function CredentialsView({ profile }: { profile: any }) {
    return (
-      <Card className="w-full max-w-2xl mx-auto shadow-sm">
+      <Card className="w-full shadow-sm">
         <CardHeader>
           <CardTitle>Your Trading Account</CardTitle>
           <CardDescription>Here are your trading account details.</CardDescription>
@@ -217,9 +218,15 @@ function UserNav({ profile }: { profile: any}) {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                        <Link href="/welcome">
+                        <Link href="/profile">
                             <User className="mr-2 h-4 w-4" />
                             <span>Profile</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/guide">
+                            <BookUser className="mr-2 h-4 w-4" />
+                            <span>Trading Guide</span>
                         </Link>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -316,6 +323,12 @@ export default async function WelcomePage() {
                 KYC Verification
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/guide" tooltip="Trading Guide">
+                <BookUser />
+                Trading Guide
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="border-t p-2">
@@ -348,7 +361,7 @@ export default async function WelcomePage() {
            </div>
         </header>
         <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-6xl mx-auto space-y-8">
             <AccountStatusBanner profile={profile} />
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
