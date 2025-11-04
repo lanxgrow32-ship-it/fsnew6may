@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Mountain, Ticket } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signup, validateCoupon } from './actions';
+import { ClientOnly } from '@/components/ui/client-only';
 
 function SignupForm() {
   const router = useRouter();
@@ -187,7 +188,9 @@ function SignupForm() {
 export default function SignupPage() {
   return (
     <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>}>
-      <SignupForm />
+        <ClientOnly>
+            <SignupForm />
+        </ClientOnly>
     </Suspense>
   )
 }
