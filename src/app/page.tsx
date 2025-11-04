@@ -29,7 +29,7 @@ export default async function HomePage() {
           </div>
           <div className="flex flex-col gap-4 w-full max-w-xs">
             <Button asChild size="lg">
-              <a href="https://fundedstock.live/">Login</a>
+              <Link href="/login">Login</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link href="/pricing">View Plans & Sign Up</Link>
