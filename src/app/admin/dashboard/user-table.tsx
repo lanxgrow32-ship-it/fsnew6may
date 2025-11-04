@@ -26,8 +26,8 @@ function UserMobileCard({ profile }: { profile: Profile }) {
     return (
         <Card className="mb-4">
             <CardHeader>
-                 <div className="flex justify-between items-start">
-                    <div className='max-w-[calc(100%-80px)]'>
+                 <div className="flex items-start justify-between gap-4">
+                    <div className="flex-grow overflow-hidden">
                         <CardTitle className="text-base truncate">{profile.full_name}</CardTitle>
                         <CardDescription className="truncate">{profile.email}</CardDescription>
                     </div>
@@ -39,7 +39,7 @@ function UserMobileCard({ profile }: { profile: Profile }) {
             <CardContent className="space-y-4 text-sm">
                 <div>
                     <div className="font-medium text-muted-foreground">Plan</div>
-                    <div>{profile.plan_purchased || 'N/A'}</div>
+                    <div className='truncate'>{profile.plan_purchased || 'N/A'}</div>
                 </div>
                  <div>
                     <div className="font-medium text-muted-foreground">Transaction ID</div>
