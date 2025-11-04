@@ -63,6 +63,30 @@ function SignupForm() {
      setFinalPrice(newFinalPrice > 0 ? newFinalPrice : 0);
   }, [price, discountPercent]);
 
+    const handleDownload = async () => {
+        if (!paymentDetails?.qr_code_url) return;
+
+        try {
+            const response = await fetch(paymentDetails.qr_code_url);
+            if (!response.ok) throw new Error('Network response was not ok.');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'payment-qr-code.png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast({
+                title: "Download Failed",
+                description: "Could not download the QR code. Please try again or take a screenshot.",
+                variant: "destructive",
+            });
+        }
+    };
 
   const handleApplyCoupon = async () => {
     if (!couponCode) {
@@ -195,11 +219,9 @@ function SignupForm() {
                            {paymentDetails?.qr_code_url && (
                              <div className="flex flex-col items-center gap-2">
                                <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
-                                <Button asChild variant="ghost" size="sm">
-                                    <a href={paymentDetails.qr_code_url} download="qr-code.png">
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download QR
-                                    </a>
+                                <Button variant="ghost" size="sm" onClick={handleDownload}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download QR
                                 </Button>
                              </div>
                            )}
