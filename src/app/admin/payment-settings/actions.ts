@@ -41,8 +41,6 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
       }
   }
 
-  const supabase = createClient();
-
   const updateData: { upi_id: string; qr_code_url?: string } = { upi_id: upiId };
   if (qrCodeUrl) {
     updateData.qr_code_url = qrCodeUrl;
@@ -50,7 +48,8 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   
   // We use upsert to create the record if it doesn't exist, or update it if it does.
   // We'll match on a known `id` of 1, so we're always working on the same single row.
-  const { error } = await supabase
+  // Using supabaseAdmin to bypass RLS for this trusted server-side operation.
+  const { error } = await supabaseAdmin
     .from('payment_details')
     .upsert({ id: 1, ...updateData }, { onConflict: 'id' });
 
