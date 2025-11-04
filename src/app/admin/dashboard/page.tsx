@@ -1,21 +1,19 @@
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Home, Ticket, User, Mountain, LogOut } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserTable } from './user-table';
 
 function AdminNav() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 border">
                         <AvatarImage src={`https://avatar.vercel.sh/admin.png`} alt="Admin" />
                         <AvatarFallback>A</AvatarFallback>
                     </Avatar>
@@ -51,34 +49,34 @@ export default async function AdminDashboard() {
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader className="border-b">
-           <div className="h-14 flex items-center px-4">
+        <SidebarHeader className="border-b p-2">
+           <div className="h-12 flex items-center justify-center">
                 <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
-                    <Mountain className="w-6 h-6 text-primary" />
-                    <span className="text-foreground">PropStar</span>
+                    <Mountain className="w-8 h-8 text-primary" />
+                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">PropStar</span>
                 </Link>
            </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/dashboard" isActive>
+              <SidebarMenuButton href="/admin/dashboard" isActive tooltip="Dashboard">
                 <Home />
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/coupons">
+              <SidebarMenuButton href="/admin/coupons" tooltip="Coupons">
                 <Ticket />
                 Coupons
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter className="border-t">
+        <SidebarFooter className="border-t p-2">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Logout">
                         <LogOut />
                         Logout
                     </SidebarMenuButton>
@@ -94,10 +92,10 @@ export default async function AdminDashboard() {
            </div>
            <AdminNav />
         </header>
-        <main className="p-4 md:p-8">
-            <div className="grid gap-4 md:grid-cols-3 mb-8">
+        <main className="p-4 md:p-8 bg-muted/40">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
                 {stats.map(stat => (
-                    <Card key={stat.title}>
+                    <Card key={stat.title} className="shadow-sm">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
                             <stat.icon className="h-4 w-4 text-muted-foreground" />
@@ -109,65 +107,7 @@ export default async function AdminDashboard() {
                 ))}
             </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>User List</CardTitle>
-              <CardDescription>A list of all users in the system.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TooltipProvider>
-                <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Full Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Plan</TableHead>
-                      <TableHead>Transaction ID</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {profiles?.map((profile) => (
-                      <TableRow key={profile.id}>
-                        <TableCell className="font-medium">{profile.full_name}</TableCell>
-                        <TableCell>{profile.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {profile.is_approved ? 'Approved' : 'Pending'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{profile.plan_purchased || 'N/A'}</TableCell>
-                        <TableCell>
-                          {profile.transaction_id ? (
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <span className="block max-w-32 truncate">
-                                  {profile.transaction_id}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{profile.transaction_id}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            'N/A'
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={`/admin/profile/${profile.id}`}>Manage</Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                </div>
-              </TooltipProvider>
-            </CardContent>
-          </Card>
+          <UserTable profiles={profiles || []} />
         </main>
       </SidebarInset>
     </SidebarProvider>
