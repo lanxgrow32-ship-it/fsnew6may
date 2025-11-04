@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
+import { signOut } from '@/app/actions';
 
 type Coupon = {
   id: number;
@@ -251,49 +252,53 @@ export default function CouponsPage() {
     return (
         <SidebarProvider>
             <Sidebar>
-                <SidebarHeader className="border-b">
-                <div className="h-14 flex items-center px-4">
+                <SidebarHeader className="border-b p-2">
+                    <div className="h-12 flex items-center justify-center">
                         <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
-                            <FundedStockLogo className="w-6 h-6 text-primary" />
-                            <span className="text-foreground">FundedStock 2.0</span>
+                            <FundedStockLogo className="w-8 h-8 text-primary" />
+                            <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
                         </Link>
-                </div>
+                    </div>
                 </SidebarHeader>
                 <SidebarContent>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                    <SidebarMenuButton href="/admin/dashboard">
+                    <SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard">
                         <Home />
                         Dashboard
                     </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                    <SidebarMenuButton href="/admin/coupons" isActive>
+                    <SidebarMenuButton href="/admin/coupons" isActive tooltip="Coupons">
                         <Ticket />
                         Coupons
                     </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
                 </SidebarContent>
-                <SidebarFooter className="border-t">
+                <SidebarFooter className="border-t p-2">
                     <SidebarMenu>
                         <SidebarMenuItem>
-                            <SidebarMenuButton>
-                                <LogOut />
-                                Logout
-                            </SidebarMenuButton>
+                           <form action={signOut} className="w-full">
+                                <SidebarMenuButton tooltip="Logout" asChild>
+                                    <button type="submit" className="w-full">
+                                        <LogOut />
+                                        Logout
+                                    </button>
+                                </SidebarMenuButton>
+                            </form>
                         </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset>
-                <header className="flex h-14 items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
+                <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
                     <div className="flex items-center gap-4">
                         <SidebarTrigger className="md:hidden" />
                         <h1 className="text-xl font-semibold">Coupon Management</h1>
                     </div>
                 </header>
-                <main className="p-4 md:p-8">
+                <main className="p-4 md:p-8 bg-muted/40">
                     <ClientOnly>
                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                            <div className="lg:col-span-1">

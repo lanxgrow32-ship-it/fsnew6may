@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FundedStockLogo } from '@/components/ui/logo';
+import { signOut } from '@/app/actions';
 
 function KycPrompt() {
   return (
@@ -149,10 +150,14 @@ function UserNav({ profile }: { profile: any}) {
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                     <LogOut className="mr-2 h-4 w-4" />
-                     <span>Log out</span>
-                </DropdownMenuItem>
+                 <form action={signOut}>
+                    <DropdownMenuItem asChild>
+                         <button type="submit" className="w-full">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </button>
+                    </DropdownMenuItem>
+                </form>
             </DropdownMenuContent>
         </DropdownMenu>
     )
@@ -211,11 +216,11 @@ export default async function WelcomePage() {
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader className="border-b">
-           <div className="h-14 flex items-center px-4">
+        <SidebarHeader className="border-b p-2">
+           <div className="h-12 flex items-center justify-center">
                 <Link href="/welcome" className="flex items-center gap-2 font-bold text-lg">
-                    <FundedStockLogo className="w-6 h-6 text-primary" />
-                    <span className="text-foreground">FundedStock 2.0</span>
+                    <FundedStockLogo className="w-8 h-8 text-primary" />
+                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
                 </Link>
            </div>
         </SidebarHeader>
@@ -247,19 +252,23 @@ export default async function WelcomePage() {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter className="border-t">
+        <SidebarFooter className="border-t p-2">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton>
-                        <LogOut />
-                        Logout
-                    </SidebarMenuButton>
+                    <form action={signOut} className="w-full">
+                        <SidebarMenuButton asChild>
+                            <button type="submit" className="w-full">
+                                <LogOut />
+                                Logout
+                            </button>
+                        </SidebarMenuButton>
+                    </form>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
+        <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
                 <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>

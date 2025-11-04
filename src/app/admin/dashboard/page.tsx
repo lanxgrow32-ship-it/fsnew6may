@@ -11,6 +11,7 @@ import { UserTable } from './user-table';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
+import { signOut } from '@/app/actions';
 
 function AdminNav() {
     return (
@@ -31,10 +32,14 @@ function AdminNav() {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                     <LogOut className="mr-2 h-4 w-4" />
-                     <span>Log out</span>
-                </DropdownMenuItem>
+                <form action={signOut}>
+                    <DropdownMenuItem asChild>
+                        <button type="submit" className="w-full">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </button>
+                    </DropdownMenuItem>
+                </form>
             </DropdownMenuContent>
         </DropdownMenu>
     )
@@ -107,16 +112,20 @@ export default async function AdminDashboard() {
         <SidebarFooter className="border-t p-2">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Logout">
-                        <LogOut />
-                        Logout
-                    </SidebarMenuButton>
+                    <form action={signOut} className="w-full">
+                        <SidebarMenuButton tooltip="Logout" asChild>
+                            <button type="submit" className="w-full">
+                                <LogOut />
+                                Logout
+                            </button>
+                        </SidebarMenuButton>
+                    </form>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
+        <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
                 <h1 className="text-xl font-semibold">User Management</h1>
