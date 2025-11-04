@@ -26,12 +26,12 @@ function UserMobileCard({ profile }: { profile: Profile }) {
     return (
         <Card className="mb-4">
             <CardHeader>
-                 <div className="flex items-start justify-between gap-4">
-                    <div className="flex-grow overflow-hidden">
-                        <CardTitle className="text-base truncate">{profile.full_name}</CardTitle>
-                        <CardDescription className="truncate">{profile.email}</CardDescription>
+                 <div className="flex flex-col gap-2">
+                    <div>
+                        <CardTitle className="text-base">{profile.full_name}</CardTitle>
+                        <CardDescription>{profile.email}</CardDescription>
                     </div>
-                     <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={`${profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} shrink-0`}>
+                    <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={`${profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} self-start`}>
                         {profile.is_approved ? 'Approved' : 'Pending'}
                     </Badge>
                  </div>
