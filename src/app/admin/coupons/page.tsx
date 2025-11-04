@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useActionState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { createCoupon, deleteCoupon } from './actions';
-import { useFormStatus, useFormState } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -27,7 +27,7 @@ type Coupon = {
 function CreateCouponForm() {
     const ref = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
-    const [state, formAction] = useFormState(createCoupon, { error: null, success: false });
+    const [state, formAction] = useActionState(createCoupon, { error: null, success: false });
 
     useEffect(() => {
         if (state.error) {
@@ -82,14 +82,16 @@ function CreateCouponForm() {
 
 function ActiveCouponsList({ coupons, onCouponDelete }: { coupons: Coupon[], onCouponDelete: (id: number) => void }) {
     const [isPending, setIsPending] = useState(false);
+    const { toast } = useToast();
 
     const handleDelete = async (couponId: number) => {
         setIsPending(true);
         try {
             await deleteCoupon(couponId);
             onCouponDelete(couponId);
-        } catch (error) {
-            // Error toast is handled in the page component
+            toast({ title: "Coupon deleted successfully" });
+        } catch (error: any) {
+            toast({ title: "Error", description: error.message, variant: "destructive" });
         } finally {
             setIsPending(false);
         }
@@ -223,7 +225,6 @@ export default function CouponsPage() {
     
     const handleCouponDelete = (deletedCouponId: number) => {
         setCoupons(prev => prev.filter(c => c.id !== deletedCouponId));
-        toast({ title: "Coupon deleted successfully" });
     };
 
     return (
