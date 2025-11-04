@@ -85,13 +85,11 @@ export default async function AdminDashboard() {
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader className="border-b p-2">
-           <div className="h-12 flex items-center justify-center">
-                <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
-                    <FundedStockLogo className="w-8 h-8 text-primary" />
-                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
-                </Link>
-           </div>
+        <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
+            <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
+                <FundedStockLogo className="w-8 h-8 text-primary" />
+                <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
+            </Link>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
