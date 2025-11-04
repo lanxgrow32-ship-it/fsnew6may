@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,15 +64,24 @@ function CredentialsView({ profile }: { profile: any }) {
           </div>
           {profile.credentials_provided ? (
             <>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="rounded-lg border bg-muted/40 p-4">
-                  <p className="text-sm font-medium text-muted-foreground">Trading Username</p>
-                  <p className="text-xl font-semibold tracking-wider">{profile.trading_username}</p>
+              <div className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="rounded-lg border bg-muted/40 p-4">
+                    <p className="text-sm font-medium text-muted-foreground">Trading Username</p>
+                    <p className="text-xl font-semibold tracking-wider">{profile.trading_username}</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/40 p-4">
+                    <p className="text-sm font-medium text-muted-foreground">Trading Password</p>
+                    <p className="text-xl font-semibold tracking-wider">{profile.trading_password}</p>
+                  </div>
                 </div>
-                <div className="rounded-lg border bg-muted/40 p-4">
-                  <p className="text-sm font-medium text-muted-foreground">Trading Password</p>
-                  <p className="text-xl font-semibold tracking-wider">{profile.trading_password}</p>
-                </div>
+                 <div className="rounded-lg border bg-muted/40 p-4 flex items-center gap-3">
+                    <ServerIcon className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">Server</p>
+                        <p className="text-lg font-semibold">Falcon Trader</p>
+                    </div>
+                 </div>
               </div>
               <Button asChild size="lg" className="w-full">
                 <Link href="https://nextrade.club/" target="_blank">
@@ -87,7 +96,7 @@ function CredentialsView({ profile }: { profile: any }) {
                 <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
                 <p className="font-semibold text-yellow-800">Your trading credentials are being set up.</p>
               </div>
-              <p className="text-sm text-yellow-600 mt-2">An admin will provide them shortly. Please check back later.</p>
+              <p className="text-sm text-yellow-600 mt-2">Now that your KYC is verified, an admin will provide your credentials shortly. Please check back later.</p>
             </div>
           )}
         </CardContent>
