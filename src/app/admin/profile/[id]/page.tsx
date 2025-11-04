@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -40,6 +41,10 @@ type Profile = {
   drawdown_rules_accepted: boolean;
   risk_rules_understood: boolean;
   terms_accepted: boolean;
+  plan_price: number | null;
+  coupon_code: string | null;
+  discount_amount: number | null;
+  final_amount_paid: number | null;
 };
 
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -202,6 +207,28 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                 </CardContent>
                             </Card>
                         )}
+                         {/* Purchase Details */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Purchase Details</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm text-muted-foreground">{profile.plan_purchased}</p>
+                                    <p className="text-sm">₹{profile.plan_price?.toFixed(2) ?? 'N/A'}</p>
+                                </div>
+                                {profile.coupon_code && (
+                                <div className="flex items-center justify-between text-green-600">
+                                    <p className="text-sm text-muted-foreground">Coupon "{profile.coupon_code}"</p>
+                                    <p className="text-sm">- ₹{profile.discount_amount?.toFixed(2)}</p>
+                                </div>
+                                )}
+                                <div className="flex items-center justify-between border-t pt-4 font-bold">
+                                    <p>Final Amount Paid</p>
+                                    <p>₹{profile.final_amount_paid?.toFixed(2) ?? 'N/A'}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                     {/* Right Column */}
                     <div className="space-y-8">

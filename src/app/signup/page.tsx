@@ -37,6 +37,8 @@ function SignupForm() {
   const [paymentDetails, setPaymentDetails] = useState<{ upi_id: string; qr_code_url: string; } | null>(null);
   const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(true);
 
+  const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
+
   useEffect(() => {
     const fetchPaymentDetails = async () => {
       setPaymentDetailsLoading(true);
@@ -56,12 +58,11 @@ function SignupForm() {
 
 
   useEffect(() => {
-     const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
      const discountValue = (originalPrice * discountPercent) / 100;
      const newFinalPrice = originalPrice - discountValue;
      setDiscountAmount(discountValue);
      setFinalPrice(newFinalPrice > 0 ? newFinalPrice : 0);
-  }, [price, discountPercent]);
+  }, [price, discountPercent, originalPrice]);
 
     const handleDownload = async () => {
         if (!paymentDetails?.qr_code_url) return;
@@ -112,6 +113,10 @@ function SignupForm() {
     setError(null);
     const formData = new FormData(e.currentTarget);
     formData.append('plan_purchased', plan || '');
+    formData.append('plan_price', String(originalPrice));
+    formData.append('coupon_code', discountPercent > 0 ? couponCode : '');
+    formData.append('discount_amount', String(discountAmount));
+    formData.append('final_amount_paid', String(finalPrice));
     
     const result = await signup(formData);
 
@@ -194,7 +199,7 @@ function SignupForm() {
                     <CardContent className="space-y-4">
                         <div className="flex justify-between items-center text-sm">
                             <p className="text-muted-foreground">Plan Price:</p>
-                            <p>₹{price}</p>
+                            <p>₹{originalPrice.toFixed(2)}</p>
                         </div>
                         {discountAmount > 0 && (
                             <div className="flex justify-between items-center text-sm text-green-600">
