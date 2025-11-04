@@ -3,6 +3,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export async function createCoupon(prevState: any, formData: FormData) {
   const code = formData.get('code') as string;
@@ -34,7 +35,7 @@ export async function createCoupon(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/admin/coupons');
-  return { error: null, success: true };
+  redirect('/admin/coupons');
 }
 
 export async function deleteCoupon(couponId: number) {
