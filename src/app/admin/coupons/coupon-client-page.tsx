@@ -3,11 +3,9 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trash2 } from 'lucide-react';
-import { createCoupon, deleteCoupon } from './actions';
+import { createCoupon } from './actions';
 import { useFormStatus } from 'react-dom';
 import { useEffect, useRef, useActionState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -21,24 +19,6 @@ type Coupon = {
   discount_value: number;
   created_at: string;
 };
-
-function DeleteButton({ couponId }: { couponId: number }) {
-  const deleteCouponWithId = deleteCoupon.bind(null, couponId);
-  const router = useRouter();
-
-  const handleDelete = async () => {
-    await deleteCouponWithId();
-    router.refresh();
-  }
-
-  return (
-    <form action={handleDelete}>
-      <Button variant="destructive" size="icon">
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </form>
-  )
-}
 
 function CreateCouponForm() {
     const ref = useRef<HTMLFormElement>(null);
@@ -127,45 +107,8 @@ function SubmitButton() {
 
 export function CouponClientPage({ coupons }: { coupons: Coupon[] }) {
   return (
-    <main className="p-4 md:p-8 grid gap-8 md:grid-cols-3">
-        <div className="md:col-span-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Active Coupons</CardTitle>
-                    <CardDescription>A list of all available coupons.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Code</TableHead>
-                                <TableHead>Discount Value (₹)</TableHead>
-                                <TableHead>Created At</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {coupons?.map((coupon) => (
-                                <TableRow key={coupon.id}>
-                                    <TableCell className="font-medium">{coupon.code}</TableCell>
-                                    <TableCell>₹{coupon.discount_value}</TableCell>
-                                    <TableCell>{new Date(coupon.created_at).toLocaleDateString()}</TableCell>
-                                    <TableCell className="text-right">
-                                        <DeleteButton couponId={coupon.id} />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {coupons?.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="text-center h-24">No coupons found.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
-        <div>
+    <main className="p-4 md:p-8 flex justify-center">
+        <div className="w-full max-w-md">
              <ClientOnly fallback={<CreateCouponFormSkeleton />}>
                 <CreateCouponForm />
             </ClientOnly>
