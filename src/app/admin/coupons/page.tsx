@@ -6,7 +6,7 @@ import { CouponClientPage } from './coupon-client-page';
 
 export default async function CouponsPage() {
   const supabase = createClient();
-  const { data: coupons, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
+  const { data: coupons } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
 
   return (
     <SidebarProvider>
@@ -40,9 +40,7 @@ export default async function CouponsPage() {
           </div>
           <SidebarTrigger className="md:hidden" />
         </header>
-
         <CouponClientPage coupons={coupons || []} />
-
       </SidebarInset>
     </SidebarProvider>
   );
