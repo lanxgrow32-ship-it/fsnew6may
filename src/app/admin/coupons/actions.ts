@@ -40,7 +40,7 @@ export async function createCoupon(prevState: any, formData: FormData) {
 
 export async function deleteCoupon(couponId: number) {
   if (!couponId) {
-    return { error: 'Coupon ID is required.' };
+    throw new Error('Coupon ID is required.');
   }
 
   const { error } = await supabaseAdmin
@@ -50,9 +50,8 @@ export async function deleteCoupon(couponId: number) {
 
   if (error) {
     console.error('Error deleting coupon:', error);
-    return { error: `Failed to delete coupon: ${error.message}` };
+    throw new Error(`Failed to delete coupon: ${error.message}`);
   }
   
   revalidatePath('/admin/coupons');
-  return { success: true, error: null };
 }

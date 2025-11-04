@@ -1,10 +1,46 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, Mountain, LogOut, PlusCircle } from 'lucide-react';
+import { Home, Ticket, Mountain, LogOut, PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { CouponClientPage } from './coupon-client-page';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { deleteCoupon } from './actions';
+
+function DeleteButton({ coupon }: { coupon: { id: number, code: string }}) {
+  return (
+    <form action={async () => {
+      'use server';
+      await deleteCoupon(coupon.id);
+    }}>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the coupon <span className="font-bold">{coupon.code}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction asChild>
+                <Button type="submit" className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </form>
+  )
+}
 
 export default async function CouponsPage() {
   const supabase = createClient();
@@ -12,7 +48,6 @@ export default async function CouponsPage() {
 
   if (error) {
     console.error("Error fetching coupons: ", error);
-    // You could render an error message here
   }
 
   return (
@@ -54,7 +89,7 @@ export default async function CouponsPage() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-         <header className="flex h-14 items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
+         <header className="flex h-14 items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
            <div className="flex items-center gap-4">
              <SidebarTrigger className="md:hidden" />
              <h1 className="text-xl font-semibold">Coupon Management</h1>
@@ -67,7 +102,42 @@ export default async function CouponsPage() {
            </Button>
         </header>
         <main className="p-4 md:p-8">
-            <CouponClientPage coupons={coupons || []} />
+           <Card>
+            <CardHeader>
+                <CardTitle>Active Coupons</CardTitle>
+                <CardDescription>A list of all currently available coupons.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {!coupons || coupons.length === 0 ? (
+                    <p className="text-muted-foreground">No active coupons found. Use the 'Create New Coupon' button to add one.</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Code</TableHead>
+                                    <TableHead>Discount</TableHead>
+                                    <TableHead>Created</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {coupons.map((coupon) => (
+                                    <TableRow key={coupon.id}>
+                                        <TableCell className="font-medium">{coupon.code}</TableCell>
+                                        <TableCell>{coupon.discount_value}%</TableCell>
+                                        <TableCell>{new Date(coupon.created_at).toLocaleDateString()}</TableCell>
+                                        <TableCell className="text-right">
+                                            <DeleteButton coupon={coupon} />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
         </main>
       </SidebarInset>
     </SidebarProvider>
