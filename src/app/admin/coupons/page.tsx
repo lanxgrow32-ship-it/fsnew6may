@@ -16,6 +16,8 @@ import { Loader2, Trash2 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Home, Ticket, Mountain, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { ClientOnly } from '@/components/ui/client-only';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Coupon = {
   id: number;
@@ -191,6 +193,24 @@ function ActiveCouponsList({ coupons, onCouponDelete }: { coupons: Coupon[], onC
     )
 }
 
+function ActiveCouponsSkeleton() {
+    return (
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-7 w-40" />
+                <Skeleton className="h-4 w-64 mt-2" />
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 export default function CouponsPage() {
     const supabase = createClient();
     const { toast } = useToast();
@@ -278,13 +298,15 @@ export default function CouponsPage() {
                            <CreateCouponForm />
                        </div>
                        <div className="lg:col-span-2">
-                           {isLoading ? (
-                               <div className="flex justify-center items-center h-64">
-                                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                               </div>
-                           ) : (
-                               <ActiveCouponsList coupons={coupons} onCouponDelete={handleCouponDelete} />
-                           )}
+                            <ClientOnly fallback={<ActiveCouponsSkeleton />}>
+                                {isLoading ? (
+                                    <div className="flex justify-center items-center h-64">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    </div>
+                                ) : (
+                                    <ActiveCouponsList coupons={coupons} onCouponDelete={handleCouponDelete} />
+                                )}
+                            </ClientOnly>
                        </div>
                    </div>
                 </main>
