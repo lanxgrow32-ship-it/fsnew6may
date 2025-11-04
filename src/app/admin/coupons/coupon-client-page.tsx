@@ -21,17 +21,10 @@ type Coupon = {
 };
 
 function DeleteButton({ couponId }: { couponId: number }) {
-  const router = useRouter();
-  const deleteWithId = async () => {
-    'use server';
-    await deleteCoupon(couponId);
-    // We need to manually re-trigger the router to refresh the page data
-    // as revalidatePath in a server action called from a client component
-    // doesn't always re-render the page automatically.
-    router.refresh();
-  }
+  const deleteCouponWithId = deleteCoupon.bind(null, couponId);
+
   return (
-    <form action={deleteWithId}>
+    <form action={deleteCouponWithId}>
       <Button variant="destructive" size="icon">
         <Trash2 className="h-4 w-4" />
       </Button>
