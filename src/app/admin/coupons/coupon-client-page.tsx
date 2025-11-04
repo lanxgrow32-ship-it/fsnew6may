@@ -11,7 +11,6 @@ import { createCoupon, deleteCoupon } from './actions';
 import { useFormStatus, useFormState } from 'react-dom';
 import { useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { revalidatePath } from 'next/cache';
 import { useRouter } from 'next/navigation';
 
 type Coupon = {
@@ -24,9 +23,11 @@ type Coupon = {
 function DeleteButton({ couponId }: { couponId: number }) {
   const router = useRouter();
   const deleteWithId = async () => {
+    'use server';
     await deleteCoupon(couponId);
     // We need to manually re-trigger the router to refresh the page data
-    // as revalidatePath in a 'use client' component doesn't work as expected.
+    // as revalidatePath in a server action called from a client component
+    // doesn't always re-render the page automatically.
     router.refresh();
   }
   return (
@@ -43,7 +44,7 @@ function CreateCouponForm() {
     const { toast } = useToast();
     const router = useRouter();
 
-    const [state, formAction] = useFormState(createCoupon, { error: null });
+    const [state, formAction] = useFormState(createCoupon, { error: null, success: false });
 
     useEffect(() => {
         if (state.error) {
