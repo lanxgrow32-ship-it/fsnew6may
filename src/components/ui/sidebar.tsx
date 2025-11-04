@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import Link from "next/link"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -539,6 +540,7 @@ const SidebarMenuButton = React.forwardRef<
     asChild?: boolean
     isActive?: boolean
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
+    href?: string
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -549,26 +551,49 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
+      href,
+      children,
       ...props
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
-
-    const button = (
-      <Comp
-        ref={ref}
+    
+    const buttonContent = (
+      <div
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-        {...props}
-      />
+      >
+        {children}
+      </div>
+    )
+
+    const button = href ? (
+      <Link href={href} passHref>
+        <a ref={ref as React.Ref<HTMLAnchorElement>} {...props}>
+          {buttonContent}
+        </a>
+      </Link>
+    ) : (
+      <button ref={ref} {...props}>
+        {buttonContent}
+      </button>
     )
 
     if (!tooltip) {
-      return button
+      return href ? (
+          <Link href={href} passHref legacyBehavior>
+            <a ref={ref as React.Ref<HTMLAnchorElement>} {...props} className={cn(sidebarMenuButtonVariants({ variant, size }), className)} data-active={isActive}>
+              {children}
+            </a>
+          </Link>
+        ) : (
+          <button ref={ref} {...props} className={cn(sidebarMenuButtonVariants({ variant, size }), className)} data-active={isActive}>
+            {children}
+          </button>
+        )
     }
 
     if (typeof tooltip === "string") {
@@ -579,7 +604,19 @@ const SidebarMenuButton = React.forwardRef<
 
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipTrigger asChild>
+          {href ? (
+             <Link href={href} passHref legacyBehavior>
+                <a ref={ref as React.Ref<HTMLAnchorElement>} {...props} className={cn(sidebarMenuButtonVariants({ variant, size }), className)} data-active={isActive}>
+                  {children}
+                </a>
+              </Link>
+          ) : (
+             <button ref={ref} {...props} className={cn(sidebarMenuButtonVariants({ variant, size }), className)} data-active={isActive}>
+                {children}
+            </button>
+          )}
+        </TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
@@ -761,3 +798,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    

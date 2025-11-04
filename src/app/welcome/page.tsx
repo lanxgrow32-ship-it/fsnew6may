@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, Landmark, User, DollarSign } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -213,7 +213,7 @@ export default async function WelcomePage() {
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href="/my-accounts">
+              <SidebarMenuButton href="/welcome">
                 <User />
                 My Accounts
               </SidebarMenuButton>
@@ -253,3 +253,5 @@ export default async function WelcomePage() {
   );
 }
 
+
+    
