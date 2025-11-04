@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -559,41 +560,30 @@ const SidebarMenuButton = React.forwardRef<
   ) => {
     const { isMobile, state } = useSidebar()
     
-    const buttonContent = (
-      <div
-        data-sidebar="menu-button"
-        data-size={size}
-        data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-      >
-        {children}
-      </div>
-    )
-
-    const button = href ? (
-      <Link href={href} passHref>
-        <a ref={ref as React.Ref<HTMLAnchorElement>} {...props}>
-          {buttonContent}
-        </a>
-      </Link>
-    ) : (
-      <button ref={ref} {...props}>
-        {buttonContent}
-      </button>
-    )
-
     if (!tooltip) {
-      return href ? (
-          <Link href={href} passHref legacyBehavior>
-            <a ref={ref as React.Ref<HTMLAnchorElement>} {...props} className={cn(sidebarMenuButtonVariants({ variant, size }), className)} data-active={isActive}>
-              {children}
-            </a>
-          </Link>
-        ) : (
-          <button ref={ref} {...props} className={cn(sidebarMenuButtonVariants({ variant, size }), className)} data-active={isActive}>
+      if (href) {
+        return (
+          <Link
+            href={href}
+            ref={ref as React.Ref<HTMLAnchorElement>}
+            className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
+            data-active={isActive}
+            {...props}
+          >
             {children}
-          </button>
+          </Link>
         )
+      }
+      return (
+        <button
+          ref={ref}
+          className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
+          data-active={isActive}
+          {...props}
+        >
+          {children}
+        </button>
+      )
     }
 
     if (typeof tooltip === "string") {
@@ -602,19 +592,30 @@ const SidebarMenuButton = React.forwardRef<
       }
     }
 
+    const Comp = asChild ? Slot : 'button';
+
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           {href ? (
-             <Link href={href} passHref legacyBehavior>
-                <a ref={ref as React.Ref<HTMLAnchorElement>} {...props} className={cn(sidebarMenuButtonVariants({ variant, size }), className)} data-active={isActive}>
-                  {children}
-                </a>
+             <Link
+                href={href}
+                ref={ref as React.Ref<HTMLAnchorElement>}
+                className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
+                data-active={isActive}
+                {...props}
+              >
+                {children}
               </Link>
           ) : (
-             <button ref={ref} {...props} className={cn(sidebarMenuButtonVariants({ variant, size }), className)} data-active={isActive}>
+             <Comp
+                ref={ref}
+                className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
+                data-active={isActive}
+                {...props}
+              >
                 {children}
-            </button>
+              </Comp>
           )}
         </TooltipTrigger>
         <TooltipContent
@@ -798,5 +799,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    
