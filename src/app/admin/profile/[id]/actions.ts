@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -9,6 +10,7 @@ export async function updateProfile(formData: FormData) {
   const trading_username = formData.get('trading_username') as string;
   const trading_password = formData.get('trading_password') as string;
   const credentials_provided = formData.get('credentials_provided') === 'on';
+  const kyc_status = formData.get('kyc_status') as string;
 
   const { error } = await supabaseAdmin
     .from('profiles')
@@ -16,7 +18,8 @@ export async function updateProfile(formData: FormData) {
       is_approved,
       trading_username,
       trading_password,
-      credentials_provided
+      credentials_provided,
+      kyc_status,
     })
     .eq('id', id);
 
@@ -28,6 +31,7 @@ export async function updateProfile(formData: FormData) {
   // Revalidate the dashboard path to show updated data
   revalidatePath('/admin/dashboard');
   revalidatePath(`/admin/profile/${id}`);
+  revalidatePath('/welcome');
 
   return { error: null };
 }
