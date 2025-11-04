@@ -12,6 +12,8 @@ import { useFormStatus } from 'react-dom';
 import { useEffect, useRef, useActionState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { ClientOnly } from '@/components/ui/client-only';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Coupon = {
   id: number;
@@ -22,9 +24,15 @@ type Coupon = {
 
 function DeleteButton({ couponId }: { couponId: number }) {
   const deleteCouponWithId = deleteCoupon.bind(null, couponId);
+  const router = useRouter();
+
+  const handleDelete = async () => {
+    await deleteCouponWithId();
+    router.refresh();
+  }
 
   return (
-    <form action={deleteCouponWithId}>
+    <form action={handleDelete}>
       <Button variant="destructive" size="icon">
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -82,6 +90,31 @@ function CreateCouponForm() {
     );
 }
 
+function CreateCouponFormSkeleton() {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Create New Coupon</CardTitle>
+                <CardDescription>Add a new promotional code.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="code">Coupon Code</Label>
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="discount_value">Discount Value (₹)</Label>
+                    <Skeleton className="h-10 w-full" />
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Skeleton className="h-10 w-28" />
+            </CardFooter>
+        </Card>
+    );
+}
+
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -133,7 +166,9 @@ export function CouponClientPage({ coupons }: { coupons: Coupon[] }) {
             </Card>
         </div>
         <div>
-            <CreateCouponForm />
+             <ClientOnly fallback={<CreateCouponFormSkeleton />}>
+                <CreateCouponForm />
+            </ClientOnly>
         </div>
     </main>
   );
