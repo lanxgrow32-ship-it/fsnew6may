@@ -6,8 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PropStar Admin",
-  description: "Admin dashboard for PropStar",
+  title: "FundedStock 2.0",
+  description: "Account management for FundedStock 2.0",
 };
 
 export default function RootLayout({
