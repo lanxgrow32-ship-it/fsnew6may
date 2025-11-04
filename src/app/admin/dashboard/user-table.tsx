@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
+import { ClientOnly } from '@/components/ui/client-only';
 
 type Profile = {
     id: string;
@@ -20,6 +21,37 @@ type Profile = {
     transaction_id: string | null;
     kyc_status: string;
 };
+
+function UserMobileCard({ profile }: { profile: Profile }) {
+    return (
+        <Card className="mb-4">
+            <CardHeader>
+                 <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-base">{profile.full_name}</CardTitle>
+                        <CardDescription>{profile.email}</CardDescription>
+                    </div>
+                     <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                        {profile.is_approved ? 'Approved' : 'Pending'}
+                    </Badge>
+                 </div>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Plan</span>
+                    <span>{profile.plan_purchased || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Transaction ID</span>
+                    <span className="truncate max-w-[150px]">{profile.transaction_id || 'N/A'}</span>
+                </div>
+                <Button asChild variant="outline" size="sm" className="w-full mt-2">
+                    <Link href={`/admin/profile/${profile.id}`}>Manage</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    )
+}
 
 export function UserTable({ profiles }: { profiles: Profile[] }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -54,63 +86,79 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                </div>
             </CardHeader>
             <CardContent>
-                <TooltipProvider>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Full Name</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Plan</TableHead>
-                                    <TableHead>Transaction ID</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredProfiles.length > 0 ? filteredProfiles.map((profile) => (
-                                    <TableRow key={profile.id}>
-                                        <TableCell className="font-medium">{profile.full_name}</TableCell>
-                                        <TableCell>{profile.email}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                                                {profile.is_approved ? 'Approved' : 'Pending'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{profile.plan_purchased || 'N/A'}</TableCell>
-                                        <TableCell>
-                                            {profile.transaction_id ? (
-                                                <Tooltip>
-                                                    <TooltipTrigger>
-                                                        <span className="block max-w-32 truncate">
-                                                            {profile.transaction_id}
-                                                        </span>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{profile.transaction_id}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            ) : (
-                                                'N/A'
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button asChild variant="outline" size="sm">
-                                                <Link href={`/admin/profile/${profile.id}`}>Manage</Link>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24">
-                                            No users found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                <ClientOnly>
+                    {/* Mobile View */}
+                    <div className="md:hidden">
+                        {filteredProfiles.length > 0 ? filteredProfiles.map((profile) => (
+                           <UserMobileCard key={profile.id} profile={profile} />
+                        )) : (
+                            <div className="text-center h-24 flex items-center justify-center">
+                                <p>No users found.</p>
+                            </div>
+                        )}
                     </div>
-                </TooltipProvider>
+
+                    {/* Desktop View */}
+                    <div className="hidden md:block">
+                        <TooltipProvider>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Full Name</TableHead>
+                                            <TableHead>Email</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Plan</TableHead>
+                                            <TableHead>Transaction ID</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredProfiles.length > 0 ? filteredProfiles.map((profile) => (
+                                            <TableRow key={profile.id}>
+                                                <TableCell className="font-medium">{profile.full_name}</TableCell>
+                                                <TableCell>{profile.email}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                                        {profile.is_approved ? 'Approved' : 'Pending'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{profile.plan_purchased || 'N/A'}</TableCell>
+                                                <TableCell>
+                                                    {profile.transaction_id ? (
+                                                        <Tooltip>
+                                                            <TooltipTrigger>
+                                                                <span className="block max-w-32 truncate">
+                                                                    {profile.transaction_id}
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>{profile.transaction_id}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        'N/A'
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button asChild variant="outline" size="sm">
+                                                        <Link href={`/admin/profile/${profile.id}`}>Manage</Link>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        )) : (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="text-center h-24">
+                                                    No users found.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </TooltipProvider>
+                    </div>
+                </ClientOnly>
             </CardContent>
         </Card>
     );
