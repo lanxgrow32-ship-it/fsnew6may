@@ -108,8 +108,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-        <header className="flex h-14 items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
+    <div className="bg-muted/40 min-h-screen">
+        <header className="flex h-14 items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4" />
@@ -127,7 +127,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     <div className="lg:col-span-2 space-y-8">
                         {/* KYC Details */}
                         {profile.kyc_status === 'submitted' || profile.kyc_status === 'verified' || profile.kyc_status === 'rejected' ? (
-                            <Card className="shadow-md">
+                            <Card>
                                 <CardHeader>
                                     <CardTitle>KYC Verification Details</CardTitle>
                                 </CardHeader>
@@ -150,7 +150,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                             <p>{profile.city_state}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="font-medium text[--muted-foreground]">Traded Before</p>
+                                            <p className="font-medium text-muted-foreground">Traded Before</p>
                                             <p>{profile.traded_before ? 'Yes' : 'No'}</p>
                                         </div>
                                 </div>
@@ -181,7 +181,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                 </CardContent>
                             </Card>
                         ) : (
-                            <Card className="shadow-md">
+                            <Card>
                                 <CardHeader>
                                     <CardTitle>KYC Verification</CardTitle>
                                 </CardHeader>
@@ -194,7 +194,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     {/* Right Column */}
                     <div className="space-y-8">
                         {/* User Details */}
-                        <Card className="shadow-md">
+                        <Card>
                             <CardHeader>
                             <CardTitle>User Details</CardTitle>
                             </CardHeader>
@@ -218,7 +218,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                             </CardContent>
                         </Card>
                         {/* Admin Controls */}
-                        <Card className="shadow-md">
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Admin Controls</CardTitle>
                             </CardHeader>
@@ -248,7 +248,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                             </CardContent>
                         </Card>
                         {/* Trading Credentials */}
-                        <Card className="shadow-md">
+                        <Card>
                             <CardHeader>
                             <CardTitle>Trading Credentials</CardTitle>
                             </CardHeader>

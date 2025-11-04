@@ -19,8 +19,8 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-8">
-      <div className="flex flex-col items-center justify-center space-y-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-8">
+      <div className="flex flex-col items-center justify-center space-y-6 text-center">
         <Mountain className="h-12 w-12 text-primary" />
         <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome to PropStar</h1>

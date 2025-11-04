@@ -47,7 +47,7 @@ export default function KycPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-start justify-center p-4 md:p-8 bg-gray-50">
+    <main className="flex min-h-screen items-start justify-center p-4 md:p-8 bg-muted/40">
       <Card className="w-full max-w-3xl">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">KYC Verification</CardTitle>

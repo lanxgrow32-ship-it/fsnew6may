@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Moon, Sun, Mountain } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, Bell, Mountain, Loader2, XCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 
 function KycPrompt() {
   return (
-    <Card className="w-full max-w-lg mx-auto mt-8 shadow-md">
+    <Card className="w-full max-w-lg mx-auto mt-8">
       <CardHeader className="text-center">
         <FileCheck className="mx-auto h-12 w-12 text-primary" />
         <CardTitle className="mt-4">Verification Required</CardTitle>
@@ -28,7 +28,7 @@ function KycPrompt() {
 
 function KycUnderReview() {
   return (
-    <Card className="w-full max-w-lg mx-auto mt-8 shadow-md">
+    <Card className="w-full max-w-lg mx-auto mt-8">
       <CardHeader className="text-center">
         <Loader2 className="mx-auto h-12 w-12 text-yellow-500 animate-spin" />
         <CardTitle className="mt-4">KYC Submitted</CardTitle>
@@ -46,7 +46,7 @@ function KycUnderReview() {
 
 function CredentialsView({ profile }: { profile: any }) {
    return (
-      <Card className="w-full max-w-2xl mx-auto mt-8 shadow-md">
+      <Card className="w-full max-w-2xl mx-auto mt-8">
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between sm:items-start">
             <div>
@@ -57,17 +57,17 @@ function CredentialsView({ profile }: { profile: any }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border bg-gray-50 p-4">
+          <div className="rounded-lg border bg-muted/40 p-4">
             <p className="text-sm font-medium text-muted-foreground">Plan Purchased</p>
             <p className="text-lg font-semibold">{profile.plan_purchased || 'Not specified'}</p>
           </div>
           {profile.credentials_provided ? (
             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="rounded-lg border bg-gray-50 p-4">
+              <div className="rounded-lg border bg-muted/40 p-4">
                 <p className="text-sm font-medium text-muted-foreground">Trading Username</p>
                 <p className="text-lg font-semibold">{profile.trading_username}</p>
               </div>
-              <div className="rounded-lg border bg-gray-50 p-4">
+              <div className="rounded-lg border bg-muted/40 p-4">
                 <p className="text-sm font-medium text-muted-foreground">Trading Password</p>
                 <p className="text-lg font-semibold">{profile.trading_password}</p>
               </div>
@@ -85,7 +85,7 @@ function CredentialsView({ profile }: { profile: any }) {
 
 function KycRejected() {
   return (
-    <Card className="w-full max-w-lg mx-auto mt-8 shadow-md">
+    <Card className="w-full max-w-lg mx-auto mt-8">
       <CardHeader className="text-center">
         <XCircle className="mx-auto h-12 w-12 text-destructive" />
         <CardTitle className="mt-4 text-destructive">KYC Rejected</CardTitle>
@@ -177,8 +177,8 @@ export default async function WelcomePage() {
   
   if (!profile.is_approved) {
     return (
-        <main className="flex min-h-screen items-center justify-center p-4 bg-gray-50">
-            <Card className="w-full max-w-lg text-center shadow-md">
+        <main className="flex min-h-screen items-center justify-center p-4 bg-muted/40">
+            <Card className="w-full max-w-lg text-center">
                 <CardHeader>
                     <CardTitle>Account Pending Approval</CardTitle>
                     <CardDescription>Your account registration has been received. You will be able to log in once an administrator has verified your payment and approved your account.</CardDescription>
@@ -257,7 +257,7 @@ export default async function WelcomePage() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center justify-between p-4 border-b bg-white">
+        <header className="flex h-14 items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
                 <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
@@ -270,7 +270,7 @@ export default async function WelcomePage() {
                 <UserNav profile={profile} />
            </div>
         </header>
-        <main className="p-4 md:p-6">
+        <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-3.5rem)]">
           <AccountStatus profile={profile} />
           {renderContent()}
         </main>

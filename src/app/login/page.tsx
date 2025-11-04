@@ -57,9 +57,9 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 bg-gray-50">
+    <main className="flex min-h-screen items-center justify-center p-4 bg-muted/40">
        <div className="w-full max-w-md space-y-6">
-        <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center text-center">
             <Mountain className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold mt-4">Welcome Back</h1>
             <p className="text-muted-foreground">Enter your credentials to access your account.</p>

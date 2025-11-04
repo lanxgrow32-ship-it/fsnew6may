@@ -58,7 +58,7 @@ const PlanCard = ({ size, title, price }: { size: string; title: string; price: 
 
 export default function PricingPage() {
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-muted/40 min-h-screen">
       <header className="p-4 flex justify-start">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
             <Mountain className="w-6 h-6 text-primary" />

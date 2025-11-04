@@ -87,7 +87,7 @@ export default async function AdminDashboard() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
+        <header className="flex h-14 items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
                 <h1 className="text-xl font-semibold">User Management</h1>
