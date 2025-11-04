@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,85 +14,94 @@ import { signOut } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
-function OnboardingGuide({ currentStep }: { currentStep: 'kyc' | 'credentials' | 'done' }) {
+function OnboardingGuide({ profile }: { profile: any }) {
+  const getStepStatus = (step: number) => {
+    if (step === 1) return 'completed';
+    
+    // Step 2: KYC
+    if (step === 2) {
+        if (profile.kyc_status === 'pending' || profile.kyc_status === 'rejected') return 'active';
+        if (profile.kyc_status === 'submitted' || profile.kyc_status === 'verified') return 'completed';
+    }
+
+    // Step 3: Credentials
+    if (step === 3) {
+        if (profile.kyc_status !== 'verified') return 'pending';
+        if (profile.kyc_status === 'verified' && !profile.credentials_provided) return 'active';
+        if (profile.credentials_provided) return 'completed';
+    }
+
+    return 'pending';
+  }
+
   const steps = [
-    { name: 'Payment Approved', status: 'completed' },
-    { name: 'Complete KYC', status: currentStep === 'kyc' ? 'active' : 'completed' },
-    { name: 'Receive Credentials', status: currentStep === 'credentials' ? 'active' : (currentStep === 'done' ? 'completed' : 'pending') },
+    { name: 'Payment Approved', status: getStepStatus(1) },
+    { name: 'Complete KYC', status: getStepStatus(2) },
+    { name: 'Receive Credentials', status: getStepStatus(3) },
   ];
 
   return (
-    <div className="space-y-4 rounded-lg border bg-card p-6 mt-6">
-      <h3 className="font-semibold text-lg">Your Onboarding Steps</h3>
-      <ol className="relative space-y-4">
-        {steps.map((step, index) => (
-          <li key={step.name} className={`pl-8 relative ${index !== steps.length - 1 ? 'pb-4' : ''}`}>
-             {index !== steps.length - 1 && (
-                 <div className={`absolute left-[11px] top-5 h-full w-0.5 ${step.status === 'completed' ? 'bg-primary' : 'bg-border'}`}></div>
-             )}
-            <div className="absolute left-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              {step.status === 'completed' ? <Check className="h-4 w-4" /> : <span className="text-sm font-bold">{index + 1}</span>}
-            </div>
-            <h4 className={`font-medium ${step.status === 'active' ? 'text-primary' : ''}`}>{step.name}</h4>
-            <p className="text-sm text-muted-foreground">
-                {step.status === 'completed' && 'Completed'}
-                {step.status === 'active' && 'Current Step'}
-                {step.status === 'pending' && 'Pending'}
-            </p>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Your Onboarding Steps</CardTitle>
+        <CardDescription>Follow these steps to get your trading account up and running.</CardDescription>
+      </CardHeader>
+      <CardContent>
+          <ol className="relative space-y-4">
+            {steps.map((step, index) => (
+              <li key={step.name} className={`pl-8 relative ${index !== steps.length - 1 ? 'pb-4' : ''}`}>
+                 {index !== steps.length - 1 && (
+                     <div className={`absolute left-[11px] top-5 h-full w-0.5 ${step.status === 'completed' ? 'bg-primary' : 'bg-border'}`}></div>
+                 )}
+                <div className={`absolute left-0 flex h-6 w-6 items-center justify-center rounded-full ${step.status === 'completed' ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/20 text-muted-foreground'}`}>
+                  {step.status === 'completed' ? <Check className="h-4 w-4" /> : <span className="text-sm font-bold">{index + 1}</span>}
+                </div>
+                <h4 className={`font-medium ${step.status === 'active' ? 'text-primary' : ''}`}>{step.name}</h4>
+                <p className="text-sm text-muted-foreground">
+                    {step.status === 'completed' && 'Completed'}
+                    {step.status === 'active' && 'Current Step'}
+                    {step.status === 'pending' && 'Pending'}
+                </p>
+              </li>
+            ))}
+          </ol>
+      </CardContent>
+    </Card>
   );
 }
 
 
 function KycPrompt() {
   return (
-      <Card>
-        <CardHeader>
-          <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-            <FileCheck className="h-5 w-5 !text-blue-600" />
-            <AlertTitle className="font-semibold">Complete Your Verification</AlertTitle>
-            <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              To start trading, you need to complete your KYC verification. This is a one-time process.
-              <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
-                <Link href="/kyc">Start KYC Verification</Link>
-              </Button>
-            </AlertDescription>
-          </Alert>
-        </CardHeader>
-        <CardContent>
-          <OnboardingGuide currentStep="kyc" />
-        </CardContent>
-      </Card>
+      <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+        <FileCheck className="h-5 w-5 !text-blue-600" />
+        <AlertTitle className="font-semibold">Complete Your Verification</AlertTitle>
+        <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          To start trading, you need to complete your KYC verification. This is the next step.
+          <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
+            <Link href="/kyc-status">Start KYC Verification</Link>
+          </Button>
+        </AlertDescription>
+      </Alert>
   )
 }
 
 function KycUnderReview() {
   return (
-    <Card className="w-full max-w-2xl mx-auto mt-8">
-      <CardHeader className="text-center">
-        <Loader2 className="mx-auto h-12 w-12 text-yellow-500 animate-spin" />
-        <CardTitle className="mt-4">KYC Submitted & Under Review</CardTitle>
-        <CardDescription>Your documents have been submitted and are currently being reviewed by our team. We'll notify you once the process is complete. This usually takes 1-2 business days.</CardDescription>
-      </CardHeader>
-       <CardContent>
-         <OnboardingGuide currentStep="credentials" />
-      </CardContent>
-    </Card>
+    <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800">
+      <Loader2 className="mx-auto h-5 w-5 text-yellow-500 animate-spin" />
+      <AlertTitle>KYC Submitted & Under Review</AlertTitle>
+      <AlertDescription>Your documents have been submitted and are currently being reviewed by our team. We'll notify you once the process is complete. This usually takes 1-2 business days.</AlertDescription>
+    </Alert>
   )
 }
 
 function CredentialsView({ profile }: { profile: any }) {
    return (
-      <Card className="w-full max-w-2xl mx-auto mt-8 shadow-sm">
-        <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-start">
-            <div>
-              <CardTitle>Your Trading Account</CardTitle>
-              <CardDescription>Here are your trading account details.</CardDescription>
-            </div>
-             <Badge variant="default" className="mt-2 sm:mt-0 bg-green-100 text-green-800 border-green-300 self-start">KYC Verified</Badge>
+      <Card className="w-full max-w-2xl mx-auto shadow-sm">
+        <CardHeader>
+          <CardTitle>Your Trading Account</CardTitle>
+          <CardDescription>Here are your trading account details.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="rounded-lg border bg-muted/40 p-4">
@@ -136,7 +145,6 @@ function CredentialsView({ profile }: { profile: any }) {
                     </div>
                     <p className="text-sm text-yellow-600 mt-2">Now that your KYC is verified, an admin will provide your credentials shortly. Please check back later.</p>
                 </div>
-                <OnboardingGuide currentStep="credentials" />
              </div>
           )}
         </CardContent>
@@ -150,34 +158,34 @@ function KycRejected() {
         <XCircle className="h-5 w-5" />
         <AlertTitle className="font-semibold">KYC Verification Rejected</AlertTitle>
         <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          Unfortunately, your KYC verification was not successful. Please resubmit your application with clear documents and correct information.
+          Unfortunately, your KYC verification was not successful. Please check your status and resubmit.
           <Button asChild size="sm" variant="destructive" className="shrink-0">
-            <Link href="/kyc">Resubmit KYC Application</Link>
+            <Link href="/kyc-status">Check KYC Status</Link>
           </Button>
         </AlertDescription>
       </Alert>
   )
 }
 
-function AccountStatus({ profile }: { profile: any }) {
-  if (profile.kyc_status === 'verified') {
-    return (
-      <div className="p-6 rounded-lg bg-primary text-primary-foreground">
-        <div className="flex items-center gap-4">
-            <div className="bg-white/20 p-3 rounded-full">
-                <CheckCircle className="h-8 w-8" />
+function AccountStatusBanner({ profile }: { profile: any }) {
+    if (profile.credentials_provided) {
+        return (
+          <div className="p-6 rounded-lg bg-primary text-primary-foreground mb-8">
+            <div className="flex items-center gap-4">
+                <div className="bg-white/20 p-3 rounded-full">
+                    <CheckCircle className="h-8 w-8" />
+                </div>
+                <div>
+                    <h2 className="text-2xl font-bold">Welcome back, {profile.full_name || 'User'}!</h2>
+                    <p className="opacity-90">Your account is fully active. Here are your trading credentials.</p>
+                </div>
             </div>
-            <div>
-                <h2 className="text-2xl font-bold">Welcome back, {profile.full_name || 'User'}!</h2>
-                <p className="opacity-90">Your account is fully active. Here are your trading credentials.</p>
-            </div>
-        </div>
-      </div>
-    );
-  }
-   if (profile.kyc_status === 'pending') {
+          </div>
+        );
+    }
+   
     return (
-        <div className="p-6 rounded-lg bg-card border">
+        <div className="p-6 rounded-lg bg-card border mb-8">
             <div className="flex items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold">Welcome, {profile.full_name || 'User'}!</h2>
@@ -186,8 +194,6 @@ function AccountStatus({ profile }: { profile: any }) {
             </div>
         </div>
     );
-   }
-  return null;
 }
 
 function UserNav({ profile }: { profile: any}) {
@@ -210,9 +216,11 @@ function UserNav({ profile }: { profile: any}) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
+                    <DropdownMenuItem asChild>
+                        <Link href="/welcome">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                        </Link>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
@@ -278,14 +286,6 @@ export default async function WelcomePage() {
     }
   }
 
-  const getKycSidebarHref = () => {
-    if (profile.kyc_status === 'pending' || profile.kyc_status === 'rejected') {
-      return '/kyc';
-    }
-    // If submitted or verified, just show them their status on the dashboard
-    return '/welcome';
-  };
-
 
   return (
     <SidebarProvider>
@@ -304,12 +304,6 @@ export default async function WelcomePage() {
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton href="/my-accounts" tooltip="My Accounts">
-                <User />
-                My Accounts
-              </SidebarMenuButton>
-            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton href="/pricing" tooltip="Purchase New Account">
                 <DollarSign />
@@ -317,7 +311,7 @@ export default async function WelcomePage() {
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href={getKycSidebarHref()} tooltip="KYC Verification">
+              <SidebarMenuButton href="/kyc-status" tooltip="KYC Verification">
                 <FileCheck />
                 KYC Verification
               </SidebarMenuButton>
@@ -354,9 +348,17 @@ export default async function WelcomePage() {
            </div>
         </header>
         <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
-          <AccountStatus profile={profile} />
-          <div className="mt-8 max-w-2xl mx-auto">
-            {renderContent()}
+          <div className="max-w-4xl mx-auto space-y-8">
+            <AccountStatusBanner profile={profile} />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8">
+                  {renderContent()}
+                </div>
+                <div className="lg:col-span-1">
+                    <OnboardingGuide profile={profile} />
+                </div>
+            </div>
           </div>
         </main>      
       </SidebarInset>
