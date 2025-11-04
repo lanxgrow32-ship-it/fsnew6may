@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
+import { ClientOnly } from '@/components/ui/client-only';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,6 +61,7 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4 bg-background">
+      <ClientOnly>
        <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
             <FundedStockLogo className="h-10 w-10 text-primary" />
@@ -92,6 +94,7 @@ export default function LoginPage() {
             </CardDescription>
         </Card>
       </div>
+      </ClientOnly>
     </main>
   );
 }
