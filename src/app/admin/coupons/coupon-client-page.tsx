@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trash2 } from 'lucide-react';
 import { createCoupon, deleteCoupon } from './actions';
-import { useFormStatus, useFormState } from 'react-dom';
-import { useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useActionState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -37,7 +37,7 @@ function CreateCouponForm() {
     const { toast } = useToast();
     const router = useRouter();
 
-    const [state, formAction] = useFormState(createCoupon, { error: null, success: false });
+    const [state, formAction] = useActionState(createCoupon, { error: null, success: false });
 
     useEffect(() => {
         if (state.error) {
