@@ -109,7 +109,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="bg-muted/40 min-h-screen">
-        <header className="flex h-14 items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
+        <header className="flex h-14 items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4" />

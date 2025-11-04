@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, Mountain, LogOut } from 'lucide-react';
+import { Home, Ticket, User, LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FundedStockLogo } from '@/components/ui/logo';
 
 function AdminNav() {
     return (
@@ -26,7 +27,7 @@ function AdminNav() {
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">Admin</p>
-                        <p className="text-xs leading-none text-muted-foreground">admin@propstar.com</p>
+                        <p className="text-xs leading-none text-muted-foreground">admin@fundedstock.com</p>
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -82,8 +83,8 @@ export default async function AdminDashboard() {
         <SidebarHeader className="border-b p-2">
            <div className="h-12 flex items-center justify-center">
                 <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
-                    <Mountain className="w-8 h-8 text-primary" />
-                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">PropStar</span>
+                    <FundedStockLogo className="w-8 h-8 text-primary" />
+                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
                 </Link>
            </div>
         </SidebarHeader>
@@ -115,7 +116,7 @@ export default async function AdminDashboard() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
+        <header className="flex h-14 items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
                 <h1 className="text-xl font-semibold">User Management</h1>

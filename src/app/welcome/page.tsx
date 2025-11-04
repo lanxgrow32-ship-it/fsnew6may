@@ -3,12 +3,13 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Mountain, Loader2, XCircle, CheckCircle } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { FundedStockLogo } from '@/components/ui/logo';
 
 function KycPrompt() {
   return (
@@ -213,8 +214,8 @@ export default async function WelcomePage() {
         <SidebarHeader className="border-b">
            <div className="h-14 flex items-center px-4">
                 <Link href="/welcome" className="flex items-center gap-2 font-bold text-lg">
-                    <Mountain className="w-6 h-6 text-primary" />
-                    <span className="text-foreground">PropStar</span>
+                    <FundedStockLogo className="w-6 h-6 text-primary" />
+                    <span className="text-foreground">FundedStock 2.0</span>
                 </Link>
            </div>
         </SidebarHeader>
@@ -258,7 +259,7 @@ export default async function WelcomePage() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
+        <header className="flex h-14 items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
                 <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
@@ -274,7 +275,7 @@ export default async function WelcomePage() {
         <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-3.5rem)]">
           <AccountStatus profile={profile} />
           {renderContent()}
-        </main>
+        </main>      
       </SidebarInset>
     </SidebarProvider>
   );

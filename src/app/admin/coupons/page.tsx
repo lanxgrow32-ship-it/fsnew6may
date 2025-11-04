@@ -14,10 +14,11 @@ import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, Mountain, LogOut } from 'lucide-react';
+import { Home, Ticket, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FundedStockLogo } from '@/components/ui/logo';
 
 type Coupon = {
   id: number;
@@ -253,8 +254,8 @@ export default function CouponsPage() {
                 <SidebarHeader className="border-b">
                 <div className="h-14 flex items-center px-4">
                         <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
-                            <Mountain className="w-6 h-6 text-primary" />
-                            <span className="text-foreground">PropStar</span>
+                            <FundedStockLogo className="w-6 h-6 text-primary" />
+                            <span className="text-foreground">FundedStock 2.0</span>
                         </Link>
                 </div>
                 </SidebarHeader>
@@ -286,7 +287,7 @@ export default function CouponsPage() {
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset>
-                <header className="flex h-14 items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
+                <header className="flex h-14 items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
                     <div className="flex items-center gap-4">
                         <SidebarTrigger className="md:hidden" />
                         <h1 className="text-xl font-semibold">Coupon Management</h1>
