@@ -14,18 +14,58 @@ import { signOut } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
+function OnboardingGuide({ currentStep }: { currentStep: 'kyc' | 'credentials' | 'done' }) {
+  const steps = [
+    { name: 'Payment Approved', status: 'completed' },
+    { name: 'Complete KYC', status: currentStep === 'kyc' ? 'active' : 'completed' },
+    { name: 'Receive Credentials', status: currentStep === 'credentials' ? 'active' : (currentStep === 'done' ? 'completed' : 'pending') },
+  ];
+
+  return (
+    <div className="space-y-4 rounded-lg border bg-card p-6 mt-6">
+      <h3 className="font-semibold text-lg">Your Onboarding Steps</h3>
+      <ol className="relative space-y-4">
+        {steps.map((step, index) => (
+          <li key={step.name} className={`pl-8 relative ${index !== steps.length - 1 ? 'pb-4' : ''}`}>
+             {index !== steps.length - 1 && (
+                 <div className={`absolute left-[11px] top-5 h-full w-0.5 ${step.status === 'completed' ? 'bg-primary' : 'bg-border'}`}></div>
+             )}
+            <div className="absolute left-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              {step.status === 'completed' ? <Check className="h-4 w-4" /> : <span className="text-sm font-bold">{index + 1}</span>}
+            </div>
+            <h4 className={`font-medium ${step.status === 'active' ? 'text-primary' : ''}`}>{step.name}</h4>
+            <p className="text-sm text-muted-foreground">
+                {step.status === 'completed' && 'Completed'}
+                {step.status === 'active' && 'Current Step'}
+                {step.status === 'pending' && 'Pending'}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+
 function KycPrompt() {
   return (
-      <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-        <FileCheck className="h-5 w-5 !text-blue-600" />
-        <AlertTitle className="font-semibold">Complete Your Verification</AlertTitle>
-        <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          To start trading, you need to complete your KYC verification. This is a one-time process.
-          <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
-            <Link href="/kyc">Start KYC Verification</Link>
-          </Button>
-        </AlertDescription>
-      </Alert>
+      <Card>
+        <CardHeader>
+          <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+            <FileCheck className="h-5 w-5 !text-blue-600" />
+            <AlertTitle className="font-semibold">Complete Your Verification</AlertTitle>
+            <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              To start trading, you need to complete your KYC verification. This is a one-time process.
+              <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
+                <Link href="/kyc">Start KYC Verification</Link>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </CardHeader>
+        <CardContent>
+          <OnboardingGuide currentStep="kyc" />
+        </CardContent>
+      </Card>
   )
 }
 
@@ -38,10 +78,7 @@ function KycUnderReview() {
         <CardDescription>Your documents have been submitted and are currently being reviewed by our team. We'll notify you once the process is complete. This usually takes 1-2 business days.</CardDescription>
       </CardHeader>
        <CardContent>
-         <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-center">
-            <p className="font-semibold text-yellow-800">Your trading credentials are pending KYC approval.</p>
-            <p className="text-sm text-yellow-600">You will be able to access them here once your KYC is verified.</p>
-          </div>
+         <OnboardingGuide currentStep="credentials" />
       </CardContent>
     </Card>
   )
@@ -91,13 +128,16 @@ function CredentialsView({ profile }: { profile: any }) {
               </Button>
             </>
           ) : (
-            <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-center">
-              <div className="flex items-center justify-center gap-3">
-                <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
-                <p className="font-semibold text-yellow-800">Your trading credentials are being set up.</p>
-              </div>
-              <p className="text-sm text-yellow-600 mt-2">Now that your KYC is verified, an admin will provide your credentials shortly. Please check back later.</p>
-            </div>
+             <div className="space-y-4">
+                <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-center">
+                    <div className="flex items-center justify-center gap-3">
+                        <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
+                        <p className="font-semibold text-yellow-800">Your trading credentials are being set up.</p>
+                    </div>
+                    <p className="text-sm text-yellow-600 mt-2">Now that your KYC is verified, an admin will provide your credentials shortly. Please check back later.</p>
+                </div>
+                <OnboardingGuide currentStep="credentials" />
+             </div>
           )}
         </CardContent>
       </Card>
@@ -135,6 +175,18 @@ function AccountStatus({ profile }: { profile: any }) {
       </div>
     );
   }
+   if (profile.kyc_status === 'pending') {
+    return (
+        <div className="p-6 rounded-lg bg-card border">
+            <div className="flex items-center gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold">Welcome, {profile.full_name || 'User'}!</h2>
+                    <p className="text-muted-foreground">Your account has been approved. Please complete the final steps to start trading.</p>
+                </div>
+            </div>
+        </div>
+    );
+   }
   return null;
 }
 
@@ -303,7 +355,7 @@ export default async function WelcomePage() {
         </header>
         <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
           <AccountStatus profile={profile} />
-          <div className="mt-8">
+          <div className="mt-8 max-w-2xl mx-auto">
             {renderContent()}
           </div>
         </main>      
