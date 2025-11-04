@@ -293,24 +293,24 @@ export default function CouponsPage() {
                     </div>
                 </header>
                 <main className="p-4 md:p-8">
-                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                       <div className="lg:col-span-1">
-                           <CreateCouponForm />
-                       </div>
-                       <div className="lg:col-span-2">
-                            <ClientOnly fallback={<ActiveCouponsSkeleton />}>
+                    <ClientOnly>
+                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                           <div className="lg:col-span-1">
+                               <CreateCouponForm />
+                           </div>
+                           <div className="lg:col-span-2">
                                 {isLoading ? (
-                                    <div className="flex justify-center items-center h-64">
-                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    </div>
+                                    <ActiveCouponsSkeleton />
                                 ) : (
                                     <ActiveCouponsList coupons={coupons} onCouponDelete={handleCouponDelete} />
                                 )}
-                            </ClientOnly>
+                           </div>
                        </div>
-                   </div>
+                   </ClientOnly>
                 </main>
             </SidebarInset>
         </SidebarProvider>
     );
 }
+
+    
