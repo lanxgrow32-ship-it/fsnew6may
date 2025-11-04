@@ -27,23 +27,23 @@ function UserMobileCard({ profile }: { profile: Profile }) {
         <Card className="mb-4">
             <CardHeader>
                  <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="text-base">{profile.full_name}</CardTitle>
-                        <CardDescription>{profile.email}</CardDescription>
+                    <div className='max-w-[calc(100%-80px)]'>
+                        <CardTitle className="text-base truncate">{profile.full_name}</CardTitle>
+                        <CardDescription className="truncate">{profile.email}</CardDescription>
                     </div>
-                     <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                     <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={`${profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} shrink-0`}>
                         {profile.is_approved ? 'Approved' : 'Pending'}
                     </Badge>
                  </div>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Plan</span>
-                    <span>{profile.plan_purchased || 'N/A'}</span>
+            <CardContent className="space-y-4 text-sm">
+                <div>
+                    <div className="font-medium text-muted-foreground">Plan</div>
+                    <div>{profile.plan_purchased || 'N/A'}</div>
                 </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Transaction ID</span>
-                    <span className="truncate max-w-[150px]">{profile.transaction_id || 'N/A'}</span>
+                 <div>
+                    <div className="font-medium text-muted-foreground">Transaction ID</div>
+                    <div className="truncate">{profile.transaction_id || 'N/A'}</div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full mt-2">
                     <Link href={`/admin/profile/${profile.id}`}>Manage</Link>
