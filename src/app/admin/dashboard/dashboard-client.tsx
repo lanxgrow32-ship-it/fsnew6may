@@ -21,7 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 
-function CreateAdminForm() {
+function CreateAdminForm({ className }: { className?: string }) {
     const ref = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
     const [state, formAction] = useActionState(createAdmin, { error: null, success: false });
@@ -57,7 +57,7 @@ function CreateAdminForm() {
     return (
        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button className={className}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Create New Admin
                 </Button>
@@ -239,13 +239,14 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
                 <h1 className="text-xl font-semibold">User Management</h1>
            </div>
            <div className="flex items-center gap-4">
-            <CreateAdminForm />
+            <CreateAdminForm className="hidden md:flex"/>
             <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
               <AdminNav />
             </ClientOnly>
            </div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
+            <CreateAdminForm className="w-full md:hidden mb-6" />
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
                 {stats.map(stat => (
                     <Card key={stat.title} className="shadow-sm">
