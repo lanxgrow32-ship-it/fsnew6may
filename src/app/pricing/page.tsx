@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 
@@ -62,8 +62,16 @@ export default function PricingPage() {
   return (
     <div className="dark-theme">
       <div className="bg-background min-h-screen text-foreground">
+        <nav className="absolute top-4 left-4 z-10">
+            <Button asChild variant="outline" size="sm">
+            <Link href="https://fundedstock.live/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Main Site
+            </Link>
+            </Button>
+        </nav>
         <main className="p-4 md:p-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 pt-12 md:pt-0">
               <h1 className="text-4xl font-extrabold tracking-tight">Choose Your Funding Plan</h1>
               <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
               Select the program that best fits your trading style and goals. Whether you're ready to trade now or want to prove your skills first, we have a path for you.

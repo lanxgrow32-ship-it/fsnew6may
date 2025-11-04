@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
@@ -61,6 +61,14 @@ export default function LoginPage() {
 
   return (
     <div className="dark-theme">
+        <nav className="absolute top-4 left-4 z-10">
+            <Button asChild variant="outline" size="sm">
+            <Link href="https://fundedstock.live/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Main Site
+            </Link>
+            </Button>
+        </nav>
       <main className="flex min-h-screen items-center justify-center p-4 bg-background">
         <ClientOnly>
         <div className="w-full max-w-md space-y-6">
