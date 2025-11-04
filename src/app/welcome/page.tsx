@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-async function KycPrompt() {
+function KycPrompt() {
   return (
     <Card className="w-full max-w-lg mx-auto mt-8">
       <CardHeader>
@@ -80,6 +80,73 @@ function CredentialsView({ profile }: { profile: any }) {
   );
 }
 
+function KycRejected() {
+  return (
+    <Card className="w-full max-w-lg mx-auto mt-8">
+      <CardHeader>
+        <CardTitle className="text-destructive">KYC Rejected</CardTitle>
+        <CardDescription>
+          Unfortunately, your KYC verification was not successful. This could be due to unclear documents or incorrect information. Please resubmit your application.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button asChild className="w-full">
+          <Link href="/kyc">Resubmit KYC Application</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+function AccountStatus({ profile }: { profile: any }) {
+  const getStatusInfo = () => {
+    switch (profile.kyc_status) {
+      case 'verified':
+        return {
+          title: 'KYC Verified',
+          description: 'Your account is fully active. You can view your credentials below.',
+          variant: 'default',
+          badgeClass: 'bg-green-600',
+        };
+      case 'submitted':
+        return {
+          title: 'KYC Under Review',
+          description: 'Our team is reviewing your documents. This usually takes 1-2 business days.',
+          variant: 'default',
+          badgeClass: 'bg-yellow-500',
+        };
+      case 'rejected':
+         return {
+          title: 'KYC Rejected',
+          description: 'Your verification was unsuccessful. Please resubmit your documents.',
+          variant: 'destructive',
+          badgeClass: 'bg-red-600',
+        };
+      default:
+        return {
+          title: 'Pending KYC Submission',
+          description: 'Please complete your KYC verification to activate your account.',
+          variant: 'destructive',
+          badgeClass: 'bg-gray-500',
+        };
+    }
+  };
+
+  const { title, description, badgeClass } = getStatusInfo();
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Account Status</CardTitle>
+          <Badge className={badgeClass}>{title}</Badge>
+        </div>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+    </Card>
+  );
+}
+
 
 export default async function WelcomePage() {
   const supabase = createClient();
@@ -117,20 +184,17 @@ export default async function WelcomePage() {
   }
   
   const renderContent = () => {
-    // If KYC is verified, show credentials if they exist.
     if (profile.kyc_status === 'verified') {
       return <CredentialsView profile={profile} />
     }
-    // If KYC is submitted but not yet verified
     if (profile.kyc_status === 'submitted') {
       return <KycUnderReview />
     }
-    // If KYC is rejected or pending, show the prompt to start/retry KYC
-     if (profile.kyc_status === 'rejected' || profile.kyc_status === 'pending') {
-      return <KycPrompt />
+    if (profile.kyc_status === 'rejected') {
+        return <KycRejected />
     }
-    // Default fallback
-    return <p>Loading...</p>
+    // Default to pending if not submitted or rejected.
+    return <KycPrompt />
   }
 
 
@@ -148,16 +212,16 @@ export default async function WelcomePage() {
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/pricing">
-                <DollarSign />
-                Purchase Account
+             <SidebarMenuItem>
+              <SidebarMenuButton href="/my-accounts">
+                <User />
+                My Accounts
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/welcome">
-                <User />
-                My Accounts
+              <SidebarMenuButton href="/pricing">
+                <DollarSign />
+                Purchase New Account
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
@@ -181,9 +245,11 @@ export default async function WelcomePage() {
           <SidebarTrigger className="md:hidden" />
         </header>
         <main className="p-4 md:p-6">
+          <AccountStatus profile={profile} />
           {renderContent()}
         </main>
       </SidebarInset>
     </SidebarProvider>
   );
 }
+
