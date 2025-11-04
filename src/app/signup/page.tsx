@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Ticket } from 'lucide-react';
+import { Loader2, Ticket, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signup, validateCoupon } from './actions';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -193,10 +193,14 @@ function SignupForm() {
                            <p className="font-semibold text-xl">UPI ID: {paymentDetails?.upi_id || 'Not available'}</p>
                            <p className="text-sm text-muted-foreground">Scan the QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
                            {paymentDetails?.qr_code_url && (
-                             <div className="flex justify-center">
-                                <a href={paymentDetails.qr_code_url} download="qr-code.png" title="Download QR Code">
-                                   <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
-                                </a>
+                             <div className="flex flex-col items-center gap-2">
+                               <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
+                                <Button asChild variant="ghost" size="sm">
+                                    <a href={paymentDetails.qr_code_url} download="qr-code.png">
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download QR
+                                    </a>
+                                </Button>
                              </div>
                            )}
                       </CardContent>
