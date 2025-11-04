@@ -1,7 +1,7 @@
 
 'use client';
-import { useState, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { updatePaymentSettings } from './actions';
@@ -35,7 +35,7 @@ function SubmitButton() {
 
 function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDetails | null }) {
     const { toast } = useToast();
-    const [state, formAction] = useFormState(updatePaymentSettings, { error: null, success: null });
+    const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
     const [previewUrl, setPreviewUrl] = useState<string | null>(currentSettings?.qr_code_url || null);
 
     useEffect(() => {

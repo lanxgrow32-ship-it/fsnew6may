@@ -35,7 +35,10 @@ export async function createCoupon(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/admin/coupons');
-  redirect('/admin/coupons');
+  // Since this is a form action, we should not redirect here.
+  // The success state will trigger a toast and form reset on the client.
+  // redirect('/admin/coupons');
+  return { success: true, error: null };
 }
 
 export async function deleteCoupon(couponId: number) {
