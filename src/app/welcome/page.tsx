@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,33 +11,33 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 
 function KycPrompt() {
   return (
-    <Card className="w-full max-w-lg mx-auto mt-8">
-      <CardHeader className="text-center">
-        <FileCheck className="mx-auto h-12 w-12 text-primary" />
-        <CardTitle className="mt-4">Verification Required</CardTitle>
-        <CardDescription>To proceed with your trading account, you need to complete your KYC verification. This is a one-time process.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button asChild className="w-full" size="lg">
-          <Link href="/kyc">Start KYC Verification</Link>
-        </Button>
-      </CardContent>
-    </Card>
+      <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+        <FileCheck className="h-5 w-5 !text-blue-600" />
+        <AlertTitle className="font-semibold">Complete Your Verification</AlertTitle>
+        <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          To start trading, you need to complete your KYC verification. This is a one-time process.
+          <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
+            <Link href="/kyc">Start KYC Verification</Link>
+          </Button>
+        </AlertDescription>
+      </Alert>
   )
 }
 
 function KycUnderReview() {
   return (
-    <Card className="w-full max-w-lg mx-auto mt-8">
+    <Card className="w-full max-w-2xl mx-auto mt-8">
       <CardHeader className="text-center">
         <Loader2 className="mx-auto h-12 w-12 text-yellow-500 animate-spin" />
-        <CardTitle className="mt-4">KYC Submitted</CardTitle>
-        <CardDescription>Your documents have been submitted and are currently under review. We'll notify you once the process is complete. This usually takes 1-2 business days.</CardDescription>
+        <CardTitle className="mt-4">KYC Submitted & Under Review</CardTitle>
+        <CardDescription>Your documents have been submitted and are currently being reviewed by our team. We'll notify you once the process is complete. This usually takes 1-2 business days.</CardDescription>
       </CardHeader>
-      <CardContent>
+       <CardContent>
          <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-center">
             <p className="font-semibold text-yellow-800">Your trading credentials are pending KYC approval.</p>
             <p className="text-sm text-yellow-600">You will be able to access them here once your KYC is verified.</p>
@@ -49,36 +49,45 @@ function KycUnderReview() {
 
 function CredentialsView({ profile }: { profile: any }) {
    return (
-      <Card className="w-full max-w-2xl mx-auto mt-8">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between sm:items-start">
+      <Card className="w-full max-w-2xl mx-auto mt-8 shadow-sm">
+        <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-start">
             <div>
               <CardTitle>Your Trading Account</CardTitle>
               <CardDescription>Here are your trading account details.</CardDescription>
             </div>
-             <Badge variant="default" className="mt-2 sm:mt-0 bg-green-100 text-green-800 border-green-300">KYC Verified</Badge>
-          </div>
+             <Badge variant="default" className="mt-2 sm:mt-0 bg-green-100 text-green-800 border-green-300 self-start">KYC Verified</Badge>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="rounded-lg border bg-muted/40 p-4">
             <p className="text-sm font-medium text-muted-foreground">Plan Purchased</p>
             <p className="text-lg font-semibold">{profile.plan_purchased || 'Not specified'}</p>
           </div>
           {profile.credentials_provided ? (
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="rounded-lg border bg-muted/40 p-4">
-                <p className="text-sm font-medium text-muted-foreground">Trading Username</p>
-                <p className="text-lg font-semibold">{profile.trading_username}</p>
+            <>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="rounded-lg border bg-muted/40 p-4">
+                  <p className="text-sm font-medium text-muted-foreground">Trading Username</p>
+                  <p className="text-xl font-semibold tracking-wider">{profile.trading_username}</p>
+                </div>
+                <div className="rounded-lg border bg-muted/40 p-4">
+                  <p className="text-sm font-medium text-muted-foreground">Trading Password</p>
+                  <p className="text-xl font-semibold tracking-wider">{profile.trading_password}</p>
+                </div>
               </div>
-              <div className="rounded-lg border bg-muted/40 p-4">
-                <p className="text-sm font-medium text-muted-foreground">Trading Password</p>
-                <p className="text-lg font-semibold">{profile.trading_password}</p>
-              </div>
-            </div>
+              <Button asChild size="lg" className="w-full">
+                <Link href="https://nextrade.club/" target="_blank">
+                  Launch Trading Software
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </>
           ) : (
             <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-center">
-              <p className="font-semibold text-yellow-800">Your trading credentials are being set up.</p>
-              <p className="text-sm text-yellow-600">An admin will provide them shortly.</p>
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
+                <p className="font-semibold text-yellow-800">Your trading credentials are being set up.</p>
+              </div>
+              <p className="text-sm text-yellow-600 mt-2">An admin will provide them shortly. Please check back later.</p>
             </div>
           )}
         </CardContent>
@@ -88,20 +97,16 @@ function CredentialsView({ profile }: { profile: any }) {
 
 function KycRejected() {
   return (
-    <Card className="w-full max-w-lg mx-auto mt-8">
-      <CardHeader className="text-center">
-        <XCircle className="mx-auto h-12 w-12 text-destructive" />
-        <CardTitle className="mt-4 text-destructive">KYC Rejected</CardTitle>
-        <CardDescription>
-          Unfortunately, your KYC verification was not successful. This could be due to unclear documents or incorrect information. Please check for any comments from the admin and resubmit your application.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button asChild className="w-full" size="lg">
-          <Link href="/kyc">Resubmit KYC Application</Link>
-        </Button>
-      </CardContent>
-    </Card>
+     <Alert variant="destructive">
+        <XCircle className="h-5 w-5" />
+        <AlertTitle className="font-semibold">KYC Verification Rejected</AlertTitle>
+        <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          Unfortunately, your KYC verification was not successful. Please resubmit your application with clear documents and correct information.
+          <Button asChild size="sm" variant="destructive" className="shrink-0">
+            <Link href="/kyc">Resubmit KYC Application</Link>
+          </Button>
+        </AlertDescription>
+      </Alert>
   )
 }
 
@@ -115,7 +120,7 @@ function AccountStatus({ profile }: { profile: any }) {
             </div>
             <div>
                 <h2 className="text-2xl font-bold">Welcome back, {profile.full_name || 'User'}!</h2>
-                <p className="opacity-90">Here's your trading performance overview. Your account is fully active.</p>
+                <p className="opacity-90">Your account is fully active. Here are your trading credentials.</p>
             </div>
         </div>
       </div>
@@ -199,18 +204,26 @@ export default async function WelcomePage() {
   }
   
   const renderContent = () => {
-    if (profile.kyc_status === 'verified') {
-      return <CredentialsView profile={profile} />
+    switch (profile.kyc_status) {
+      case 'verified':
+        return <CredentialsView profile={profile} />;
+      case 'submitted':
+        return <KycUnderReview />;
+      case 'rejected':
+        return <KycRejected />;
+      case 'pending':
+      default:
+        return <KycPrompt />;
     }
-    if (profile.kyc_status === 'submitted') {
-      return <KycUnderReview />
-    }
-    if (profile.kyc_status === 'rejected') {
-        return <KycRejected />
-    }
-    // Default to pending if not submitted or rejected.
-    return <KycPrompt />
   }
+
+  const getKycSidebarHref = () => {
+    if (profile.kyc_status === 'pending' || profile.kyc_status === 'rejected') {
+      return '/kyc';
+    }
+    // If submitted or verified, just show them their status on the dashboard
+    return '/welcome';
+  };
 
 
   return (
@@ -225,25 +238,25 @@ export default async function WelcomePage() {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/welcome" isActive>
+              <SidebarMenuButton href="/welcome" isActive tooltip="Dashboard">
                 <Home />
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href="/my-accounts">
+              <SidebarMenuButton href="/my-accounts" tooltip="My Accounts">
                 <User />
                 My Accounts
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/pricing">
+              <SidebarMenuButton href="/pricing" tooltip="Purchase New Account">
                 <DollarSign />
                 Purchase New Account
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href="/kyc">
+              <SidebarMenuButton href={getKycSidebarHref()} tooltip="KYC Verification">
                 <FileCheck />
                 KYC Verification
               </SidebarMenuButton>
@@ -254,7 +267,7 @@ export default async function WelcomePage() {
             <SidebarMenu>
                 <SidebarMenuItem>
                     <form action={signOut} className="w-full">
-                        <SidebarMenuButton asChild>
+                        <SidebarMenuButton tooltip="Logout" asChild>
                             <button type="submit" className="w-full">
                                 <LogOut />
                                 Logout
@@ -279,9 +292,11 @@ export default async function WelcomePage() {
                 <UserNav profile={profile} />
            </div>
         </header>
-        <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-3.5rem)]">
+        <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
           <AccountStatus profile={profile} />
-          {renderContent()}
+          <div className="mt-8">
+            {renderContent()}
+          </div>
         </main>      
       </SidebarInset>
     </SidebarProvider>

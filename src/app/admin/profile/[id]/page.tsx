@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -107,6 +107,18 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     return <div className="flex min-h-screen items-center justify-center"><p>Profile not found.</p></div>
   }
 
+  const DocumentLink = ({ href, children }: { href: string, children: React.ReactNode }) => {
+    if (!href) return null;
+    return (
+        <Button asChild variant="outline" size="sm">
+            <Link href={href} target="_blank" className="flex items-center gap-2">
+                {children}
+                <Download className="h-3 w-3" />
+            </Link>
+        </Button>
+    )
+  }
+
   return (
     <div className="bg-muted/40 min-h-screen">
         <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
@@ -174,9 +186,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                     <p><strong>Terms Accepted:</strong> {profile.terms_accepted ? 'Yes' : 'No'}</p>
                                 </div>
                                     <div className="flex flex-wrap gap-4 pt-4">
-                                        {profile.pan_card_url && <Button asChild variant="outline"><Link href={profile.pan_card_url} target="_blank">View PAN Card</Link></Button>}
-                                        {profile.aadhar_card_url && <Button asChild variant="outline"><Link href={profile.aadhar_card_url} target="_blank">View Aadhar Card</Link></Button>}
-                                        {profile.selfie_url && <Button asChild variant="outline"><Link href={profile.selfie_url} target="_blank">View Selfie</Link></Button>}
+                                        <DocumentLink href={profile.pan_card_url}>View PAN Card</DocumentLink>
+                                        <DocumentLink href={profile.aadhar_card_url}>View Aadhar Card</DocumentLink>
+                                        <DocumentLink href={profile.selfie_url}>View Selfie</DocumentLink>
                                     </div>
                                 </CardContent>
                             </Card>
