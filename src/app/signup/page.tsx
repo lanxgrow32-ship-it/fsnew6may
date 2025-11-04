@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -22,16 +23,19 @@ function SignupForm() {
   const price = searchParams.get('price');
 
   const [couponCode, setCouponCode] = useState('');
-  const [discount, setDiscount] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState(0);
   const [finalPrice, setFinalPrice] = useState(price ? parseFloat(price.replace(/,/g, '')) : 0);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   useEffect(() => {
      const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
-     const newFinalPrice = originalPrice - discount;
+     const discountValue = (originalPrice * discountPercent) / 100;
+     const newFinalPrice = originalPrice - discountValue;
+     setDiscountAmount(discountValue);
      setFinalPrice(newFinalPrice > 0 ? newFinalPrice : 0);
-  }, [price, discount]);
+  }, [price, discountPercent]);
 
 
   const handleApplyCoupon = async () => {
@@ -44,10 +48,10 @@ function SignupForm() {
     const result = await validateCoupon(couponCode);
     if (result.error) {
       setCouponError(result.error);
-      setDiscount(0);
+      setDiscountPercent(0);
     } else if (result.discount) {
-      setDiscount(result.discount);
-      toast({ title: 'Coupon Applied!', description: `You received a discount of ₹${result.discount}.`});
+      setDiscountPercent(result.discount);
+      toast({ title: 'Coupon Applied!', description: `You received a ${result.discount}% discount.`});
     }
     setCouponLoading(false);
   };
@@ -71,19 +75,22 @@ function SignupForm() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 bg-muted/40">
+    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-4xl space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
             <Mountain className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold mt-4">Create an Account</h1>
+            <h1 className="text-3xl font-bold mt-4">Create an Account</h1>
             <p className="text-muted-foreground">
                  {plan && price ? `You are purchasing the ${plan} plan.` : 'Enter your details to get started.'}
             </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 gap-4">
             <Card>
-                <CardContent className="p-6">
+                <CardHeader>
+                    <CardTitle>Registration Details</CardTitle>
+                </CardHeader>
+                <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
@@ -101,13 +108,13 @@ function SignupForm() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="transaction_id">UPI Transaction ID</Label>
-                        <Input id="transaction_id" name="transaction_id" required />
+                        <Input id="transaction_id" name="transaction_id" required placeholder="Enter the ID from your payment app" />
                     </div>
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit for Approval
                     </Button>
-                    <div className="text-center text-sm text-muted-foreground">
+                    <div className="text-center text-sm text-muted-foreground pt-2">
                         Already have an account?{' '}
                         <Link href="/login" className="font-semibold text-primary hover:underline">
                         Login
@@ -122,30 +129,30 @@ function SignupForm() {
                     <CardHeader>
                         <CardTitle className="text-lg">Order Summary</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                    <div className="flex justify-between items-center text-sm mb-2">
-                        <p className="text-muted-foreground">Plan Price:</p>
-                        <p>₹{price}</p>
-                    </div>
-                    {discount > 0 && (
-                        <div className="flex justify-between items-center text-sm mb-2 text-green-600">
-                        <p className="text-muted-foreground">Coupon Discount:</p>
-                        <p>- ₹{discount}</p>
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <p className="text-muted-foreground">Plan Price:</p>
+                            <p>₹{price}</p>
                         </div>
-                    )}
-                    <div className="flex justify-between items-center font-bold text-base border-t pt-4 mt-4">
-                        <p>Final Price to Pay:</p>
-                        <p>₹{finalPrice.toFixed(2)}</p>
-                    </div>
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between items-center text-sm text-green-600">
+                            <p className="text-muted-foreground">Coupon Discount ({discountPercent}%):</p>
+                            <p>- ₹{discountAmount.toFixed(2)}</p>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
+                            <p>Final Price to Pay:</p>
+                            <p>₹{finalPrice.toFixed(2)}</p>
+                        </div>
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
                         <CardTitle className="text-lg">Payment Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-center">
-                         <p className="font-semibold text-base">UPI ID: your-upi-id@okhdfcbank</p>
-                         <p className="text-sm text-muted-foreground">Scan QR or use UPI ID and pay ₹{finalPrice.toFixed(2)}</p>
+                    <CardContent className="text-center space-y-2">
+                         <p className="font-semibold text-xl">UPI ID: your-upi-id@okhdfcbank</p>
+                         <p className="text-sm text-muted-foreground">Scan a QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
                     </CardContent>
                 </Card>
 
@@ -160,9 +167,9 @@ function SignupForm() {
                             placeholder="Enter coupon code" 
                             value={couponCode}
                             onChange={(e) => setCouponCode(e.target.value)}
-                            disabled={discount > 0}
+                            disabled={discountPercent > 0}
                         />
-                        <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discount > 0}>
+                        <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0}>
                             {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
                         </Button>
                         </div>

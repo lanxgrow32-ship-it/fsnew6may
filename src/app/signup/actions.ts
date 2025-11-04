@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -64,7 +65,7 @@ export async function validateCoupon(code: string) {
   const { data, error } = await supabase
     .from('coupons')
     .select('discount_value')
-    .eq('code', code)
+    .eq('code', code.toUpperCase())
     .single();
 
   if (error || !data) {

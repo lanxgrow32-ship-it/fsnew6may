@@ -9,14 +9,20 @@ export async function createCoupon(prevState: any, formData: FormData) {
   const discountValue = formData.get('discount_value') as string;
 
   if (!code || !discountValue) {
-    return { error: 'Coupon code and discount value are required.', success: false };
+    return { error: 'Coupon code and discount percentage are required.', success: false };
   }
+  
+  const discount = parseFloat(discountValue);
+  if (isNaN(discount) || discount <= 0 || discount > 100) {
+      return { error: 'Discount percentage must be between 1 and 100.', success: false };
+  }
+
 
   const { error } = await supabaseAdmin
     .from('coupons')
     .insert({
       code: code.toUpperCase(),
-      discount_value: parseFloat(discountValue)
+      discount_value: discount
     });
 
   if (error) {
@@ -47,5 +53,5 @@ export async function deleteCoupon(couponId: number) {
   }
   
   revalidatePath('/admin/coupons');
-  return { error: null };
+  return { success: true, error: null };
 }
