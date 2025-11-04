@@ -38,7 +38,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
 
     return (
         <Card className="shadow-sm">
-            <CardHeader className="flex-row items-center justify-between">
+            <CardHeader className="flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <CardTitle>User List</CardTitle>
                 <CardDescription>A list of all users in the system.</CardDescription>

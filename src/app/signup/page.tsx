@@ -72,7 +72,7 @@ function SignupForm() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4 bg-muted/40">
-      <div className="w-full max-w-xl space-y-6">
+      <div className="w-full max-w-4xl space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
             <Mountain className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold mt-4">Create an Account</h1>

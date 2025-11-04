@@ -173,7 +173,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                     <p><strong>Risk Rules Understood:</strong> {profile.risk_rules_understood ? 'Yes' : 'No'}</p>
                                     <p><strong>Terms Accepted:</strong> {profile.terms_accepted ? 'Yes' : 'No'}</p>
                                 </div>
-                                    <div className="flex gap-4 pt-4">
+                                    <div className="flex flex-wrap gap-4 pt-4">
                                         {profile.pan_card_url && <Button asChild variant="outline"><Link href={profile.pan_card_url} target="_blank">View PAN Card</Link></Button>}
                                         {profile.aadhar_card_url && <Button asChild variant="outline"><Link href={profile.aadhar_card_url} target="_blank">View Aadhar Card</Link></Button>}
                                         {profile.selfie_url && <Button asChild variant="outline"><Link href={profile.selfie_url} target="_blank">View Selfie</Link></Button>}

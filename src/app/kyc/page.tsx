@@ -132,7 +132,7 @@ export default function KycPage() {
                 </div>
                 <div className="space-y-4">
                     <Label>Preferred Trading Style *</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {tradingStyleOptions.map(style => (
                             <div key={style.id} className="flex items-center space-x-2">
                                 <Checkbox id={style.id} name="trading_style" value={style.id} />
@@ -176,7 +176,7 @@ export default function KycPage() {
                <Button type="button" variant="outline" asChild>
                     <Link href="/welcome">Cancel</Link>
                 </Button>
-                <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isLoading}>
+                <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit for Verification
                 </Button>
