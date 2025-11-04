@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Mountain } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { FundedStockLogo } from '@/components/ui/logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,7 +62,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center p-4 bg-background">
        <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
-            <Mountain className="h-8 w-8 text-primary" />
+            <FundedStockLogo className="h-10 w-10 text-primary" />
             <h1 className="text-2xl font-bold mt-4">Welcome Back</h1>
             <p className="text-muted-foreground">Enter your credentials to access your account.</p>
         </div>

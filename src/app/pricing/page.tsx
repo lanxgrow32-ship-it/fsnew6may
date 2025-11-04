@@ -1,8 +1,10 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, Mountain } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { FundedStockLogo } from '@/components/ui/logo';
 
 const instantFundingPlans = [
   { size: '1,00,000', title: '1L Instant Funding', price: '5,999' },
@@ -61,8 +63,8 @@ export default function PricingPage() {
     <div className="bg-background min-h-screen">
       <header className="p-4 flex justify-start">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-            <Mountain className="w-6 h-6 text-primary" />
-            <span>PropStar</span>
+            <FundedStockLogo className="w-6 h-6 text-primary" />
+            <span>FundedStock 2.0</span>
         </Link>
       </header>
       <main className="p-4 md:p-8">

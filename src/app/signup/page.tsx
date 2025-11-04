@@ -8,10 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Mountain, Ticket } from 'lucide-react';
+import { Loader2, Ticket } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signup, validateCoupon } from './actions';
 import { ClientOnly } from '@/components/ui/client-only';
+import { FundedStockLogo } from '@/components/ui/logo';
 
 function SignupForm() {
   const router = useRouter();
@@ -79,7 +80,7 @@ function SignupForm() {
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-4xl space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
-            <Mountain className="h-8 w-8 text-primary" />
+            <FundedStockLogo className="h-10 w-10 text-primary" />
             <h1 className="text-3xl font-bold mt-4">Create an Account</h1>
             <p className="text-muted-foreground">
                  {plan && price ? `You are purchasing the ${plan} plan.` : 'Enter your details to get started.'}
