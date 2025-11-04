@@ -3,6 +3,8 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,12 +14,13 @@ import { Loader2, Ticket } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signup, validateCoupon } from './actions';
 import { ClientOnly } from '@/components/ui/client-only';
-import { FundedStockLogo } from '@/components/ui/logo';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +33,27 @@ function SignupForm() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
+
+  const [paymentDetails, setPaymentDetails] = useState<{ upi_id: string; qr_code_url: string; } | null>(null);
+  const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPaymentDetails = async () => {
+      setPaymentDetailsLoading(true);
+      const { data, error } = await supabase
+        .from('payment_details')
+        .select('upi_id, qr_code_url')
+        .eq('id', 1)
+        .single();
+      
+      if (data) {
+        setPaymentDetails(data);
+      }
+      setPaymentDetailsLoading(false);
+    };
+    fetchPaymentDetails();
+  }, [supabase]);
+
 
   useEffect(() => {
      const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
@@ -75,6 +99,19 @@ function SignupForm() {
       router.push('/login');
     }
   };
+
+  const PaymentDetailsSkeleton = () => (
+    <Card className="bg-card/80 backdrop-blur-sm border-border">
+        <CardHeader>
+            <CardTitle className="text-lg">Payment Details</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+              <Skeleton className="h-6 w-3/4 mx-auto" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-40 w-40 mx-auto" />
+        </CardContent>
+    </Card>
+  );
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -147,15 +184,22 @@ function SignupForm() {
                         </div>
                     </CardContent>
                 </Card>
-                 <Card className="bg-card/80 backdrop-blur-sm border-border">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Payment Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center space-y-2">
-                         <p className="font-semibold text-xl">UPI ID: your-upi-id@okhdfcbank</p>
-                         <p className="text-sm text-muted-foreground">Scan a QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
-                    </CardContent>
-                </Card>
+                 {paymentDetailsLoading ? <PaymentDetailsSkeleton /> : (
+                  <Card className="bg-card/80 backdrop-blur-sm border-border">
+                      <CardHeader>
+                          <CardTitle className="text-lg">Payment Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-center space-y-4">
+                           <p className="font-semibold text-xl">UPI ID: {paymentDetails?.upi_id || 'Not available'}</p>
+                           <p className="text-sm text-muted-foreground">Scan the QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
+                           {paymentDetails?.qr_code_url && (
+                             <div className="flex justify-center">
+                               <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
+                             </div>
+                           )}
+                      </CardContent>
+                  </Card>
+                 )}
 
                  <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>

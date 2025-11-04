@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut } from 'lucide-react';
+import { Home, Ticket, User, LogOut, Wallet } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
@@ -103,6 +103,12 @@ export default async function AdminDashboard() {
               <SidebarMenuButton href="/admin/coupons" tooltip="Coupons">
                 <Ticket />
                 Coupons
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings">
+                <Wallet />
+                Payment Settings
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
