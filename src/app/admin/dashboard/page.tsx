@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 export default async function AdminDashboard() {
   const supabase = createClient();
@@ -23,7 +24,7 @@ export default async function AdminDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>User List</CardTitle>
-          <CardDescription>A list of all users in the system.</CardDescription>
+          <CardDescription>A list of all users in the system. Approve new sign-ups and manage credentials.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -31,8 +32,9 @@ export default async function AdminDashboard() {
               <TableRow>
                 <TableHead>Full Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Transaction ID</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -41,11 +43,16 @@ export default async function AdminDashboard() {
                 <TableRow key={profile.id}>
                   <TableCell className="font-medium">{profile.full_name}</TableCell>
                   <TableCell>{profile.email}</TableCell>
-                  <TableCell>{profile.role}</TableCell>
+                  <TableCell>
+                    <Badge variant={profile.is_approved ? 'default' : 'destructive'}>
+                      {profile.is_approved ? 'Approved' : 'Pending'}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{profile.plan_purchased || 'N/A'}</TableCell>
+                   <TableCell>{profile.transaction_id || 'N/A'}</TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/profile/${profile.id}`}>Edit</Link>
+                      <Link href={`/admin/profile/${profile.id}`}>Manage</Link>
                     </Button>
                   </TableCell>
                 </TableRow>
