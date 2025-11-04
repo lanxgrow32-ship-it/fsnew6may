@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 
 export async function signup(formData: FormData) {
   const email = formData.get('email') as string;
@@ -52,4 +53,23 @@ export async function signup(formData: FormData) {
   }
 
   return { error: null };
+}
+
+
+export async function validateCoupon(code: string) {
+  if (!code) {
+    return { error: 'Coupon code cannot be empty.' };
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('coupons')
+    .select('discount_value')
+    .eq('code', code)
+    .single();
+
+  if (error || !data) {
+    return { error: 'Invalid or expired coupon code.' };
+  }
+
+  return { discount: data.discount_value };
 }
