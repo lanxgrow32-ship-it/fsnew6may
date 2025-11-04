@@ -218,12 +218,6 @@ function UserNav({ profile }: { profile: any}) {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                        <Link href="/profile">
-                            <User className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
                         <Link href="/guide">
                             <BookUser className="mr-2 h-4 w-4" />
                             <span>Trading Guide</span>

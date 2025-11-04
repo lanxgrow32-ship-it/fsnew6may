@@ -1,17 +1,99 @@
 
+'use client';
+import { useState, useEffect, useRef, useActionState } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut, Wallet } from 'lucide-react';
+import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useFormStatus } from 'react-dom';
+import { useToast } from '@/hooks/use-toast';
+import { createAdmin } from './actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
+
+function CreateAdminForm() {
+    const ref = useRef<HTMLFormElement>(null);
+    const { toast } = useToast();
+    const [state, formAction] = useActionState(createAdmin, { error: null, success: false });
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (state.error) {
+            toast({
+                title: "Error Creating Admin",
+                description: state.error,
+                variant: "destructive",
+            });
+        }
+        if (state.success) {
+            toast({
+                title: "Success",
+                description: "Admin user created successfully.",
+            });
+            ref.current?.reset();
+            setIsOpen(false); // Close dialog on success
+        }
+    }, [state, toast]);
+
+    function SubmitButton() {
+        const { pending } = useFormStatus();
+        return (
+            <Button type="submit" disabled={pending}>
+                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Create Admin User'}
+            </Button>
+        );
+    }
+
+    return (
+       <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Create New Admin
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                 <form ref={ref} action={formAction} className="space-y-6">
+                    <DialogHeader>
+                        <DialogTitle>Create New Admin User</DialogTitle>
+                        <DialogDescription>
+                            Enter the details for the new admin. They will be able to log in with this email and password.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="full_name">Full Name</Label>
+                            <Input id="full_name" name="full_name" placeholder="Jane Doe" required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" name="email" type="email" placeholder="admin@example.com" required />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="password">Temporary Password</Label>
+                            <Input id="password" name="password" type="password" required />
+                             <p className="text-xs text-muted-foreground">Must be at least 6 characters long.</p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <SubmitButton />
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 function AdminNav() {
     return (
@@ -71,10 +153,32 @@ function UserTableSkeleton() {
     )
 }
 
-
-export default async function AdminDashboard() {
+// Changed to a client component to use hooks
+export default function AdminDashboard({ profiles: initialProfiles }: { profiles: any[] }) {
   const supabase = createClient();
-  const { data: profiles, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+  const [profiles, setProfiles] = useState(initialProfiles);
+  
+  useEffect(() => {
+    setProfiles(initialProfiles);
+  }, [initialProfiles]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime profiles')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
+        async (payload) => {
+            const { data: updatedProfiles, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+            if (updatedProfiles) {
+                setProfiles(updatedProfiles);
+            }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
 
   const stats = [
     { title: "Total Users", value: profiles?.length || 0, icon: User },
@@ -134,9 +238,12 @@ export default async function AdminDashboard() {
                 <SidebarTrigger className="md:hidden" />
                 <h1 className="text-xl font-semibold">User Management</h1>
            </div>
-           <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
-            <AdminNav />
-           </ClientOnly>
+           <div className="flex items-center gap-4">
+            <CreateAdminForm />
+            <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
+              <AdminNav />
+            </ClientOnly>
+           </div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
@@ -159,4 +266,16 @@ export default async function AdminDashboard() {
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+// This function now runs on the server and passes initial data
+export async function getServerSideProps() {
+  const supabase = createClient();
+  const { data: profiles, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+  
+  return {
+    props: {
+      profiles: profiles || [],
+    },
+  };
 }
