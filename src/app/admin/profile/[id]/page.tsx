@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ type Profile = {
   trading_password: string;
 };
 
-export default function ProfilePage({ params }: { params: { id: string } }) {
+export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
@@ -34,12 +34,14 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { id } = use(params);
+
   useEffect(() => {
     const fetchProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', id)
         .single();
       
       if (error) {
@@ -52,7 +54,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     };
 
     fetchProfile();
-  }, [params.id, supabase]);
+  }, [id, supabase]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
