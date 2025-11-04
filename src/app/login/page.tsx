@@ -60,41 +60,43 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 bg-background">
-      <ClientOnly>
-       <div className="w-full max-w-md space-y-6">
-        <div className="flex flex-col items-center justify-center text-center">
-            <FundedStockLogo className="h-10 w-10 text-primary" />
-            <h1 className="text-2xl font-bold mt-4">Welcome Back</h1>
-            <p className="text-muted-foreground">Enter your credentials to access your account.</p>
+    <div className="dark-theme">
+      <main className="flex min-h-screen items-center justify-center p-4 bg-background">
+        <ClientOnly>
+        <div className="w-full max-w-md space-y-6">
+          <div className="flex flex-col items-center justify-center text-center">
+              <FundedStockLogo className="h-10 w-10 text-primary" />
+              <h1 className="text-2xl font-bold mt-4">Welcome Back</h1>
+              <p className="text-muted-foreground">Enter your credentials to access your account.</p>
+          </div>
+          <Card className="bg-card/80 backdrop-blur-sm border-border">
+              <CardContent className="p-6">
+              <form onSubmit={handleLogin} className="space-y-4">
+                  {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+                  <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  </div>
+                  <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Sign In
+                  </Button>
+              </form>
+              </CardContent>
+              <CardDescription className="p-6 pt-0 text-center text-sm">
+                  Don't have an account?{' '}
+                  <Link href="/pricing" className="font-semibold text-primary hover:underline">
+                      Sign Up
+                  </Link>
+              </CardDescription>
+          </Card>
         </div>
-        <Card className="bg-card/80 backdrop-blur-sm border-border">
-            <CardContent className="p-6">
-            <form onSubmit={handleLogin} className="space-y-4">
-                {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-                <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                </div>
-                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
-                </Button>
-            </form>
-            </CardContent>
-            <CardDescription className="p-6 pt-0 text-center text-sm">
-                Don't have an account?{' '}
-                <Link href="/pricing" className="font-semibold text-primary hover:underline">
-                    Sign Up
-                </Link>
-            </CardDescription>
-        </Card>
-      </div>
-      </ClientOnly>
-    </main>
+        </ClientOnly>
+      </main>
+    </div>
   );
 }

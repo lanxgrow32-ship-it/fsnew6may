@@ -188,10 +188,12 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>}>
-        <ClientOnly>
-            <SignupForm />
-        </ClientOnly>
-    </Suspense>
+    <div className="dark-theme">
+      <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>}>
+          <ClientOnly>
+              <SignupForm />
+          </ClientOnly>
+      </Suspense>
+    </div>
   )
 }
