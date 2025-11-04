@@ -21,7 +21,7 @@ export default async function HomePage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Welcome to PropStar Admin</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Welcome to PropStar</CardTitle>
           <CardDescription className="text-center">Your trading account management solution.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -29,7 +29,7 @@ export default async function HomePage() {
             <Link href="/login">Login</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/signup">Sign Up</Link>
+            <Link href="/pricing">View Plans & Sign Up</Link>
           </Button>
         </CardContent>
       </Card>
