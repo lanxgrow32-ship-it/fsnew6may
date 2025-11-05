@@ -64,7 +64,7 @@ export default function PricingPage() {
       <div className="bg-background min-h-screen text-foreground">
         <nav className="absolute top-4 left-4 z-10">
             <Button asChild variant="outline" size="sm" className="border-border/50 text-foreground/80 hover:bg-accent/50 hover:text-foreground">
-            <Link href="https://fundedstock.live/">
+            <Link href="https://www.fundedstock.io/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Main Site
             </Link>
