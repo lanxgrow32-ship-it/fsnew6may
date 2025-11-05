@@ -74,7 +74,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-6">
           <div className="flex flex-col items-center justify-center text-center">
               <FundedStockLogo className="h-10 w-10 text-primary" />
-              <h1 className="text-2xl font-bold mt-4">Welcome Back</h1>
+              <h1 className="text-2xl font-bold mt-4 text-primary">Welcome Back</h1>
               <p className="text-muted-foreground">Enter your credentials to access your account.</p>
           </div>
           <Card className="bg-card/80 backdrop-blur-sm border-border">

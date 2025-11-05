@@ -143,83 +143,80 @@ function SignupForm() {
   );
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-4xl space-y-6">
+    <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12">
+      <div className="w-full max-w-lg space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
-            <h1 className="text-3xl font-bold mt-4">Create an Account</h1>
+            <h1 className="text-3xl font-bold mt-4 text-primary">Create an Account</h1>
             <p className="text-muted-foreground">
                  {plan && price ? `You are purchasing the ${plan} plan.` : 'Enter your details to get started.'}
             </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 gap-4">
-            <div className="space-y-6">
-                <Card className="bg-card/80 backdrop-blur-sm border-border">
-                    <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex gap-2">
-                        <Input 
-                            id="coupon" 
-                            placeholder="Enter coupon code" 
-                            value={couponCode}
-                            onChange={(e) => setCouponCode(e.target.value)}
-                            disabled={discountPercent > 0}
-                        />
-                        <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0}>
-                            {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-                        </Button>
-                        </div>
-                        {couponError && <p className="text-sm text-destructive mt-2">{couponError}</p>}
-                    </CardContent>
-                </Card>
-
-                 {paymentDetailsLoading ? <PaymentDetailsSkeleton /> : (
-                  <Card className="bg-card/80 backdrop-blur-sm border-border">
-                      <CardHeader>
-                          <CardTitle className="text-lg">Payment Details</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-center space-y-4">
-                           <p className="font-semibold text-xl">UPI ID: {paymentDetails?.upi_id || 'Not available'}</p>
-                           <p className="text-sm text-muted-foreground">Scan the QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
-                           {paymentDetails?.qr_code_url && (
-                             <div className="flex flex-col items-center gap-2">
-                               <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
-                                <Button variant="ghost" size="sm" onClick={handleDownload}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download QR
-                                </Button>
-                             </div>
-                           )}
-                      </CardContent>
-                  </Card>
-                 )}
-                
-                <Card className="bg-card/80 backdrop-blur-sm border-border">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Order Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-center text-sm">
-                            <p className="text-muted-foreground">Plan Price:</p>
-                            <p>₹{originalPrice.toFixed(2)}</p>
-                        </div>
-                        {discountAmount > 0 && (
-                            <div className="flex justify-between items-center text-sm text-green-600">
-                            <p className="text-muted-foreground">Coupon Discount ({discountPercent}%):</p>
-                            <p>- ₹{discountAmount.toFixed(2)}</p>
-                            </div>
-                        )}
-                        <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
-                            <p>Final Price to Pay:</p>
-                            <p>₹{finalPrice.toFixed(2)}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-            </div>
+        <div className="space-y-6">
+             <Card className="bg-card/80 backdrop-blur-sm border-border">
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex gap-2">
+                    <Input 
+                        id="coupon" 
+                        placeholder="Enter coupon code" 
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        disabled={discountPercent > 0}
+                    />
+                    <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0}>
+                        {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                    </Button>
+                    </div>
+                    {couponError && <p className="text-sm text-destructive mt-2">{couponError}</p>}
+                </CardContent>
+            </Card>
             
+            {paymentDetailsLoading ? <PaymentDetailsSkeleton /> : (
+              <Card className="bg-card/80 backdrop-blur-sm border-border">
+                  <CardHeader>
+                      <CardTitle className="text-lg">Payment Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center space-y-4">
+                       <p className="font-semibold text-xl">UPI ID: {paymentDetails?.upi_id || 'Not available'}</p>
+                       <p className="text-sm text-muted-foreground">Scan the QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
+                       {paymentDetails?.qr_code_url && (
+                         <div className="flex flex-col items-center gap-2">
+                           <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
+                            <Button variant="ghost" size="sm" onClick={handleDownload}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download QR
+                            </Button>
+                         </div>
+                       )}
+                  </CardContent>
+              </Card>
+             )}
+
+            <Card className="bg-card/80 backdrop-blur-sm border-border">
+                <CardHeader>
+                    <CardTitle className="text-lg">Order Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center text-sm">
+                        <p className="text-muted-foreground">Plan Price:</p>
+                        <p>₹{originalPrice.toFixed(2)}</p>
+                    </div>
+                    {discountAmount > 0 && (
+                        <div className="flex justify-between items-center text-sm text-green-600">
+                        <p className="text-muted-foreground">Coupon Discount ({discountPercent}%):</p>
+                        <p>- ₹{discountAmount.toFixed(2)}</p>
+                        </div>
+                    )}
+                    <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
+                        <p>Final Price to Pay:</p>
+                        <p>₹{finalPrice.toFixed(2)}</p>
+                    </div>
+                </CardContent>
+            </Card>
+
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
                     <CardTitle>Registration Details</CardTitle>
@@ -257,8 +254,8 @@ function SignupForm() {
                 </form>
                 </CardContent>
             </Card>
-
         </div>
+
       </div>
     </main>
   );
