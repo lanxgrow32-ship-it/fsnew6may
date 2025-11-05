@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 
@@ -89,6 +89,9 @@ export default function PricingPage() {
                   <div className="text-center mb-8">
                       <h2 className="text-2xl font-bold">Instant Funding</h2>
                       <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Get funded instantly and start trading right away. Skip the evaluation process and get immediate access to capital up to ₹25L.</p>
+                      <Button variant="link" asChild className="text-primary">
+                          <Link href="/rules/instant-funding">View Rules <ExternalLink className="ml-2 h-4 w-4" /></Link>
+                      </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {instantFundingPlans.map((plan) => (
@@ -101,6 +104,9 @@ export default function PricingPage() {
                   <div className="text-center mb-8">
                       <h2 className="text-2xl font-bold">1-Step Evaluation</h2>
                       <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Our Fast-Track program. Pass one evaluation phase to get funded and access higher capital allocations sooner.</p>
+                      <Button variant="link" asChild className="text-primary">
+                          <Link href="/rules/one-step">View Rules <ExternalLink className="ml-2 h-4 w-4" /></Link>
+                      </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {oneStepPlans.map((plan) => (
@@ -113,6 +119,9 @@ export default function PricingPage() {
                   <div className="text-center my-8">
                       <h2 className="text-2xl font-bold">2-Step Evaluation</h2>
                       <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Our most popular route. Pass two phases to unlock higher profit splits and demonstrate your trading skill and discipline.</p>
+                      <Button variant="link" asChild className="text-primary">
+                          <Link href="/rules/two-step-evaluation">View Rules <ExternalLink className="ml-2 h-4 w-4" /></Link>
+                      </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {twoStepPlans.map((plan) => (
