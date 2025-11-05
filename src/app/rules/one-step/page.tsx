@@ -16,8 +16,7 @@ export default function OneStepRulesPage() {
         <div className="dark-theme">
             <div className="bg-background min-h-screen text-foreground">
                 <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-                    <div className="container mx-auto flex h-16 items-center justify-between px-4">
-                        <h1 className="text-2xl font-bold text-primary">One-Step Evaluation Rules</h1>
+                    <div className="container mx-auto flex h-16 items-center justify-center px-4">
                         <Button asChild variant="outline">
                             <Link href="/pricing">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -27,6 +26,9 @@ export default function OneStepRulesPage() {
                     </div>
                 </header>
                 <main className="container mx-auto p-4 md:p-8">
+                     <div className="text-center mb-12">
+                        <h1 className="text-4xl font-extrabold tracking-tight">One-Step Evaluation Rules</h1>
+                    </div>
                     <div className="max-w-4xl mx-auto space-y-8">
                         <Card>
                             <CardHeader>
