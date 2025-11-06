@@ -111,7 +111,7 @@ function ActionsMenu({ profile, onUserDelete, onUserDeleteError }: { profile: Pr
         return (
             <TooltipProvider>
                 <Tooltip>
-                    <TooltipTrigger>
+                    <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" disabled>
                            <MoreHorizontal className="h-4 w-4" />
                         </Button>
