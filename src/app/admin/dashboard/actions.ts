@@ -38,3 +38,22 @@ export async function createAdmin(prevState: any, formData: FormData) {
   
   return { success: true, error: null };
 }
+
+export async function deleteUser(userId: string) {
+    if (!userId) {
+        return { error: 'User ID is required.' };
+    }
+    
+    // The user's profile in the `profiles` table should be deleted automatically 
+    // by the database trigger if a cascading delete is set up on the foreign key.
+    // If not, you would need to delete it manually first.
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (error) {
+        console.error('Error deleting user:', error);
+        return { error: `Failed to delete user: ${error.message}` };
+    }
+    
+    revalidatePath('/admin/dashboard');
+    return { success: true };
+}

@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createAdmin } from './actions';
+import { createAdmin, deleteUser } from './actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -157,6 +157,7 @@ function UserTableSkeleton() {
 export default function AdminDashboardClient({ initialProfiles }: { initialProfiles: any[] }) {
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
+  const { toast } = useToast();
   
   useEffect(() => {
     setProfiles(initialProfiles);
@@ -179,6 +180,19 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
       supabase.removeChannel(channel);
     };
   }, [supabase]);
+  
+  const onUserDelete = (deletedUserId: string) => {
+    setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== deletedUserId));
+    toast({ title: 'User deleted successfully' });
+  };
+
+  const handleUserDeleteError = (errorMessage: string) => {
+    toast({
+      title: 'Error Deleting User',
+      description: errorMessage,
+      variant: 'destructive',
+    });
+  };
 
   const stats = [
     { title: "Total Users", value: profiles?.length || 0, icon: User },
@@ -261,7 +275,11 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
                 ))}
             </div>
             <ClientOnly fallback={<UserTableSkeleton />}>
-                <UserTable profiles={profiles || []} />
+                <UserTable 
+                    profiles={profiles || []} 
+                    onUserDelete={onUserDelete}
+                    onUserDeleteError={handleUserDeleteError}
+                />
             </ClientOnly>
         </main>
       </SidebarInset>

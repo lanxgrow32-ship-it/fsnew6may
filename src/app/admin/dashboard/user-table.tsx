@@ -9,8 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Trash2, Loader2 } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { deleteUser } from './actions';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
+
 
 type Profile = {
     id: string;
@@ -20,16 +25,67 @@ type Profile = {
     plan_purchased: string | null;
     transaction_id: string | null;
     kyc_status: string;
+    role: string;
 };
 
-function UserMobileCard({ profile }: { profile: Profile }) {
+interface UserTableProps {
+  profiles: Profile[];
+  onUserDelete: (userId: string) => void;
+  onUserDeleteError: (errorMessage: string) => void;
+}
+
+
+function DeleteUserDialog({ profile, onUserDelete, onUserDeleteError, children }: { profile: Profile, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void, children: React.ReactNode }) {
+  const [isPending, setIsPending] = useState(false);
+
+  const handleDelete = async () => {
+    setIsPending(true);
+    const result = await deleteUser(profile.id);
+    if (result.error) {
+      onUserDeleteError(result.error);
+    } else {
+      onUserDelete(profile.id);
+    }
+    setIsPending(false);
+  };
+  
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        {children}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the user account for <span className="font-bold">{profile.full_name} ({profile.email})</span> and all of their associated data.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction asChild>
+            <Button onClick={handleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isPending}>
+              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Yes, delete user'}
+            </Button>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+
+function UserMobileCard({ profile, onUserDelete, onUserDeleteError }: { profile: Profile, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void }) {
     return (
         <Card className="mb-4">
             <CardHeader>
                  <div className="flex flex-col gap-2">
-                    <div>
-                        <CardTitle className="text-base">{profile.full_name}</CardTitle>
-                        <CardDescription>{profile.email}</CardDescription>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle className="text-base">{profile.full_name}</CardTitle>
+                            <CardDescription>{profile.email}</CardDescription>
+                        </div>
+                        <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
                     </div>
                     <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={`${profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} self-start`}>
                         {profile.is_approved ? 'Approved' : 'Pending'}
@@ -45,15 +101,53 @@ function UserMobileCard({ profile }: { profile: Profile }) {
                     <div className="font-medium text-muted-foreground">Transaction ID</div>
                     <div className="truncate">{profile.transaction_id || 'N/A'}</div>
                 </div>
-                <Button asChild variant="outline" size="sm" className="w-full mt-2">
-                    <Link href={`/admin/profile/${profile.id}`}>Manage</Link>
-                </Button>
             </CardContent>
         </Card>
     )
 }
 
-export function UserTable({ profiles }: { profiles: Profile[] }) {
+function ActionsMenu({ profile, onUserDelete, onUserDeleteError }: { profile: Profile, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void}) {
+    if (profile.role === 'admin') {
+        return (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger>
+                        <Button variant="ghost" size="icon" disabled>
+                           <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Admin users cannot be deleted here.</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        );
+    }
+    
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                     <Link href={`/admin/profile/${profile.id}`} className="w-full cursor-pointer">Manage User</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                 <DeleteUserDialog profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError}>
+                    <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-destructive outline-none transition-colors hover:bg-accent focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete User</span>
+                    </div>
+                </DeleteUserDialog>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredProfiles, setFilteredProfiles] = useState(profiles);
 
@@ -90,7 +184,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                     {/* Mobile View */}
                     <div className="md:hidden">
                         {filteredProfiles.length > 0 ? filteredProfiles.map((profile) => (
-                           <UserMobileCard key={profile.id} profile={profile} />
+                           <UserMobileCard key={profile.id} profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
                         )) : (
                             <div className="text-center h-24 flex items-center justify-center">
                                 <p>No users found.</p>
@@ -141,9 +235,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button asChild variant="outline" size="sm">
-                                                        <Link href={`/admin/profile/${profile.id}`}>Manage</Link>
-                                                    </Button>
+                                                    <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
