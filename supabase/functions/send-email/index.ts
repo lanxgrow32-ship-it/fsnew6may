@@ -1,2 +1,1 @@
-// This function is being removed and will be replaced by a webhook trigger.
-// Please see the conversation for the next steps.
+// This function has been deprecated and replaced by a Make.com webhook.
