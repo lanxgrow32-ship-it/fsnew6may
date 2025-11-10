@@ -87,6 +87,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     setError(null);
     const formData = new FormData(e.currentTarget);
     formData.append('id', profile.id);
+    // Add full_name and email to formData for the server action
+    formData.append('full_name', profile.full_name);
+    formData.append('email', profile.email);
     
     const result = await updateProfile(formData);
 
