@@ -9,8 +9,8 @@ import {
   Preview,
   Section,
   Text,
-} from "@react-email/components";
-import * as React from "react";
+} from "https://esm.sh/@react-email/components@0.0.19";
+import * as React from "https://esm.sh/react@18.2.0";
 
 interface KycSubmittedEmailProps {
   name: string;
