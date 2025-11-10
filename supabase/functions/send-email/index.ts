@@ -9,7 +9,7 @@ import KycSubmittedEmail from "../../../src/emails/kyc-submitted.tsx";
 import CredentialsProvidedEmail from "../../../src/emails/credentials-provided.tsx";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const resend = new Resend(RESEND_API_KEY);
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,6 +21,16 @@ async function handler(req: Request) {
   // It's a preflight request that asks for permission to make the actual request.
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Immediately check for the API key and log if it's missing.
+  if (!resend || !RESEND_API_KEY) {
+    const errorMsg = "RESEND_API_KEY is not set in environment variables. Function cannot proceed.";
+    console.error(errorMsg);
+    return new Response(JSON.stringify({ error: errorMsg }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -50,13 +60,9 @@ async function handler(req: Request) {
       default:
         throw new Error(`Unknown event type: ${event_type}`);
     }
-    
-    if (!RESEND_API_KEY) {
-        throw new Error("RESEND_API_KEY is not set in environment variables.");
-    }
 
     const { data, error } = await resend.emails.send({
-      from: "onboarding@resend.dev", // Use the default, verified Resend address
+      from: "onboarding@resend.dev",
       to: user_email,
       subject: subject,
       react: emailComponent,
@@ -75,6 +81,7 @@ async function handler(req: Request) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error(error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
