@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend";
+// By importing this, we make sure the dependency is available in the Deno environment.
+import { render } from "npm:@react-email/render";
+
 
 // Import the email components.
 // Note: The paths might seem unusual. This is how Deno and Supabase functions
