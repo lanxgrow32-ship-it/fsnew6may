@@ -22,11 +22,12 @@ export async function updateProfile(formData: FormData) {
 
   if (fetchError) {
     console.error('Error fetching profile before update:', fetchError);
-    return { error: 'Could not verify user state before update.' };
+    // Don't block the update if this fails, but log it.
+    // The main logic can proceed, but commission might need manual check if this fails.
   }
   
-  const wasApproved = beforeUpdateData.is_approved;
-  const wasCredentialsProvided = beforeUpdateData.credentials_provided;
+  const wasApproved = beforeUpdateData?.is_approved ?? false;
+  const wasCredentialsProvided = beforeUpdateData?.credentials_provided ?? false;
 
   const updateData: any = {
     is_approved,
@@ -78,11 +79,11 @@ export async function updateProfile(formData: FormData) {
 
   // 2. Referral Commission Logic
   // Check if user is newly approved and was referred by someone
-  if (is_approved && !wasApproved && beforeUpdateData.referred_by) {
+  if (is_approved && !wasApproved && beforeUpdateData?.referred_by) {
     const referrerId = beforeUpdateData.referred_by;
     const amountPaid = beforeUpdateData.final_amount_paid;
 
-    if (amountPaid > 0) {
+    if (amountPaid && amountPaid > 0) {
         // Get commission percentage from settings
         const { data: settings, error: settingsError } = await supabaseAdmin
             .from('payment_details')
