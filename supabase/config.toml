@@ -1,0 +1,6 @@
+# Supabase project configuration.
+# https://supabase.com/docs/guides/cli/config
+
+[functions.send-email]
+  handler = "main"
+  verify_jwt = false
