@@ -16,7 +16,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('credentials_provided')
+    .select('credentials_provided, kyc_status') // also fetch kyc_status
     .eq('id', id)
     .single();
 
@@ -26,6 +26,7 @@ export async function updateProfile(formData: FormData) {
   }
   
   const wasCredentialsProvided = beforeUpdateData.credentials_provided;
+  const previousKycStatus = beforeUpdateData.kyc_status;
 
   const updateData: any = {
     is_approved,
@@ -54,7 +55,9 @@ export async function updateProfile(formData: FormData) {
     return { error: error.message };
   }
 
-  // Trigger webhook only if credentials_provided changed from false to true
+  // --- Start Webhook Logic ---
+
+  // 1. Credentials Webhook
   if (credentials_provided && !wasCredentialsProvided) {
     const webhookUrl = 'https://hook.eu1.make.com/9xr9u0vlumza0rdk28vu2xeuxjcsc50i';
     try {
@@ -70,9 +73,29 @@ export async function updateProfile(formData: FormData) {
         });
     } catch (webhookError) {
         console.error('Failed to trigger credentials webhook:', webhookError);
-        // We don't return an error to the user, as the main operation succeeded
     }
   }
+
+  // 2. KYC Status Webhook (Waiting for your URL)
+  if (kyc_status !== previousKycStatus && (kyc_status === 'verified' || kyc_status === 'rejected')) {
+    // const kycWebhookUrl = 'YOUR_NEW_MAKE_COM_URL_HERE'; 
+    // try {
+    //     await fetch(kycWebhookUrl, {
+    //         method: 'POST',
+    //         headers: { 'Content-Type': 'application/json' },
+    //         body: JSON.stringify({
+    //             full_name: fullName,
+    //             email: email,
+    odules
+    //             kyc_status: kyc_status 
+    //         }),
+    //     });
+    // } catch (webhookError) {
+    //     console.error('Failed to trigger KYC status webhook:', webhookError);
+    // }
+  }
+
+  // --- End Webhook Logic ---
 
 
   revalidatePath('/admin/dashboard');
