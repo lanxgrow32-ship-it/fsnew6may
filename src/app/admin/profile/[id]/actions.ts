@@ -16,7 +16,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('credentials_provided, kyc_status') // also fetch kyc_status
+    .select('credentials_provided, kyc_status')
     .eq('id', id)
     .single();
 
@@ -76,23 +76,22 @@ export async function updateProfile(formData: FormData) {
     }
   }
 
-  // 2. KYC Status Webhook (Waiting for your URL)
+  // 2. KYC Status Webhook
   if (kyc_status !== previousKycStatus && (kyc_status === 'verified' || kyc_status === 'rejected')) {
-    // const kycWebhookUrl = 'YOUR_NEW_MAKE_COM_URL_HERE'; 
-    // try {
-    //     await fetch(kycWebhookUrl, {
-    //         method: 'POST',
-    //         headers: { 'Content-Type': 'application/json' },
-    //         body: JSON.stringify({
-    //             full_name: fullName,
-    //             email: email,
-    odules
-    //             kyc_status: kyc_status 
-    //         }),
-    //     });
-    // } catch (webhookError) {
-    //     console.error('Failed to trigger KYC status webhook:', webhookError);
-    // }
+    const kycWebhookUrl = 'https://hook.eu1.make.com/bod5bjm8as7cdtp5qwnhpmhafo783kdo';
+    try {
+        await fetch(kycWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                full_name: fullName,
+                email: email,
+                kyc_status: kyc_status 
+            }),
+        });
+    } catch (webhookError) {
+        console.error('Failed to trigger KYC status webhook:', webhookError);
+    }
   }
 
   // --- End Webhook Logic ---
