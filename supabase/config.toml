@@ -2,5 +2,5 @@
 # https://supabase.com/docs/guides/cli/config
 
 [functions.send-email]
-  handler = "main"
+  entrypoint = "main"
   verify_jwt = false
