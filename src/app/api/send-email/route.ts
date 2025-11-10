@@ -15,7 +15,7 @@ async function getEmailHtml(templateName: string, name: string): Promise<string>
     } catch (error) {
         console.error(`Error reading email template ${templateName}:`, error);
         // Fallback to a simple text email if template is missing
-        return `<p>Hi ${name}, your account has been approved. Welcome to FundedStock!</p>`;
+        return `<p>Hi ${name}, your account status has been updated. Welcome to FundedStock!</p>`;
     }
 }
 
