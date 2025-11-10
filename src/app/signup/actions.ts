@@ -33,6 +33,7 @@ export async function signup(formData: FormData) {
     } else {
         // If the code is invalid, we'll proceed without a referrer but won't block the signup.
         // The UI will handle showing the error to the user.
+        return { error: 'The entered referral code is not valid. Please remove it or enter a valid one.' };
     }
   }
 
@@ -123,4 +124,3 @@ export async function validateReferralCode(code: string) {
 
   return { success: true };
 }
-

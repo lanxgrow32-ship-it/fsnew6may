@@ -225,7 +225,7 @@ function SignupForm() {
 
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
-                    <CardTitle className="text-lg">Order Summary</CardTitle>
+                    <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex justify-between items-center text-sm">
