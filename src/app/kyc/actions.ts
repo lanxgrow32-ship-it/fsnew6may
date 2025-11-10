@@ -87,7 +87,7 @@ export async function submitKyc(formData: FormData) {
     }
     
     // Trigger KYC submitted webhook
-    const webhookUrl = 'https://hook.eu1.make.com/c1ykk6amxebs3labaxisyeto5ya3crsf';
+    const webhookUrl = 'https://hook.eu1.make.com/jxkrf9yv2jefik2wl6xr27dw970c6dvc';
     try {
         await fetch(webhookUrl, {
             method: 'POST',
