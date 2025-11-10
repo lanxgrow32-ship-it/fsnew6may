@@ -2,8 +2,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend";
 
-// IMPORTANT: This is a placeholder for your actual Resend API Key.
-// You must set this in your Supabase project's secrets.
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
@@ -11,15 +9,13 @@ const corsHeaders = {
   'Access-control-allow-headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Function to read and prepare the email template
 async function getEmailHtml(templateName: string, params: Record<string, string>): Promise<string> {
-    // The path is relative to the function's root directory when deployed.
+    // Corrected Path: The path should be relative to the function's root.
     const templatePath = `./${templateName}.html`;
     try {
         let html = await Deno.readTextFile(templatePath);
 
         for (const key in params) {
-            // Use a global regex to replace all occurrences of the placeholder
             const regex = new RegExp(`{{${key}}}`, 'g');
             html = html.replace(regex, params[key]);
         }
@@ -35,7 +31,6 @@ async function handler(req: Request) {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Check for Resend API Key
   if (!RESEND_API_KEY) {
     const errorMsg = "RESEND_API_KEY is not set. The email function cannot proceed.";
     console.error(errorMsg);
