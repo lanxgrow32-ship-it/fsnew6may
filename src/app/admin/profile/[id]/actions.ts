@@ -16,7 +16,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('credentials_provided')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid')
     .eq('id', id)
     .single();
 
@@ -25,6 +25,7 @@ export async function updateProfile(formData: FormData) {
     return { error: 'Could not verify user state before update.' };
   }
   
+  const wasApproved = beforeUpdateData.is_approved;
   const wasCredentialsProvided = beforeUpdateData.credentials_provided;
 
   const updateData: any = {
@@ -54,7 +55,7 @@ export async function updateProfile(formData: FormData) {
     return { error: error.message };
   }
 
-  // --- Start Webhook Logic ---
+  // --- Start Webhook & Commission Logic ---
 
   // 1. Credentials Webhook
   if (credentials_provided && !wasCredentialsProvided) {
@@ -75,12 +76,61 @@ export async function updateProfile(formData: FormData) {
     }
   }
 
-  // --- End Webhook Logic ---
+  // 2. Referral Commission Logic
+  // Check if user is newly approved and was referred by someone
+  if (is_approved && !wasApproved && beforeUpdateData.referred_by) {
+    const referrerId = beforeUpdateData.referred_by;
+    const amountPaid = beforeUpdateData.final_amount_paid;
+
+    if (amountPaid > 0) {
+        // Get commission percentage from settings
+        const { data: settings, error: settingsError } = await supabaseAdmin
+            .from('payment_details')
+            .select('referral_commission_percentage')
+            .eq('id', 1)
+            .single();
+        
+        if (settingsError || !settings) {
+            console.error('Could not fetch referral commission setting:', settingsError);
+        } else {
+            const commissionPercentage = settings.referral_commission_percentage;
+            const commissionAmount = (amountPaid * commissionPercentage) / 100;
+
+            // Use an RPC function to safely update the referrer's balance
+            const { error: rpcError } = await supabaseAdmin.rpc('add_to_balance', {
+                user_id: referrerId,
+                amount_to_add: commissionAmount
+            });
+
+            if (rpcError) {
+                console.error('Error updating referrer balance:', rpcError);
+            } else {
+                // Create a record of the referral transaction
+                const { error: referralError } = await supabaseAdmin
+                    .from('referrals')
+                    .insert({
+                        referrer_id: referrerId,
+                        referred_id: id,
+                        commission_amount: commissionAmount,
+                        is_commission_paid: true, // It's paid to their balance, not withdrawn yet
+                    });
+                if (referralError) {
+                    console.error('Error creating referral record:', referralError);
+                }
+            }
+        }
+    }
+  }
+
+
+  // --- End Webhook & Commission Logic ---
 
 
   revalidatePath('/admin/dashboard');
   revalidatePath(`/admin/profile/${id}`);
   revalidatePath('/welcome');
+  revalidatePath('/referrals');
+  revalidatePath('/admin/payouts');
 
   return { error: null };
 }
