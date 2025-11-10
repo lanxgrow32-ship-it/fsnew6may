@@ -13,13 +13,26 @@ export async function updateProfile(formData: FormData) {
   const kyc_status = formData.get('kyc_status') as string;
 
   // This is the data that will be sent to the webhook
-  const updateData = {
+  const updateData: any = {
     is_approved,
-    trading_username,
-    trading_password,
-    credentials_provided,
     kyc_status,
   };
+
+  // Only include credential fields if they are being provided
+  if (credentials_provided) {
+    updateData.credentials_provided = true;
+    updateData.trading_username = trading_username;
+    updateData.trading_password = trading_password;
+  } else {
+    // If the switch is off, ensure we don't accidentally clear credentials
+    // unless that's the desired behavior. For now, we only update if provided.
+    // If you wanted to "un-provide" them, you'd handle that here.
+  }
+
+  // To prevent sending empty credentials, we only update them if the 'credentials_provided' toggle is on
+  if (credentials_provided && (!trading_username || !trading_password)) {
+    return { error: "Trading username and password are required when 'Credentials Provided' is on." };
+  }
 
   const { error } = await supabaseAdmin
     .from('profiles')
