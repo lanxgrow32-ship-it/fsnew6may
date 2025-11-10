@@ -68,7 +68,8 @@ async function handler(req: Request) {
       from: "onboarding@resend.dev",
       to: user_email,
       subject: subject,
-      react: emailComponent,
+      // Render the component to an HTML string before sending
+      html: render(emailComponent),
     });
 
     if (error) {
