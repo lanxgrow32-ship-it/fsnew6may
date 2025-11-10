@@ -56,7 +56,7 @@ async function handler(req: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: "noreply@fundedstock.live", // You will need to verify this domain in Resend.
+      from: "onboarding@resend.dev", // Use the default, verified Resend address
       to: user_email,
       subject: subject,
       react: emailComponent,
