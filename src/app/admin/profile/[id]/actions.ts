@@ -16,7 +16,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('credentials_provided, kyc_status')
+    .select('credentials_provided')
     .eq('id', id)
     .single();
 
@@ -26,7 +26,6 @@ export async function updateProfile(formData: FormData) {
   }
   
   const wasCredentialsProvided = beforeUpdateData.credentials_provided;
-  const previousKycStatus = beforeUpdateData.kyc_status;
 
   const updateData: any = {
     is_approved,
@@ -73,24 +72,6 @@ export async function updateProfile(formData: FormData) {
         });
     } catch (webhookError) {
         console.error('Failed to trigger credentials webhook:', webhookError);
-    }
-  }
-
-  // 2. KYC Status Webhook
-  if (kyc_status !== previousKycStatus && (kyc_status === 'verified' || kyc_status === 'rejected')) {
-    const kycWebhookUrl = 'https://hook.eu1.make.com/bod5bjm8as7cdtp5qwnhpmhafo783kdo';
-    try {
-        await fetch(kycWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                full_name: fullName,
-                email: email,
-                kyc_status: kyc_status 
-            }),
-        });
-    } catch (webhookError) {
-        console.error('Failed to trigger KYC status webhook:', webhookError);
     }
   }
 
