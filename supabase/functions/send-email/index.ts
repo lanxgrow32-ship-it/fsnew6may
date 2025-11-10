@@ -1,12 +1,9 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend";
-// By importing this, we make sure the dependency is available in the Deno environment.
 import { render } from "npm:@react-email/render";
 
-
 // Import the email components.
-// Note: The paths might seem unusual. This is how Deno and Supabase functions
-// import shared code from the main project source.
 import PaymentConfirmationEmail from "../../../src/emails/payment-confirmation.tsx";
 import KycSubmittedEmail from "../../../src/emails/kyc-submitted.tsx";
 import CredentialsProvidedEmail from "../../../src/emails/credentials-provided.tsx";
@@ -40,25 +37,27 @@ async function handler(req: Request) {
     const { event_type, user_name, user_email, trading_username, trading_password } = await req.json();
 
     let subject = "";
-    let emailComponent;
+    let emailHtml = "";
 
     switch (event_type) {
       case "payment_confirmed":
         subject = "Payment Confirmed & Account Approved!";
-        emailComponent = PaymentConfirmationEmail({ name: user_name });
+        emailHtml = render(PaymentConfirmationEmail({ name: user_name }));
         break;
       case "kyc_submitted":
         subject = "KYC Documents Submitted for Review";
-        emailComponent = KycSubmittedEmail({ name: user_name });
+        emailHtml = render(KycSubmittedEmail({ name: user_name }));
         break;
       case "credentials_provided":
         subject = "Your Trading Credentials Are Here!";
-        emailComponent = CredentialsProvidedEmail({
-          name: user_name,
-          username: trading_username,
-          password: trading_password,
-          loginUrl: "https://nextrade.club/",
-        });
+        emailHtml = render(
+          CredentialsProvidedEmail({
+            name: user_name,
+            username: trading_username,
+            password: trading_password,
+            loginUrl: "https://nextrade.club/",
+          })
+        );
         break;
       default:
         throw new Error(`Unknown event type: ${event_type}`);
@@ -68,8 +67,7 @@ async function handler(req: Request) {
       from: "onboarding@resend.dev",
       to: user_email,
       subject: subject,
-      // Render the component to an HTML string before sending
-      html: render(emailComponent),
+      html: emailHtml,
     });
 
     if (error) {
