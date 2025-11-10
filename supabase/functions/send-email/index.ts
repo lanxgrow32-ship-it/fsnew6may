@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend";
 
+// IMPORTANT: This is a placeholder for your actual Resend API Key.
+// You must set this in your Supabase project's secrets.
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
@@ -30,6 +32,7 @@ async function handler(req: Request) {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Check for Resend API Key
   if (!resend) {
     const errorMsg = "RESEND_API_KEY is not set. The email function cannot proceed.";
     console.error(errorMsg);
@@ -43,21 +46,20 @@ async function handler(req: Request) {
     const { event_type, user_name, user_email, trading_username, trading_password } = await req.json();
 
     let subject = "";
-    let emailHtml = "";
-    let params: Record<string, string> = { name: user_name };
+    let html = "";
 
     switch (event_type) {
       case "payment_confirmed":
         subject = "Payment Confirmed & Account Approved!";
-        emailHtml = await getEmailHtml('payment-confirmation', { name: user_name });
+        html = await getEmailHtml('payment-confirmation', { name: user_name });
         break;
       case "kyc_submitted":
         subject = "KYC Documents Submitted for Review";
-        emailHtml = await getEmailHtml('kyc-submitted', { name: user_name });
+        html = await getEmailHtml('kyc-submitted', { name: user_name });
         break;
       case "credentials_provided":
         subject = "Your Trading Credentials Are Here!";
-        emailHtml = await getEmailHtml('credentials-provided', { 
+        html = await getEmailHtml('credentials-provided', { 
             name: user_name, 
             username: trading_username, 
             password: trading_password 
@@ -68,10 +70,10 @@ async function handler(req: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: 'onboarding@resend.dev',
       to: user_email,
       subject: subject,
-      html: emailHtml,
+      html: html,
     });
 
     if (error) {
@@ -87,6 +89,7 @@ async function handler(req: Request) {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (error) {
     console.error({ message: "Handler Error", error: error.message });
     return new Response(JSON.stringify({ error: error.message }), {
