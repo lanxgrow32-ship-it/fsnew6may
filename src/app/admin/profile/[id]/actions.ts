@@ -12,15 +12,18 @@ export async function updateProfile(formData: FormData) {
   const credentials_provided = formData.get('credentials_provided') === 'on';
   const kyc_status = formData.get('kyc_status') as string;
 
+  // This is the data that will be sent to the webhook
+  const updateData = {
+    is_approved,
+    trading_username,
+    trading_password,
+    credentials_provided,
+    kyc_status,
+  };
+
   const { error } = await supabaseAdmin
     .from('profiles')
-    .update({
-      is_approved,
-      trading_username,
-      trading_password,
-      credentials_provided,
-      kyc_status,
-    })
+    .update(updateData)
     .eq('id', id);
 
   if (error) {
