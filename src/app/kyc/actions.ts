@@ -64,9 +64,6 @@ export async function submitKyc(formData: FormData) {
         pan_card_url,
         aadhar_card_url,
         selfie_url,
-        // Add full name and email to the update payload for the webhook
-        full_name: fullName,
-        email: email,
     };
 
     const { error: updateError } = await supabase
