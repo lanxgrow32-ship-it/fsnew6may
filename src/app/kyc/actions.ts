@@ -28,6 +28,9 @@ export async function submitKyc(formData: FormData) {
     return { error: 'You must be logged in to submit KYC.' };
   }
 
+  const fullName = formData.get('full_name') as string;
+  const email = formData.get('email') as string;
+
   try {
     const panFile = formData.get('pan_card') as File;
     const aadharFile = formData.get('aadhar_card') as File;
@@ -45,10 +48,10 @@ export async function submitKyc(formData: FormData) {
     ]);
     
     const tradingStyles = formData.getAll('trading_style') as string[];
-    const fullName = formData.get('full_name') as string;
-    const email = formData.get('email') as string;
 
     const profileUpdateData = {
+        full_name: fullName,
+        email: email,
         mobile_number: formData.get('mobile_number') as string,
         pan_number: formData.get('pan_number') as string,
         aadhar_number: formData.get('aadhar_number') as string,
