@@ -148,7 +148,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     {/* Left Column */}
                     <div className="lg:col-span-2 space-y-8">
                         {/* KYC Details */}
-                        {profile.kyc_status === 'submitted' || profile.kyc_status === 'verified' || profile.kyc_status === 'rejected' ? (
+                        {(profile.kyc_status === 'submitted' || profile.kyc_status === 'verified' || profile.kyc_status === 'rejected') ? (
                             <Card>
                                 <CardHeader>
                                     <CardTitle>KYC Verification Details</CardTitle>
@@ -323,3 +323,5 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     </div>
   );
 }
+
+    

@@ -85,3 +85,5 @@ export async function submitKyc(formData: FormData) {
     return { error: error.message };
   }
 }
+
+    

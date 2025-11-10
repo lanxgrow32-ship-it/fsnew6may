@@ -1,2 +1,3 @@
-// This function has been deprecated and is no longer used.
-// The new consolidated function is 'handle-kyc-update'.
+// This function is no longer used. The logic has been moved to 'handle-kyc-update'.
+
+    
