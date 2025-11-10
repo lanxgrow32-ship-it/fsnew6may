@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, Download } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, PanelLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -131,8 +131,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     <div className="bg-muted/40 min-h-screen">
         <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-4 w-4" />
+                <Button variant="outline" size="icon" asChild>
+                    <Link href="/admin/dashboard">
+                        <ArrowLeft className="h-4 w-4" />
+                    </Link>
                 </Button>
                 <h1 className="text-xl font-semibold">Manage User Profile</h1>
            </div>
