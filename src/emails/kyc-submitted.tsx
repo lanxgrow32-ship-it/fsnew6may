@@ -82,7 +82,7 @@ const heading = {
   color: "#1a1a1a",
   fontSize: "24px",
   fontWeight: "bold",
-  textAlign: "center" as const,
+  textAlign: "center",
   margin: "30px 0",
 };
 
@@ -96,7 +96,7 @@ const paragraph = {
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
+  textAlign: "left",
   padding: "0 40px",
 };
 

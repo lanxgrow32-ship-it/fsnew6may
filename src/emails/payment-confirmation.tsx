@@ -87,8 +87,8 @@ const container = {
 const heading = {
   color: "#1a1a1a",
   fontSize: "24px",
-  fontWeight: "bold",_
-  textAlign: "center" as const,
+  fontWeight: "bold",
+  textAlign: "center",
   margin: "30px 0",
 };
 
@@ -102,7 +102,7 @@ const paragraph = {
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
+  textAlign: "left",
   padding: "0 40px",
 };
 
@@ -125,7 +125,7 @@ const button = {
   fontSize: "16px",
   fontWeight: "bold",
   textDecoration: "none",
-  textAlign: "center" as const,
+  textAlign: "center",
   display: "block",
   width: "100%",
   padding: "14px 0",
