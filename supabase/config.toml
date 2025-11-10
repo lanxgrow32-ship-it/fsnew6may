@@ -2,5 +2,5 @@
 # https://supabase.com/docs/guides/cli/config
 
 [functions.send-email]
-  entrypoint = "./supabase/functions/send-email/index.ts"
+  entrypoint = "./functions/send-email/index.ts"
   verify_jwt = false
