@@ -27,9 +27,18 @@ export async function submitKyc(formData: FormData) {
   if (!user) {
     return { error: 'You must be logged in to submit KYC.' };
   }
+  
+  // SECURELY fetch the user's profile from the database
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', user.id)
+    .single();
 
-  const fullName = formData.get('full_name') as string;
-  const email = formData.get('email') as string;
+  if (profileError || !profile) {
+      return { error: 'Could not retrieve your user profile to submit KYC.' };
+  }
+
 
   try {
     const panFile = formData.get('pan_card') as File;
@@ -50,8 +59,6 @@ export async function submitKyc(formData: FormData) {
     const tradingStyles = formData.getAll('trading_style') as string[];
 
     const profileUpdateData = {
-        full_name: fullName,
-        email: email,
         mobile_number: formData.get('mobile_number') as string,
         pan_number: formData.get('pan_number') as string,
         aadhar_number: formData.get('aadhar_number') as string,
@@ -86,8 +93,8 @@ export async function submitKyc(formData: FormData) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                full_name: fullName,
-                email: email,
+                full_name: profile.full_name, // Use the name from the database
+                email: profile.email,         // Use the email from the database
             }),
         });
     } catch (webhookError) {

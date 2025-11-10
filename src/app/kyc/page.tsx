@@ -65,14 +65,6 @@ export default function KycPage() {
                 <h3 className="font-semibold text-lg">Personal Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label htmlFor="full_name">Full Name (as per PAN) *</Label>
-                        <Input id="full_name" name="full_name" required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Email Address *</Label>
-                        <Input id="email" name="email" type="email" required />
-                    </div>
-                    <div className="space-y-2">
                         <Label htmlFor="mobile_number">Mobile Number *</Label>
                         <Input id="mobile_number" name="mobile_number" required />
                     </div>
