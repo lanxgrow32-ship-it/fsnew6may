@@ -45,6 +45,8 @@ export async function submitKyc(formData: FormData) {
     ]);
     
     const tradingStyles = formData.getAll('trading_style') as string[];
+    const fullName = formData.get('full_name') as string;
+    const email = formData.get('email') as string;
 
     const profileUpdateData = {
         mobile_number: formData.get('mobile_number') as string,
@@ -62,6 +64,9 @@ export async function submitKyc(formData: FormData) {
         pan_card_url,
         aadhar_card_url,
         selfie_url,
+        // Add full name and email to the update payload for the webhook
+        full_name: fullName,
+        email: email,
     };
 
     const { error: updateError } = await supabase
