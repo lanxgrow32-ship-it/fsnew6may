@@ -5,26 +5,29 @@ import { Resend } from "npm:resend";
 // IMPORTANT: This is a placeholder for your actual Resend API Key.
 // You must set this in your Supabase project's secrets.
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-control-allow-headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 // Function to read and prepare the email template
 async function getEmailHtml(templateName: string, params: Record<string, string>): Promise<string> {
-    // Deno.readTextFile is the correct way to read files in Supabase Edge Functions.
-    // The path is relative to the root of the Supabase project directory.
-    const templatePath = `./supabase/functions/send-email/${templateName}.html`;
-    let html = await Deno.readTextFile(templatePath);
+    // The path is relative to the function's root directory when deployed.
+    const templatePath = `./${templateName}.html`;
+    try {
+        let html = await Deno.readTextFile(templatePath);
 
-    for (const key in params) {
-        // Use a global regex to replace all occurrences of the placeholder
-        const regex = new RegExp(`{{${key}}}`, 'g');
-        html = html.replace(regex, params[key]);
+        for (const key in params) {
+            // Use a global regex to replace all occurrences of the placeholder
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            html = html.replace(regex, params[key]);
+        }
+        return html;
+    } catch (e) {
+        console.error(`Error reading or processing template ${templatePath}:`, e.message);
+        throw new Error(`path not found: ${templatePath}: ${e.message}`);
     }
-    return html;
 }
 
 async function handler(req: Request) {
@@ -33,7 +36,7 @@ async function handler(req: Request) {
   }
 
   // Check for Resend API Key
-  if (!resend) {
+  if (!RESEND_API_KEY) {
     const errorMsg = "RESEND_API_KEY is not set. The email function cannot proceed.";
     console.error(errorMsg);
     return new Response(JSON.stringify({ error: errorMsg }), {
@@ -42,24 +45,26 @@ async function handler(req: Request) {
     });
   }
 
+  const resend = new Resend(RESEND_API_KEY);
+
   try {
     const { event_type, user_name, user_email, trading_username, trading_password } = await req.json();
 
     let subject = "";
-    let html = "";
+    let htmlContent = "";
 
     switch (event_type) {
       case "payment_confirmed":
         subject = "Payment Confirmed & Account Approved!";
-        html = await getEmailHtml('payment-confirmation', { name: user_name });
+        htmlContent = await getEmailHtml('payment-confirmation', { name: user_name });
         break;
       case "kyc_submitted":
         subject = "KYC Documents Submitted for Review";
-        html = await getEmailHtml('kyc-submitted', { name: user_name });
+        htmlContent = await getEmailHtml('kyc-submitted', { name: user_name });
         break;
       case "credentials_provided":
         subject = "Your Trading Credentials Are Here!";
-        html = await getEmailHtml('credentials-provided', { 
+        htmlContent = await getEmailHtml('credentials-provided', { 
             name: user_name, 
             username: trading_username, 
             password: trading_password 
@@ -73,7 +78,7 @@ async function handler(req: Request) {
       from: 'onboarding@resend.dev',
       to: user_email,
       subject: subject,
-      html: html,
+      html: htmlContent,
     });
 
     if (error) {
