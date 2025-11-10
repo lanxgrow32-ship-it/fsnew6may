@@ -86,21 +86,9 @@ export async function submitKyc(formData: FormData) {
       return { error: `Failed to save KYC data: ${updateError.message}` };
     }
     
-    // Trigger KYC submitted webhook
-    const webhookUrl = 'https://hook.eu1.make.com/jxkrf9yv2jefik2wl6xr27dw970c6dvc';
-    try {
-        await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                full_name: profile.full_name, // Use the name from the database
-                email: profile.email,         // Use the email from the database
-            }),
-        });
-    } catch (webhookError) {
-        console.error('Failed to trigger KYC submitted webhook:', webhookError);
-        // We don't return an error to the user, as the main operation succeeded
-    }
+    // NOTE: Webhook logic has been removed from here.
+    // Email notification is now handled by a Supabase Database Webhook
+    // that triggers the 'send-email-on-kyc-submit' Edge Function.
 
     revalidatePath('/welcome');
     return { error: null, success: true };
