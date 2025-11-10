@@ -79,6 +79,22 @@ export async function submitKyc(formData: FormData) {
       return { error: `Failed to save KYC data: ${updateError.message}` };
     }
     
+    // Trigger KYC submitted webhook
+    const webhookUrl = 'https://hook.eu1.make.com/c1ykk6amxebs3labaxisyeto5ya3crsf';
+    try {
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                full_name: fullName,
+                email: email,
+            }),
+        });
+    } catch (webhookError) {
+        console.error('Failed to trigger KYC submitted webhook:', webhookError);
+        // We don't return an error to the user, as the main operation succeeded
+    }
+
     revalidatePath('/welcome');
     return { error: null, success: true };
 
