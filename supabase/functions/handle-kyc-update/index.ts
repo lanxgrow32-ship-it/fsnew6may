@@ -5,9 +5,8 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req) => {
   try {
-    const { record } = await req.json();
+    const { record, old_record } = await req.json();
 
-    // Ensure we have a record and an email to send to
     if (!record || !record.email) {
       console.warn("Received invalid payload or missing email:", { record });
       return new Response(JSON.stringify({ message: "Invalid payload" }), {
@@ -16,74 +15,70 @@ serve(async (req) => {
       });
     }
 
-    const kycStatus = record.kyc_status;
     const userEmail = record.email;
     const userName = record.full_name || 'Trader';
-
     let emailSubject = '';
     let emailHtml = '';
+    let shouldSend = false;
 
-    switch (kycStatus) {
-      case 'submitted':
-        emailSubject = 'KYC Documents Submitted Successfully';
-        emailHtml = `
-          <h1>Thank You For Your Submission!</h1>
-          <p>Hi ${userName},</p>
-          <p>We have successfully received your KYC documents. Our team will review them shortly.</p>
-          <p>This process usually takes 1-2 business days. We will notify you once the review is complete.</p>
-          <p>The FundedStock Team</p>
-        `;
-        break;
+    // --- Logic for KYC Status Change ---
+    const oldKycStatus = old_record?.kyc_status;
+    const newKycStatus = record.kyc_status;
 
-      case 'verified':
-        emailSubject = 'Congratulations! Your KYC is Verified';
-        emailHtml = `
-          <h1>KYC Approved!</h1>
-          <p>Hi ${userName},</p>
-          <p>Great news! Your KYC documents have been successfully verified and your account is now fully active.</p>
-          <p>Your trading credentials will be provided on your dashboard shortly. Please check back soon to begin trading.</p>
-          <p>Happy Trading!</p>
-          <p>The FundedStock Team</p>
-        `;
-        break;
+    if (newKycStatus !== oldKycStatus) {
+      switch (newKycStatus) {
+        case 'verified':
+          shouldSend = true;
+          emailSubject = 'Congratulations! Your KYC is Verified';
+          emailHtml = `
+            <h1>KYC Approved!</h1>
+            <p>Hi ${userName},</p>
+            <p>Great news! Your KYC documents have been successfully verified.</p>
+            <p>Your trading credentials will now be generated and provided on your dashboard shortly. Please check back soon to begin trading.</p>
+            <p>Happy Trading!</p>
+            <p>The FundedStock Team</p>
+          `;
+          break;
 
-      case 'rejected':
-        emailSubject = 'Action Required: Your KYC Verification';
-        emailHtml = `
-          <h1>KYC Verification Update</h1>
-          <p>Hi ${userName},</p>
-          <p>Unfortunately, we were unable to approve your recent KYC submission. This may be due to unclear documents or incorrect information.</p>
-          <p>Please log in to your account to check your status and resubmit your documents for verification.</p>
-          <p>If you have any questions, please contact our support team.</p>
-          <p>The FundedStock Team</p>
-        `;
-        break;
-      
-      default:
-        // If the status is 'pending' or something else, we don't send an email.
-        return new Response(JSON.stringify({ message: `No email sent for status: ${kycStatus}` }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
+        case 'rejected':
+          shouldSend = true;
+          emailSubject = 'Action Required: Your KYC Verification';
+          emailHtml = `
+            <h1>KYC Verification Update</h1>
+            <p>Hi ${userName},</p>
+            <p>Unfortunately, we were unable to approve your recent KYC submission. This may be due to unclear documents or incorrect information.</p>
+            <p>Please log in to your account to check your status and resubmit your documents for verification.</p>
+            <p>If you have any questions, please contact our support team.</p>
+            <p>The FundedStock Team</p>
+          `;
+          break;
+      }
+    }
+    
+    // --- Send the email if needed ---
+    if (shouldSend) {
+        const { data, error } = await resend.emails.send({
+          from: "FundedStock <noreply@fundedstock.io>",
+          to: [userEmail],
+          subject: emailSubject,
+          html: emailHtml,
+        });
+
+        if (error) {
+          console.error("Error sending email:", error);
+          return new Response(JSON.stringify(error), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        
+        return new Response(JSON.stringify(data), {
+            headers: { "Content-Type": "application/json" },
         });
     }
 
-    // Send the email using Resend
-    const { data, error } = await resend.emails.send({
-      from: "FundedStock <noreply@fundedstock.io>",
-      to: [userEmail],
-      subject: emailSubject,
-      html: emailHtml,
-    });
-
-    if (error) {
-      console.error("Error sending email:", error);
-      return new Response(JSON.stringify(error), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify({ message: "No relevant changes detected to send an email." }), {
+      status: 200,
       headers: { "Content-Type": "application/json" },
     });
 

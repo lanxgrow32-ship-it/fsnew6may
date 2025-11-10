@@ -27,18 +27,6 @@ export async function submitKyc(formData: FormData) {
   if (!user) {
     return { error: 'You must be logged in to submit KYC.' };
   }
-  
-  // SECURELY fetch the user's profile from the database
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('full_name, email')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || !profile) {
-      return { error: 'Could not retrieve your user profile to submit KYC.' };
-  }
-
 
   try {
     const panFile = formData.get('pan_card') as File;
@@ -88,7 +76,7 @@ export async function submitKyc(formData: FormData) {
     
     // NOTE: Webhook logic has been removed from here.
     // Email notification is now handled by a Supabase Database Webhook
-    // that triggers the 'send-email-on-kyc-submit' Edge Function.
+    // that triggers the 'handle-kyc-update' Edge Function.
 
     revalidatePath('/welcome');
     return { error: null, success: true };
