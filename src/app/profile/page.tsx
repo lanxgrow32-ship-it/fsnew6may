@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, BookUser } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, BookUser, Gift } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
@@ -52,6 +52,12 @@ export default async function ProfilePage() {
                             <SidebarMenuButton href="/kyc-status" tooltip="KYC Verification">
                                 <FileCheck />
                                 KYC Verification
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                         <SidebarMenuItem>
+                            <SidebarMenuButton href="/referrals" tooltip="Referrals">
+                                <Gift />
+                                Referrals
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
