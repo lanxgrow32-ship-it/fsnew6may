@@ -6,8 +6,6 @@ import path from 'path';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// This function now reads a local HTML file from the `src/emails` directory
-// It's much more reliable than the previous Supabase function attempts.
 async function getEmailHtml(templateName: string, name: string): Promise<string> {
     const templatePath = path.join(process.cwd(), 'src', 'emails', `${templateName}.html`);
     try {
@@ -76,4 +74,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
-
