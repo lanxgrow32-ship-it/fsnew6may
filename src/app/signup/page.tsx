@@ -10,11 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Ticket, Download } from 'lucide-react';
+import { Loader2, Ticket, Download, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signup, validateCoupon } from './actions';
+import { signup, validateCoupon, validateReferralCode } from './actions';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDebounce } from 'use-debounce';
+
 
 function SignupForm() {
   const router = useRouter();
@@ -33,6 +35,11 @@ function SignupForm() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
+  
+  const [referralCode, setReferralCode] = useState('');
+  const [debouncedReferralCode] = useDebounce(referralCode, 500);
+  const [referralState, setReferralState] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
+
 
   const [paymentDetails, setPaymentDetails] = useState<{ upi_id: string; qr_code_url: string; } | null>(null);
   const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(true);
@@ -63,6 +70,22 @@ function SignupForm() {
      setDiscountAmount(discountValue);
      setFinalPrice(newFinalPrice > 0 ? newFinalPrice : 0);
   }, [price, discountPercent, originalPrice]);
+
+   useEffect(() => {
+    if (debouncedReferralCode) {
+      setReferralState('loading');
+      validateReferralCode(debouncedReferralCode).then(result => {
+        if (result.success) {
+          setReferralState('valid');
+        } else {
+          setReferralState('invalid');
+        }
+      });
+    } else {
+      setReferralState('idle');
+    }
+  }, [debouncedReferralCode]);
+
 
     const handleDownload = async () => {
         if (!paymentDetails?.qr_code_url) return;
@@ -109,6 +132,10 @@ function SignupForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (referralState === 'invalid') {
+        setError('The entered referral code is not valid. Please remove it or enter a valid one.');
+        return;
+    }
     setIsLoading(true);
     setError(null);
     const formData = new FormData(e.currentTarget);
@@ -152,15 +179,16 @@ function SignupForm() {
             </p>
         </div>
 
-        <div className="space-y-6">
-             <Card className="bg-card/80 backdrop-blur-sm border-border">
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex gap-2">
                     <Input 
-                        id="coupon" 
+                        id="coupon"
+                        name="coupon_code"
                         placeholder="Enter coupon code" 
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
@@ -220,9 +248,9 @@ function SignupForm() {
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
                     <CardTitle>Registration Details</CardTitle>
+                    <CardDescription>Enter your details below to create your account. After payment, enter the UPI transaction ID to submit your application for approval.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <CardContent className="space-y-6">
                     {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
                     <div className="space-y-2">
@@ -241,6 +269,26 @@ function SignupForm() {
                         <Label htmlFor="transaction_id">UPI Transaction ID</Label>
                         <Input id="transaction_id" name="transaction_id" required placeholder="Enter the ID from your payment app" />
                     </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="referral_code">Referral Code (Optional)</Label>
+                        <div className="relative">
+                            <Input 
+                                id="referral_code" 
+                                name="referral_code" 
+                                value={referralCode}
+                                onChange={(e) => setReferralCode(e.target.value)}
+                                placeholder="Enter referral code" 
+                            />
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                {referralState === 'loading' && <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />}
+                                {referralState === 'valid' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                                {referralState === 'invalid' && <XCircle className="h-5 w-5 text-destructive" />}
+                            </div>
+                        </div>
+                        {referralState === 'invalid' && <p className="text-sm text-destructive mt-1">This referral code is not valid.</p>}
+                    </div>
+
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit for Approval
@@ -251,10 +299,9 @@ function SignupForm() {
                         Login
                         </Link>
                     </div>
-                </form>
                 </CardContent>
             </Card>
-        </div>
+        </form>
 
       </div>
     </main>
