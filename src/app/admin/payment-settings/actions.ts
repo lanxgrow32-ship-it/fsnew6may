@@ -25,9 +25,15 @@ async function uploadQrCode(file: File) {
 export async function updatePaymentSettings(prevState: any, formData: FormData) {
   const upiId = formData.get('upi_id') as string;
   const qrCodeFile = formData.get('qr_code') as File;
+  const commissionPercentage = formData.get('referral_commission_percentage') as string;
 
   if (!upiId) {
     return { error: 'UPI ID is required.' };
+  }
+  
+  const commission = parseFloat(commissionPercentage);
+  if (isNaN(commission) || commission < 0 || commission > 100) {
+    return { error: 'Commission percentage must be a number between 0 and 100.' };
   }
 
   let qrCodeUrl: string | undefined;
@@ -41,7 +47,10 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
       }
   }
 
-  const updateData: { upi_id: string; qr_code_url?: string } = { upi_id: upiId };
+  const updateData: { upi_id: string; qr_code_url?: string, referral_commission_percentage: number; } = { 
+    upi_id: upiId,
+    referral_commission_percentage: commission
+  };
   if (qrCodeUrl) {
     updateData.qr_code_url = qrCodeUrl;
   }

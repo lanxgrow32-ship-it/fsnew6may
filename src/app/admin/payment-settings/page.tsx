@@ -15,13 +15,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2 } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent } from 'lucide-react';
 import { signOut } from '@/app/actions';
 
 type PaymentDetails = {
     id: number;
     upi_id: string;
     qr_code_url: string;
+    referral_commission_percentage: number;
 };
 
 function SubmitButton() {
@@ -56,34 +57,62 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
 
     return (
         <form action={formAction}>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Manage Payment Details</CardTitle>
-                    <CardDescription>Update the UPI ID and QR code shown to users during signup.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="upi_id">UPI ID</Label>
-                        <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi-id@okhdfcbank" required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="qr_code">QR Code Image</Label>
-                        <Input id="qr_code" name="qr_code" type="file" accept="image/*" onChange={handleFileChange} />
-                        <p className="text-xs text-muted-foreground">Upload a new image to replace the current one.</p>
-                    </div>
-                    {previewUrl && (
-                        <div>
-                            <Label>Current QR Code Preview</Label>
-                            <div className="mt-2 rounded-md border p-4 w-fit bg-white">
-                                <Image src={previewUrl} alt="QR Code Preview" width={200} height={200} className="object-contain" />
+            <div className="space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>User Payment Details</CardTitle>
+                        <CardDescription>Update the UPI ID and QR code shown to users during signup.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="upi_id">UPI ID</Label>
+                            <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi-id@okhdfcbank" required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="qr_code">QR Code Image</Label>
+                            <Input id="qr_code" name="qr_code" type="file" accept="image/*" onChange={handleFileChange} />
+                            <p className="text-xs text-muted-foreground">Upload a new image to replace the current one.</p>
+                        </div>
+                        {previewUrl && (
+                            <div>
+                                <Label>Current QR Code Preview</Label>
+                                <div className="mt-2 rounded-md border p-4 w-fit bg-white">
+                                    <Image src={previewUrl} alt="QR Code Preview" width={200} height={200} className="object-contain" />
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Referral Program Settings</CardTitle>
+                        <CardDescription>Set the commission percentage for successful referrals.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <div className="space-y-2">
+                            <Label htmlFor="referral_commission_percentage">Referral Commission (%)</Label>
+                            <div className="relative">
+                                <Input 
+                                    id="referral_commission_percentage" 
+                                    name="referral_commission_percentage" 
+                                    type="number"
+                                    defaultValue={currentSettings?.referral_commission_percentage || 10} 
+                                    placeholder="e.g. 10" 
+                                    required 
+                                    min="0"
+                                    max="100"
+                                    step="0.1"
+                                    className="pl-8"
+                                />
+                                <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             </div>
                         </div>
-                    )}
-                </CardContent>
-                <CardFooter>
+                    </CardContent>
+                </Card>
+                 <div className="flex justify-end">
                     <SubmitButton />
-                </CardFooter>
-            </Card>
+                </div>
+            </div>
         </form>
     );
 }
