@@ -142,7 +142,18 @@ function PayoutsTable({ requests, onStatusChange }: { requests: PayoutRequest[],
                                         <Button variant="outline" size="sm">View QR</Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent className="w-fit">
-                                        <Image src={req.profiles.payout_qr_code_url} alt="Payout QR Code" width={300} height={300} />
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>User Payout QR Code</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Scan this code to process the payout for {req.profiles?.full_name}.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <div className="flex justify-center p-4">
+                                            <Image src={req.profiles.payout_qr_code_url} alt="Payout QR Code" width={300} height={300} />
+                                        </div>
+                                         <AlertDialogFooter>
+                                            <AlertDialogCancel>Close</AlertDialogCancel>
+                                        </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
                             ) : (
