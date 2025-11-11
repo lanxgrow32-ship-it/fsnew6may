@@ -104,7 +104,7 @@ export default function TwoStepRulesPage() {
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" />
-                                    <p className="text-muted-foreground"><strong>Profit Split:</strong> 80% for the Trader, 20% for FundedStock.</p>
+                                    <p className="text-muted-foreground"><strong>Profit Split:</strong> 80% for the Trader, 20% for FundedStock 2.0.</p>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" />

@@ -53,7 +53,7 @@ function TicketsTable({ tickets }: { tickets: Ticket[] }) {
                             <Link href={`/admin/tickets/${ticket.id}`} className="block">
                                 {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
                             </Link>
-                        </TableCell>
+                         </TableCell>
                         <TableCell className="text-right">
                            <Link href={`/admin/tickets/${ticket.id}`} className="block">
                                 <Badge variant={ticket.status === 'Open' ? 'destructive' : 'secondary'}>
@@ -93,7 +93,7 @@ export default async function AdminTicketsPage() {
                 <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
                     <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
                         <FundedStockLogo className="w-8 h-8 text-primary" />
-                        <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock</span>
+                        <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
                     </Link>
                 </SidebarHeader>
                 <SidebarContent>

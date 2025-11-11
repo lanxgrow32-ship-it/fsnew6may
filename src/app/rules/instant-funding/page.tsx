@@ -120,7 +120,7 @@ export default function InstantFundingRulesPage() {
                                 <CardTitle className="text-xl">Profit Split</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-3xl font-bold text-primary">80% for You / 20% for FundedStock</p>
+                                <p className="text-3xl font-bold text-primary">80% for You / 20% for FundedStock 2.0</p>
                             </CardContent>
                         </Card>
                     </div>
