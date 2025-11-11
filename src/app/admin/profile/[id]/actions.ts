@@ -13,6 +13,7 @@ export async function updateProfile(formData: FormData) {
   const trading_password = formData.get('trading_password') as string;
   const credentials_provided = formData.get('credentials_provided') === 'on';
   const kyc_status = formData.get('kyc_status') as string;
+  const is_breached = formData.get('is_breached') === 'on';
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
@@ -32,6 +33,7 @@ export async function updateProfile(formData: FormData) {
   const updateData: any = {
     is_approved,
     kyc_status,
+    is_breached,
   };
 
   if (credentials_provided) {

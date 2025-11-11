@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, Download, PanelLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, PanelLeft, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -45,6 +45,7 @@ type Profile = {
   coupon_code: string | null;
   discount_amount: number | null;
   final_amount_paid: number | null;
+  is_breached: boolean;
 };
 
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -288,6 +289,13 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                             <SelectItem value="rejected">Rejected</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                </div>
+                                <div className="flex items-center justify-between space-x-2 rounded-md border border-destructive/50 bg-destructive/10 p-3">
+                                    <Label htmlFor="is_breached" className="font-semibold text-destructive flex items-center gap-2">
+                                        <ShieldAlert className="h-5 w-5" />
+                                        Account Breached
+                                    </Label>
+                                    <Switch id="is_breached" name="is_breached" defaultChecked={profile.is_breached} />
                                 </div>
                             </CardContent>
                         </Card>

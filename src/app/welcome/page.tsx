@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser, Gift, MessageSquare } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser, Gift, MessageSquare, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -267,6 +267,30 @@ export default async function WelcomePage() {
                 </CardHeader>
                  <CardContent>
                     <p className="text-muted-foreground">Please check back later.</p>
+                 </CardContent>
+            </Card>
+        </main>
+    )
+  }
+
+  if (profile.is_breached) {
+    return (
+        <main className="flex min-h-screen items-center justify-center p-4 bg-muted/40">
+            <Card className="w-full max-w-lg text-center border-destructive">
+                <CardHeader>
+                    <div className="mx-auto bg-destructive/10 rounded-full p-3 w-fit">
+                        <ShieldAlert className="h-10 w-10 text-destructive" />
+                    </div>
+                    <CardTitle className="text-destructive">Account Breached</CardTitle>
+                    <CardDescription>
+                        Your account has been flagged for a breach of our trading rules. Access to your dashboard and trading credentials has been suspended.
+                    </CardDescription>
+                </CardHeader>
+                 <CardContent>
+                    <p className="text-muted-foreground mb-4">Please contact our support team to resolve this issue.</p>
+                    <Button asChild>
+                        <Link href="/tickets">Contact Support</Link>
+                    </Button>
                  </CardContent>
             </Card>
         </main>
