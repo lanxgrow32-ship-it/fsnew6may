@@ -35,7 +35,7 @@ type PayoutRequest = {
     }
 };
 
-function PayoutActions({ request, onStatusChange }: { request: PayoutRequest, onStatusChange: (id: number, status: 'completed' | 'rejected') => void }) {
+function PayoutActions({ request, onStatusChange }: { request: PayoutRequest, onStatusChange: (id: number, status: 'completed' | 'rejected' | 'pending') => void }) {
     const [isPending, setIsPending] = useState(false);
     const { toast } = useToast();
 
@@ -97,7 +97,7 @@ function PayoutActions({ request, onStatusChange }: { request: PayoutRequest, on
     )
 }
 
-function PayoutsTable({ requests, onStatusChange }: { requests: PayoutRequest[], onStatusChange: (id: number, status: 'completed' | 'rejected') => void }) {
+function PayoutsTable({ requests, onStatusChange }: { requests: PayoutRequest[], onStatusChange: (id: number, status: 'completed' | 'rejected' | 'pending') => void }) {
     const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {

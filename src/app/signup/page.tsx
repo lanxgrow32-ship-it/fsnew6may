@@ -188,7 +188,7 @@ function SignupForm() {
                     <div className="flex gap-2">
                     <Input 
                         id="coupon"
-                        name="coupon_code"
+                        name="coupon"
                         placeholder="Enter coupon code" 
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
@@ -234,7 +234,7 @@ function SignupForm() {
                     </div>
                     {discountAmount > 0 && (
                         <div className="flex justify-between items-center text-sm text-green-600">
-                        <p className="text-muted-foreground">Coupon Discount ({discountPercent}%):</p>
+                        <p className="text-muted-foreground">Coupon "{couponCode}":</p>
                         <p>- ₹{discountAmount.toFixed(2)}</p>
                         </div>
                     )}
