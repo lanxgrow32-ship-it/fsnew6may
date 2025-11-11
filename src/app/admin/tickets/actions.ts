@@ -17,13 +17,6 @@ async function appendReply(ticketId: number, replyObject: any) {
 }
 
 export async function addAdminReply(ticketId: number, reply: string) {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        return { error: 'You must be logged in.' };
-    }
-    
     // We can assume the admin's name is 'Admin' for simplicity, or fetch it.
     const replyObject = {
         author: 'Admin',
