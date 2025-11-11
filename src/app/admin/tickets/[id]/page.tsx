@@ -3,17 +3,16 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, Send, Check, X, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Check, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addAdminReply, updateTicketStatus } from '../actions';
+import { addAdminReply, updateTicketStatus, getTicketById } from '../actions';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 
 type Reply = {
@@ -39,7 +38,6 @@ type Ticket = {
 export default function AdminTicketDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { toast } = useToast();
-  const supabase = createClient();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -48,34 +46,28 @@ export default function AdminTicketDetailsPage({ params }: { params: { id: strin
 
   const { id } = use(params);
 
-  const fetchTicket = async () => {
-    const { data, error } = await supabase
-        .from('tickets')
-        .select('*, profiles:user_id(*)')
-        .eq('id', id)
-        .single();
-    
-    if (error) {
-        setError('Failed to fetch ticket.');
-        console.error(error);
-    } else {
-        setTicket(data as Ticket);
-    }
-    setIsFetching(false);
-  }
-
   useEffect(() => {
-    if (!id) return;
+    const fetchTicket = async () => {
+      if (!id) return;
+      setIsFetching(true);
+      const { data, error: fetchError } = await getTicketById(Number(id));
+      
+      if (fetchError) {
+          setError(fetchError);
+          console.error(fetchError);
+      } else {
+          setTicket(data as Ticket);
+      }
+      setIsFetching(false);
+    }
+
     fetchTicket();
 
-    const channel = supabase.channel(`ticket_${id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets', filter: `id=eq.${id}` }, 
-        (payload) => { setTicket(payload.new as Ticket) }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel) };
+    // The realtime subscription will need to be re-evaluated as it might not work
+    // correctly with the new RLS policies for admins without a token.
+    // For now, key actions revalidate the path, causing a re-fetch.
 
-  }, [id, supabase]);
+  }, [id]);
 
   const handleReplySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -88,6 +80,9 @@ export default function AdminTicketDetailsPage({ params }: { params: { id: strin
     } else {
       setReply('');
       toast({ title: 'Reply sent' });
+      // Re-fetch data after submitting a reply
+      const { data, error: fetchError } = await getTicketById(Number(id));
+      if (data) setTicket(data as Ticket);
     }
     setIsLoading(false);
   };
@@ -99,6 +94,9 @@ export default function AdminTicketDetailsPage({ params }: { params: { id: strin
           toast({ title: 'Error', description: result.error, variant: 'destructive' });
       } else {
           toast({ title: `Ticket ${status.toLowerCase()}` });
+          // Re-fetch to show updated status
+          const { data, error: fetchError } = await getTicketById(Number(id));
+          if (data) setTicket(data as Ticket);
       }
       setIsLoading(false);
   }

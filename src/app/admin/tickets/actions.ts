@@ -65,3 +65,18 @@ export async function updateTicketStatus(ticketId: number, status: 'Open' | 'Clo
     revalidatePath(`/tickets/${ticketId}`);
     return { success: true };
 }
+
+export async function getTicketById(ticketId: number) {
+    const { data, error } = await supabaseAdmin
+        .from('tickets')
+        .select('*, profiles:user_id(*)')
+        .eq('id', ticketId)
+        .single();
+    
+    if (error) {
+        console.error('Error fetching ticket by ID (admin):', error);
+        return { error: 'Failed to fetch ticket.' };
+    }
+
+    return { data };
+}
