@@ -1,7 +1,7 @@
 
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { createClient } from '@/lib/supabase/server'; // Use server client
+import { supabaseAdmin } from '@/lib/supabase/admin'; // Use admin client
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,9 +73,8 @@ function TicketsTable({ tickets }: { tickets: Ticket[] }) {
 }
 
 export default async function AdminTicketsPage() {
-    // Use the server client to fetch data directly, bypassing RLS issues for admin.
-    const supabase = createClient();
-    const { data: tickets, error } = await supabase
+    // Use the admin client to fetch data directly, bypassing RLS.
+    const { data: tickets, error } = await supabaseAdmin
         .from('tickets')
         .select('*, profiles:user_id(full_name, email)')
         .order('updated_at', { ascending: false });
