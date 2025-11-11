@@ -1,7 +1,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardFooter } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
 import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser, Gift, MessageSquare, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
@@ -294,7 +294,7 @@ export default async function WelcomePage() {
                  <CardContent className="space-y-4">
                     {profile.breach_reason && (
                       <Alert variant="destructive" className="text-left">
-                        <AlertTitle className="font-semibold">Admin Reason:</AlertTitle>
+                        <AlertTitle className="font-semibold">Reason:</AlertTitle>
                         <AlertDescription>{profile.breach_reason}</AlertDescription>
                       </Alert>
                     )}
