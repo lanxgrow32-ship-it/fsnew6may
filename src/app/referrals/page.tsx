@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, Loader2, Copy, Check, Users, Banknote, History, Wallet, MessageSquare } from 'lucide-react';
+import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, Loader2, Copy, Check, Users, Banknote, History, Wallet, MessageSquare, Percent } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -105,7 +105,7 @@ function PayoutDetailsForm({ profile }: { profile: Profile | null }) {
     );
 }
 
-function ReferralDashboard({ profile, referrals, payoutRequests }: { profile: Profile | null, referrals: any[], payoutRequests: PayoutRequest[] }) {
+function ReferralDashboard({ profile, referrals, payoutRequests, commissionPercentage }: { profile: Profile | null, referrals: any[], payoutRequests: PayoutRequest[], commissionPercentage: number | null }) {
     const { toast } = useToast();
     const [copied, setCopied] = useState(false);
     const [isRequesting, setIsRequesting] = useState(false);
@@ -157,8 +157,8 @@ function ReferralDashboard({ profile, referrals, payoutRequests }: { profile: Pr
 
     return (
         <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <Card className="md:col-span-2">
                     <CardHeader>
                         <CardTitle>Your Referral Code</CardTitle>
                         <CardDescription>Share this code with others. When they sign up, you earn!</CardDescription>
@@ -172,17 +172,26 @@ function ReferralDashboard({ profile, referrals, payoutRequests }: { profile: Pr
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
+                 <Card>
                     <CardHeader>
-                        <CardTitle>Your Earnings</CardTitle>
-                        <CardDescription>Your total available referral commission balance.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Percent className="w-5 h-5"/> Commission Rate</CardTitle>
+                        <CardDescription>Your earning rate for each successful referral.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-4xl font-bold">₹{profile?.referral_balance.toFixed(2) ?? '0.00'}</p>
-                        <PayoutAlert />
+                    <CardContent>
+                        <p className="text-4xl font-bold">{commissionPercentage ?? '...'}<span className="text-2xl text-muted-foreground">%</span></p>
                     </CardContent>
                 </Card>
             </div>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Your Earnings</CardTitle>
+                    <CardDescription>Your total available referral commission balance.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-4xl font-bold">₹{profile?.referral_balance.toFixed(2) ?? '0.00'}</p>
+                    <PayoutAlert />
+                </CardContent>
+            </Card>
             
             <PayoutDetailsForm profile={profile} />
 
@@ -260,6 +269,7 @@ export default function ReferralsPage() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [referrals, setReferrals] = useState<any[]>([]);
     const [payoutRequests, setPayoutRequests] = useState<any[]>([]);
+    const [commissionPercentage, setCommissionPercentage] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -269,15 +279,17 @@ export default function ReferralsPage() {
 
             if (user) {
                 // Fetch profile, referrals, and payouts in parallel
-                const [profileRes, referralsRes, payoutsRes] = await Promise.all([
+                const [profileRes, referralsRes, payoutsRes, paymentDetailsRes] = await Promise.all([
                     supabase.from('profiles').select('referral_code, referral_balance, payout_upi_id, payout_qr_code_url').eq('id', user.id).single(),
                     supabase.from('referrals').select('*, profiles!referrals_referred_id_fkey(full_name)').eq('referrer_id', user.id).order('created_at', { ascending: false }),
-                    supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+                    supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+                    supabase.from('payment_details').select('referral_commission_percentage').eq('id', 1).single()
                 ]);
                 
                 if (profileRes.data) setProfile(profileRes.data);
                 if (referralsRes.data) setReferrals(referralsRes.data);
                 if (payoutsRes.data) setPayoutRequests(payoutsRes.data);
+                if (paymentDetailsRes.data) setCommissionPercentage(paymentDetailsRes.data.referral_commission_percentage);
             }
             setIsLoading(false);
         };
@@ -375,7 +387,7 @@ export default function ReferralsPage() {
                 </header>
                 <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
                     <div className="max-w-4xl mx-auto">
-                        {isLoading ? <PageSkeleton /> : <ReferralDashboard profile={profile} referrals={referrals} payoutRequests={payoutRequests} />}
+                        {isLoading ? <PageSkeleton /> : <ReferralDashboard profile={profile} referrals={referrals} payoutRequests={payoutRequests} commissionPercentage={commissionPercentage} />}
                     </div>
                 </main>
             </SidebarInset>
