@@ -61,10 +61,6 @@ export default function InstantFundingRulesPage() {
                                 <RuleItem><strong>Daily Trailing Drawdown:</strong> 5% of account balance</RuleItem>
                                 <RuleItem><strong>Max Loss per Trade:</strong> 2% of capital</RuleItem>
                                 <RuleItem><strong>Max Capital Usage per Trade:</strong> 80%</RuleItem>
-                                <RuleItem>
-                                    <strong>Consistency Rule:</strong> No single trade can account for more than 15% of the total profit.
-                                    <span className="block text-xs">(Example: On a ₹10,000 profit, any single trade's profit cannot exceed ₹1,500).</span>
-                                </RuleItem>
                             </CardContent>
                         </Card>
 
@@ -75,7 +71,6 @@ export default function InstantFundingRulesPage() {
                             <CardContent className="space-y-3">
                                 <RuleItem>Minimum <strong>4 profitable trading days</strong> required before the first payout.</RuleItem>
                                 <RuleItem>Weekly payouts are available, subject to performance review.</RuleItem>
-                                <RuleItem>Must be in compliance with the 15% consistency rule to be eligible for payout.</RuleItem>
                                 <RuleItem>Non-compliance with rules may lead to payout rejection or account suspension.</RuleItem>
                             </CardContent>
                         </Card>
