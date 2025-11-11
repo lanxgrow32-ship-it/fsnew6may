@@ -1,14 +1,10 @@
 
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { createClient } from '@/lib/supabase/server'; // Use server client
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare } from 'lucide-react';
 import { signOut } from '@/app/actions';
@@ -76,48 +72,22 @@ function TicketsTable({ tickets }: { tickets: Ticket[] }) {
     )
 }
 
-export default function AdminTicketsPage() {
+export default async function AdminTicketsPage() {
+    // Use the server client to fetch data directly, bypassing RLS issues for admin.
     const supabase = createClient();
-    const [tickets, setTickets] = useState<Ticket[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: tickets, error } = await supabase
+        .from('tickets')
+        .select('*, profiles:user_id(full_name, email)')
+        .order('updated_at', { ascending: false });
 
-    const fetchTickets = async () => {
-        setIsLoading(true);
-        const { data, error } = await supabase
-            .from('tickets')
-            .select('*, profiles:user_id(full_name, email)')
-            .order('updated_at', { ascending: false });
-        
-        if (error) {
-            console.error(error);
-        } else {
-            setTickets(data as Ticket[]);
-        }
-        setIsLoading(false);
-    };
+    if (error) {
+        console.error("Error fetching tickets:", error);
+        // Handle error state if necessary
+    }
 
-    useEffect(() => {
-        fetchTickets();
-        const channel = supabase.channel('realtime tickets')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, 
-                () => { fetchTickets() }
-            )
-            .subscribe();
-        return () => { supabase.removeChannel(channel) };
-    }, []);
-
-
-    const openTickets = tickets.filter(t => t.status === 'Open');
-    const closedTickets = tickets.filter(t => t.status === 'Closed');
+    const openTickets = (tickets || []).filter(t => t.status === 'Open');
+    const closedTickets = (tickets || []).filter(t => t.status === 'Closed');
     
-    const SkeletonTable = () => (
-         <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-         </div>
-    );
-
     return (
         <SidebarProvider>
             <Sidebar>
@@ -193,10 +163,10 @@ export default function AdminTicketsPage() {
                                 </TabsList>
                                 <div className="p-4">
                                 <TabsContent value="open">
-                                    {isLoading ? <SkeletonTable /> : <TicketsTable tickets={openTickets} />}
+                                    <TicketsTable tickets={openTickets} />
                                 </TabsContent>
                                 <TabsContent value="closed">
-                                    {isLoading ? <SkeletonTable /> : <TicketsTable tickets={closedTickets} />}
+                                    <TicketsTable tickets={closedTickets} />
                                 </TabsContent>
                                 </div>
                            </Tabs>
