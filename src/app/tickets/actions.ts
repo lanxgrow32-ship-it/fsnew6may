@@ -21,7 +21,10 @@ export async function createTicket(prevState: any, formData: FormData) {
         return { error: 'Subject and description are required.' };
     }
     
-    const { data, error } = await supabase
+    // Use supabaseAdmin to create the ticket, bypassing user-specific RLS for insertion
+    // This ensures the record is owned by the system and visible to admins.
+    // RLS policies for SELECT will still apply, so users only see their own tickets.
+    const { data, error } = await supabaseAdmin
         .from('tickets')
         .insert({
             user_id: user.id,
