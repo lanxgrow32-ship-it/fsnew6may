@@ -250,21 +250,19 @@ export default async function WelcomePage() {
                         <AlertDescription>{profile.breach_reason}</AlertDescription>
                       </Alert>
                     )}
-                    <p className="text-muted-foreground">Please contact our support team or purchase a new account to continue.</p>
-                    <div className="flex justify-center gap-4">
-                        <Button asChild>
-                            <Link href="/tickets">Contact Support</Link>
-                        </Button>
-                        <Button asChild variant="secondary">
+                    <p className="text-muted-foreground pt-4">To continue trading, you may purchase a new account or contact support for assistance.</p>
+                    <div className="flex flex-col items-center gap-4 pt-4">
+                        <Button asChild className="w-full max-w-xs">
                             <Link href="/pricing">Purchase New Account</Link>
                         </Button>
+                        <Button asChild variant="secondary" className="w-full max-w-xs">
+                            <Link href="/tickets">Contact Support</Link>
+                        </Button>
+                         <form action={signOut} className="w-full max-w-xs">
+                            <Button variant="outline" className="w-full">Log Out</Button>
+                        </form>
                     </div>
                  </CardContent>
-                 <CardFooter className="flex justify-center">
-                    <form action={signOut}>
-                        <Button variant="outline">Log Out</Button>
-                    </form>
-                 </CardFooter>
             </Card>
         </main>
     )
