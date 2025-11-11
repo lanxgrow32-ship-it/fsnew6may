@@ -1,7 +1,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardFooter } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
 import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser, Gift, MessageSquare, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CredentialsView } from './credentials-view';
 
 
 function OnboardingGuide({ profile }: { profile: any }) {
@@ -95,62 +96,6 @@ function KycUnderReview() {
       <AlertDescription>Your documents have been submitted and are currently being reviewed by our team. We'll notify you once the process is complete. This usually takes 1-2 business days.</AlertDescription>
     </Alert>
   )
-}
-
-function CredentialsView({ profile }: { profile: any }) {
-   return (
-      <Card className="w-full shadow-sm">
-        <CardHeader>
-          <CardTitle>Your Trading Account</CardTitle>
-          <CardDescription>Here are your trading account details.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="rounded-lg border bg-muted/40 p-4">
-            <p className="text-sm font-medium text-muted-foreground">Plan Purchased</p>
-            <p className="text-lg font-semibold">{profile.plan_purchased || 'Not specified'}</p>
-          </div>
-          {profile.credentials_provided ? (
-            <>
-              <div className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="rounded-lg border bg-muted/40 p-4">
-                    <p className="text-sm font-medium text-muted-foreground">Trading Username</p>
-                    <p className="text-xl font-semibold tracking-wider">{profile.trading_username}</p>
-                  </div>
-                  <div className="rounded-lg border bg-muted/40 p-4">
-                    <p className="text-sm font-medium text-muted-foreground">Trading Password</p>
-                    <p className="text-xl font-semibold tracking-wider">{profile.trading_password}</p>
-                  </div>
-                </div>
-                 <div className="rounded-lg border bg-muted/40 p-4 flex items-center gap-3">
-                    <ServerIcon className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">Server</p>
-                        <p className="text-lg font-semibold">Falcon Trader</p>
-                    </div>
-                 </div>
-              </div>
-              <Button asChild size="lg" className="w-full">
-                <Link href="https://nextrade.club/" target="_blank">
-                  Launch Trading Software
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </>
-          ) : (
-             <div className="space-y-4">
-                <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-center">
-                    <div className="flex items-center justify-center gap-3">
-                        <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
-                        <p className="font-semibold text-yellow-800">Your trading credentials are being set up.</p>
-                    </div>
-                    <p className="text-sm text-yellow-600 mt-2">Now that your KYC is verified, an admin will provide your credentials shortly. Please check back later.</p>
-                </div>
-             </div>
-          )}
-        </CardContent>
-      </Card>
-  );
 }
 
 function KycRejected() {
