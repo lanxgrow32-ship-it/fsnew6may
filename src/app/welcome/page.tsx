@@ -1,7 +1,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
 import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser, Gift, MessageSquare, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
@@ -268,6 +268,11 @@ export default async function WelcomePage() {
                  <CardContent>
                     <p className="text-muted-foreground">Please check back later.</p>
                  </CardContent>
+                 <CardFooter className="flex justify-center">
+                    <form action={signOut}>
+                        <Button variant="outline">Log Out</Button>
+                    </form>
+                 </CardFooter>
             </Card>
         </main>
     )
@@ -286,12 +291,23 @@ export default async function WelcomePage() {
                         Your account has been flagged for a breach of our trading rules. Access to your dashboard and trading credentials has been suspended.
                     </CardDescription>
                 </CardHeader>
-                 <CardContent>
-                    <p className="text-muted-foreground mb-4">Please contact our support team to resolve this issue.</p>
+                 <CardContent className="space-y-4">
+                    {profile.breach_reason && (
+                      <Alert variant="destructive" className="text-left">
+                        <AlertTitle className="font-semibold">Admin Reason:</AlertTitle>
+                        <AlertDescription>{profile.breach_reason}</AlertDescription>
+                      </Alert>
+                    )}
+                    <p className="text-muted-foreground">Please contact our support team to resolve this issue.</p>
                     <Button asChild>
                         <Link href="/tickets">Contact Support</Link>
                     </Button>
                  </CardContent>
+                 <CardFooter className="flex justify-center">
+                    <form action={signOut}>
+                        <Button variant="outline">Log Out</Button>
+                    </form>
+                 </CardFooter>
             </Card>
         </main>
     )

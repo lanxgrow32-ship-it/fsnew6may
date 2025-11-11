@@ -14,6 +14,7 @@ export async function updateProfile(formData: FormData) {
   const credentials_provided = formData.get('credentials_provided') === 'on';
   const kyc_status = formData.get('kyc_status') as string;
   const is_breached = formData.get('is_breached') === 'on';
+  const breach_reason = formData.get('breach_reason') as string;
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
@@ -34,6 +35,7 @@ export async function updateProfile(formData: FormData) {
     is_approved,
     kyc_status,
     is_breached,
+    breach_reason,
   };
 
   if (credentials_provided) {

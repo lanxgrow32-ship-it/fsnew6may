@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { updateProfile } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
 
 type Profile = {
   id: string;
@@ -46,9 +47,10 @@ type Profile = {
   discount_amount: number | null;
   final_amount_paid: number | null;
   is_breached: boolean;
+  breach_reason: string | null;
 };
 
-export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProfilePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
@@ -290,12 +292,24 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="flex items-center justify-between space-x-2 rounded-md border border-destructive/50 bg-destructive/10 p-3">
-                                    <Label htmlFor="is_breached" className="font-semibold text-destructive flex items-center gap-2">
-                                        <ShieldAlert className="h-5 w-5" />
-                                        Account Breached
-                                    </Label>
-                                    <Switch id="is_breached" name="is_breached" defaultChecked={profile.is_breached} />
+                                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 space-y-4">
+                                    <div className="flex items-center justify-between space-x-2">
+                                        <Label htmlFor="is_breached" className="font-semibold text-destructive flex items-center gap-2">
+                                            <ShieldAlert className="h-5 w-5" />
+                                            Account Breached
+                                        </Label>
+                                        <Switch id="is_breached" name="is_breached" defaultChecked={profile.is_breached} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="breach_reason" className="text-destructive">Reason for Breach</Label>
+                                        <Textarea 
+                                            id="breach_reason" 
+                                            name="breach_reason" 
+                                            defaultValue={profile.breach_reason || ''}
+                                            placeholder="Explain why the account was marked as breached..."
+                                            className="bg-background"
+                                        />
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
