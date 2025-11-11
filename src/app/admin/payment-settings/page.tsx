@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect, useActionState } from 'react';
+import { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +38,9 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     const { toast } = useToast();
     const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
     const [previewUrl, setPreviewUrl] = useState<string | null>(currentSettings?.qr_code_url || null);
+    const [commission, setCommission] = useState(currentSettings?.referral_commission_percentage ?? 10);
+    const formRef = useRef<HTMLFormElement>(null);
+
 
     useEffect(() => {
         if (state.error) {
@@ -48,15 +51,34 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
         }
     }, [state, toast]);
 
+    useEffect(() => {
+        // This ensures the form's value updates if the parent's data re-fetches successfully.
+        if (currentSettings) {
+            setCommission(currentSettings.referral_commission_percentage);
+            setPreviewUrl(currentSettings.qr_code_url);
+        }
+    }, [currentSettings]);
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             setPreviewUrl(URL.createObjectURL(file));
         }
     }
+    
+    // Wrapper for form action to reset file input state
+    const handleFormAction = (formData: FormData) => {
+        formAction(formData);
+        // We optimistically assume success. If it fails, the user might have to re-select the file.
+        // A more complex setup would be needed to retain file state upon server action failure.
+        const fileInput = formRef.current?.querySelector('input[type="file"]') as HTMLInputElement;
+        if (fileInput) {
+            fileInput.value = ""; // Clear file input
+        }
+    }
 
     return (
-        <form action={formAction}>
+        <form ref={formRef} action={handleFormAction}>
             <div className="space-y-8">
                 <Card>
                     <CardHeader>
@@ -96,7 +118,8 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                                     id="referral_commission_percentage" 
                                     name="referral_commission_percentage" 
                                     type="number"
-                                    defaultValue={currentSettings?.referral_commission_percentage || 10} 
+                                    value={commission}
+                                    onChange={(e) => setCommission(parseFloat(e.target.value))}
                                     placeholder="e.g. 10" 
                                     required 
                                     min="0"
@@ -138,6 +161,19 @@ export default function PaymentSettingsPage() {
             setIsLoading(false);
         };
         fetchSettings();
+        
+        const channel = supabase
+            .channel('realtime payment_details')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'payment_details', filter: 'id=eq.1' }, 
+            (payload) => {
+                setSettings(payload.new as PaymentDetails);
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+
     }, []);
 
     return (
@@ -230,3 +266,5 @@ export default function PaymentSettingsPage() {
         </SidebarProvider>
     );
 }
+
+    
