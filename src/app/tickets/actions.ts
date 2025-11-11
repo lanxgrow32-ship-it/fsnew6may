@@ -6,6 +6,21 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+
+async function uploadTicketAttachment(file: File, ticketId: number) {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `ticket-${ticketId}-${Date.now()}.${fileExt}`;
+  const { data, error } = await supabaseAdmin.storage.from('ticket-attachments').upload(fileName, file);
+
+  if (error) {
+    console.error('Error uploading ticket attachment:', error);
+    throw new Error('Failed to upload image.');
+  }
+
+  const { data: urlData } = supabaseAdmin.storage.from('ticket-attachments').getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
+
 export async function createTicket(prevState: any, formData: FormData) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -16,22 +31,28 @@ export async function createTicket(prevState: any, formData: FormData) {
 
     const subject = formData.get('subject') as string;
     const description = formData.get('description') as string;
+    const imageFile = formData.get('image') as File | null;
     
     if (!subject || !description) {
         return { error: 'Subject and description are required.' };
     }
     
-    // Use supabaseAdmin to create the ticket, bypassing user-specific RLS for insertion
-    // This ensures the record is owned by the system and visible to admins.
-    // RLS policies for SELECT will still apply, so users only see their own tickets.
+    const insertData: {
+        user_id: string;
+        subject: string;
+        description: string;
+        updated_at: string;
+        image_url?: string;
+    } = {
+        user_id: user.id,
+        subject,
+        description,
+        updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabaseAdmin
         .from('tickets')
-        .insert({
-            user_id: user.id,
-            subject,
-            description,
-            updated_at: new Date().toISOString(), // Set updated_at on creation
-        })
+        .insert(insertData)
         .select()
         .single();
     
@@ -40,18 +61,43 @@ export async function createTicket(prevState: any, formData: FormData) {
         return { error: `Failed to create ticket: ${error.message}` };
     }
 
+    // Now handle image upload if it exists
+    if (imageFile && imageFile.size > 0 && data) {
+        try {
+            const imageUrl = await uploadTicketAttachment(imageFile, data.id);
+            const { error: updateError } = await supabaseAdmin
+                .from('tickets')
+                .update({ image_url: imageUrl })
+                .eq('id', data.id);
+            if (updateError) throw updateError;
+        } catch(uploadError: any) {
+             // If image upload fails, we don't fail the whole ticket creation
+             // but we can log it. A more robust solution might delete the ticket
+             // or mark it as having a failed upload.
+             console.error("Ticket created, but image upload failed:", uploadError.message);
+        }
+    }
+
+
     revalidatePath('/tickets');
     revalidatePath('/admin/tickets');
     redirect(`/tickets/${data.id}`);
 }
 
 
-export async function addReply(ticketId: number, reply: string) {
+export async function addReply(ticketId: number, formData: FormData) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
         return { error: 'You must be logged in.' };
+    }
+
+    const reply = formData.get('reply') as string;
+    const imageFile = formData.get('image') as File | null;
+
+    if (!reply.trim() && !imageFile) {
+        return { error: 'Reply message or image is required.' };
     }
     
     const { data: profile } = await supabase.from('profiles').select('full_name, role').eq('id', user.id).single();
@@ -60,11 +106,21 @@ export async function addReply(ticketId: number, reply: string) {
         return { error: 'Profile not found.' };
     }
 
+    let imageUrl: string | undefined;
+    if (imageFile && imageFile.size > 0) {
+        try {
+            imageUrl = await uploadTicketAttachment(imageFile, ticketId);
+        } catch (uploadError: any) {
+            return { error: uploadError.message };
+        }
+    }
+
     const replyObject = {
         author: profile.full_name,
         author_role: profile.role,
         message: reply,
         created_at: new Date().toISOString(),
+        image_url: imageUrl,
     };
 
     // This custom RPC is necessary because of Supabase's RLS limitations with updating arrays.

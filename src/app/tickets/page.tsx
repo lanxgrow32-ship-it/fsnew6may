@@ -10,7 +10,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, Si
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, MessageSquare, Loader2, PlusCircle } from 'lucide-react';
+import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, MessageSquare, Loader2, PlusCircle, Paperclip } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createTicket } from './actions';
+import Image from 'next/image';
 
 type Ticket = {
     id: number;
@@ -35,6 +36,7 @@ function CreateTicketForm() {
     const ref = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
     const [state, formAction] = useActionState(createTicket, { error: null });
+    const [preview, setPreview] = useState<string | null>(null);
 
     useEffect(() => {
         if (state?.error) {
@@ -45,6 +47,15 @@ function CreateTicketForm() {
             });
         }
     }, [state, toast]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setPreview(URL.createObjectURL(file));
+        } else {
+            setPreview(null);
+        }
+    };
 
     function SubmitButton() {
         const { pending } = useFormStatus();
@@ -79,6 +90,15 @@ function CreateTicketForm() {
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
                             <Textarea id="description" name="description" placeholder="Please describe your issue in detail..." required rows={6}/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="image">Attach Image (optional)</Label>
+                            <Input id="image" name="image" type="file" accept="image/*" onChange={handleFileChange} />
+                            {preview && (
+                                <div className="mt-2">
+                                    <Image src={preview} alt="Attachment preview" width={100} height={100} className="rounded-md object-cover" />
+                                </div>
+                            )}
                         </div>
                     </div>
                     <DialogFooter>

@@ -4,7 +4,28 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
-export async function addAdminReply(ticketId: number, reply: string) {
+async function uploadTicketAttachment(file: File, ticketId: number) {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `ticket-${ticketId}-${Date.now()}.${fileExt}`;
+  const { data, error } = await supabaseAdmin.storage.from('ticket-attachments').upload(fileName, file);
+
+  if (error) {
+    console.error('Error uploading ticket attachment:', error);
+    throw new Error('Failed to upload image.');
+  }
+
+  const { data: urlData } = supabaseAdmin.storage.from('ticket-attachments').getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
+
+export async function addAdminReply(ticketId: number, formData: FormData) {
+    const reply = formData.get('reply') as string;
+    const imageFile = formData.get('image') as File | null;
+
+    if (!reply.trim() && !imageFile) {
+        return { error: 'Reply message or image is required.' };
+    }
+
     // 1. Fetch the current ticket data securely
     const { data: ticket, error: fetchError } = await supabaseAdmin
         .from('tickets')
@@ -17,12 +38,22 @@ export async function addAdminReply(ticketId: number, reply: string) {
         return { error: 'Failed to find the ticket to reply to.' };
     }
 
+    let imageUrl: string | undefined;
+    if (imageFile && imageFile.size > 0) {
+        try {
+            imageUrl = await uploadTicketAttachment(imageFile, ticketId);
+        } catch (uploadError: any) {
+            return { error: uploadError.message };
+        }
+    }
+
     // 2. Prepare the new reply object
     const replyObject = {
         author: 'Admin',
         author_role: 'admin' as const,
         message: reply,
         created_at: new Date().toISOString(),
+        image_url: imageUrl,
     };
 
     // 3. Append the new reply to the existing array
