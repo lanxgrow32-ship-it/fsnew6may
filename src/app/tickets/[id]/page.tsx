@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,7 @@ type Ticket = {
   replies: Reply[];
 };
 
-export default function TicketDetailsPage({ params }: { params: { id: string } }) {
+export default function TicketDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
@@ -42,7 +42,7 @@ export default function TicketDetailsPage({ params }: { params: { id: string } }
   const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState('');
 
-  const id = params.id;
+  const { id } = use(params);
 
   const fetchTicket = async () => {
     const { data, error } = await supabase

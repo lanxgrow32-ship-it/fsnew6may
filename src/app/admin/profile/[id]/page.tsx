@@ -323,5 +323,3 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     </div>
   );
 }
-
-    
