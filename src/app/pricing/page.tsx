@@ -83,7 +83,7 @@ export default function PricingPage() {
               <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-2xl mx-auto h-auto p-1.5 bg-muted/50 border-border">
                   <div className="relative">
                      <TabsTrigger value="instant" className="py-2 text-base w-full">Instant Funding</TabsTrigger>
-                     <Badge variant="destructive" className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-1 text-xs font-bold whitespace-nowrap">
+                     <Badge variant="destructive" className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-1 text-xs font-bold whitespace-nowrap">
                         🔥 Most Demanded 🔥
                      </Badge>
                   </div>
