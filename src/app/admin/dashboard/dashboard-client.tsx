@@ -206,7 +206,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
         <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
             <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
                 <FundedStockLogo className="w-8 h-8 text-primary" />
-                <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
+                <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock</span>
             </Link>
         </SidebarHeader>
         <SidebarContent>

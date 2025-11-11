@@ -24,7 +24,7 @@ export default async function HomePage() {
         <div className="flex flex-col items-center justify-center space-y-6 text-center">
           <FundedStockLogo className="h-12 w-12 text-primary" />
           <div className="text-center">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome to FundedStock 2.0</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome to FundedStock</h1>
               <p className="mt-2 text-muted-foreground">Your trading account management solution.</p>
           </div>
           <div className="flex flex-col gap-4 w-full max-w-xs">
