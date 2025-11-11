@@ -297,6 +297,7 @@ function SignupForm() {
 
                     <div className="space-y-2">
                         <Label htmlFor="referral_code">Referral Code (Optional)</Label>
+                        <p className="text-xs text-muted-foreground">Use a referral code to get an additional 5% discount!</p>
                         <div className="relative">
                             <Input 
                                 id="referral_code" 
