@@ -31,14 +31,17 @@ function SignupForm() {
 
   const [couponCode, setCouponCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
-  const [finalPrice, setFinalPrice] = useState(price ? parseFloat(price.replace(/,/g, '')) : 0);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [discountAmount, setDiscountAmount] = useState(0);
   
   const [referralCode, setReferralCode] = useState('');
   const [debouncedReferralCode] = useDebounce(referralCode, 500);
   const [referralState, setReferralState] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
+  const [isReferralDiscountApplied, setIsReferralDiscountApplied] = useState(false);
+  
+  const [finalPrice, setFinalPrice] = useState(price ? parseFloat(price.replace(/,/g, '')) : 0);
+  const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
+  const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
 
 
   const [paymentDetails, setPaymentDetails] = useState<{ upi_id: string; qr_code_url: string; } | null>(null);
@@ -65,11 +68,21 @@ function SignupForm() {
 
 
   useEffect(() => {
-     const discountValue = (originalPrice * discountPercent) / 100;
-     const newFinalPrice = originalPrice - discountValue;
-     setDiscountAmount(discountValue);
-     setFinalPrice(newFinalPrice > 0 ? newFinalPrice : 0);
-  }, [price, discountPercent, originalPrice]);
+    const couponDiscount = (originalPrice * discountPercent) / 100;
+    
+    // Calculate price after coupon
+    const priceAfterCoupon = originalPrice - couponDiscount;
+
+    // Calculate referral discount (5% of price *after* coupon)
+    const referralDiscount = isReferralDiscountApplied ? priceAfterCoupon * 0.05 : 0;
+    
+    const newFinalPrice = priceAfterCoupon - referralDiscount;
+
+    setCouponDiscountAmount(couponDiscount);
+    setReferralDiscountAmount(referralDiscount);
+    setFinalPrice(newFinalPrice > 0 ? newFinalPrice : 0);
+
+  }, [price, discountPercent, originalPrice, isReferralDiscountApplied]);
 
    useEffect(() => {
     if (debouncedReferralCode) {
@@ -77,14 +90,18 @@ function SignupForm() {
       validateReferralCode(debouncedReferralCode).then(result => {
         if (result.success) {
           setReferralState('valid');
+          setIsReferralDiscountApplied(true);
+          toast({ title: 'Referral code applied!', description: 'You received an additional 5% discount.'});
         } else {
           setReferralState('invalid');
+          setIsReferralDiscountApplied(false);
         }
       });
     } else {
       setReferralState('idle');
+      setIsReferralDiscountApplied(false);
     }
-  }, [debouncedReferralCode]);
+  }, [debouncedReferralCode, toast]);
 
 
     const handleDownload = async () => {
@@ -142,7 +159,9 @@ function SignupForm() {
     formData.append('plan_purchased', plan || '');
     formData.append('plan_price', String(originalPrice));
     formData.append('coupon_code', discountPercent > 0 ? couponCode : '');
-    formData.append('discount_amount', String(discountAmount));
+    // The total discount amount is now coupon + referral
+    const totalDiscount = couponDiscountAmount + referralDiscountAmount;
+    formData.append('discount_amount', String(totalDiscount));
     formData.append('final_amount_paid', String(finalPrice));
     
     const result = await signup(formData);
@@ -232,10 +251,16 @@ function SignupForm() {
                         <p className="text-muted-foreground">Plan Price:</p>
                         <p>₹{originalPrice.toFixed(2)}</p>
                     </div>
-                    {discountAmount > 0 && (
+                    {couponDiscountAmount > 0 && (
                         <div className="flex justify-between items-center text-sm text-green-600">
-                        <p className="text-muted-foreground">Coupon "{couponCode}":</p>
-                        <p>- ₹{discountAmount.toFixed(2)}</p>
+                            <p className="text-muted-foreground">Coupon "{couponCode}":</p>
+                            <p>- ₹{couponDiscountAmount.toFixed(2)}</p>
+                        </div>
+                    )}
+                    {referralDiscountAmount > 0 && (
+                         <div className="flex justify-between items-center text-sm text-green-600">
+                            <p className="text-muted-foreground">Referral Discount (5%):</p>
+                            <p>- ₹{referralDiscountAmount.toFixed(2)}</p>
                         </div>
                     )}
                     <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
