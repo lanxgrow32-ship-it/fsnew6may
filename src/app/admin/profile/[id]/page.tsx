@@ -16,6 +16,7 @@ import { updateProfile } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
+import Image from 'next/image';
 
 type Profile = {
   id: string;
@@ -48,6 +49,7 @@ type Profile = {
   final_amount_paid: number | null;
   is_breached: boolean;
   breach_reason: string | null;
+  breach_image_url: string | null;
 };
 
 export default function ProfilePage({ params }: { params: { id: string } }) {
@@ -309,6 +311,16 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                             placeholder="Explain why the account was marked as breached..."
                                             className="bg-background"
                                         />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="breach_image" className="text-destructive">Breach Proof Image</Label>
+                                        <Input id="breach_image" name="breach_image" type="file" accept="image/*" className="bg-background" />
+                                        {profile.breach_image_url && (
+                                            <div className="mt-2">
+                                                <p className="text-xs text-destructive mb-1">Current Image:</p>
+                                                <Image src={profile.breach_image_url} alt="Breach proof" width={100} height={100} className="rounded-md border" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>

@@ -13,6 +13,7 @@ import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CredentialsView } from './credentials-view';
+import Image from 'next/image';
 
 
 function OnboardingGuide({ profile }: { profile: any }) {
@@ -237,6 +238,12 @@ export default async function WelcomePage() {
                     </CardDescription>
                 </CardHeader>
                  <CardContent className="space-y-4">
+                    {profile.breach_image_url && (
+                         <div className="mt-2 flex flex-col items-center">
+                            <p className="text-sm font-semibold text-destructive mb-2">Breach Evidence:</p>
+                            <Image src={profile.breach_image_url} alt="Proof of account breach" width={400} height={300} className="rounded-md border" />
+                        </div>
+                    )}
                     {profile.breach_reason && (
                       <Alert variant="destructive" className="text-left">
                         <AlertTitle className="font-semibold">Reason:</AlertTitle>

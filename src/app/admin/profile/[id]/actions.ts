@@ -4,6 +4,24 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
+async function uploadBreachProof(file: File, userId: string) {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `breach-proof-${userId}-${Date.now()}.${fileExt}`;
+  const { data, error } = await supabaseAdmin.storage.from('breach-proofs').upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
+  });
+
+  if (error) {
+    console.error('Error uploading breach proof:', error);
+    throw new Error('Failed to upload breach proof image.');
+  }
+
+  const { data: urlData } = supabaseAdmin.storage.from('breach-proofs').getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
+
+
 export async function updateProfile(formData: FormData) {
   const id = formData.get('id') as string;
   const fullName = formData.get('full_name') as string;
@@ -15,6 +33,7 @@ export async function updateProfile(formData: FormData) {
   const kyc_status = formData.get('kyc_status') as string;
   const is_breached = formData.get('is_breached') === 'on';
   const breach_reason = formData.get('breach_reason') as string;
+  const breach_image = formData.get('breach_image') as File;
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
@@ -49,6 +68,15 @@ export async function updateProfile(formData: FormData) {
   if (credentials_provided && (!trading_username || !trading_password)) {
     return { error: "Trading username and password are required when 'Credentials Provided' is on." };
   }
+  
+  try {
+      if (breach_image && breach_image.size > 0) {
+        updateData.breach_image_url = await uploadBreachProof(breach_image, id);
+      }
+  } catch (uploadError: any) {
+      return { error: uploadError.message };
+  }
+
 
   const { error } = await supabaseAdmin
     .from('profiles')
