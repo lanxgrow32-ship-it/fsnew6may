@@ -33,10 +33,10 @@ const twoStepPlans = [
     { size: '50,00_000', title: '50L 2-Step', price: '35,999' },
 ];
 
-const PlanCard = ({ size, title, price }: { size: string; title: string; price: string }) => (
+const PlanCard = ({ size, title, price, isPopular }: { size: string; title: string; price: string, isPopular?: boolean }) => (
   <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border">
     <CardHeader className="pb-4">
-      <CardDescription className="text-primary text-sm font-semibold">POPULAR</CardDescription>
+      {isPopular && <CardDescription className="text-primary text-sm font-semibold">🔥 MOST DEMANDED 🔥</CardDescription>}
       <CardTitle className="text-3xl font-bold">₹{size}</CardTitle>
       <p className="text-base text-muted-foreground">{title}</p>
     </CardHeader>
@@ -81,10 +81,7 @@ export default function PricingPage() {
 
           <Tabs defaultValue="instant" className="w-full max-w-6xl mx-auto">
               <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-2xl mx-auto h-auto p-1.5 bg-muted/50 border-border">
-                  <TabsTrigger value="instant" className="py-2 text-base flex items-center gap-2">
-                    Instant Funding
-                    <Badge variant="destructive" className="bg-orange-500 text-white animate-pulse">🔥 Most Demanded 🔥</Badge>
-                  </TabsTrigger>
+                  <TabsTrigger value="instant" className="py-2 text-base">Instant Funding</TabsTrigger>
                   <TabsTrigger value="1-step" className="py-2 text-base">1-Step Evaluation</TabsTrigger>
                   <TabsTrigger value="2-step" className="py-2 text-base">2-Step Evaluation</TabsTrigger>
               </TabsList>
@@ -99,7 +96,7 @@ export default function PricingPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {instantFundingPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} />
+                      <PlanCard key={plan.title} {...plan} isPopular={true} />
                       ))}
                   </div>
               </TabsContent>
