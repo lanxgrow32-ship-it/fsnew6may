@@ -298,10 +298,15 @@ export default async function WelcomePage() {
                         <AlertDescription>{profile.breach_reason}</AlertDescription>
                       </Alert>
                     )}
-                    <p className="text-muted-foreground">Please contact our support team to resolve this issue.</p>
-                    <Button asChild>
-                        <Link href="/tickets">Contact Support</Link>
-                    </Button>
+                    <p className="text-muted-foreground">Please contact our support team or purchase a new account to continue.</p>
+                    <div className="flex justify-center gap-4">
+                        <Button asChild>
+                            <Link href="/tickets">Contact Support</Link>
+                        </Button>
+                        <Button asChild variant="secondary">
+                            <Link href="/pricing">Purchase New Account</Link>
+                        </Button>
+                    </div>
                  </CardContent>
                  <CardFooter className="flex justify-center">
                     <form action={signOut}>
