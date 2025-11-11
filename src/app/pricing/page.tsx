@@ -36,8 +36,8 @@ const twoStepPlans = [
 const PlanCard = ({ size, title, price, isPopular }: { size: string; title: string; price: string, isPopular?: boolean }) => (
   <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border">
     <CardHeader className="pb-4">
-      {isPopular && <CardDescription className="text-primary text-sm font-semibold">🔥 MOST DEMANDED 🔥</CardDescription>}
-      <CardTitle className="text-3xl font-bold">₹{size}</CardTitle>
+      {isPopular && <Badge variant="destructive">🔥 POPULAR</Badge>}
+      <CardTitle className="text-3xl font-bold pt-2">₹{size}</CardTitle>
       <p className="text-base text-muted-foreground">{title}</p>
     </CardHeader>
     <CardContent className="flex flex-col flex-grow justify-between space-y-6">
@@ -81,7 +81,12 @@ export default function PricingPage() {
 
           <Tabs defaultValue="instant" className="w-full max-w-6xl mx-auto">
               <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-2xl mx-auto h-auto p-1.5 bg-muted/50 border-border">
-                  <TabsTrigger value="instant" className="py-2 text-base">Instant Funding</TabsTrigger>
+                  <div className="relative">
+                     <TabsTrigger value="instant" className="py-2 text-base w-full">Instant Funding</TabsTrigger>
+                     <Badge variant="destructive" className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-1 text-xs font-bold whitespace-nowrap">
+                        🔥 Most Demanded 🔥
+                     </Badge>
+                  </div>
                   <TabsTrigger value="1-step" className="py-2 text-base">1-Step Evaluation</TabsTrigger>
                   <TabsTrigger value="2-step" className="py-2 text-base">2-Step Evaluation</TabsTrigger>
               </TabsList>
@@ -96,7 +101,7 @@ export default function PricingPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {instantFundingPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} isPopular={true} />
+                      <PlanCard key={plan.title} {...plan} />
                       ))}
                   </div>
               </TabsContent>
