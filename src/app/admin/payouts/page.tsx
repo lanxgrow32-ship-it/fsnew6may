@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, Loader2, Check, X, Copy } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, Loader2, Check, X, Copy, MessageSquare } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -274,6 +274,12 @@ export default function PayoutsPage() {
                             <SidebarMenuButton href="/admin/payouts" isActive tooltip="Payouts">
                                 <Banknote />
                                 Payouts
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                         <SidebarMenuItem>
+                            <SidebarMenuButton href="/admin/tickets" tooltip="Support">
+                                <MessageSquare />
+                                Support
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>

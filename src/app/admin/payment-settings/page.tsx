@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare } from 'lucide-react';
 import { signOut } from '@/app/actions';
 
 type PaymentDetails = {
@@ -119,7 +119,7 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                                     name="referral_commission_percentage" 
                                     type="number"
                                     value={commission}
-                                    onChange={(e) => setCommission(parseFloat(e.target.value))}
+                                    onChange={(e) => setCommission(parseFloat(e.target.value) || 0)}
                                     placeholder="e.g. 10" 
                                     required 
                                     min="0"
@@ -174,7 +174,7 @@ export default function PaymentSettingsPage() {
             supabase.removeChannel(channel);
         };
 
-    }, []);
+    }, [supabase]);
 
     return (
         <SidebarProvider>
@@ -203,6 +203,12 @@ export default function PaymentSettingsPage() {
                             <SidebarMenuButton href="/admin/payouts" tooltip="Payouts">
                                 <Banknote />
                                 Payouts
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                         <SidebarMenuItem>
+                            <SidebarMenuButton href="/admin/tickets" tooltip="Support">
+                                <MessageSquare />
+                                Support
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
@@ -266,5 +272,3 @@ export default function PaymentSettingsPage() {
         </SidebarProvider>
     );
 }
-
-    

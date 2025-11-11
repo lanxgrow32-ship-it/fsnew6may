@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, Loader2, Copy, Check, Users, Banknote, History, Wallet } from 'lucide-react';
+import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, Loader2, Copy, Check, Users, Banknote, History, Wallet, MessageSquare } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -335,6 +335,12 @@ export default function ReferralsPage() {
                             <SidebarMenuButton href="/referrals" isActive tooltip="Referrals">
                                 <Gift />
                                 Referrals
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/tickets" tooltip="Support">
+                                <MessageSquare />
+                                Support
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>

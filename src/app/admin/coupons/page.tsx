@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { createCoupon, deleteCoupon } from './actions';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Home, Ticket, Wallet, LogOut, Banknote } from 'lucide-react';
+import { Loader2, Trash2, Home, Ticket, Wallet, LogOut, Banknote, MessageSquare } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -277,6 +277,12 @@ export default function CouponsPage() {
                             Payouts
                         </SidebarMenuButton>
                     </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton href="/admin/tickets" tooltip="Support">
+                            <MessageSquare />
+                            Support
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings">
                             <Wallet />
@@ -327,5 +333,3 @@ export default function CouponsPage() {
         </SidebarProvider>
     );
 }
-
-    
