@@ -32,7 +32,7 @@ type PayoutRequest = {
         full_name: string;
         email: string;
         payout_qr_code_url: string | null;
-    }
+    } | null;
 };
 
 function PayoutActions({ request, onStatusChange }: { request: PayoutRequest, onStatusChange: (id: number, status: 'completed' | 'rejected' | 'pending') => void }) {
@@ -101,6 +101,7 @@ function PayoutsTable({ requests, onStatusChange }: { requests: PayoutRequest[],
     const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {
+        if (!text) return;
         navigator.clipboard.writeText(text);
         toast({ title: 'UPI ID copied to clipboard' });
     }
@@ -122,8 +123,8 @@ function PayoutsTable({ requests, onStatusChange }: { requests: PayoutRequest[],
                     <TableRow key={req.id}>
                         <TableCell>{new Date(req.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
-                            <div className="font-medium">{req.profiles.full_name}</div>
-                            <div className="text-muted-foreground text-sm">{req.profiles.email}</div>
+                            <div className="font-medium">{req.profiles?.full_name}</div>
+                            <div className="text-muted-foreground text-sm">{req.profiles?.email}</div>
                         </TableCell>
                         <TableCell className="font-bold">₹{req.amount.toFixed(2)}</TableCell>
                         <TableCell>
@@ -135,7 +136,7 @@ function PayoutsTable({ requests, onStatusChange }: { requests: PayoutRequest[],
                             </div>
                         </TableCell>
                         <TableCell>
-                            {req.profiles.payout_qr_code_url ? (
+                            {req.profiles?.payout_qr_code_url ? (
                                  <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="outline" size="sm">View QR</Button>
@@ -171,9 +172,13 @@ export default function PayoutsPage() {
         setIsLoading(true);
         const { data, error } = await supabase
             .from('payout_requests')
-            .select('*, profiles(full_name, email, payout_qr_code_url)')
+            .select('*, profiles:user_id(full_name, email, payout_qr_code_url)')
             .order('created_at', { ascending: false });
         
+        if (error) {
+            console.error(error);
+        }
+
         if (data) {
             setRequests(data as PayoutRequest[]);
         }

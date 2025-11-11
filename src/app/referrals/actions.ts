@@ -124,5 +124,6 @@ export async function requestPayout(amount: number) {
     }
     
     revalidatePath('/referrals');
+    revalidatePath('/admin/payouts');
     return { success: true };
 }
