@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
@@ -80,7 +81,10 @@ export default function PricingPage() {
 
           <Tabs defaultValue="instant" className="w-full max-w-6xl mx-auto">
               <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-2xl mx-auto h-auto p-1.5 bg-muted/50 border-border">
-                  <TabsTrigger value="instant" className="py-2 text-base">Instant Funding</TabsTrigger>
+                  <TabsTrigger value="instant" className="py-2 text-base flex items-center gap-2">
+                    Instant Funding
+                    <Badge variant="destructive" className="bg-orange-500 text-white animate-pulse">🔥 Most Demanded 🔥</Badge>
+                  </TabsTrigger>
                   <TabsTrigger value="1-step" className="py-2 text-base">1-Step Evaluation</TabsTrigger>
                   <TabsTrigger value="2-step" className="py-2 text-base">2-Step Evaluation</TabsTrigger>
               </TabsList>
