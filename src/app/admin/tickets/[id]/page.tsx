@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, Send, Check, X, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addReply, updateTicketStatus } from '../actions';
+import { addAdminReply, updateTicketStatus } from '../actions';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,7 +36,7 @@ type Ticket = {
   } | null;
 };
 
-export default function AdminTicketDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AdminTicketDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
@@ -82,7 +82,7 @@ export default function AdminTicketDetailsPage({ params }: { params: Promise<{ i
     if (!reply.trim()) return;
 
     setIsLoading(true);
-    const result = await addReply(ticket!.id, reply);
+    const result = await addAdminReply(ticket!.id, reply);
     if (result.error) {
       toast({ title: 'Error', description: result.error, variant: 'destructive' });
     } else {

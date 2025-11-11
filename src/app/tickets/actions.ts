@@ -2,6 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -26,6 +27,7 @@ export async function createTicket(prevState: any, formData: FormData) {
             user_id: user.id,
             subject,
             description,
+            updated_at: new Date().toISOString(), // Set updated_at on creation
         })
         .select()
         .single();
@@ -36,6 +38,7 @@ export async function createTicket(prevState: any, formData: FormData) {
     }
 
     revalidatePath('/tickets');
+    revalidatePath('/admin/tickets');
     redirect(`/tickets/${data.id}`);
 }
 
@@ -62,7 +65,8 @@ export async function addReply(ticketId: number, reply: string) {
     };
 
     // This custom RPC is necessary because of Supabase's RLS limitations with updating arrays.
-    const { error } = await supabase.rpc('append_to_jsonb_array', {
+    // It is defined in the initial SQL script.
+    const { error } = await supabaseAdmin.rpc('append_to_jsonb_array', {
         table_name: 'tickets',
         column_name: 'replies',
         row_id: ticketId,
@@ -75,10 +79,11 @@ export async function addReply(ticketId: number, reply: string) {
     }
     
     // Also update the `updated_at` timestamp
-    await supabase.from('tickets').update({ updated_at: new Date().toISOString() }).eq('id', ticketId);
+    await supabaseAdmin.from('tickets').update({ updated_at: new Date().toISOString() }).eq('id', ticketId);
 
 
     revalidatePath(`/tickets/${ticketId}`);
     revalidatePath(`/admin/tickets/${ticketId}`);
+    revalidatePath('/admin/tickets');
     return { success: true };
 }
