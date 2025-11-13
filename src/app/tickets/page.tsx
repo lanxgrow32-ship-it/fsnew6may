@@ -10,7 +10,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, Si
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, MessageSquare, Loader2, PlusCircle, Paperclip } from 'lucide-react';
+import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, MessageSquare, Loader2, PlusCircle, Paperclip, BrainCircuit } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -231,6 +231,12 @@ export default function UserTicketsPage() {
                             <SidebarMenuButton href="/tickets" isActive tooltip="Support">
                                 <MessageSquare />
                                 Support
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/mentor" tooltip="AI Mentor">
+                                <BrainCircuit />
+                                AI Mentor
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>

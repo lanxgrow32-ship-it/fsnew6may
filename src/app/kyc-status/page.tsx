@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, CheckCircle, Loader2, XCircle, BookUser, Gift, MessageSquare } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, CheckCircle, Loader2, XCircle, BookUser, Gift, MessageSquare, BrainCircuit } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { FundedStockLogo } from '@/components/ui/logo';
@@ -138,6 +138,12 @@ export default async function KycStatusPage() {
                             <SidebarMenuButton href="/tickets" tooltip="Support">
                                 <MessageSquare />
                                 Support
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/mentor" tooltip="AI Mentor">
+                                <BrainCircuit />
+                                AI Mentor
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
