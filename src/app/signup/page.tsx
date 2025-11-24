@@ -320,7 +320,7 @@ function SignupForm() {
                     <div className="flex items-start space-x-2">
                         <Checkbox id="terms" onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} />
                         <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground">
-                            When you register and create an account you acknowledge that you have read and accepted our <Link href="/rules/instant-funding" target="_blank" className="underline hover:text-primary">terms and conditions</Link> and <Link href="#" target="_blank" className="underline hover:text-primary">privacy policy</Link>.
+                            When you register and create an account you acknowledge that you have read and accepted our <Link href="https://www.fundedstock.io/terms-and-conditions" target="_blank" className="underline hover:text-primary">terms and conditions</Link> and <Link href="https://www.fundedstock.io/privacy-policy" target="_blank" className="underline hover:text-primary">privacy policy</Link>.
                         </Label>
                     </div>
 
