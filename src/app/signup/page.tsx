@@ -16,6 +16,7 @@ import { signup, validateCoupon, validateReferralCode } from './actions';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDebounce } from 'use-debounce';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 function SignupForm() {
@@ -25,6 +26,7 @@ function SignupForm() {
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const plan = searchParams.get('plan');
   const price = searchParams.get('price');
@@ -315,7 +317,15 @@ function SignupForm() {
                         {referralState === 'invalid' && <p className="text-sm text-destructive mt-1">This referral code is not valid.</p>}
                     </div>
 
-                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                    <div className="flex items-start space-x-2">
+                        <Checkbox id="terms" onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} />
+                        <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground">
+                            When you register and create an account you acknowledge that you have read and accepted our <Link href="/rules/instant-funding" target="_blank" className="underline hover:text-primary">terms and conditions</Link> and <Link href="#" target="_blank" className="underline hover:text-primary">privacy policy</Link>.
+                        </Label>
+                    </div>
+
+
+                    <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit for Approval
                     </Button>
