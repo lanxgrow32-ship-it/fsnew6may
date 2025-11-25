@@ -272,7 +272,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
            </div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
-            <CreateAdminForm className="w-full md:hidden mb-6" />
+            
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
                 {stats.map(stat => (
                     <Card key={stat.title} className="shadow-sm">
@@ -286,6 +286,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
                     </Card>
                 ))}
             </div>
+             <CreateAdminForm className="w-full md:hidden mb-6" />
             <ClientOnly fallback={<UserTableSkeleton />}>
                 <UserTable 
                     profiles={profiles || []} 

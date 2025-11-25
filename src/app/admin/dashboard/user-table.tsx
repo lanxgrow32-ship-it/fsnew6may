@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, MoreHorizontal, X } from 'lucide-react';
+import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteUser } from './actions';
@@ -27,6 +27,7 @@ type Profile = {
     kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected';
     credentials_provided: boolean;
     role: string;
+    is_breached: boolean;
 };
 
 interface UserTableProps {
@@ -75,6 +76,22 @@ function DeleteUserDialog({ profile, onUserDelete, onUserDeleteError, children }
   );
 }
 
+function StatusBadge({ profile }: { profile: Profile }) {
+    if (profile.is_breached) {
+        return (
+            <Badge variant="destructive" className="flex items-center gap-1">
+                <ShieldAlert className="h-3 w-3" />
+                Breached
+            </Badge>
+        );
+    }
+    
+    return (
+        <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+            {profile.is_approved ? 'Approved' : 'Pending'}
+        </Badge>
+    );
+}
 
 function UserMobileCard({ profile, onUserDelete, onUserDeleteError }: { profile: Profile, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void }) {
     return (
@@ -88,9 +105,9 @@ function UserMobileCard({ profile, onUserDelete, onUserDeleteError }: { profile:
                         </div>
                         <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
                     </div>
-                    <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={`${profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} self-start`}>
-                        {profile.is_approved ? 'Approved' : 'Pending'}
-                    </Badge>
+                    <div className="self-start">
+                        <StatusBadge profile={profile} />
+                    </div>
                  </div>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
@@ -154,6 +171,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
         is_approved: '',
         kyc_status: '',
         credentials_provided: '',
+        is_breached: '',
     });
 
     const filteredProfiles = useMemo(() => {
@@ -168,8 +186,9 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
             const matchesApproved = filters.is_approved ? String(profile.is_approved) === filters.is_approved : true;
             const matchesKyc = filters.kyc_status ? profile.kyc_status === filters.kyc_status : true;
             const matchesCredentials = filters.credentials_provided ? String(profile.credentials_provided) === filters.credentials_provided : true;
+            const matchesBreached = filters.is_breached ? String(profile.is_breached) === filters.is_breached : true;
             
-            return matchesSearch && matchesApproved && matchesKyc && matchesCredentials;
+            return matchesSearch && matchesApproved && matchesKyc && matchesCredentials && matchesBreached;
         });
     }, [searchTerm, profiles, filters]);
     
@@ -183,6 +202,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
             is_approved: '',
             kyc_status: '',
             credentials_provided: '',
+            is_breached: '',
         });
     }
 
@@ -238,6 +258,15 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                     <SelectItem value="false">Not Provided</SelectItem>
                                 </SelectContent>
                             </Select>
+                             <Select value={filters.is_breached} onValueChange={(value) => handleFilterChange('is_breached', value)}>
+                                <SelectTrigger className="w-full sm:w-auto flex-grow">
+                                    <SelectValue placeholder="Account Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="true">Breached</SelectItem>
+                                    <SelectItem value="false">Active</SelectItem>
+                                </SelectContent>
+                            </Select>
                             {isAnyFilterActive && (
                                 <Button variant="ghost" onClick={clearFilters}>
                                     <X className="mr-2 h-4 w-4"/>
@@ -281,9 +310,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                                 <TableCell className="font-medium">{profile.full_name}</TableCell>
                                                 <TableCell>{profile.email}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                                                        {profile.is_approved ? 'Approved' : 'Pending'}
-                                                    </Badge>
+                                                    <StatusBadge profile={profile} />
                                                 </TableCell>
                                                 <TableCell>{profile.plan_purchased || 'N/A'}</TableCell>
                                                 <TableCell>
