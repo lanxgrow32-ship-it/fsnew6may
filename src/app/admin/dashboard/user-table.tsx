@@ -234,8 +234,8 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                     <SelectValue placeholder="Credentials" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="true">Provided</TesseractOcrEngine>
-                                    <SelectItem value="false">Not Provided</TesseractOcrEngine>
+                                    <SelectItem value="true">Provided</SelectItem>
+                                    <SelectItem value="false">Not Provided</SelectItem>
                                 </SelectContent>
                             </Select>
                             {isAnyFilterActive && (
