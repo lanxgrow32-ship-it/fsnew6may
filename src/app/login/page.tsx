@@ -63,17 +63,17 @@ export default function LoginPage() {
 
   return (
     <div className="dark-theme">
-        <nav className="absolute top-4 left-4 z-10">
-            <Button asChild variant="outline" size="sm" className="border-border/50 text-foreground/80 hover:bg-accent/50 hover:text-foreground">
-            <Link href="https://www.fundedstock.io/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Main Site
-            </Link>
-            </Button>
-        </nav>
-      <main className="flex min-h-screen items-center justify-center p-4 bg-background">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
         <ClientOnly>
         <div className="w-full max-w-md space-y-6">
+          <div className="flex justify-center">
+            <Button asChild variant="outline" size="sm" className="border-border/50 text-foreground/80 hover:bg-accent/50 hover:text-foreground">
+              <Link href="https://www.fundedstock.io/">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Main Site
+              </Link>
+            </Button>
+          </div>
           <div className="flex flex-col items-center justify-center text-center">
               <FundedStockLogo className="h-10 w-10 text-primary" />
               <h1 className="text-2xl font-bold mt-4 text-primary">Welcome Back</h1>
