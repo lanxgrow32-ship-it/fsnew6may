@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { ClientOnly } from '@/components/ui/client-only';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +91,13 @@ export default function LoginPage() {
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                   <div className="flex items-start space-x-2 pt-2">
+                        <Checkbox id="terms" onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} />
+                        <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground">
+                           By logging in, you acknowledge you have read and accepted our <Link href="https://www.fundedstock.io/terms-and-conditions" target="_blank" className="underline hover:text-primary">terms and conditions</Link> and <Link href="https://www.fundedstock.io/privacy-policy" target="_blank" className="underline hover:text-primary">privacy policy</Link>.
+                        </Label>
+                    </div>
+                  <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Sign In
                   </Button>
