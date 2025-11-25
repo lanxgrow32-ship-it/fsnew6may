@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2 } from 'lucide-react';
+import { Search, Trash2, Loader2, MoreHorizontal, X } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteUser } from './actions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 type Profile = {
@@ -24,7 +24,8 @@ type Profile = {
     is_approved: boolean;
     plan_purchased: string | null;
     transaction_id: string | null;
-    kyc_status: string;
+    kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected';
+    credentials_provided: boolean;
     role: string;
 };
 
@@ -149,53 +150,120 @@ function ActionsMenu({ profile, onUserDelete, onUserDeleteError }: { profile: Pr
 
 export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [filteredProfiles, setFilteredProfiles] = useState(profiles);
+    const [filters, setFilters] = useState({
+        is_approved: '',
+        kyc_status: '',
+        credentials_provided: '',
+    });
 
-    useEffect(() => {
+    const filteredProfiles = useMemo(() => {
         const lowercasedFilter = searchTerm.toLowerCase();
-        const filteredData = profiles.filter((profile) => {
-            return (
+        
+        return profiles.filter((profile) => {
+            const matchesSearch = (
                 profile.full_name?.toLowerCase().includes(lowercasedFilter) ||
                 profile.email?.toLowerCase().includes(lowercasedFilter)
             );
+
+            const matchesApproved = filters.is_approved ? String(profile.is_approved) === filters.is_approved : true;
+            const matchesKyc = filters.kyc_status ? profile.kyc_status === filters.kyc_status : true;
+            const matchesCredentials = filters.credentials_provided ? String(profile.credentials_provided) === filters.credentials_provided : true;
+            
+            return matchesSearch && matchesApproved && matchesKyc && matchesCredentials;
         });
-        setFilteredProfiles(filteredData);
-    }, [searchTerm, profiles]);
+    }, [searchTerm, profiles, filters]);
+    
+    const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
+        setFilters(prev => ({...prev, [filterName]: value}));
+    }
+    
+    const clearFilters = () => {
+        setSearchTerm('');
+        setFilters({
+            is_approved: '',
+            kyc_status: '',
+            credentials_provided: '',
+        });
+    }
+
+    const isAnyFilterActive = searchTerm || Object.values(filters).some(v => v !== '');
 
     return (
         <Card className="shadow-sm">
-            <CardHeader className="flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
+            <CardHeader>
               <div>
                 <CardTitle>User List</CardTitle>
-                <CardDescription>A list of all users in the system.</CardDescription>
+                <CardDescription>A list of all users in the system. Found {filteredProfiles.length} of {profiles.length} users.</CardDescription>
               </div>
-              <div className="relative w-full max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Filter by name or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                />
-               </div>
             </CardHeader>
             <CardContent>
+                <div className="space-y-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                         <div className="relative w-full md:flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Filter by name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 md:flex gap-2">
+                             <Select value={filters.is_approved} onValueChange={(value) => handleFilterChange('is_approved', value)}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Payment Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="true">Approved</SelectItem>
+                                    <SelectItem value="false">Pending</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={filters.kyc_status} onValueChange={(value) => handleFilterChange('kyc_status', value)}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="KYC Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="submitted">Submitted</SelectItem>
+                                    <SelectItem value="verified">Verified</SelectItem>
+                                    <SelectItem value="rejected">Rejected</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={filters.credentials_provided} onValueChange={(value) => handleFilterChange('credentials_provided', value)}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Credentials" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="true">Provided</TesseractOcrEngine>
+                                    <SelectItem value="false">Not Provided</TesseractOcrEngine>
+                                </SelectContent>
+                            </Select>
+                            {isAnyFilterActive && (
+                                <Button variant="ghost" onClick={clearFilters}>
+                                    <X className="mr-2 h-4 w-4"/>
+                                    Clear
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 <ClientOnly>
                     {/* Mobile View */}
-                    <div className="md:hidden">
+                    <div className="md:hidden mt-4">
                         {filteredProfiles.length > 0 ? filteredProfiles.map((profile) => (
                            <UserMobileCard key={profile.id} profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
                         )) : (
                             <div className="text-center h-24 flex items-center justify-center">
-                                <p>No users found.</p>
+                                <p>No users found matching your filters.</p>
                             </div>
                         )}
                     </div>
 
                     {/* Desktop View */}
-                    <div className="hidden md:block">
+                    <div className="hidden md:block mt-4">
                         <TooltipProvider>
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto rounded-md border">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -241,7 +309,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                         )) : (
                                             <TableRow>
                                                 <TableCell colSpan={6} className="text-center h-24">
-                                                    No users found.
+                                                    No users found matching your filters.
                                                 </TableCell>
                                             </TableRow>
                                         )}
