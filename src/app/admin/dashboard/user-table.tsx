@@ -208,9 +208,9 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                 className="pl-10"
                             />
                         </div>
-                        <div className="grid grid-cols-2 md:flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                              <Select value={filters.is_approved} onValueChange={(value) => handleFilterChange('is_approved', value)}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className="w-full sm:w-auto flex-grow">
                                     <SelectValue placeholder="Payment Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -219,7 +219,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                 </SelectContent>
                             </Select>
                             <Select value={filters.kyc_status} onValueChange={(value) => handleFilterChange('kyc_status', value)}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className="w-full sm:w-auto flex-grow">
                                     <SelectValue placeholder="KYC Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -230,7 +230,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                 </SelectContent>
                             </Select>
                             <Select value={filters.credentials_provided} onValueChange={(value) => handleFilterChange('credentials_provided', value)}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className="w-full sm:w-auto flex-grow">
                                     <SelectValue placeholder="Credentials" />
                                 </SelectTrigger>
                                 <SelectContent>
