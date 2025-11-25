@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Ticket, Download, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Ticket, Download, CheckCircle, XCircle, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signup, validateCoupon, validateReferralCode } from './actions';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -48,6 +48,7 @@ function SignupForm() {
 
   const [paymentDetails, setPaymentDetails] = useState<{ upi_id: string; qr_code_url: string; } | null>(null);
   const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
 
@@ -105,6 +106,14 @@ function SignupForm() {
     }
   }, [debouncedReferralCode, toast]);
 
+    const copyToClipboard = () => {
+        if (paymentDetails?.upi_id) {
+            navigator.clipboard.writeText(paymentDetails.upi_id);
+            setCopied(true);
+            toast({ title: 'UPI ID copied to clipboard!' });
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     const handleDownload = async () => {
         if (!paymentDetails?.qr_code_url) return;
@@ -229,12 +238,20 @@ function SignupForm() {
                       <CardTitle className="text-lg">Payment Details</CardTitle>
                   </CardHeader>
                   <CardContent className="text-center space-y-4">
-                       <p className="font-semibold text-xl">UPI ID: {paymentDetails?.upi_id || 'Not available'}</p>
+                        <div className="space-y-2">
+                           <p className="text-sm text-muted-foreground">UPI ID</p>
+                           <div className="flex w-full items-center justify-center rounded-lg border bg-muted p-3">
+                                <p className="truncate font-semibold text-base">{paymentDetails?.upi_id || 'Not available'}</p>
+                                <Button size="icon" variant="ghost" type="button" onClick={copyToClipboard} className="ml-2 shrink-0">
+                                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                       </div>
                        <p className="text-sm text-muted-foreground">Scan the QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
                        {paymentDetails?.qr_code_url && (
                          <div className="flex flex-col items-center gap-2">
                            <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
-                            <Button variant="ghost" size="sm" onClick={handleDownload}>
+                            <Button variant="ghost" size="sm" type="button" onClick={handleDownload}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Download QR
                             </Button>
