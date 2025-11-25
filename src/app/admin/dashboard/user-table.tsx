@@ -228,7 +228,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                 className="pl-10"
                             />
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
                              <Select value={filters.is_approved} onValueChange={(value) => handleFilterChange('is_approved', value)}>
                                 <SelectTrigger className="w-full sm:w-auto flex-grow">
                                     <SelectValue placeholder="Payment Status" />

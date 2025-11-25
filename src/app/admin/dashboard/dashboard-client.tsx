@@ -286,7 +286,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
                     </Card>
                 ))}
             </div>
-             <CreateAdminForm className="w-full md:hidden mb-6" />
+            <CreateAdminForm className="w-full md:hidden mb-6" />
             <ClientOnly fallback={<UserTableSkeleton />}>
                 <UserTable 
                     profiles={profiles || []} 
@@ -299,5 +299,3 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
     </SidebarProvider>
   );
 }
-
-    
