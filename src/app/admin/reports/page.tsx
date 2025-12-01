@@ -18,7 +18,6 @@ import {
 } from 'recharts';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import html2canvas from 'html2canvas';
 
 
 import { getSalesData, SalesData } from './actions';
@@ -81,6 +80,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
         if (date?.from || date?.to) {
             fetchAndSetData(date.from, date.to);
         } else {
+            // This case handles the "All Time" scenario when dates are cleared
             fetchAndSetData();
         }
     }, [date]);
@@ -95,77 +95,90 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
         }
     }
     
-    const downloadPdfReport = async () => {
+    const downloadPdfReport = () => {
         setIsGeneratingReport(true);
         const doc = new jsPDF('p', 'mm', 'a4');
-        const margin = 15;
-        const pageHeight = doc.internal.pageSize.getHeight();
-        let yPos = margin;
+        let yPos = 20;
 
-        const addTitle = () => {
-            doc.setFontSize(22);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Sales Performance Report', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-            yPos += 10;
-            
-            const dateString = date?.from ? `${format(date.from, 'LLL dd, y')} - ${date.to ? format(date.to, 'LLL dd, y') : 'Present'}` : 'All Time';
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Date Range: ${dateString}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-            yPos += 15;
-        };
+        // 1. Add Title
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Sales Performance Report', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 10;
         
-        addTitle();
+        // 2. Add Date Range
+        const dateString = date?.from ? `${format(date.from, 'LLL dd, y')} - ${date.to ? format(date.to, 'LLL dd, y') : 'Present'}` : 'All Time';
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Date Range: ${dateString}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 15;
 
-        const captureElement = async (id: string, options = {}) => {
-            const element = document.getElementById(id);
-            if (!element) return null;
-            const canvas = await html2canvas(element, { ...options, scale: 2, backgroundColor: null });
-            return canvas.toDataURL('image/png');
+        // 3. Add Summary Cards Data as Text
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Overall Summary', 14, yPos);
+        yPos += 8;
+
+        const summaryData = [
+            `Total Revenue: ${data.totalRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
+            `Today's Revenue: ${data.todayRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
+            `Instant Revenue: ${data.instantRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
+            `1-Step Revenue: ${data.oneStepRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
+            `2-Step Revenue: ${data.twoStepRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
+        ];
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        summaryData.forEach(line => {
+            doc.text(line, 14, yPos);
+            yPos += 7;
+        });
+        yPos += 10;
+
+        // 4. Add Plan Breakdown Tables using jspdf-autotable
+        const addTableToPdf = (title: string, tableData: { [key: string]: number }) => {
+            const body = Object.entries(tableData).map(([name, revenue]) => [
+                name,
+                revenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })
+            ]);
+
+            if (body.length > 0) {
+                 if (yPos > 240) { // Check if there's enough space for the table header + some rows
+                    doc.addPage();
+                    yPos = 20;
+                 }
+                (doc as any).autoTable({
+                    startY: yPos,
+                    head: [['Plan Name', 'Revenue']],
+                    body: body,
+                    theme: 'striped',
+                    headStyles: { fillColor: [22, 163, 74] }, // A green color
+                    didDrawPage: (data: any) => {
+                        yPos = data.cursor.y; // Update yPos after table draws
+                    }
+                });
+                yPos = (doc as any).lastAutoTable.finalY + 10;
+            }
         };
 
-        const addImageToPdf = (imgData: string, width: number, height: number, customY?: number) => {
-            if (customY !== undefined) yPos = customY;
-            if (yPos + height > pageHeight - margin) {
-                doc.addPage();
-                yPos = margin;
-                addTitle(); // Add title to new page
-            }
-            doc.addImage(imgData, 'PNG', margin, yPos, width, height);
-            yPos += height + 10;
-        }
-
-        const statCardsImg = await captureElement('stat-cards-grid');
-        if (statCardsImg) addImageToPdf(statCardsImg, 180, 50);
-
-        const chartsGridImg = await captureElement('charts-grid');
-        if (chartsGridImg) addImageToPdf(chartsGridImg, 180, 80);
-
-        const addTableToPdf = (title: string, data: { [key: string]: number }) => {
-            if (Object.keys(data).length === 0) return;
-            if (yPos + 20 > pageHeight - margin) { // Check space for header
-                doc.addPage();
-                yPos = margin;
-            }
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text(title, margin, yPos);
-            yPos += 8;
-
-            (doc as any).autoTable({
-                startY: yPos,
-                head: [['Plan Name', 'Revenue (INR)']],
-                body: Object.entries(data).map(([name, revenue]) => [name, `₹${revenue.toLocaleString('en-IN')}`]),
-                theme: 'striped',
-                headStyles: { fillColor: [34, 48, 64] }
-            });
-            yPos = (doc as any).lastAutoTable.finalY + 15;
-        };
-
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Instant Funding Plans Breakdown', 14, yPos);
+        yPos += 8;
         addTableToPdf('Instant Funding Plans Breakdown', data.instantPlanBreakdown);
+        
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('1-Step Evaluation Plans Breakdown', 14, yPos);
+        yPos += 8;
         addTableToPdf('1-Step Evaluation Plans Breakdown', data.oneStepPlanBreakdown);
-        addTableToPdf('2-Step Evaluation Plans Breakdown', data.twoStepPlanBreakdown);
 
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('2-Step Evaluation Plans Breakdown', 14, yPos);
+        yPos += 8;
+        addTableToPdf('2-Step Evaluation Plans Breakdown', data.twoStepPlanBreakdown);
+        
         doc.save('Sales_Report.pdf');
         setIsGeneratingReport(false);
     };
@@ -289,7 +302,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
 
             {isLoading ? <DashboardSkeleton /> : (
                 <>
-                    <div id="stat-cards-grid" className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                         <StatCard title="Total Revenue" value={data.totalRevenue} description={date?.from && date?.to ? `From ${format(date.from, "LLL dd")} to ${format(date.to, "LLL dd")}` : 'All time revenue'} className="lg:col-span-2"/>
                         <StatCard title="Today's Revenue" value={data.todayRevenue} />
                         <StatCard title="1-Step Revenue" value={data.oneStepRevenue} />
@@ -316,7 +329,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                                             axisLine={false} 
                                             tickMargin={8} 
                                             tickFormatter={(value) => format(new Date(value), "MMM d")}
-                                            interval={isMobile ? Math.floor(data.salesByDate.length / 4) : undefined}
+                                            interval={isMobile ? Math.floor(data.salesByDate.length / 4) : 'preserveStartEnd'}
                                         />
                                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
                                         <ChartTooltip
