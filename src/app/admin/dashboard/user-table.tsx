@@ -93,13 +93,14 @@ function StatusBadge({ profile }: { profile: Profile }) {
     );
 }
 
-function UserMobileCard({ profile, onUserDelete, onUserDeleteError }: { profile: Profile, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void }) {
+function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError }: { profile: Profile, index: number, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void }) {
     return (
         <Card className="mb-4">
             <CardHeader>
                  <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-start">
                         <div>
+                            <p className="text-sm text-muted-foreground">#{index + 1}</p>
                             <CardTitle className="text-base">{profile.full_name}</CardTitle>
                             <CardDescription>{profile.email}</CardDescription>
                         </div>
@@ -280,8 +281,8 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                 <ClientOnly>
                     {/* Mobile View */}
                     <div className="md:hidden mt-4">
-                        {filteredProfiles.length > 0 ? filteredProfiles.map((profile) => (
-                           <UserMobileCard key={profile.id} profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
+                        {filteredProfiles.length > 0 ? filteredProfiles.map((profile, index) => (
+                           <UserMobileCard key={profile.id} profile={profile} index={index} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
                         )) : (
                             <div className="text-center h-24 flex items-center justify-center">
                                 <p>No users found matching your filters.</p>
@@ -296,6 +297,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead>S.No.</TableHead>
                                             <TableHead>Full Name</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Status</TableHead>
@@ -305,8 +307,9 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {filteredProfiles.length > 0 ? filteredProfiles.map((profile) => (
+                                        {filteredProfiles.length > 0 ? filteredProfiles.map((profile, index) => (
                                             <TableRow key={profile.id}>
+                                                <TableCell>{index + 1}</TableCell>
                                                 <TableCell className="font-medium">{profile.full_name}</TableCell>
                                                 <TableCell>{profile.email}</TableCell>
                                                 <TableCell>
@@ -335,7 +338,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                             </TableRow>
                                         )) : (
                                             <TableRow>
-                                                <TableCell colSpan={6} className="text-center h-24">
+                                                <TableCell colSpan={7} className="text-center h-24">
                                                     No users found matching your filters.
                                                 </TableCell>
                                             </TableRow>
@@ -350,5 +353,3 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
         </Card>
     );
 }
-
-    

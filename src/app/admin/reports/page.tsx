@@ -120,7 +120,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
         yPos += 8;
 
         const summaryData = [
-            `Total Revenue: ${data.totalRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
+            `Total Revenue: ${data.totalRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} (from ${data.totalSalesCount} users)`,
             `Today's Revenue: ${data.todayRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
             `Instant Revenue: ${data.instantRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
             `1-Step Revenue: ${data.oneStepRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
@@ -250,6 +250,18 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
         </div>
     );
     
+    const getTotalRevenueDescription = () => {
+        if (date?.from || date?.to) {
+            const fromStr = date.from ? format(date.from, "LLL dd") : '';
+            const toStr = date.to ? format(date.to, "LLL dd") : '';
+            if (fromStr && toStr) {
+                return `Revenue from ${fromStr} to ${toStr} from ${data.totalSalesCount} users.`;
+            }
+            return `Revenue from ${data.totalSalesCount} users in selected period.`;
+        }
+        return `All time revenue from ${data.totalSalesCount} users.`;
+    };
+
     return (
          <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
@@ -302,15 +314,15 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
 
             {isLoading ? <DashboardSkeleton /> : (
                 <>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                        <StatCard title="Total Revenue" value={data.totalRevenue} description={date?.from && date?.to ? `From ${format(date.from, "LLL dd")} to ${format(date.to, "LLL dd")}` : 'All time revenue'} className="lg:col-span-2"/>
-                        <StatCard title="Today's Revenue" value={data.todayRevenue} />
-                        <StatCard title="1-Step Revenue" value={data.oneStepRevenue} />
-                        <StatCard title="2-Step Revenue" value={data.twoStepRevenue} />
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                        <StatCard title="Total Revenue" value={data.totalRevenue} description={getTotalRevenueDescription()} className="sm:col-span-2 lg:col-span-3"/>
+                        <StatCard title="Today's Revenue" value={data.todayRevenue} className="lg:col-span-2"/>
                     </div>
                     
-                    <div className="grid gap-4 md:grid-cols-1">
+                    <div className="grid gap-4 md:grid-cols-3">
                         <StatCard title="Instant Revenue" value={data.instantRevenue} />
+                        <StatCard title="1-Step Revenue" value={data.oneStepRevenue} />
+                        <StatCard title="2-Step Revenue" value={data.twoStepRevenue} />
                     </div>
 
                     <div id="charts-grid" className="grid grid-cols-1 lg:grid-cols-5 gap-6">

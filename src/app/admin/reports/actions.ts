@@ -14,6 +14,7 @@ export interface SalesData {
     oneStepPlanBreakdown: { [key: string]: number };
     twoStepPlanBreakdown: { [key: string]: number };
     salesByDate: { date: string, revenue: number }[];
+    totalSalesCount: number;
 }
 
 export async function getSalesData(startDate?: Date, endDate?: Date): Promise<SalesData | null> {
@@ -52,7 +53,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
         instantPlanBreakdown: {},
         oneStepPlanBreakdown: {},
         twoStepPlanBreakdown: {},
-        salesByDate: []
+        salesByDate: [],
+        totalSalesCount: 0,
     };
 
     if (!sales) {
@@ -98,6 +100,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
     aggregatedData.salesByDate = Object.entries(salesByDay)
         .map(([date, revenue]) => ({ date, revenue }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    aggregatedData.totalSalesCount = sales.length;
 
     return aggregatedData;
 }
