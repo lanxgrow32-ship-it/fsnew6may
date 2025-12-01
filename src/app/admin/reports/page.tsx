@@ -18,7 +18,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  DonutChart,
 } from 'recharts';
 
 import { getSalesData, SalesData } from './actions';
@@ -33,7 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Calendar as CalendarIcon, Loader2, Download } from 'lucide-react';
 import { signOut } from '@/app/actions';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, DonutChart } from "@/components/ui/chart";
 
 function SalesDashboard({ initialData }: { initialData: SalesData }) {
     const [data, setData] = useState(initialData);
