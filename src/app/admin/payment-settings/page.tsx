@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart } from 'lucide-react';
 import { signOut } from '@/app/actions';
 
 type PaymentDetails = {
@@ -209,6 +209,12 @@ export default function PaymentSettingsPage() {
                             <SidebarMenuButton href="/admin/tickets" tooltip="Support">
                                 <MessageSquare />
                                 Support
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/admin/reports" tooltip="Reports">
+                                <LineChart />
+                                Reports
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
