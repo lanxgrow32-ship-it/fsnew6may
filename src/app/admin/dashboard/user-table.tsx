@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { deleteUser } from './actions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 
 type Profile = {
@@ -28,6 +29,9 @@ type Profile = {
     credentials_provided: boolean;
     role: string;
     is_breached: boolean;
+    plan_price: number | null;
+    discount_amount: number | null;
+    final_amount_paid: number | null;
 };
 
 interface UserTableProps {
@@ -93,6 +97,30 @@ function StatusBadge({ profile }: { profile: Profile }) {
     );
 }
 
+const PaymentSummary = ({ profile }: { profile: Profile }) => {
+    if (!profile.is_approved) return null;
+    
+    return (
+        <div className="text-xs border-t mt-4 pt-4">
+            <h4 className="font-semibold mb-2">Payment Summary</h4>
+            <div className="space-y-1 text-muted-foreground">
+                <div className="flex justify-between">
+                    <span>Plan Price:</span>
+                    <span className="font-medium">₹{profile.plan_price?.toFixed(2) ?? '0.00'}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span>Discount:</span>
+                    <span className="font-medium">- ₹{profile.discount_amount?.toFixed(2) ?? '0.00'}</span>
+                </div>
+                 <div className="flex justify-between font-bold text-foreground">
+                    <span>Final Paid:</span>
+                    <span>₹{profile.final_amount_paid?.toFixed(2) ?? '0.00'}</span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError }: { profile: Profile, index: number, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void }) {
     return (
         <Card className="mb-4">
@@ -120,6 +148,7 @@ function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError }: { p
                     <div className="font-medium text-muted-foreground">Transaction ID</div>
                     <div className="truncate">{profile.transaction_id || 'N/A'}</div>
                 </div>
+                <PaymentSummary profile={profile} />
             </CardContent>
         </Card>
     )
@@ -303,6 +332,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                             <TableHead>Status</TableHead>
                                             <TableHead>Plan</TableHead>
                                             <TableHead>Transaction ID</TableHead>
+                                            <TableHead>Final Price</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -332,13 +362,16 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                                         'N/A'
                                                     )}
                                                 </TableCell>
+                                                <TableCell className="font-semibold">
+                                                    {profile.is_approved ? `₹${profile.final_amount_paid?.toFixed(2) ?? '0.00'}` : 'N/A'}
+                                                </TableCell>
                                                 <TableCell className="text-right">
                                                     <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
                                             <TableRow>
-                                                <TableCell colSpan={7} className="text-center h-24">
+                                                <TableCell colSpan={8} className="text-center h-24">
                                                     No users found matching your filters.
                                                 </TableCell>
                                             </TableRow>
@@ -353,3 +386,5 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
         </Card>
     );
 }
+
+    
