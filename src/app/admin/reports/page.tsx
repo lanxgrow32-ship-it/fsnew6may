@@ -1,11 +1,9 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import Papa from 'papaparse';
 import {
   LineChart as RechartsLineChart,
   Line,
@@ -13,12 +11,14 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
 } from 'recharts';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 
 import { getSalesData, SalesData } from './actions';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -30,14 +30,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Calendar as CalendarIcon, Loader2, Download } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download } from 'lucide-react';
 import { signOut } from '@/app/actions';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, DonutChart } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 function SalesDashboard({ initialData }: { initialData: SalesData }) {
     const [data, setData] = useState(initialData);
     const [isLoading, setIsLoading] = useState(false);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [date, setDate] = useState<DateRange | undefined>({
         from: undefined,
         to: undefined,
@@ -46,7 +47,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
     const chartConfig = {
       revenue: {
         label: "Revenue",
-        color: "hsl(var(--chart-1))",
+        color: "hsl(var(--primary))",
       },
     }
 
@@ -57,9 +58,9 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
     }
     
     const pieChartData = [
-        { name: 'Instant', value: data.instantRevenue, fill: pieChartConfig.instant.color },
-        { name: '1-Step', value: data.oneStepRevenue, fill: pieChartConfig.oneStep.color },
-        { name: '2-Step', value: data.twoStepRevenue, fill: pieChartConfig.twoStep.color },
+        { name: 'Instant', value: data.instantRevenue, fill: 'var(--color-instant)' },
+        { name: '1-Step', value: data.oneStepRevenue, fill: 'var(--color-oneStep)' },
+        { name: '2-Step', value: data.twoStepRevenue, fill: 'var(--color-twoStep)' },
     ].filter(d => d.value > 0);
 
 
@@ -90,33 +91,83 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
         }
     }
     
-    const downloadReport = () => {
-        if (!data) return;
+    const downloadPdfReport = async () => {
+        setIsGeneratingReport(true);
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const margin = 15;
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPos = margin;
 
-        const reportData = [
-            ...Object.entries(data.instantPlanBreakdown),
-            ...Object.entries(data.oneStepPlanBreakdown),
-            ...Object.entries(data.twoStepPlanBreakdown),
-        ].map(([planName, revenue]) => ({
-            "Plan Name": planName,
-            "Revenue": revenue,
-        }));
+        const addTitle = () => {
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Sales Performance Report', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+            yPos += 10;
+            
+            const dateString = date?.from ? `${format(date.from, 'LLL dd, y')} - ${date.to ? format(date.to, 'LLL dd, y') : 'Present'}` : 'All Time';
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Date Range: ${dateString}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+            yPos += 15;
+        };
+        
+        addTitle();
 
-        const csv = Papa.unparse(reportData);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        const dateString = date?.from ? `${format(date.from, 'yyyy-MM-dd')}_to_${date.to ? format(date.to, 'yyyy-MM-dd') : ''}` : 'all-time';
-        link.setAttribute('download', `sales_report_${dateString}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const captureElement = async (id: string, options = {}) => {
+            const element = document.getElementById(id);
+            if (!element) return null;
+            const canvas = await html2canvas(element, { ...options, scale: 2, backgroundColor: null });
+            return canvas.toDataURL('image/png');
+        };
+
+        const addImageToPdf = (imgData: string, width: number, height: number, customY?: number) => {
+            if (customY !== undefined) yPos = customY;
+            if (yPos + height > pageHeight - margin) {
+                doc.addPage();
+                yPos = margin;
+                addTitle(); // Add title to new page
+            }
+            doc.addImage(imgData, 'PNG', margin, yPos, width, height);
+            yPos += height + 10;
+        }
+
+        const statCardsImg = await captureElement('stat-cards-grid');
+        if (statCardsImg) addImageToPdf(statCardsImg, 180, 50);
+
+        const chartsGridImg = await captureElement('charts-grid');
+        if (chartsGridImg) addImageToPdf(chartsGridImg, 180, 80);
+
+        const addTableToPdf = (title: string, data: { [key: string]: number }) => {
+            if (Object.keys(data).length === 0) return;
+            if (yPos + 20 > pageHeight - margin) { // Check space for header
+                doc.addPage();
+                yPos = margin;
+            }
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, margin, yPos);
+            yPos += 8;
+
+            (doc as any).autoTable({
+                startY: yPos,
+                head: [['Plan Name', 'Revenue (INR)']],
+                body: Object.entries(data).map(([name, revenue]) => [name, `₹${revenue.toLocaleString('en-IN')}`]),
+                theme: 'striped',
+                headStyles: { fillColor: [34, 48, 64] }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 15;
+        };
+
+        addTableToPdf('Instant Funding Plans Breakdown', data.instantPlanBreakdown);
+        addTableToPdf('1-Step Evaluation Plans Breakdown', data.oneStepPlanBreakdown);
+        addTableToPdf('2-Step Evaluation Plans Breakdown', data.twoStepPlanBreakdown);
+
+        doc.save('Sales_Report.pdf');
+        setIsGeneratingReport(false);
     };
 
-
-    const StatCard = ({ title, value, description }: { title: string, value: number, description?: string }) => (
-        <Card>
+    const StatCard = ({ title, value, description, className }: { title: string, value: number, description?: string, className?: string }) => (
+        <Card className={cn(className)}>
             <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">{title}</CardTitle>
             </CardHeader>
@@ -225,36 +276,39 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                         <Button onClick={() => setDatePreset(29)} variant="ghost" size="sm">30D</Button>
                         <Button onClick={() => setDatePreset(null)} variant="ghost" size="sm">All</Button>
                     </div>
-                     <Button onClick={downloadReport} variant="outline" size="sm" disabled={isLoading}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Download Report
+                     <Button onClick={downloadPdfReport} variant="outline" size="sm" disabled={isLoading || isGeneratingReport}>
+                        {isGeneratingReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        Download PDF
                     </Button>
                 </div>
             </div>
 
             {isLoading ? <DashboardSkeleton /> : (
                 <>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                       <StatCard title="Total Revenue" value={data.totalRevenue} description={date?.from && date?.to ? `From ${format(date.from, "LLL dd")} to ${format(date.to, "LLL dd")}` : 'All time revenue'}/>
+                    <div id="stat-cards-grid" className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+                       <StatCard title="Total Revenue" value={data.totalRevenue} description={date?.from && date?.to ? `From ${format(date.from, "LLL dd")} to ${format(date.to, "LLL dd")}` : 'All time revenue'} className="lg:col-span-2"/>
                        <StatCard title="Today's Revenue" value={data.todayRevenue} />
-                       <StatCard title="Instant Revenue" value={data.instantRevenue} />
                        <StatCard title="1-Step Revenue" value={data.oneStepRevenue} />
                        <StatCard title="2-Step Revenue" value={data.twoStepRevenue} />
                     </div>
+                     <StatCard title="Instant Revenue" value={data.instantRevenue} />
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div id="charts-grid" className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         <Card className="lg:col-span-3">
                              <CardHeader>
                                 <CardTitle>Sales Trend</CardTitle>
-                                <CardDescription>Daily revenue over the selected period.</CardDescription>
+                                <CardDescription>Daily revenue over the selected period. Total: <span className="font-bold">₹{data.totalRevenue.toLocaleString('en-IN')}</span></CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <ChartContainer config={chartConfig} className="h-64">
                                     <RechartsLineChart data={data.salesByDate} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(new Date(value), "MMM d")} />
-                                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${value / 1000}k`} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
+                                        <ChartTooltip
+                                            cursor={false}
+                                            content={<ChartTooltipContent indicator="dot" />}
+                                            />
                                         <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                                     </RechartsLineChart>
                                 </ChartContainer>
@@ -267,14 +321,39 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                             </CardHeader>
                             <CardContent className="flex justify-center">
                                 <ChartContainer config={pieChartConfig} className="h-64">
-                                     <DonutChart>
-                                        <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                                        <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
+                                     <PieChart>
+                                        <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                                        <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5} labelLine={false} label={({
+                                            cx,
+                                            cy,
+                                            midAngle,
+                                            innerRadius,
+                                            outerRadius,
+                                            percent,
+                                            index,
+                                          }) => {
+                                            const RADIAN = Math.PI / 180
+                                            const radius = innerRadius + (outerRadius - innerRadius) * 0.5
+                                            const x = cx + radius * Math.cos(-midAngle * RADIAN)
+                                            const y = cy + radius * Math.sin(-midAngle * RADIAN)
+
+                                            return (
+                                              <text
+                                                x={x}
+                                                y={y}
+                                                fill="hsl(var(--primary-foreground))"
+                                                textAnchor={x > cx ? "start" : "end"}
+                                                dominantBaseline="central"
+                                              >
+                                                {`${(percent * 100).toFixed(0)}%`}
+                                              </text>
+                                            )
+                                          }}>
                                             {pieChartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                                             ))}
                                         </Pie>
-                                    </DonutChart>
+                                    </PieChart>
                                 </ChartContainer>
                             </CardContent>
                         </Card>
@@ -366,7 +445,7 @@ export default function ReportsPage() {
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/reports" isActive tooltip="Reports">
-                                <LineChart />
+                                <LineChartIcon />
                                 Reports
                             </SidebarMenuButton>
                         </SidebarMenuItem>
