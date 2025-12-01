@@ -17,6 +17,7 @@ import {
   Cell,
 } from 'recharts';
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 
 
@@ -34,6 +35,7 @@ import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart as Lin
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { cn } from '@/lib/utils';
 
 function SalesDashboard({ initialData }: { initialData: SalesData }) {
     const [data, setData] = useState(initialData);
@@ -285,13 +287,16 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
 
             {isLoading ? <DashboardSkeleton /> : (
                 <>
-                    <div id="stat-cards-grid" className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-                       <StatCard title="Total Revenue" value={data.totalRevenue} description={date?.from && date?.to ? `From ${format(date.from, "LLL dd")} to ${format(date.to, "LLL dd")}` : 'All time revenue'} className="lg:col-span-2"/>
-                       <StatCard title="Today's Revenue" value={data.todayRevenue} />
-                       <StatCard title="1-Step Revenue" value={data.oneStepRevenue} />
-                       <StatCard title="2-Step Revenue" value={data.twoStepRevenue} />
+                    <div id="stat-cards-grid" className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                        <StatCard title="Total Revenue" value={data.totalRevenue} description={date?.from && date?.to ? `From ${format(date.from, "LLL dd")} to ${format(date.to, "LLL dd")}` : 'All time revenue'} className="lg:col-span-2"/>
+                        <StatCard title="Today's Revenue" value={data.todayRevenue} />
+                        <StatCard title="1-Step Revenue" value={data.oneStepRevenue} />
+                        <StatCard title="2-Step Revenue" value={data.twoStepRevenue} />
                     </div>
-                     <StatCard title="Instant Revenue" value={data.instantRevenue} />
+                    
+                    <div className="grid gap-4 md:grid-cols-1">
+                        <StatCard title="Instant Revenue" value={data.instantRevenue} />
+                    </div>
                     
                     <div id="charts-grid" className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         <Card className="lg:col-span-3">
