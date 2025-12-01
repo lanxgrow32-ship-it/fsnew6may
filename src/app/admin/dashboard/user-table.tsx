@@ -9,13 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert } from 'lucide-react';
+import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteUser } from './actions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import Papa from 'papaparse';
 
 
 type Profile = {
@@ -238,6 +239,34 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
 
     const isAnyFilterActive = searchTerm || Object.values(filters).some(v => v !== '');
 
+    const handleDownloadCSV = () => {
+        const dataToExport = filteredProfiles.map((profile, index) => ({
+            'S.No.': index + 1,
+            'Full Name': profile.full_name,
+            'Email': profile.email,
+            'Payment Status': profile.is_approved ? 'Approved' : 'Pending',
+            'Account Status': profile.is_breached ? 'Breached' : 'Active',
+            'KYC Status': profile.kyc_status,
+            'Plan': profile.plan_purchased,
+            'Transaction ID': profile.transaction_id,
+            'Plan Price': profile.plan_price,
+            'Discount': profile.discount_amount,
+            'Final Amount Paid': profile.final_amount_paid,
+        }));
+        const csv = Papa.unparse(dataToExport);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'users.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
     return (
         <Card className="shadow-sm">
             <CardHeader>
@@ -297,12 +326,16 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                     <SelectItem value="false">Active</SelectItem>
                                 </SelectContent>
                             </Select>
-                            {isAnyFilterActive && (
+                             {isAnyFilterActive && (
                                 <Button variant="ghost" onClick={clearFilters}>
                                     <X className="mr-2 h-4 w-4"/>
                                     Clear
                                 </Button>
                             )}
+                             <Button variant="outline" onClick={handleDownloadCSV}>
+                                <Download className="mr-2 h-4 w-4"/>
+                                Download CSV
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -386,5 +419,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
         </Card>
     );
 }
+
+    
 
     
