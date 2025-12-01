@@ -36,6 +36,7 @@ import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function SalesDashboard({ initialData }: { initialData: SalesData }) {
     const [data, setData] = useState(initialData);
@@ -45,6 +46,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
         from: undefined,
         to: undefined,
     });
+    const isMobile = useIsMobile();
     
     const chartConfig = {
       revenue: {
@@ -306,7 +308,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                             </CardHeader>
                             <CardContent>
                                 <ChartContainer config={chartConfig} className="h-64">
-                                    <RechartsLineChart data={data.salesByDate} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
+                                    <RechartsLineChart data={data.salesByDate} margin={{ top: 5, right: 10, left: isMobile ? -30 : -20, bottom: 5 }}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis 
                                             dataKey="date" 
@@ -314,8 +316,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                                             axisLine={false} 
                                             tickMargin={8} 
                                             tickFormatter={(value) => format(new Date(value), "MMM d")}
-                                            angle={-45}
-                                            textAnchor="end"
+                                            interval={isMobile ? Math.floor(data.salesByDate.length / 4) : undefined}
                                         />
                                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
                                         <ChartTooltip
@@ -377,9 +378,9 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                             <CardHeader>
                                 <CardTitle>Revenue by Plan</CardTitle>
                                 <TabsList className="grid w-full grid-cols-3 mt-2">
-                                    <TabsTrigger value="instant">Instant Funding</TabsTrigger>
-                                    <TabsTrigger value="oneStep">1-Step Plans</TabsTrigger>
-                                    <TabsTrigger value="twoStep">2-Step Plans</TabsTrigger>
+                                    <TabsTrigger value="instant">Instant</TabsTrigger>
+                                    <TabsTrigger value="oneStep">1-Step</TabsTrigger>
+                                    <TabsTrigger value="twoStep">2-Step</TabsTrigger>
                                 </TabsList>
                             </CardHeader>
                             <CardContent>
