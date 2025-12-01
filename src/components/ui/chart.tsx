@@ -1,6 +1,14 @@
+
 "use client"
 
 import * as React from "react"
+import {
+  Cell,
+  Pie,
+  PieChart,
+  PieLabel,
+  PieLabelRenderProps,
+} from "recharts"
 import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
@@ -316,6 +324,12 @@ const ChartLegendContent = React.forwardRef<
 )
 ChartLegendContent.displayName = "ChartLegend"
 
+const DonutChart = ({
+  ...props
+}: React.ComponentProps<typeof RechartsPrimitive.PieChart>) => (
+  <RechartsPrimitive.PieChart {...props} />
+)
+
 // Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(
   config: ChartConfig,
@@ -362,4 +376,5 @@ export {
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
+  DonutChart,
 }

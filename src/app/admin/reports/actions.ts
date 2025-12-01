@@ -2,6 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { startOfDay, endOfDay } from 'date-fns';
 
 export interface SalesData {
     totalRevenue: number;
@@ -12,6 +13,7 @@ export interface SalesData {
     instantPlanBreakdown: { [key: string]: number };
     oneStepPlanBreakdown: { [key: string]: number };
     twoStepPlanBreakdown: { [key: string]: number };
+    salesByDate: { date: string, revenue: number }[];
 }
 
 export async function getSalesData(startDate?: Date, endDate?: Date): Promise<SalesData | null> {
@@ -25,7 +27,6 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
         query = query.gte('created_at', startDate.toISOString());
     }
     if (endDate) {
-        // Add one day to the end date to make the range inclusive
         const inclusiveEndDate = new Date(endDate);
         inclusiveEndDate.setDate(inclusiveEndDate.getDate() + 1);
         query = query.lt('created_at', inclusiveEndDate.toISOString());
@@ -39,7 +40,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
     }
 
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+    const startOfTodayString = startOfDay(today).toISOString();
+    const endOfTodayString = endOfDay(today).toISOString();
 
     const initialData: SalesData = {
         totalRevenue: 0,
@@ -50,27 +52,33 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
         instantPlanBreakdown: {},
         oneStepPlanBreakdown: {},
         twoStepPlanBreakdown: {},
+        salesByDate: []
     };
 
     if (!sales) {
         return initialData;
     }
+    
+    const salesByDay: { [key: string]: number } = {};
 
     const aggregatedData = sales.reduce((acc, sale) => {
-        if (!sale.final_amount_paid) {
+        if (!sale.final_amount_paid || !sale.plan_purchased) {
             return acc;
         }
 
         const revenue = sale.final_amount_paid;
         acc.totalRevenue += revenue;
 
-        if (sale.created_at >= startOfToday) {
+        // Check for today's revenue
+        if (sale.created_at >= startOfTodayString && sale.created_at <= endOfTodayString) {
             acc.todayRevenue += revenue;
         }
+        
+        // Aggregate sales by date for the line chart
+        const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+        salesByDay[saleDate] = (salesByDay[saleDate] || 0) + revenue;
 
         const planName = sale.plan_purchased;
-        if (!planName) return acc;
-        
         const lowerPlanName = planName.toLowerCase();
 
         if (lowerPlanName.includes('instant')) {
@@ -86,6 +94,10 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
 
         return acc;
     }, initialData);
+
+    aggregatedData.salesByDate = Object.entries(salesByDay)
+        .map(([date, revenue]) => ({ date, revenue }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return aggregatedData;
 }
