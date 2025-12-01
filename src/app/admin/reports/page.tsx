@@ -33,6 +33,7 @@ import { FundedStockLogo } from '@/components/ui/logo';
 import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Calendar as CalendarIcon, Loader2, Download } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, DonutChart } from "@/components/ui/chart";
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 function SalesDashboard({ initialData }: { initialData: SalesData }) {
     const [data, setData] = useState(initialData);
@@ -398,6 +399,7 @@ export default function ReportsPage() {
                         <SidebarTrigger className="md:hidden" />
                         <h1 className="text-xl font-semibold">Sales Reports</h1>
                     </div>
+                    <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                    <div className="max-w-7xl mx-auto">

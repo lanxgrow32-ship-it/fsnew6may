@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 
 type PayoutRequest = {
@@ -317,6 +318,7 @@ export default function PayoutsPage() {
                         <SidebarTrigger className="md:hidden" />
                         <h1 className="text-xl font-semibold">Payout Requests</h1>
                     </div>
+                    <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                     <Card>

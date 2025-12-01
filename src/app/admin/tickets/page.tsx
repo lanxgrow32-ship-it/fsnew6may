@@ -11,6 +11,7 @@ import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 type Ticket = {
     id: number;
@@ -157,6 +158,7 @@ export default async function AdminTicketsPage() {
                         <SidebarTrigger className="md:hidden" />
                         <h1 className="text-xl font-semibold">Support Tickets</h1>
                     </div>
+                    <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                     <Card>

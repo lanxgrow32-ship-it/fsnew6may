@@ -20,6 +20,7 @@ import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 function CreateAdminForm({ className }: { className?: string }) {
     const ref = useRef<HTMLFormElement>(null);
@@ -271,6 +272,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
                 <h1 className="text-xl font-semibold">User Management</h1>
            </div>
            <div className="flex items-center gap-4">
+            <ThemeToggle />
             <CreateAdminForm className="hidden md:flex"/>
             <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
               <AdminNav />

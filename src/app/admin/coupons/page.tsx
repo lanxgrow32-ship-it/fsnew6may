@@ -19,6 +19,7 @@ import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 type Coupon = {
   id: number;
@@ -318,6 +319,7 @@ export default function CouponsPage() {
                         <SidebarTrigger className="md:hidden" />
                         <h1 className="text-xl font-semibold">Coupon Management</h1>
                     </div>
+                    <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                     <ClientOnly>

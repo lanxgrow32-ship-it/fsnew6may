@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart } from 'lucide-react';
 import { signOut } from '@/app/actions';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 type PaymentDetails = {
     id: number;
@@ -246,6 +247,7 @@ export default function PaymentSettingsPage() {
                         <SidebarTrigger className="md:hidden" />
                         <h1 className="text-xl font-semibold">Payment Settings</h1>
                     </div>
+                    <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                     <div className="max-w-2xl mx-auto">
