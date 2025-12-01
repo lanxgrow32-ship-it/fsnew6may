@@ -297,7 +297,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                     <div className="grid gap-4 md:grid-cols-1">
                         <StatCard title="Instant Revenue" value={data.instantRevenue} />
                     </div>
-                    
+
                     <div id="charts-grid" className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         <Card className="lg:col-span-3">
                              <CardHeader>
@@ -306,9 +306,17 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                             </CardHeader>
                             <CardContent>
                                 <ChartContainer config={chartConfig} className="h-64">
-                                    <RechartsLineChart data={data.salesByDate} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                    <RechartsLineChart data={data.salesByDate} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
                                         <CartesianGrid vertical={false} />
-                                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(new Date(value), "MMM d")} />
+                                        <XAxis 
+                                            dataKey="date" 
+                                            tickLine={false} 
+                                            axisLine={false} 
+                                            tickMargin={8} 
+                                            tickFormatter={(value) => format(new Date(value), "MMM d")}
+                                            angle={-45}
+                                            textAnchor="end"
+                                        />
                                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
                                         <ChartTooltip
                                             cursor={false}
