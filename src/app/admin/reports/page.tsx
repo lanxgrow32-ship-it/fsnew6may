@@ -27,24 +27,27 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
         to: undefined,
     });
 
+    const fetchAndSetData = async (from?: Date, to?: Date) => {
+        setIsLoading(true);
+        const result = await getSalesData(from, to);
+        if (result) {
+            setData(result);
+        }
+        setIsLoading(false);
+    };
+
     useEffect(() => {
-        const fetchDataForRange = async () => {
-            if (date?.from && date?.to) {
-                setIsLoading(true);
-                const result = await getSalesData(date.from, date.to);
-                if (result) {
-                    setData(result);
-                }
-                setIsLoading(false);
-            }
-        };
-        fetchDataForRange();
+        if (date?.from && date?.to) {
+            fetchAndSetData(date.from, date.to);
+        } else if (!date?.from && !date?.to) {
+             // Handles the 'All Time' case
+            fetchAndSetData();
+        }
     }, [date]);
     
     const setDatePreset = (days: number | null) => {
         if (days === null) { // All time
             setDate({ from: undefined, to: undefined });
-            setData(initialData); // Reset to initial full data
         } else {
             const to = endOfDay(new Date());
             const from = startOfDay(subDays(new Date(), days));
@@ -76,7 +79,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
             </TableHeader>
             <TableBody>
                 {Object.keys(plans).length > 0 ? (
-                    Object.entries(plans).map(([name, revenue]) => (
+                    Object.entries(plans).sort(([, a], [, b]) => b - a).map(([name, revenue]) => (
                         <TableRow key={name}>
                             <TableCell className="font-medium">{name}</TableCell>
                             <TableCell className="text-right">₹{revenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
@@ -93,8 +96,11 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
 
     const DashboardSkeleton = () => (
         <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2">
                 <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+            </div>
+             <div className="grid gap-4 md:grid-cols-3">
                 <Skeleton className="h-28" />
                 <Skeleton className="h-28" />
                 <Skeleton className="h-28" />
@@ -114,12 +120,12 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
          <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
                 <h2 className="text-2xl font-bold">Sales Overview</h2>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 variant={"outline"}
-                                className="w-[280px] justify-start text-left font-normal"
+                                className="w-[240px] justify-start text-left font-normal"
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {date?.from ? (
@@ -144,20 +150,25 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
                             />
                         </PopoverContent>
                     </Popover>
-                    <Button onClick={() => setDatePreset(0)}>Today</Button>
-                     <Button onClick={() => setDatePreset(6)}>Last 7 Days</Button>
-                    <Button onClick={() => setDatePreset(29)}>Last 30 Days</Button>
-                     <Button onClick={() => setDatePreset(null)} variant="ghost">All Time</Button>
+                    <div className="flex gap-2">
+                        <Button onClick={() => setDatePreset(0)} variant="ghost">Today</Button>
+                        <Button onClick={() => setDatePreset(6)} variant="ghost">7D</Button>
+                        <Button onClick={() => setDatePreset(29)} variant="ghost">30D</Button>
+                        <Button onClick={() => setDatePreset(null)} variant="ghost">All</Button>
+                    </div>
                 </div>
             </div>
 
             {isLoading ? <DashboardSkeleton /> : (
                 <>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <StatCard title="Total Revenue" value={data.totalRevenue} />
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <StatCard title="Total Revenue" value={data.totalRevenue} description={date?.from && date?.to ? `From ${format(date.from, "LLL dd")} to ${format(date.to, "LLL dd")}` : 'All time revenue'}/>
                         <StatCard title="Today's Revenue" value={data.todayRevenue} />
+                    </div>
+                     <div className="grid gap-4 md:grid-cols-3">
                         <StatCard title="Instant Funding Revenue" value={data.instantRevenue} />
-                        <StatCard title="Evaluation Revenue" value={data.evaluationRevenue} />
+                        <StatCard title="1-Step Revenue" value={data.oneStepRevenue} />
+                        <StatCard title="2-Step Revenue" value={data.twoStepRevenue} />
                     </div>
 
                     <Card>

@@ -7,7 +7,8 @@ export interface SalesData {
     totalRevenue: number;
     todayRevenue: number;
     instantRevenue: number;
-    evaluationRevenue: number;
+    oneStepRevenue: number;
+    twoStepRevenue: number;
     instantPlanBreakdown: { [key: string]: number };
     oneStepPlanBreakdown: { [key: string]: number };
     twoStepPlanBreakdown: { [key: string]: number };
@@ -24,7 +25,10 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
         query = query.gte('created_at', startDate.toISOString());
     }
     if (endDate) {
-        query = query.lte('created_at', endDate.toISOString());
+        // Add one day to the end date to make the range inclusive
+        const inclusiveEndDate = new Date(endDate);
+        inclusiveEndDate.setDate(inclusiveEndDate.getDate() + 1);
+        query = query.lt('created_at', inclusiveEndDate.toISOString());
     }
 
     const { data: sales, error } = await query;
@@ -41,14 +45,23 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
         totalRevenue: 0,
         todayRevenue: 0,
         instantRevenue: 0,
-        evaluationRevenue: 0,
+        oneStepRevenue: 0,
+        twoStepRevenue: 0,
         instantPlanBreakdown: {},
         oneStepPlanBreakdown: {},
         twoStepPlanBreakdown: {},
     };
 
+    if (!sales) {
+        return initialData;
+    }
+
     const aggregatedData = sales.reduce((acc, sale) => {
-        const revenue = sale.final_amount_paid || 0;
+        if (!sale.final_amount_paid) {
+            return acc;
+        }
+
+        const revenue = sale.final_amount_paid;
         acc.totalRevenue += revenue;
 
         if (sale.created_at >= startOfToday) {
@@ -64,10 +77,10 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
             acc.instantRevenue += revenue;
             acc.instantPlanBreakdown[planName] = (acc.instantPlanBreakdown[planName] || 0) + revenue;
         } else if (lowerPlanName.includes('1-step')) {
-            acc.evaluationRevenue += revenue;
+            acc.oneStepRevenue += revenue;
             acc.oneStepPlanBreakdown[planName] = (acc.oneStepPlanBreakdown[planName] || 0) + revenue;
         } else if (lowerPlanName.includes('2-step')) {
-            acc.evaluationRevenue += revenue;
+            acc.twoStepRevenue += revenue;
             acc.twoStepPlanBreakdown[planName] = (acc.twoStepPlanBreakdown[planName] || 0) + revenue;
         }
 
