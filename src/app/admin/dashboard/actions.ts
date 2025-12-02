@@ -57,3 +57,33 @@ export async function deleteUser(userId: string) {
     revalidatePath('/admin/dashboard');
     return { success: true };
 }
+
+
+export async function clearPaymentData(userId: string) {
+    if (!userId) {
+        return { error: 'User ID is required to clear payment data.' };
+    }
+
+    const { error } = await supabaseAdmin
+        .from('profiles')
+        .update({
+            plan_purchased: null,
+            transaction_id: null,
+            is_approved: false,
+            plan_price: 0,
+            coupon_code: null,
+            discount_amount: 0,
+            final_amount_paid: 0,
+        })
+        .eq('id', userId);
+
+    if (error) {
+        console.error('Error clearing payment data:', error);
+        return { error: `Failed to clear payment data: ${error.message}` };
+    }
+
+    revalidatePath('/admin/dashboard');
+    revalidatePath('/admin/reports'); // Revalidate reports page as well
+    revalidatePath(`/admin/profile/${userId}`);
+    return { success: true };
+}

@@ -164,15 +164,21 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
     setProfiles(initialProfiles);
   }, [initialProfiles]);
 
+  const fetchProfiles = async () => {
+    const { data: updatedProfiles, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    if (error) {
+        toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });
+    } else if (updatedProfiles) {
+        setProfiles(updatedProfiles);
+    }
+  }
+
   useEffect(() => {
     const channel = supabase
       .channel('realtime profiles')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
-        async (payload) => {
-            const { data: updatedProfiles, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-            if (updatedProfiles) {
-                setProfiles(updatedProfiles);
-            }
+        (payload) => {
+            fetchProfiles();
         }
       )
       .subscribe();
@@ -194,6 +200,11 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
       variant: 'destructive',
     });
   };
+  
+  const handleUserUpdate = () => {
+      toast({ title: 'User data updated successfully' });
+      fetchProfiles(); // Re-fetch all profiles to ensure UI consistency
+  }
 
   const stats = [
     { title: "Total Users", value: profiles?.length || 0, icon: User },
@@ -300,6 +311,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
                     profiles={profiles || []} 
                     onUserDelete={onUserDelete}
                     onUserDeleteError={handleUserDeleteError}
+                    onUserUpdate={handleUserUpdate}
                 />
             </ClientOnly>
         </main>

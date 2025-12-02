@@ -9,10 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download } from 'lucide-react';
+import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { deleteUser } from './actions';
+import { deleteUser, clearPaymentData } from './actions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -39,6 +39,7 @@ interface UserTableProps {
   profiles: Profile[];
   onUserDelete: (userId: string) => void;
   onUserDeleteError: (errorMessage: string) => void;
+  onUserUpdate: () => void;
 }
 
 
@@ -79,6 +80,43 @@ function DeleteUserDialog({ profile, onUserDelete, onUserDeleteError, children }
       </AlertDialogContent>
     </AlertDialog>
   );
+}
+
+function ClearPaymentDialog({ profile, onClearSuccess, onClearError, children }: { profile: Profile, onClearSuccess: () => void, onClearError: (msg: string) => void, children: React.ReactNode }) {
+    const [isPending, setIsPending] = useState(false);
+
+    const handleClear = async () => {
+        setIsPending(true);
+        const result = await clearPaymentData(profile.id);
+        if (result.error) {
+            onClearError(result.error);
+        } else {
+            onClearSuccess();
+        }
+        setIsPending(false);
+    };
+
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Clear Payment Data?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will reset all plan and payment information for <span className="font-bold">{profile.full_name}</span> to zero. This is useful for excluding test users from reports. This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                        <Button onClick={handleClear} variant="destructive" disabled={isPending}>
+                            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Yes, clear data'}
+                        </Button>
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
 }
 
 function StatusBadge({ profile }: { profile: Profile }) {
@@ -122,7 +160,7 @@ const PaymentSummary = ({ profile }: { profile: Profile }) => {
     )
 }
 
-function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError }: { profile: Profile, index: number, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void }) {
+function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError, onClearSuccess, onClearError }: { profile: Profile, index: number, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void, onClearSuccess: () => void, onClearError: (msg: string) => void }) {
     return (
         <Card className="mb-4">
             <CardHeader>
@@ -133,7 +171,7 @@ function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError }: { p
                             <CardTitle className="text-base">{profile.full_name}</CardTitle>
                             <CardDescription>{profile.email}</CardDescription>
                         </div>
-                        <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
+                        <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} onClearSuccess={onClearSuccess} onClearError={onClearError} />
                     </div>
                     <div className="self-start">
                         <StatusBadge profile={profile} />
@@ -155,7 +193,7 @@ function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError }: { p
     )
 }
 
-function ActionsMenu({ profile, onUserDelete, onUserDeleteError }: { profile: Profile, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void}) {
+function ActionsMenu({ profile, onUserDelete, onUserDeleteError, onClearSuccess, onClearError }: { profile: Profile, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void, onClearSuccess: () => void, onClearError: (msg: string) => void}) {
     if (profile.role === 'admin') {
         return (
             <TooltipProvider>
@@ -166,7 +204,7 @@ function ActionsMenu({ profile, onUserDelete, onUserDeleteError }: { profile: Pr
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>Admin users cannot be deleted here.</p>
+                        <p>Admin users cannot be modified here.</p>
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
@@ -185,6 +223,12 @@ function ActionsMenu({ profile, onUserDelete, onUserDeleteError }: { profile: Pr
                      <Link href={`/admin/profile/${profile.id}`} className="w-full cursor-pointer">Manage User</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <ClearPaymentDialog profile={profile} onClearSuccess={onClearSuccess} onClearError={onClearError}>
+                    <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                        <Eraser className="mr-2 h-4 w-4" />
+                        <span>Clear Payment Data</span>
+                    </div>
+                </ClearPaymentDialog>
                  <DeleteUserDialog profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError}>
                     <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-destructive outline-none transition-colors hover:bg-accent focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -196,7 +240,7 @@ function ActionsMenu({ profile, onUserDelete, onUserDeleteError }: { profile: Pr
     );
 }
 
-export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTableProps) {
+export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpdate }: UserTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
         is_approved: '',
@@ -344,7 +388,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                     {/* Mobile View */}
                     <div className="md:hidden mt-4">
                         {filteredProfiles.length > 0 ? filteredProfiles.map((profile, index) => (
-                           <UserMobileCard key={profile.id} profile={profile} index={index} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
+                           <UserMobileCard key={profile.id} profile={profile} index={index} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} onClearSuccess={onUserUpdate} onClearError={onUserDeleteError}/>
                         )) : (
                             <div className="text-center h-24 flex items-center justify-center">
                                 <p>No users found matching your filters.</p>
@@ -399,7 +443,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError }: UserTab
                                                     {profile.is_approved ? `₹${profile.final_amount_paid?.toFixed(2) ?? '0.00'}` : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} />
+                                                    <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} onClearSuccess={onUserUpdate} onClearError={onUserDeleteError} />
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
