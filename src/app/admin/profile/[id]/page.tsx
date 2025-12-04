@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useActionState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useFormStatus } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, Download, PanelLeft, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateProfile } from './actions';
+import { updateProfile, resetPassword } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,7 +51,75 @@ type Profile = {
   is_breached: boolean;
   breach_reason: string | null;
   breach_image_url: string | null;
+  role: string;
 };
+
+function ResetPasswordForm({ userId, role }: { userId: string, role: string }) {
+    const formRef = useRef<HTMLFormElement>(null);
+    const { toast } = useToast();
+    const [state, formAction] = useActionState(resetPassword, { error: null, success: false });
+
+    useEffect(() => {
+        if (state.error) {
+            toast({
+                title: "Error Resetting Password",
+                description: state.error,
+                variant: "destructive",
+            });
+        }
+        if (state.success) {
+            toast({
+                title: "Success",
+                description: "User password has been reset successfully.",
+            });
+            formRef.current?.reset();
+        }
+    }, [state, toast]);
+
+    function SubmitButton() {
+        const { pending } = useFormStatus();
+        return (
+            <Button type="submit" disabled={pending} variant="destructive">
+                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resetting...</> : 'Reset Password'}
+            </Button>
+        );
+    }
+    
+    if (role === 'admin') {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Reset Password</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">You cannot reset the password for another admin user.</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
+    return (
+        <Card>
+            <form action={formAction} ref={formRef}>
+                <input type="hidden" name="id" value={userId} />
+                <CardHeader>
+                    <CardTitle>Reset Password</CardTitle>
+                    <CardDescription>Enter a new password for the user. They will be logged out and will need to sign in again.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="password">New Password</Label>
+                        <Input id="password" name="password" type="password" required />
+                        <p className="text-xs text-muted-foreground">Must be at least 6 characters long.</p>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <SubmitButton />
+                </CardFooter>
+            </form>
+        </Card>
+    );
+}
 
 export default function ProfilePage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -341,6 +410,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                 </div>
                             </CardContent>
                         </Card>
+                        
+                        <ResetPasswordForm userId={profile.id} role={profile.role}/>
                     </div>
                     </div>
                 </div>

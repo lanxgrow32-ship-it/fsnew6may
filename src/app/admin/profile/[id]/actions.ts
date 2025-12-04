@@ -167,3 +167,27 @@ export async function updateProfile(formData: FormData) {
 
   return { error: null };
 }
+
+export async function resetPassword(prevState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const password = formData.get('password') as string;
+
+  if (!password) {
+    return { error: 'Password cannot be empty.' };
+  }
+  if (password.length < 6) {
+    return { error: 'Password must be at least 6 characters long.' };
+  }
+
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(
+    id,
+    { password: password }
+  );
+
+  if (error) {
+    console.error("Error resetting password:", error);
+    return { error: `Failed to reset password: ${error.message}` };
+  }
+
+  return { success: true, error: null };
+}
