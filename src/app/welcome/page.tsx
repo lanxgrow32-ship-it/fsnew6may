@@ -14,6 +14,7 @@ import { signOut } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CredentialsView } from './credentials-view';
 import Image from 'next/image';
+import { ReceiptButton } from './receipt-button';
 
 
 function OnboardingGuide({ profile }: { profile: any }) {
@@ -118,14 +119,17 @@ function AccountStatusBanner({ profile }: { profile: any }) {
     if (profile.credentials_provided) {
         return (
           <div className="p-6 rounded-lg bg-primary text-primary-foreground mb-8">
-            <div className="flex items-center gap-4">
-                <div className="bg-white/20 p-3 rounded-full">
-                    <CheckCircle className="h-8 w-8" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="bg-white/20 p-3 rounded-full">
+                        <CheckCircle className="h-8 w-8" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold">Welcome back, {profile.full_name || 'User'}!</h2>
+                        <p className="opacity-90">Your account is fully active. Here are your trading credentials.</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-2xl font-bold">Welcome back, {profile.full_name || 'User'}!</h2>
-                    <p className="opacity-90">Your account is fully active. Here are your trading credentials.</p>
-                </div>
+                <ReceiptButton profile={profile} />
             </div>
           </div>
         );
@@ -133,11 +137,12 @@ function AccountStatusBanner({ profile }: { profile: any }) {
    
     return (
         <div className="p-6 rounded-lg bg-card border mb-8">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold">Welcome, {profile.full_name || 'User'}!</h2>
                     <p className="text-muted-foreground">Your account has been approved. Please complete the final steps to start trading.</p>
                 </div>
+                <ReceiptButton profile={profile} />
             </div>
         </div>
     );
