@@ -15,12 +15,11 @@ async function uploadFile(file: File, bucket: string, userId: string) {
     throw new Error(`Failed to upload ${bucket}.`);
   }
 
-  // Get public URL
   const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
   return urlData.publicUrl;
 }
 
-export async function submitKyc(formData: FormData) {
+export async function saveKycStep(step: number, formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -28,41 +27,58 @@ export async function submitKyc(formData: FormData) {
     return { error: 'You must be logged in to submit KYC.' };
   }
 
+  let profileUpdateData: any = {};
+
   try {
-    const panFile = formData.get('pan_card') as File;
-    const aadharFile = formData.get('aadhar_card') as File;
-    const selfieFile = formData.get('selfie') as File;
+    switch (step) {
+      case 1: // Personal Information
+        profileUpdateData = {
+          mobile_number: formData.get('mobile_number') as string,
+          pan_number: formData.get('pan_number') as string,
+          aadhar_number: formData.get('aadhar_number') as string,
+          city_state: formData.get('city_state') as string,
+        };
+        break;
 
-    if (!panFile || !aadharFile || !selfieFile || panFile.size === 0 || aadharFile.size === 0 || selfieFile.size === 0) {
-        return { error: 'All three document uploads are required.' };
+      case 2: // Document Upload
+        const panFile = formData.get('pan_card') as File;
+        const aadharFile = formData.get('aadhar_card') as File;
+        const selfieFile = formData.get('selfie') as File;
+
+        if (!panFile || !aadharFile || !selfieFile || panFile.size === 0 || aadharFile.size === 0 || selfieFile.size === 0) {
+          return { error: 'All three document uploads are required.' };
+        }
+        
+        const [pan_card_url, aadhar_card_url, selfie_url] = await Promise.all([
+          uploadFile(panFile, 'kyc-documents', user.id),
+          uploadFile(aadharFile, 'kyc-documents', user.id),
+          uploadFile(selfieFile, 'kyc-documents', user.id)
+        ]);
+
+        profileUpdateData = { pan_card_url, aadhar_card_url, selfie_url };
+        break;
+      
+      case 3: // Trading Background
+        profileUpdateData = {
+          traded_before: formData.get('traded_before') === 'yes',
+          trading_experience: formData.get('trading_experience') as string,
+          comments: formData.get('comments') as string,
+          trading_style: formData.getAll('trading_style') as string[],
+        };
+        break;
+
+      case 4: // Agreements
+        profileUpdateData = {
+          drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes',
+          risk_rules_understood: formData.get('risk_rules_understood') === 'yes',
+          terms_accepted: formData.get('terms_accepted') === 'yes',
+          kyc_status: 'submitted', // Final step sets status
+        };
+        break;
+
+      default:
+        return { error: 'Invalid KYC step.' };
     }
-
-    // Upload files in parallel
-    const [pan_card_url, aadhar_card_url, selfie_url] = await Promise.all([
-      uploadFile(panFile, 'kyc-documents', user.id),
-      uploadFile(aadharFile, 'kyc-documents', user.id),
-      uploadFile(selfieFile, 'kyc-documents', user.id)
-    ]);
-    
-    const tradingStyles = formData.getAll('trading_style') as string[];
-
-    const profileUpdateData = {
-        mobile_number: formData.get('mobile_number') as string,
-        pan_number: formData.get('pan_number') as string,
-        aadhar_number: formData.get('aadhar_number') as string,
-        city_state: formData.get('city_state') as string,
-        traded_before: formData.get('traded_before') === 'yes',
-        trading_experience: formData.get('trading_experience') as string,
-        comments: formData.get('comments') as string,
-        trading_style: tradingStyles,
-        drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes',
-        risk_rules_understood: formData.get('risk_rules_understood') === 'yes',
-        terms_accepted: formData.get('terms_accepted') === 'yes',
-        kyc_status: 'submitted',
-        pan_card_url,
-        aadhar_card_url,
-        selfie_url,
-    };
 
     const { error: updateError } = await supabase
       .from('profiles')
@@ -70,20 +86,15 @@ export async function submitKyc(formData: FormData) {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Error updating profile with KYC data:', updateError);
+      console.error(`Error updating profile on step ${step}:`, updateError);
       return { error: `Failed to save KYC data: ${updateError.message}` };
     }
-    
-    // NOTE: Webhook logic has been removed from here.
-    // Email notification is now handled by a Supabase Database Webhook
-    // that triggers the 'handle-kyc-update' Edge Function.
 
     revalidatePath('/welcome');
+    revalidatePath('/kyc-status');
     return { error: null, success: true };
 
   } catch (error: any) {
     return { error: error.message };
   }
 }
-
-    

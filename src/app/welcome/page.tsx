@@ -83,7 +83,7 @@ function KycPrompt() {
         <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           To start trading, you need to complete your KYC verification. This is the next step.
           <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
-            <Link href="/kyc-status">Start KYC Verification</Link>
+            <Link href="/kyc">Start KYC Verification</Link>
           </Button>
         </AlertDescription>
       </Alert>
@@ -108,7 +108,7 @@ function KycRejected() {
         <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           Unfortunately, your KYC verification was not successful. Please check your status and resubmit.
           <Button asChild size="sm" variant="destructive" className="shrink-0">
-            <Link href="/kyc-status">Check KYC Status</Link>
+            <Link href="/kyc">Resubmit KYC</Link>
           </Button>
         </AlertDescription>
       </Alert>
@@ -318,9 +318,9 @@ export default async function WelcomePage() {
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href="/kyc-status" tooltip="KYC Verification">
+              <SidebarMenuButton href="/kyc" tooltip="KYC Verification">
                 <FileCheck />
-                KYC Verification
+                KYC
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

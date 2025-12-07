@@ -59,9 +59,9 @@ export default async function GuidePage() {
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/kyc-status" tooltip="KYC Verification">
+                            <SidebarMenuButton href="/kyc" tooltip="KYC Verification">
                                 <FileCheck />
-                                KYC Verification
+                                KYC
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                          <SidebarMenuItem>
