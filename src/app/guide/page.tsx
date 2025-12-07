@@ -59,7 +59,7 @@ export default async function GuidePage() {
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/kyc" tooltip="KYC Verification">
+                            <SidebarMenuButton href="/kyc" tooltip="KYC">
                                 <FileCheck />
                                 KYC
                             </SidebarMenuButton>
@@ -147,7 +147,7 @@ export default async function GuidePage() {
                                  <div className="space-y-2 pt-4">
                                     <h3 className="font-semibold text-lg">Step 3: Monitor Your Performance</h3>
                                     <p className="text-muted-foreground">Once logged in, you can view your trading performance, available cash, opening balance, and drawdown limits directly in your profile section on the StockMint platform.</p>
-                                </div>
+                                 </div>
                             </CardContent>
                         </Card>
 

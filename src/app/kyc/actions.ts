@@ -91,7 +91,7 @@ export async function saveKycStep(step: number, formData: FormData) {
     }
 
     revalidatePath('/welcome');
-    revalidatePath('/kyc-status');
+    revalidatePath('/kyc');
     return { error: null, success: true };
 
   } catch (error: any) {

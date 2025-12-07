@@ -216,7 +216,7 @@ export default function UserTicketsPage() {
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/kyc" tooltip="KYC Verification">
+                            <SidebarMenuButton href="/kyc" tooltip="KYC">
                                 <FileCheck />
                                 KYC
                             </SidebarMenuButton>

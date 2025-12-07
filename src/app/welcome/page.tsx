@@ -77,13 +77,13 @@ function OnboardingGuide({ profile }: { profile: any }) {
 
 function KycPrompt() {
   return (
-      <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-        <FileCheck className="h-5 w-5 !text-blue-600" />
+      <Alert className="bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-700/50 dark:text-blue-300">
+        <FileCheck className="h-5 w-5 !text-blue-600 dark:!text-blue-400" />
         <AlertTitle className="font-semibold">Complete Your Verification</AlertTitle>
         <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           To start trading, you need to complete your KYC verification. This is the next step.
           <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
-            <Link href="/kyc">Start KYC Verification</Link>
+            <Link href="/kyc">Start KYC</Link>
           </Button>
         </AlertDescription>
       </Alert>
@@ -92,7 +92,7 @@ function KycPrompt() {
 
 function KycUnderReview() {
   return (
-    <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800">
+    <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-700/50 dark:text-yellow-300">
       <Loader2 className="mx-auto h-5 w-5 text-yellow-500 animate-spin" />
       <AlertTitle>KYC Submitted & Under Review</AlertTitle>
       <AlertDescription>Your documents have been submitted and are currently being reviewed by our team. We'll notify you once the process is complete. This usually takes 1-2 business days.</AlertDescription>
@@ -318,7 +318,7 @@ export default async function WelcomePage() {
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href="/kyc" tooltip="KYC Verification">
+              <SidebarMenuButton href="/kyc" tooltip="KYC">
                 <FileCheck />
                 KYC
               </SidebarMenuButton>
