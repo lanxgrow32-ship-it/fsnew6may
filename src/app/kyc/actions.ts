@@ -17,9 +17,8 @@ async function uploadFile(file: File, bucket: string, userId: string) {
     throw new Error(`Failed to upload ${bucket}.`);
   }
 
-  // Use the public (non-admin) client to get the public URL
-  const supabase = createClient();
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+  // Use the admin client to get the public URL
+  const { data: urlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(data.path);
   return urlData.publicUrl;
 }
 
