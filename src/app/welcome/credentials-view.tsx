@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -45,16 +44,9 @@ export function CredentialsView({ profile }: { profile: any }) {
                                     </p>
                                 </div>
                             </div>
-                            <div className="rounded-lg border bg-muted/40 p-4 flex items-center gap-3">
-                                <ServerIcon className="h-5 w-5 text-muted-foreground" />
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Server</p>
-                                    <p className="text-lg font-semibold">Falcon Trader</p>
-                                </div>
-                            </div>
                         </div>
                         <Button asChild size="lg" className="w-full">
-                            <Link href="https://nextrade.club/" target="_blank">
+                            <Link href="https://www.stockmint.io/login" target="_blank">
                                 Launch Trading Software
                                 <ExternalLink className="ml-2 h-4 w-4" />
                             </Link>
