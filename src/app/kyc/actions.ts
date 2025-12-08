@@ -2,19 +2,23 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
 async function uploadFile(file: File, bucket: string, userId: string) {
-  const supabase = createClient();
   const fileExt = file.name.split('.').pop();
   const fileName = `${userId}-${Date.now()}.${fileExt}`;
-  const { data, error } = await supabase.storage.from(bucket).upload(fileName, file);
+  
+  // Use supabaseAdmin to bypass RLS for storage writes
+  const { data, error } = await supabaseAdmin.storage.from(bucket).upload(fileName, file);
 
   if (error) {
     console.error(`Error uploading ${bucket}:`, error);
     throw new Error(`Failed to upload ${bucket}.`);
   }
 
+  // Use the public (non-admin) client to get the public URL
+  const supabase = createClient();
   const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
   return urlData.publicUrl;
 }
