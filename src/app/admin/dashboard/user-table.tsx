@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser } from 'lucide-react';
+import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser, Calendar as CalendarIcon } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteUser, clearPaymentData } from './actions';
@@ -17,6 +17,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import Papa from 'papaparse';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 
 type Profile = {
@@ -33,6 +38,7 @@ type Profile = {
     plan_price: number | null;
     discount_amount: number | null;
     final_amount_paid: number | null;
+    created_at: string;
 };
 
 interface UserTableProps {
@@ -242,6 +248,7 @@ function ActionsMenu({ profile, onUserDelete, onUserDeleteError, onClearSuccess,
 
 export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpdate }: UserTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [date, setDate] = useState<DateRange | undefined>(undefined);
     const [filters, setFilters] = useState({
         is_approved: '',
         kyc_status: '',
@@ -263,9 +270,14 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
             const matchesCredentials = filters.credentials_provided ? String(profile.credentials_provided) === filters.credentials_provided : true;
             const matchesBreached = filters.is_breached ? String(profile.is_breached) === filters.is_breached : true;
             
-            return matchesSearch && matchesApproved && matchesKyc && matchesCredentials && matchesBreached;
+            const profileDate = new Date(profile.created_at);
+            const matchesDate = 
+                (!date?.from || profileDate >= date.from) &&
+                (!date?.to || profileDate <= new Date(date.to.getTime() + 86400000 - 1)); // Include the whole end day
+
+            return matchesSearch && matchesApproved && matchesKyc && matchesCredentials && matchesBreached && matchesDate;
         });
-    }, [searchTerm, profiles, filters]);
+    }, [searchTerm, profiles, filters, date]);
     
     const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
         setFilters(prev => ({...prev, [filterName]: value}));
@@ -273,6 +285,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
     
     const clearFilters = () => {
         setSearchTerm('');
+        setDate(undefined);
         setFilters({
             is_approved: '',
             kyc_status: '',
@@ -281,7 +294,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
         });
     }
 
-    const isAnyFilterActive = searchTerm || Object.values(filters).some(v => v !== '');
+    const isAnyFilterActive = searchTerm || date?.from || date?.to || Object.values(filters).some(v => v !== '');
 
     const handleDownloadCSV = () => {
         const dataToExport = filteredProfiles.map((profile, index) => ({
@@ -331,56 +344,92 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                 className="pl-10"
                             />
                         </div>
-                        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-                             <Select value={filters.is_approved} onValueChange={(value) => handleFilterChange('is_approved', value)}>
-                                <SelectTrigger className="w-full sm:w-auto flex-grow">
-                                    <SelectValue placeholder="Payment Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="true">Approved</SelectItem>
-                                    <SelectItem value="false">Pending</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={filters.kyc_status} onValueChange={(value) => handleFilterChange('kyc_status', value)}>
-                                <SelectTrigger className="w-full sm:w-auto flex-grow">
-                                    <SelectValue placeholder="KYC Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="submitted">Submitted</SelectItem>
-                                    <SelectItem value="verified">Verified</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={filters.credentials_provided} onValueChange={(value) => handleFilterChange('credentials_provided', value)}>
-                                <SelectTrigger className="w-full sm:w-auto flex-grow">
-                                    <SelectValue placeholder="Credentials" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="true">Provided</SelectItem>
-                                    <SelectItem value="false">Not Provided</SelectItem>
-                                </SelectContent>
-                            </Select>
-                             <Select value={filters.is_breached} onValueChange={(value) => handleFilterChange('is_breached', value)}>
-                                <SelectTrigger className="w-full sm:w-auto flex-grow">
-                                    <SelectValue placeholder="Account Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="true">Breached</SelectItem>
-                                    <SelectItem value="false">Active</SelectItem>
-                                </SelectContent>
-                            </Select>
-                             {isAnyFilterActive && (
-                                <Button variant="ghost" onClick={clearFilters}>
-                                    <X className="mr-2 h-4 w-4"/>
-                                    Clear
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full md:w-[300px] justify-start text-left font-normal",
+                                    !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date?.from ? (
+                                    date.to ? (
+                                        <>
+                                        {format(date.from, "LLL dd, y")} -{" "}
+                                        {format(date.to, "LLL dd, y")}
+                                        </>
+                                    ) : (
+                                        format(date.from, "LLL dd, y")
+                                    )
+                                    ) : (
+                                    <span>Pick a date</span>
+                                    )}
                                 </Button>
-                            )}
-                             <Button variant="outline" onClick={handleDownloadCSV}>
-                                <Download className="mr-2 h-4 w-4"/>
-                                Download CSV
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={date?.from}
+                                    selected={date}
+                                    onSelect={setDate}
+                                    numberOfMonths={2}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                         <Select value={filters.is_approved} onValueChange={(value) => handleFilterChange('is_approved', value)}>
+                            <SelectTrigger className="w-full sm:w-auto flex-grow">
+                                <SelectValue placeholder="Payment Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="true">Approved</SelectItem>
+                                <SelectItem value="false">Pending</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select value={filters.kyc_status} onValueChange={(value) => handleFilterChange('kyc_status', value)}>
+                            <SelectTrigger className="w-full sm:w-auto flex-grow">
+                                <SelectValue placeholder="KYC Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="submitted">Submitted</SelectItem>
+                                <SelectItem value="verified">Verified</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select value={filters.credentials_provided} onValueChange={(value) => handleFilterChange('credentials_provided', value)}>
+                            <SelectTrigger className="w-full sm:w-auto flex-grow">
+                                <SelectValue placeholder="Credentials" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="true">Provided</SelectItem>
+                                <SelectItem value="false">Not Provided</SelectItem>
+                            </SelectContent>
+                        </Select>
+                         <Select value={filters.is_breached} onValueChange={(value) => handleFilterChange('is_breached', value)}>
+                            <SelectTrigger className="w-full sm:w-auto flex-grow">
+                                <SelectValue placeholder="Account Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="true">Breached</SelectItem>
+                                <SelectItem value="false">Active</SelectItem>
+                            </SelectContent>
+                        </Select>
+                         {isAnyFilterActive && (
+                            <Button variant="ghost" onClick={clearFilters}>
+                                <X className="mr-2 h-4 w-4"/>
+                                Clear
                             </Button>
-                        </div>
+                        )}
+                         <Button variant="outline" onClick={handleDownloadCSV}>
+                            <Download className="mr-2 h-4 w-4"/>
+                            Download CSV
+                        </Button>
                     </div>
                 </div>
 
@@ -463,7 +512,5 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
         </Card>
     );
 }
-
-    
 
     
