@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ExternalLink, Star } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
@@ -48,14 +48,29 @@ const PlanCard = ({ size, title, price, isPopular, isHighlighted }: { size: stri
       </CardHeader>
       <CardContent className="flex flex-col flex-grow justify-between space-y-6">
           <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Full Fee Refund On 3rd Payout</span>
-              </div>
-              <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>80% Profit Share</span>
-              </div>
+              {isHighlighted ? (
+                <>
+                  <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span>Limited slots available</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span>Real trading experience at the lowest entry</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span>Full Fee Refund On 3rd Payout</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span>80% Profit Share</span>
+                  </div>
+                </>
+              )}
           </div>
         <Button asChild className="w-full mt-auto" size="lg">
           <Link href={`/signup?plan=${encodeURIComponent(title)}&price=${price}`}>Get Funded for ₹{price}</Link>
