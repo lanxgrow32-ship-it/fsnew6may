@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
+import { cn } from '@/lib/utils';
 
 const instantFundingPlans = [
   { size: '1,00,000', title: '1L Instant Funding', price: '5,999' },
@@ -25,6 +26,7 @@ const oneStepPlans = [
 ];
 
 const twoStepPlans = [
+    { size: '25,000', title: '25K Try First Plan', price: '799', isHighlighted: true },
     { size: '1,00,000', title: '1L 2-Step', price: '2,999' },
     { size: '2,00,000', title: '2L 2-Step', price: '4,999' },
     { size: '5,00,000', title: '5L 2-Step', price: '7,999' },
@@ -33,35 +35,49 @@ const twoStepPlans = [
     { size: '50,00_000', title: '50L 2-Step', price: '35,999' },
 ];
 
-const PlanCard = ({ size, title, price, isPopular }: { size: string; title: string; price: string, isPopular?: boolean }) => (
-  <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border">
-    <CardHeader className="pb-4">
-      {isPopular && <Badge variant="destructive">🔥 POPULAR</Badge>}
-      <CardTitle className="text-3xl font-bold pt-2">₹{size}</CardTitle>
-      <p className="text-base text-muted-foreground">{title}</p>
-    </CardHeader>
-    <CardContent className="flex flex-col flex-grow justify-between space-y-6">
-        <div className="space-y-3 text-sm">
-            <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Full Fee Refund On 3rd Payout</span>
-            </div>
-            <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>80% Profit Share</span>
-            </div>
-        </div>
-      <Button asChild className="w-full mt-auto" size="lg">
-        <Link href={`/signup?plan=${encodeURIComponent(title)}&price=${price}`}>Get Funded for ₹{price}</Link>
-      </Button>
-    </CardContent>
-  </Card>
+const PlanCard = ({ size, title, price, isPopular, isHighlighted }: { size: string; title: string; price: string, isPopular?: boolean, isHighlighted?: boolean }) => (
+  <div className={cn('relative', isHighlighted && 'glowing-border-wrapper rounded-lg')}>
+    <Card className={cn("flex flex-col h-full hover:shadow-lg transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border", isHighlighted && "border-primary")}>
+      <CardHeader className="pb-4">
+        {isPopular && <Badge variant="destructive">🔥 POPULAR</Badge>}
+        {isHighlighted && <Badge>🎉 TRY FIRST</Badge>}
+        <CardTitle className="text-3xl font-bold pt-2">₹{size}</CardTitle>
+        <p className="text-base text-muted-foreground">{title}</p>
+      </CardHeader>
+      <CardContent className="flex flex-col flex-grow justify-between space-y-6">
+          <div className="space-y-3 text-sm">
+              <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Full Fee Refund On 3rd Payout</span>
+              </div>
+              <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>80% Profit Share</span>
+              </div>
+          </div>
+        <Button asChild className="w-full mt-auto" size="lg">
+          <Link href={`/signup?plan=${encodeURIComponent(title)}&price=${price}`}>Get Funded for ₹{price}</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  </div>
 );
 
 
 export default function PricingPage() {
   return (
     <div className="dark-theme">
+      <style jsx global>{`
+        @keyframes glowing {
+          0% { border-color: hsl(var(--primary)); box-shadow: 0 0 5px hsl(var(--primary) / 0.8); }
+          50% { border-color: hsl(var(--accent-foreground)); box-shadow: 0 0 20px hsl(var(--accent-foreground) / 0.8); }
+          100% { border-color: hsl(var(--primary)); box-shadow: 0 0 5px hsl(var(--primary) / 0.8); }
+        }
+        .glowing-border-wrapper {
+          padding: 2px;
+          animation: glowing 3s linear infinite;
+        }
+      `}</style>
       <div className="bg-background min-h-screen text-foreground">
         <nav className="absolute top-4 left-4 z-10">
             <Button asChild variant="outline" size="sm" className="border-border/50 text-foreground/80 hover:bg-accent/50 hover:text-foreground">
@@ -129,7 +145,7 @@ export default function PricingPage() {
                           <Link href="/rules/two-step-evaluation">View Rules <ExternalLink className="ml-2 h-4 w-4" /></Link>
                       </Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {twoStepPlans.map((plan) => (
                       <PlanCard key={plan.title} {...plan} />
                       ))}
