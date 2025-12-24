@@ -4,6 +4,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { randomUUID } from 'crypto';
 
 async function uploadFile(file: File, bucket: string, userId: string) {
   const fileExt = file.name.split('.').pop();
@@ -41,24 +42,24 @@ export async function saveKycStep(step: number, formData: FormData) {
           aadhar_number: formData.get('aadhar_number') as string,
           city_state: formData.get('city_state') as string,
         };
+        // Also update kyc_status to show verification is in progress for this step.
+        profileUpdateData.kyc_status = 'pending_pan';
         break;
 
       case 2: // Document Upload
-        const panFile = formData.get('pan_card') as File;
         const aadharFile = formData.get('aadhar_card') as File;
         const selfieFile = formData.get('selfie') as File;
 
-        if (!panFile || !aadharFile || !selfieFile || panFile.size === 0 || aadharFile.size === 0 || selfieFile.size === 0) {
-          return { error: 'All three document uploads are required.' };
+        if (!aadharFile || !selfieFile || aadharFile.size === 0 || selfieFile.size === 0) {
+          return { error: 'Aadhar and selfie uploads are required.' };
         }
         
-        const [pan_card_url, aadhar_card_url, selfie_url] = await Promise.all([
-          uploadFile(panFile, 'kyc-documents', user.id),
+        const [aadhar_card_url, selfie_url] = await Promise.all([
           uploadFile(aadharFile, 'kyc-documents', user.id),
           uploadFile(selfieFile, 'kyc-documents', user.id)
         ]);
 
-        profileUpdateData = { pan_card_url, aadhar_card_url, selfie_url };
+        profileUpdateData = { aadhar_card_url, selfie_url };
         break;
       
       case 3: // Trading Background
@@ -99,5 +100,31 @@ export async function saveKycStep(step: number, formData: FormData) {
 
   } catch (error: any) {
     return { error: error.message };
+  }
+}
+
+export async function verifyPan(pan: string) {
+  const username = process.env.EKYCHUB_USERNAME;
+  const token = process.env.EKYCHUB_TOKEN;
+  const orderId = randomUUID();
+
+  if (!username || !token) {
+    console.error('eKYCHub credentials are not set in environment variables.');
+    return { status: 'Failure', message: 'Verification service is not configured.' };
+  }
+
+  const url = `https://connect.ekychub.in/v3/verification/pan_verification?username=${username}&token=${token}&pan=${pan}&orderid=${orderId}`;
+
+  try {
+    const response = await fetch(url, { method: 'GET' });
+    if (!response.ok) {
+      console.error('eKYCHub API request failed:', response.statusText);
+      return { status: 'Failure', message: 'Could not connect to verification service.' };
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error calling eKYCHub API:', error);
+    return { status: 'Failure', message: 'An unexpected error occurred during verification.' };
   }
 }

@@ -29,7 +29,7 @@ type Profile = {
   credentials_provided: boolean;
   trading_username: string;
   trading_password: string;
-  kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected';
+  kyc_status: 'pending' | 'pending_pan' | 'submitted' | 'verified' | 'rejected';
   mobile_number: string;
   pan_number: string;
   aadhar_number: string;
@@ -189,7 +189,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     return <div className="flex min-h-screen items-center justify-center"><p>Profile not found.</p></div>
   }
 
-  const DocumentLink = ({ href, children }: { href: string, children: React.ReactNode }) => {
+  const DocumentLink = ({ href, children }: { href: string | null | undefined, children: React.ReactNode }) => {
     if (!href) return null;
     return (
         <Button asChild variant="outline" size="sm">
@@ -358,7 +358,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="pending">Pending Submission</SelectItem>
-                                                <SelectItem value="submitted">Submitted</SelectItem>
+                                                <SelectItem value="pending_pan">PAN Verified</SelectItem>
+                                                <SelectItem value="submitted">Submitted for Review</SelectItem>
                                                 <SelectItem value="verified">Verified</SelectItem>
                                                 <SelectItem value="rejected">Rejected</SelectItem>
                                             </SelectContent>
@@ -396,19 +397,21 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                 </CardContent>
                             </Card>
                              {/* Trading Credentials */}
-                            <CardHeader>
-                                <CardTitle>Trading Credentials</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="trading_username">Trading Username</Label>
-                                    <Input id="trading_username" name="trading_username" defaultValue={profile.trading_username || ''} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="trading_password">Trading Password</Label>
-                                    <Input id="trading_password" name="trading_password" defaultValue={profile.trading_password || ''} />
-                                </div>
-                            </CardContent>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Trading Credentials</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="trading_username">Trading Username</Label>
+                                        <Input id="trading_username" name="trading_username" defaultValue={profile.trading_username || ''} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="trading_password">Trading Password</Label>
+                                        <Input id="trading_password" name="trading_password" defaultValue={profile.trading_password || ''} />
+                                    </div>
+                                </CardContent>
+                             </Card>
                             <CardFooter className="mt-8 flex justify-end gap-4">
                                 <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
                                 <Button type="submit" size="lg" disabled={isLoading}>
@@ -433,4 +436,3 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   );
 }
 
-    

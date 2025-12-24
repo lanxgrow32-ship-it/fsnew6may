@@ -1,6 +1,5 @@
-
 'use client';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -8,9 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveKycStep } from './actions';
+import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,6 +25,23 @@ const tradingStyleOptions = [
 ];
 
 function Step1_PersonalInfo({ onSave, error }: { onSave: (formData: FormData) => void; error: string | null }) {
+    const [pan, setPan] = useState('');
+    const [panVerification, setPanVerification] = useState<{ status: 'idle' | 'loading' | 'success' | 'error'; message: string | null }>({ status: 'idle', message: null });
+
+    const handlePanVerification = async () => {
+        if (!pan || pan.length !== 10) {
+            setPanVerification({ status: 'error', message: 'Please enter a valid 10-character PAN.' });
+            return;
+        }
+        setPanVerification({ status: 'loading', message: null });
+        const result = await verifyPan(pan);
+        if (result.status === 'Success') {
+            setPanVerification({ status: 'success', message: `Verified as ${result.registered_name}` });
+        } else {
+            setPanVerification({ status: 'error', message: result.message || 'Verification failed.' });
+        }
+    };
+
     return (
         <form action={onSave} className="space-y-6">
             <h3 className="font-semibold text-lg">Step 1: Personal Information</h3>
@@ -39,9 +55,24 @@ function Step1_PersonalInfo({ onSave, error }: { onSave: (formData: FormData) =>
                     <Label htmlFor="city_state">City & State *</Label>
                     <Input id="city_state" name="city_state" required />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="pan_number">PAN Card Number *</Label>
-                    <Input id="pan_number" name="pan_number" required />
+                    <div className="flex items-center gap-2">
+                        <Input 
+                            id="pan_number" 
+                            name="pan_number" 
+                            value={pan}
+                            onChange={(e) => setPan(e.target.value.toUpperCase())}
+                            required 
+                            maxLength={10}
+                            className="flex-grow"
+                        />
+                         <Button type="button" onClick={handlePanVerification} disabled={panVerification.status === 'loading' || panVerification.status === 'success'}>
+                            {panVerification.status === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
+                        </Button>
+                    </div>
+                    {panVerification.status === 'success' && <p className="text-sm text-green-600 flex items-center gap-1 mt-1"><CheckCircle className="h-4 w-4"/> {panVerification.message}</p>}
+                    {panVerification.status === 'error' && <p className="text-sm text-destructive flex items-center gap-1 mt-1"><XCircle className="h-4 w-4"/> {panVerification.message}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="aadhar_number">Aadhar Card Number *</Label>
@@ -49,23 +80,19 @@ function Step1_PersonalInfo({ onSave, error }: { onSave: (formData: FormData) =>
                 </div>
             </div>
             <div className="flex justify-end gap-4 pt-4">
-                <Button type="submit">Save & Continue</Button>
+                <Button type="submit" disabled={panVerification.status !== 'success'}>Save & Continue</Button>
             </div>
         </form>
     );
 }
+
 
 function Step2_DocumentUpload({ onSave, onBack, error }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null }) {
      return (
         <form action={onSave} className="space-y-6">
             <h3 className="font-semibold text-lg">Step 2: Document Upload</h3>
              {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                    <Label htmlFor="pan_card">Upload PAN Card *</Label>
-                    <Input id="pan_card" name="pan_card" type="file" required accept="image/*" />
-                    <p className="text-xs text-muted-foreground">Max 10 MB.</p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label htmlFor="aadhar_card">Upload Aadhar Card *</Label>
                     <Input id="aadhar_card" name="aadhar_card" type="file" required accept="image/*"/>
