@@ -51,6 +51,7 @@ function SignupForm() {
   const [copied, setCopied] = useState(false);
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
+  const isTrialPlan = plan === '25K Try First Plan';
 
   useEffect(() => {
     const fetchPaymentDetails = async () => {
@@ -210,27 +211,29 @@ function SignupForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-            <Card className="bg-card/80 backdrop-blur-sm border-border">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex gap-2">
-                    <Input 
-                        id="coupon"
-                        name="coupon"
-                        placeholder="Enter coupon code" 
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        disabled={discountPercent > 0}
-                    />
-                    <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0}>
-                        {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-                    </Button>
-                    </div>
-                    {couponError && <p className="text-sm text-destructive mt-2">{couponError}</p>}
-                </CardContent>
-            </Card>
+            {!isTrialPlan && (
+                <Card className="bg-card/80 backdrop-blur-sm border-border">
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex gap-2">
+                        <Input 
+                            id="coupon"
+                            name="coupon"
+                            placeholder="Enter coupon code" 
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value)}
+                            disabled={discountPercent > 0}
+                        />
+                        <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0}>
+                            {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                        </Button>
+                        </div>
+                        {couponError && <p className="text-sm text-destructive mt-2">{couponError}</p>}
+                    </CardContent>
+                </Card>
+            )}
             
             {paymentDetailsLoading ? <PaymentDetailsSkeleton /> : (
               <Card className="bg-card/80 backdrop-blur-sm border-border">
