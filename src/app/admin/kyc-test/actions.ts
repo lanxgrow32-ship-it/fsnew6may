@@ -1,4 +1,3 @@
-
 'use server';
 
 import { randomUUID } from 'crypto';
@@ -31,16 +30,29 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
 
   try {
     const response = await fetch(url, { method: 'GET' });
+
+    // Check if the response is OK and looks like JSON before parsing
+    if (!response.ok) {
+        // Attempt to read the body as text to see the HTML error page from the server
+        const errorBody = await response.text();
+        console.error('eKYCHub API Error Response (Not JSON):', errorBody);
+        return { error: `Verification service returned a server error (Status: ${response.status}). Check server logs.` };
+    }
+
     const data = await response.json();
 
     if (data.status === 'Success' && data.url) {
       return { success: true, url: data.url };
     } else {
-      console.error('eKYCHub API Error:', data);
+      console.error('eKYCHub API Error (JSON Response):', data);
       return { error: data.message || 'Failed to create Digilocker URL from API.' };
     }
   } catch (error) {
     console.error('Error calling createDigilockerUrl:', error);
+    if (error instanceof SyntaxError) {
+        // This catches the "Unexpected token <" error specifically
+        return { error: 'The verification service returned an invalid response (not JSON). This may be an issue with the third-party service.' };
+    }
     if (error instanceof Error) {
         return { error: `An unexpected error occurred: ${error.message}` };
     }
