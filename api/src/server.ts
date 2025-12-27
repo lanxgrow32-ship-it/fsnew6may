@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -16,12 +17,7 @@ const ekycToken = process.env.EKYCHUB_TOKEN || '14bf70203d692e9e695f9df588c57210
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://app.fundedstock.io';
 
 
-// Configure CORS to only allow requests from your Vercel frontend
-const corsOptions = {
-  origin: FRONTEND_URL,
-};
-
-app.use(cors(corsOptions));
+app.use(cors()); // Allow all origins for now
 app.use(express.json());
 
 /**
@@ -37,8 +33,8 @@ app.post('/api/create-digilocker-url', async (req, res) => {
   }
 
   const orderId = randomUUID();
-  // The redirect URL is now the live frontend domain
-  const redirectBackUrl = `${FRONTEND_URL}/admin/kyc-test`;
+  // The redirect URL is now the live frontend domain, passed from the frontend
+  const redirectBackUrl = `${FRONTEND_URL}/admin/kyc-test?document_type=${documentType}`;
 
   const endpoint = documentType === 'AADHAAR' 
     ? 'create_url_aadhaar' 
@@ -53,7 +49,8 @@ app.post('/api/create-digilocker-url', async (req, res) => {
     if (apiResponse.ok) {
       res.status(200).json(data);
     } else {
-      res.status(apiResponse.status).json(data);
+      console.error("eKYCHub Error:", data);
+      res.status(apiResponse.status).json({ error: data.message || `Verification service returned a server error (Status: ${apiResponse.status})` });
     }
   } catch (error) {
     console.error('Error creating Digilocker URL:', error);
@@ -81,7 +78,8 @@ app.post('/api/get-document', async (req, res) => {
         if(apiResponse.ok) {
             res.status(200).json(data);
         } else {
-            res.status(apiResponse.status).json(data);
+            console.error("eKYCHub Error:", data);
+            res.status(apiResponse.status).json({ error: data.message || 'Failed to retrieve document data.' });
         }
     } catch (error) {
         console.error('Error fetching Digilocker document:', error);
