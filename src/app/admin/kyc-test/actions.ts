@@ -33,14 +33,18 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
     const response = await fetch(url, { method: 'GET' });
     const data = await response.json();
 
-    if (data.status === 'Success') {
+    if (data.status === 'Success' && data.url) {
       return { success: true, url: data.url };
     } else {
-      return { error: data.message || 'Failed to create Digilocker URL.' };
+      console.error('eKYCHub API Error:', data);
+      return { error: data.message || 'Failed to create Digilocker URL from API.' };
     }
   } catch (error) {
     console.error('Error calling createDigilockerUrl:', error);
-    return { error: 'An unexpected error occurred.' };
+    if (error instanceof Error) {
+        return { error: `An unexpected error occurred: ${error.message}` };
+    }
+    return { error: 'An unexpected error occurred while contacting the verification service.' };
   }
 }
 
