@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, Download, PanelLeft, ShieldAlert } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, PanelLeft, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile, resetPassword } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,8 +33,6 @@ type Profile = {
   mobile_number: string;
   pan_number: string;
   aadhar_number: string;
-  pan_card_url: string;
-  aadhar_card_url: string;
   selfie_url: string;
   city_state: string;
   traded_before: boolean;
@@ -52,6 +50,9 @@ type Profile = {
   breach_reason: string | null;
   breach_image_url: string | null;
   role: string;
+  is_pan_verified: boolean;
+  is_aadhaar_verified: boolean;
+  digilocker_verification_id: string | null;
 };
 
 function ResetPasswordForm({ userId, role }: { userId: string, role: string }) {
@@ -189,17 +190,12 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     return <div className="flex min-h-screen items-center justify-center"><p>Profile not found.</p></div>
   }
 
-  const DocumentLink = ({ href, children }: { href: string | null | undefined, children: React.ReactNode }) => {
-    if (!href) return null;
-    return (
-        <Button asChild variant="outline" size="sm">
-            <Link href={href} target="_blank" className="flex items-center gap-2">
-                {children}
-                <Download className="h-3 w-3" />
-            </Link>
-        </Button>
-    )
-  }
+  const VerificationStatus = ({ label, isVerified }: { label: string, isVerified: boolean }) => (
+    <div className={`flex items-center gap-2 font-medium ${isVerified ? 'text-green-600' : 'text-destructive'}`}>
+        {isVerified ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+        <span>{label} {isVerified ? 'Verified' : 'Not Verified'}</span>
+    </div>
+  );
 
   return (
     <div className="bg-muted/40 min-h-screen">
@@ -222,39 +218,53 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Left Column */}
                         <div className="lg:col-span-2 space-y-8">
-                            {/* KYC Details */}
-                            {(profile.kyc_status === 'submitted' || profile.kyc_status === 'verified' || profile.kyc_status === 'rejected') ? (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>KYC Verification Details</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                                            <div className="space-y-1">
-                                                <p className="font-medium text-muted-foreground">Mobile</p>
-                                                <p>{profile.mobile_number}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="font-medium text-muted-foreground">PAN</p>
-                                                <p>{profile.pan_number}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="font-medium text-muted-foreground">Aadhar</p>
-                                                <p>{profile.aadhar_number}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="font-medium text-muted-foreground">Location</p>
-                                                <p>{profile.city_state}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="font-medium text-muted-foreground">Traded Before</p>
-                                                <p>{profile.traded_before ? 'Yes' : 'No'}</p>
-                                            </div>
+                           <Card>
+                                <CardHeader>
+                                    <CardTitle>KYC & Verification Details</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                        <VerificationStatus label="PAN" isVerified={profile.is_pan_verified} />
+                                        <VerificationStatus label="Aadhaar" isVerified={profile.is_aadhaar_verified} />
                                     </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm pt-4 border-t">
+                                        <div className="space-y-1">
+                                            <p className="font-medium text-muted-foreground">Mobile</p>
+                                            <p>{profile.mobile_number || 'N/A'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-medium text-muted-foreground">PAN</p>
+                                            <p>{profile.pan_number || 'N/A'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-medium text-muted-foreground">Aadhar</p>
+                                            <p>{profile.aadhar_number || 'N/A'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-medium text-muted-foreground">Location</p>
+                                            <p>{profile.city_state || 'N/A'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-medium text-muted-foreground">Traded Before</p>
+                                            <p>{profile.traded_before ? 'Yes' : 'No'}</p>
+                                        </div>
+                                    </div>
+                                    {profile.selfie_url && (
+                                         <div className="space-y-2 pt-4 border-t">
+                                            <p className="font-medium text-muted-foreground text-sm">Digilocker Photo</p>
+                                            <Image src={profile.selfie_url} alt="User photo from Digilocker" width={100} height={100} className="rounded-md border p-1" />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader><CardTitle>Agreements & Trading Background</CardTitle></CardHeader>
+                                <CardContent>
                                     <div className="space-y-4 pt-4 text-sm">
                                         <div className="space-y-1">
                                             <p className="font-medium text-muted-foreground">Trading Experience</p>
-                                            <p>{profile.trading_experience}</p>
+                                            <p>{profile.trading_experience || 'N/A'}</p>
                                         </div>
                                         <div className="space-y-1">
                                             <p className="font-medium text-muted-foreground">Comments</p>
@@ -262,31 +272,17 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                         </div>
                                         <div className="space-y-1">
                                             <p className="font-medium text-muted-foreground">Trading Styles</p>
-                                            <p>{profile.trading_style?.join(', ')}</p>
+                                            <p>{profile.trading_style?.join(', ') || 'N/A'}</p>
                                         </div>
                                     </div>
-                                    <div className="space-y-2 pt-4 text-sm">
+                                    <div className="space-y-2 pt-4 mt-4 border-t text-sm">
                                         <p><strong>Drawdown Rules Accepted:</strong> {profile.drawdown_rules_accepted ? 'Yes' : 'No'}</p>
                                         <p><strong>Risk Rules Understood:</strong> {profile.risk_rules_understood ? 'Yes' : 'No'}</p>
                                         <p><strong>Terms Accepted:</strong> {profile.terms_accepted ? 'Yes' : 'No'}</p>
                                     </div>
-                                        <div className="flex flex-wrap gap-4 pt-4">
-                                            <DocumentLink href={profile.pan_card_url}>View PAN Card</DocumentLink>
-                                            <DocumentLink href={profile.aadhar_card_url}>View Aadhar Card</DocumentLink>
-                                            <DocumentLink href={profile.selfie_url}>View Selfie</DocumentLink>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ) : (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>KYC Verification</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-muted-foreground">User has not submitted KYC details yet.</p>
-                                    </CardContent>
-                                </Card>
-                            )}
+                                </CardContent>
+                            </Card>
+                            
                              {/* Purchase Details */}
                             <Card>
                                 <CardHeader>
@@ -358,7 +354,6 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="pending">Pending Submission</SelectItem>
-                                                <SelectItem value="pending_pan">PAN Verified</SelectItem>
                                                 <SelectItem value="submitted">Submitted for Review</SelectItem>
                                                 <SelectItem value="verified">Verified</SelectItem>
                                                 <SelectItem value="rejected">Rejected</SelectItem>
@@ -435,4 +430,3 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
