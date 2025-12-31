@@ -14,7 +14,6 @@ const port = process.env.PORT || 3001;
 
 const ekycUsername = process.env.EKYCHUB_USERNAME || '7304893134';
 const ekycToken = process.env.EKYCHUB_TOKEN || '14bf70203d692e9e695f9df588c57210';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://app.fundedstock.io';
 
 
 app.use(cors()); // Allow all origins for now
@@ -22,24 +21,27 @@ app.use(express.json());
 
 /**
  * Endpoint to create a Digilocker redirect URL.
- * It takes the document type (AADHAAR or PAN) and constructs the
- * correct redirect URL back to the frontend application.
+ * It takes the document type (AADHAAR or PAN) and the frontend's URL
+ * to construct the correct redirect URL back to the frontend application.
  */
 app.post('/api/create-digilocker-url', async (req, res) => {
-  const { documentType } = req.body;
+  const { documentType, redirectBackUrl } = req.body;
 
   if (!documentType || (documentType !== 'AADHAAR' && documentType !== 'PAN')) {
     return res.status(400).json({ error: 'Invalid or missing documentType.' });
   }
 
-  const orderId = randomUUID();
-  // The redirect URL is now the live frontend domain, passed from the frontend
-  const redirectBackUrl = `${FRONTEND_URL}/admin/kyc-test?document_type=${documentType}`;
+  if (!redirectBackUrl) {
+    return res.status(400).json({ error: 'Missing redirectBackUrl.' });
+  }
 
+  const orderId = randomUUID();
+  
   const endpoint = documentType === 'AADHAAR' 
     ? 'create_url_aadhaar' 
     : 'create_url_pan';
   
+  // The redirect_url is now dynamically passed from the frontend
   const url = `https://connect.ekychub.in/v3/digilocker/${endpoint}?username=${ekycUsername}&token=${ekycToken}&redirect_url=${encodeURIComponent(redirectBackUrl)}&orderid=${orderId}`;
   
   try {

@@ -81,12 +81,19 @@ function KycVerificationFlow() {
                 setError('API URL is not configured. Cannot start verification.');
                 return;
             }
+
+            // Construct the redirect URL from the current window location
+            const currentUrl = window.location.href.split('?')[0];
+            const redirectBackUrl = `${currentUrl}?document_type=${docType}`;
             
             try {
                 const response = await fetch(`${apiUrl}/api/create-digilocker-url`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ documentType: docType })
+                    body: JSON.stringify({ 
+                        documentType: docType,
+                        redirectBackUrl: redirectBackUrl // Send the dynamic URL to the backend
+                    })
                 });
 
                 const data = await response.json();
