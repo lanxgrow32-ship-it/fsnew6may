@@ -105,22 +105,19 @@ export async function signupAndCreateOrder(formData: FormData) {
     }
 
     try {
-        const orderPayload = new URLSearchParams({
-            customer_mobile: mobileNumber,
-            user_token: imbUserToken,
-            amount: String(finalAmountPaid),
-            order_id: orderId,
-            redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/welcome`, // Redirect to welcome page after payment
-            remark1: email,
-            remark2: `Signup for ${planPurchased}`
-        });
+        const orderPayload = new FormData();
+        orderPayload.append('customer_mobile', mobileNumber);
+        orderPayload.append('user_token', imbUserToken);
+        orderPayload.append('amount', String(finalAmountPaid));
+        orderPayload.append('order_id', orderId);
+        orderPayload.append('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/welcome`);
+        orderPayload.append('remark1', email);
+        orderPayload.append('remark2', `Signup for ${planPurchased}`);
+        
 
         const response = await fetch('https://pay.imb.org.in/api/create-order', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: orderPayload.toString(),
+            body: orderPayload,
         });
         
         const imbResult = await response.json();

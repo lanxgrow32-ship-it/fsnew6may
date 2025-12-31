@@ -54,6 +54,9 @@ export async function POST(req: NextRequest) {
             const updatePayload: { is_approved: boolean, transaction_id?: string } = { is_approved: true };
             if (utr) {
                 updatePayload.transaction_id = utr;
+            } else {
+                // Fallback to the order_id if utr is not available
+                updatePayload.transaction_id = order_id;
             }
 
             const { error: updateError } = await supabaseAdmin
