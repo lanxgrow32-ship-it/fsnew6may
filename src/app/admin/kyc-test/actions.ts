@@ -6,9 +6,8 @@ import { randomUUID } from 'crypto';
 // This is a server action to securely call the eKYCHub API.
 // The username and token are stored securely on the server and are not exposed to the client.
 
-// NEW Credentials provided by user
-const ekycUsername = process.env.EKYCHUB_USERNAME || '7304893134';
-const ekycToken = process.env.EKYCHUB_TOKEN || '14bf70203d692e9e695f9df588c57210';
+const ekycUsername = process.env.EKYCHUB_USERNAME;
+const ekycToken = process.env.EKYCHUB_TOKEN;
 
 /**
  * Step 1: Create the Digilocker Redirect URL.
@@ -27,17 +26,29 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
     ? 'create_url_aadhaar' 
     : 'create_url_pan';
   
-  const url = `https://connect.ekychub.in/v3/digilocker/${endpoint}?username=${ekycUsername}&token=${ekycToken}&redirect_url=${encodeURIComponent(redirectBackUrl)}&orderid=${orderId}`;
+  const baseUrl = `https://connect.ekychub.in/v3/digilocker/${endpoint}`;
+  const params = new URLSearchParams({
+      username: ekycUsername,
+      token: ekycToken,
+      redirect_url: redirectBackUrl,
+      orderid: orderId,
+  });
+
+  const url = `${baseUrl}?${params.toString()}`;
 
   try {
-    const response = await fetch(url, { method: 'GET' });
-
-    // Check if the response is OK and looks like JSON before parsing
-    if (!response.ok) {
-        // Attempt to read the body as text to see the HTML error page from the server
+    const response = await fetch(url, { 
+      method: 'GET',
+      headers: {
+        'User-Agent': 'FundedStock-NextJS-App/1.0'
+      }
+    });
+    
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
         const errorBody = await response.text();
-        console.error('eKYCHub API Error Response (Not JSON):', errorBody);
-        return { error: `Verification service returned a server error (Status: ${response.status}). Check server logs.` };
+        console.error('eKYCHub API did not return JSON. Status:', response.status, 'Body:', errorBody);
+        return { error: `Verification service returned an invalid response (not JSON). Check server logs for details. Status: ${response.status}` };
     }
 
     const data = await response.json();
@@ -46,14 +57,10 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
       return { success: true, url: data.url };
     } else {
       console.error('eKYCHub API Error (JSON Response):', data);
-      return { error: data.message || 'Failed to create Digilocker URL from API.' };
+      return { error: data.message || `Failed to create Digilocker URL from API. Status: ${response.status}` };
     }
   } catch (error) {
     console.error('Error calling createDigilockerUrl:', error);
-    if (error instanceof SyntaxError) {
-        // This catches the "Unexpected token <" error specifically
-        return { error: 'The verification service returned an invalid response (not JSON). This may be an issue with the third-party service.' };
-    }
     if (error instanceof Error) {
         return { error: `An unexpected error occurred: ${error.message}` };
     }
@@ -75,10 +82,26 @@ export async function getDigilockerDocument(verification_id: string, reference_i
     return { error: 'Verification service is not configured on the server.' };
   }
 
-  const url = `https://connect.ekychub.in/v3/digilocker/get_document?username=${ekycUsername}&token=${ekycToken}&verification_id=${verification_id}&reference_id=${reference_id}&orderid=${orderId}&document_type=${document_type}`;
+  const baseUrl = `https://connect.ekychub.in/v3/digilocker/get_document`;
+  const params = new URLSearchParams({
+      username: ekycUsername,
+      token: ekycToken,
+      verification_id: verification_id,
+      reference_id: reference_id,
+      orderid: orderId,
+      document_type: document_type,
+  });
+
+  const url = `${baseUrl}?${params.toString()}`;
 
   try {
-    const response = await fetch(url, { method: 'GET' });
+    const response = await fetch(url, { 
+      method: 'GET',
+      headers: {
+        'User-Agent': 'FundedStock-NextJS-App/1.0'
+      }
+    });
+
     const data = await response.json();
     return data;
   } catch (error) {

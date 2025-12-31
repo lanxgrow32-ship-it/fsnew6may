@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, UserCheck, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ClientOnly } from '@/components/ui/client-only';
+import { createDigilockerUrl, getDigilockerDocument } from './actions';
 
 function KycVerificationFlow() {
     const searchParams = useSearchParams();
@@ -29,22 +30,12 @@ function KycVerificationFlow() {
                 setResult(null);
 
                 try {
-                    const response = await fetch('/api/kyc', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            action: 'get_document',
-                            verification_id, 
-                            reference_id, 
-                            document_type 
-                        })
-                    });
-                    const data = await response.json();
+                    const data = await getDigilockerDocument(verification_id, reference_id, document_type);
                     
-                    if (response.ok) {
+                    if (data.status === 'Success') {
                         setResult(data);
                     } else {
-                        setError(data.error || 'Failed to retrieve document data.');
+                        setError(data.message || 'Failed to retrieve document data.');
                     }
                 } catch (e: any) {
                     setError(`Failed to connect to the verification service: ${e.message}`);
@@ -65,19 +56,9 @@ function KycVerificationFlow() {
             const redirectBackUrl = `${currentUrl}?document_type=${docType}`;
             
             try {
-                const response = await fetch('/api/kyc', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'create_url',
-                        documentType: docType,
-                        redirectBackUrl: redirectBackUrl
-                    })
-                });
-
-                const data = await response.json();
+                const data = await createDigilockerUrl(docType, redirectBackUrl);
                 
-                if (response.ok && data.url) {
+                if (data.success && data.url) {
                     window.location.href = data.url;
                 } else {
                     setError(data.error || 'Failed to start verification process.');
