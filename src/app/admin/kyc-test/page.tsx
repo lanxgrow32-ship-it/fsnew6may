@@ -23,7 +23,7 @@ function KycVerificationFlow() {
     // Fetch the microservice URL from the client-side environment variable
     useEffect(() => {
         // Vercel exposes public env vars with NEXT_PUBLIC_ prefix to the browser
-        const url = process.env.NEXT_PUBLIC_MICROSERVICE_URL;
+        const url = process.env.NEXT_PUBLIC_API_URL;
         if (url) {
             setApiUrl(url);
         } else {

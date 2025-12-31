@@ -12,8 +12,8 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
-const ekycUsername = process.env.EKYCHUB_USERNAME || '7304893134';
-const ekycToken = process.env.EKYCHUB_TOKEN || '14bf70203d692e9e695f9df588c57210';
+const ekycUsername = process.env.EKYCHUB_USERNAME;
+const ekycToken = process.env.EKYCHUB_TOKEN;
 
 
 app.use(cors()); // Allow all origins for now
@@ -35,6 +35,11 @@ app.post('/api/create-digilocker-url', async (req, res) => {
     return res.status(400).json({ error: 'Missing redirectBackUrl.' });
   }
 
+  if (!ekycUsername || !ekycToken) {
+    console.error("eKYCHub credentials are not set in environment variables.");
+    return res.status(500).json({ error: 'Verification service is not configured.' });
+  }
+
   const orderId = randomUUID();
   
   const endpoint = documentType === 'AADHAAR' 
@@ -48,7 +53,7 @@ app.post('/api/create-digilocker-url', async (req, res) => {
     const apiResponse = await fetch(url);
     const data = await apiResponse.json();
 
-    if (apiResponse.ok) {
+    if (apiResponse.ok && data.status === 'Success') {
       res.status(200).json(data);
     } else {
       console.error("eKYCHub Error:", data);
@@ -68,6 +73,11 @@ app.post('/api/get-document', async (req, res) => {
 
     if (!verification_id || !reference_id || !document_type) {
         return res.status(400).json({ error: 'Missing required parameters.' });
+    }
+
+    if (!ekycUsername || !ekycToken) {
+        console.error("eKYCHub credentials are not set in environment variables.");
+        return res.status(500).json({ error: 'Verification service is not configured.' });
     }
 
     const orderId = randomUUID();
