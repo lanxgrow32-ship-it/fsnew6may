@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useTransition, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
@@ -80,10 +81,9 @@ function KycFlow() {
   // Effect to handle Digilocker redirect
   useEffect(() => {
     const processVerification = async () => {
-        const params = new URLSearchParams(window.location.search);
-        const verification_id = params.get('verification_id');
-        const reference_id = params.get('reference_id');
-        const doc_type = sessionStorage.getItem('kyc_doc_type') as 'AADHAAR' | 'PAN' | null;
+        const verification_id = sessionStorage.getItem('digilocker_verification_id');
+        const reference_id = sessionStorage.getItem('digilocker_reference_id');
+        const doc_type = sessionStorage.getItem('digilocker_doc_type') as 'AADHAAR' | 'PAN' | null;
 
         if (verification_id && reference_id && doc_type) {
             startTransition(async () => {
@@ -95,7 +95,6 @@ function KycFlow() {
                 } else {
                     setVerifiedData(result.data);
                     
-                    // Also update the profile in the background
                     const formData = new FormData();
                     formData.append('document_type', doc_type);
                     formData.append('verification_id', verification_id);
@@ -110,14 +109,18 @@ function KycFlow() {
                     }
                 }
                 // Clean up sessionStorage and URL
-                sessionStorage.removeItem('kyc_doc_type');
+                sessionStorage.removeItem('digilocker_verification_id');
+                sessionStorage.removeItem('digilocker_reference_id');
+                sessionStorage.removeItem('digilocker_doc_type');
                 router.replace('/kyc');
             });
         }
     };
     
     processVerification();
-  }, [router]);
+    // The dependency array is intentionally empty to ensure this runs only once on page load after a redirect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const handleStepSave = async (formData: FormData) => {
@@ -127,7 +130,6 @@ function KycFlow() {
           if (result.error) {
               setError(result.error);
           } else {
-              // Manually update profile state to reflect changes before moving to next step
               if (result.updatedProfile) {
                   setProfile(result.updatedProfile as Profile);
               }
@@ -149,17 +151,18 @@ function KycFlow() {
   const handleVerificationClick = (docType: 'AADHAAR' | 'PAN') => {
         startTransition(async () => {
             setError(null);
-            sessionStorage.setItem('kyc_doc_type', docType);
-
-            // Use the current window location as the base for the redirect URL
             const redirectBackUrl = window.location.origin + window.location.pathname;
 
             const data = await createDigilockerUrl(docType, redirectBackUrl);
-            if (data.success && data.url) {
+            
+            if (data.success && data.url && data.verification_id && data.reference_id) {
+                // Save context to sessionStorage before redirecting
+                sessionStorage.setItem('digilocker_verification_id', data.verification_id);
+                sessionStorage.setItem('digilocker_reference_id', data.reference_id);
+                sessionStorage.setItem('digilocker_doc_type', docType);
                 window.location.href = data.url;
             } else {
                 setError(data.error || 'Failed to start verification process.');
-                sessionStorage.removeItem('kyc_doc_type');
             }
         });
     };

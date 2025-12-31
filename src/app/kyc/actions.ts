@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -32,7 +33,7 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
     const data = await response.json();
 
     if (data.status === 'Success' && data.url) {
-      return { success: true, url: data.url };
+      return { success: true, url: data.url, verification_id: data.verification_id, reference_id: data.reference_id };
     } else {
       console.error('eKYCHub API Error (JSON Response):', data);
       return { error: data.message || `Failed to create Digilocker URL from API. Status: ${response.status}` };
@@ -40,6 +41,10 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
   } catch (error) {
     console.error('Error calling createDigilockerUrl:', error);
     if (error instanceof Error) {
+        // Distinguish between JSON parsing errors and other errors
+        if (error.message.includes('invalid json')) {
+             return { error: `Verification service returned an invalid response (not JSON). Check server logs for details. Status: ${(error as any).status}` };
+        }
         return { error: `An unexpected error occurred: ${error.message}` };
     }
     return { error: 'An unexpected error occurred while contacting the verification service.' };
