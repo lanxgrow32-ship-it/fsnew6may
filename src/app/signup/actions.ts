@@ -110,7 +110,7 @@ export async function signupAndCreateOrder(formData: FormData) {
         orderPayload.append('user_token', imbUserToken);
         orderPayload.append('amount', String(finalAmountPaid));
         orderPayload.append('order_id', orderId);
-        orderPayload.append('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/welcome`);
+        orderPayload.append('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success`);
         orderPayload.append('remark1', email);
         orderPayload.append('remark2', `Signup for ${planPurchased}`);
         
