@@ -22,7 +22,8 @@ function KycVerificationFlow() {
     useEffect(() => {
         const verification_id = searchParams.get('verification_id');
         const reference_id = searchParams.get('reference_id');
-        const document_type = searchParams.get('document_type') as 'AADHAAR' | 'PAN' | null;
+        // Get the document type from session storage, which we set before redirecting
+        const document_type = sessionStorage.getItem('kyc_doc_type') as 'AADHAAR' | 'PAN' | null;
 
         if (verification_id && reference_id && document_type) {
             startTransition(async () => {
@@ -40,7 +41,9 @@ function KycVerificationFlow() {
                 } catch (e: any) {
                     setError(`Failed to connect to the verification service: ${e.message}`);
                 }
-
+                
+                // Clean up session storage and URL
+                sessionStorage.removeItem('kyc_doc_type');
                 router.replace('/admin/kyc-test');
             });
         }
@@ -52,8 +55,11 @@ function KycVerificationFlow() {
             setError(null);
             setResult(null);
 
-            const currentUrl = window.location.href.split('?')[0];
-            const redirectBackUrl = `${currentUrl}?document_type=${docType}`;
+            // Store the docType in session storage to retrieve it after the redirect
+            sessionStorage.setItem('kyc_doc_type', docType);
+
+            // Get the current URL without any query parameters
+            const redirectBackUrl = window.location.href.split('?')[0];
             
             try {
                 const data = await createDigilockerUrl(docType, redirectBackUrl);
@@ -62,9 +68,12 @@ function KycVerificationFlow() {
                     window.location.href = data.url;
                 } else {
                     setError(data.error || 'Failed to start verification process.');
+                    // If it fails, remove the item from session storage
+                    sessionStorage.removeItem('kyc_doc_type');
                 }
             } catch (e: any) {
                 setError(`Failed to connect to the verification service: ${e.message}`);
+                sessionStorage.removeItem('kyc_doc_type');
             }
         });
     };

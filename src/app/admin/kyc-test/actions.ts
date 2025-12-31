@@ -31,17 +31,14 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
   const params = new URLSearchParams({
       username: ekycUsername,
       token: ekycToken,
-      redirect_url: redirectBackUrl,
+      redirect_url: redirectBackUrl, // Using the clean URL passed from the client
       orderid: orderId,
   });
 
   const url = `${baseUrl}?${params.toString()}`;
 
   try {
-    // Removed the 'headers' option as it's not specified in the API docs and might cause rejection.
-    const response = await fetch(url, { 
-      method: 'GET'
-    });
+    const response = await fetch(url, { method: 'GET' });
     
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
@@ -94,10 +91,7 @@ export async function getDigilockerDocument(verification_id: string, reference_i
   const url = `${baseUrl}?${params.toString()}`;
 
   try {
-    // Removed the 'headers' option as it's not specified in the API docs and might cause rejection.
-    const response = await fetch(url, { 
-      method: 'GET'
-    });
+    const response = await fetch(url, { method: 'GET' });
 
     const data = await response.json();
     return data;
