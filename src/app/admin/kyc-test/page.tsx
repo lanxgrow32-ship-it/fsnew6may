@@ -10,7 +10,6 @@ import { Loader2, UserCheck, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ClientOnly } from '@/components/ui/client-only';
 
-// This is the new component that contains the logic using searchParams
 function KycVerificationFlow() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -18,21 +17,7 @@ function KycVerificationFlow() {
     const [isPending, startTransition] = useTransition();
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
-    const [apiUrl, setApiUrl] = useState('');
 
-    // Fetch the microservice URL from the client-side environment variable
-    useEffect(() => {
-        // Vercel exposes public env vars with NEXT_PUBLIC_ prefix to the browser
-        const url = process.env.NEXT_PUBLIC_API_URL;
-        if (url) {
-            setApiUrl(url);
-        } else {
-             // Fallback for local development if you set it in .env.local
-            setApiUrl('http://localhost:3001');
-        }
-    }, []);
-
-    // This effect runs when the page loads, checking for redirect parameters from Digilocker.
     useEffect(() => {
         const verification_id = searchParams.get('verification_id');
         const reference_id = searchParams.get('reference_id');
@@ -43,16 +28,16 @@ function KycVerificationFlow() {
                 setError(null);
                 setResult(null);
 
-                if (!apiUrl) {
-                    setError('API URL is not configured. Cannot fetch document.');
-                    return;
-                }
-
                 try {
-                    const response = await fetch(`${apiUrl}/api/get-document`, {
+                    const response = await fetch('/api/kyc', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ verification_id, reference_id, document_type })
+                        body: JSON.stringify({ 
+                            action: 'get_document',
+                            verification_id, 
+                            reference_id, 
+                            document_type 
+                        })
                     });
                     const data = await response.json();
                     
@@ -65,11 +50,10 @@ function KycVerificationFlow() {
                     setError(`Failed to connect to the verification service: ${e.message}`);
                 }
 
-                // Clean the URL
                 router.replace('/admin/kyc-test');
             });
         }
-    }, [searchParams, router, apiUrl]);
+    }, [searchParams, router]);
 
 
     const handleVerification = (docType: 'AADHAAR' | 'PAN') => {
@@ -77,29 +61,23 @@ function KycVerificationFlow() {
             setError(null);
             setResult(null);
 
-            if (!apiUrl) {
-                setError('API URL is not configured. Cannot start verification.');
-                return;
-            }
-
-            // Construct the redirect URL from the current window location
             const currentUrl = window.location.href.split('?')[0];
             const redirectBackUrl = `${currentUrl}?document_type=${docType}`;
             
             try {
-                const response = await fetch(`${apiUrl}/api/create-digilocker-url`, {
+                const response = await fetch('/api/kyc', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
+                        action: 'create_url',
                         documentType: docType,
-                        redirectBackUrl: redirectBackUrl // Send the dynamic URL to the backend
+                        redirectBackUrl: redirectBackUrl
                     })
                 });
 
                 const data = await response.json();
                 
                 if (response.ok && data.url) {
-                    // Redirect the user to the Digilocker URL
                     window.location.href = data.url;
                 } else {
                     setError(data.error || 'Failed to start verification process.');
@@ -120,11 +98,11 @@ function KycVerificationFlow() {
                 <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">Click a button below to start the verification. You will be redirected to the official Digilocker website to provide consent.</p>
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <Button onClick={() => handleVerification('AADHAAR')} disabled={isPending || !apiUrl} className="w-full">
+                        <Button onClick={() => handleVerification('AADHAAR')} disabled={isPending} className="w-full">
                             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserCheck className="mr-2 h-4 w-4" />}
                             Verify Aadhaar via Digilocker
                         </Button>
-                         <Button onClick={() => handleVerification('PAN')} disabled={isPending || !apiUrl} className="w-full">
+                         <Button onClick={() => handleVerification('PAN')} disabled={isPending} className="w-full">
                             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                             Verify PAN via Digilocker
                         </Button>
@@ -182,7 +160,6 @@ function KycVerificationFlow() {
     )
 }
 
-// This is the main page component, now acting as a wrapper.
 export default function KycTestPage() {
     return (
         <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-muted/40">
