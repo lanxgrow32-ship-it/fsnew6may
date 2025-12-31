@@ -85,7 +85,6 @@ export async function signupAndCreateOrder(formData: FormData) {
     
     // The `order_id` for IMB will be the user's UUID
     const orderId = user.id; 
-    profileData.transaction_id = orderId; // Use Supabase user ID as the unique order_id
 
     const { error: profileError } = await supabase
       .from('profiles')
@@ -110,7 +109,8 @@ export async function signupAndCreateOrder(formData: FormData) {
         orderPayload.append('user_token', imbUserToken);
         orderPayload.append('amount', String(finalAmountPaid));
         orderPayload.append('order_id', orderId);
-        orderPayload.append('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success`);
+        // Correct redirect URL to prevent double path segments
+        orderPayload.append('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?order_id=${orderId}`);
         orderPayload.append('remark1', email);
         orderPayload.append('remark2', `Signup for ${planPurchased}`);
         
@@ -127,8 +127,6 @@ export async function signupAndCreateOrder(formData: FormData) {
             return { success: true, payment_url: imbResult.result.payment_url };
         } else {
             console.error('IMB Order Creation Failed:', imbResult);
-            // This is a critical failure. Ideally, you would delete the created user
-            // or have a cleanup process. For now, we return a detailed error.
             return { error: `Failed to create payment order: ${imbResult.message || 'Unknown error from payment gateway.'}` };
         }
     } catch (apiError: any) {
