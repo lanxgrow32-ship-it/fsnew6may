@@ -28,7 +28,6 @@ const oneStepPlans = [
 ];
 
 const twoStepPlans = [
-    { size: 'Test', title: '1 Rupee Test Plan', price: '1', isHighlighted: true },
     { size: '25,000', title: '25K Try First Plan', price: '799', isHighlighted: true },
     { size: '1,00,000', title: '1L 2-Step', price: '2,999' },
     { size: '2,00,000', title: '2L 2-Step', price: '4,999' },
