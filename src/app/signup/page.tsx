@@ -3,18 +3,15 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Ticket, Download, CheckCircle, XCircle, Copy, Check } from 'lucide-react';
+import { Loader2, Ticket, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signup, validateCoupon, validateReferralCode } from './actions';
+import { signupAndCreateOrder, validateCoupon, validateReferralCode } from './actions';
 import { ClientOnly } from '@/components/ui/client-only';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useDebounce } from 'use-debounce';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -23,7 +20,6 @@ function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -45,41 +41,13 @@ function SignupForm() {
   const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
   const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
 
-
-  const [paymentDetails, setPaymentDetails] = useState<{ upi_id: string; qr_code_url: string; } | null>(null);
-  const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
   const isTrialPlan = plan === '25K Try First Plan';
 
   useEffect(() => {
-    const fetchPaymentDetails = async () => {
-      setPaymentDetailsLoading(true);
-      const { data, error } = await supabase
-        .from('payment_details')
-        .select('upi_id, qr_code_url')
-        .eq('id', 1)
-        .single();
-      
-      if (data) {
-        setPaymentDetails(data);
-      }
-      setPaymentDetailsLoading(false);
-    };
-    fetchPaymentDetails();
-  }, [supabase]);
-
-
-  useEffect(() => {
     const couponDiscount = (originalPrice * discountPercent) / 100;
-    
-    // Calculate price after coupon
     const priceAfterCoupon = originalPrice - couponDiscount;
-
-    // Calculate referral discount (5% of price *after* coupon)
     const referralDiscount = isReferralDiscountApplied ? priceAfterCoupon * 0.05 : 0;
-    
     const newFinalPrice = priceAfterCoupon - referralDiscount;
 
     setCouponDiscountAmount(couponDiscount);
@@ -107,40 +75,6 @@ function SignupForm() {
     }
   }, [debouncedReferralCode, toast]);
 
-    const copyToClipboard = () => {
-        if (paymentDetails?.upi_id) {
-            navigator.clipboard.writeText(paymentDetails.upi_id);
-            setCopied(true);
-            toast({ title: 'UPI ID copied to clipboard!' });
-            setTimeout(() => setCopied(false), 2000);
-        }
-    };
-
-    const handleDownload = async () => {
-        if (!paymentDetails?.qr_code_url) return;
-
-        try {
-            const response = await fetch(paymentDetails.qr_code_url);
-            if (!response.ok) throw new Error('Network response was not ok.');
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'payment-qr-code.png');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error("Download failed:", error);
-            toast({
-                title: "Download Failed",
-                description: "Could not download the QR code. Please try again or take a screenshot.",
-                variant: "destructive",
-            });
-        }
-    };
-
   const handleApplyCoupon = async () => {
     if (!couponCode) {
       setCouponError('Please enter a coupon code.');
@@ -167,38 +101,28 @@ function SignupForm() {
     }
     setIsLoading(true);
     setError(null);
+    
     const formData = new FormData(e.currentTarget);
     formData.append('plan_purchased', plan || '');
     formData.append('plan_price', String(originalPrice));
     formData.append('coupon_code', discountPercent > 0 ? couponCode : '');
-    // The total discount amount is now coupon + referral
     const totalDiscount = couponDiscountAmount + referralDiscountAmount;
     formData.append('discount_amount', String(totalDiscount));
     formData.append('final_amount_paid', String(finalPrice));
     
-    const result = await signup(formData);
+    const result = await signupAndCreateOrder(formData);
 
     if (result.error) {
       setError(result.error);
       setIsLoading(false);
+    } else if (result.success && result.payment_url) {
+      // Redirect to IMB payment page
+      window.location.href = result.payment_url;
     } else {
-      toast({ title: 'Sign Up Submitted', description: 'Your registration is pending admin approval.' });
-      router.push('/login');
+        setError('Could not get payment URL. Please try again.');
+        setIsLoading(false);
     }
   };
-
-  const PaymentDetailsSkeleton = () => (
-    <Card className="bg-card/80 backdrop-blur-sm border-border">
-        <CardHeader>
-            <CardTitle className="text-lg">Payment Details</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center space-y-4">
-              <Skeleton className="h-6 w-3/4 mx-auto" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-40 w-40 mx-auto" />
-        </CardContent>
-    </Card>
-  );
 
   return (
     <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12">
@@ -234,35 +158,6 @@ function SignupForm() {
                     </CardContent>
                 </Card>
             )}
-            
-            {paymentDetailsLoading ? <PaymentDetailsSkeleton /> : (
-              <Card className="bg-card/80 backdrop-blur-sm border-border">
-                  <CardHeader>
-                      <CardTitle className="text-lg">Payment Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center space-y-4">
-                        <div className="space-y-2">
-                           <p className="text-sm text-muted-foreground">UPI ID</p>
-                           <div className="flex w-full items-center justify-center rounded-lg border bg-muted p-3">
-                                <p className="truncate font-semibold text-base">{paymentDetails?.upi_id || 'Not available'}</p>
-                                <Button size="icon" variant="ghost" type="button" onClick={copyToClipboard} className="ml-2 shrink-0">
-                                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                       </div>
-                       <p className="text-sm text-muted-foreground">Scan the QR code or use the UPI ID above and pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span></p>
-                       {paymentDetails?.qr_code_url && (
-                         <div className="flex flex-col items-center gap-2">
-                           <Image src={paymentDetails.qr_code_url} alt="Scan to pay" width={160} height={160} className="rounded-md" />
-                            <Button variant="ghost" size="sm" type="button" onClick={handleDownload}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Download QR
-                            </Button>
-                         </div>
-                       )}
-                  </CardContent>
-              </Card>
-             )}
 
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
@@ -295,7 +190,7 @@ function SignupForm() {
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
                     <CardTitle>Registration Details</CardTitle>
-                    <CardDescription>Enter your details below to create your account. After payment, enter the UPI transaction ID to submit your application for approval.</CardDescription>
+                    <CardDescription>Enter your details below. You will be redirected to a secure page to complete your payment.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
@@ -308,13 +203,13 @@ function SignupForm() {
                         <Label htmlFor="email">Email</Label>
                         <Input id="email" name="email" type="email" required />
                     </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="mobile_number">Mobile Number</Label>
+                        <Input id="mobile_number" name="mobile_number" type="tel" required />
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>
                         <Input id="password" name="password" type="password" required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="transaction_id">UPI Transaction ID</Label>
-                        <Input id="transaction_id" name="transaction_id" required placeholder="Enter the ID from your payment app" />
                     </div>
 
                     <div className="space-y-2">
@@ -346,8 +241,7 @@ function SignupForm() {
 
 
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit for Approval
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}
                     </Button>
                     <div className="text-center text-sm text-muted-foreground pt-2">
                         Already have an account?{' '}
