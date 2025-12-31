@@ -23,30 +23,15 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
   
   const baseUrl = `https://connect.ekychub.in/v3/digilocker/${endpoint}`;
   
-  const params = new URLSearchParams({
-      username: ekycUsername,
-      token: ekycToken,
-      redirect_url: redirectBackUrl,
-      orderid: orderId,
-  });
+  const encodedRedirectUrl = encodeURIComponent(redirectBackUrl);
 
-  const url = `${baseUrl}?${params.toString()}`;
+  const url = `${baseUrl}?username=${ekycUsername}&token=${ekycToken}&redirect_url=${encodedRedirectUrl}&orderid=${orderId}`;
 
   try {
     const response = await fetch(url, { method: 'GET' });
-    
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-        const errorBody = await response.text();
-        console.error('eKYCHub API did not return JSON. Status:', response.status, 'Body:', errorBody);
-        return { error: `Verification service returned an invalid response (not JSON). Check server logs for details. Status: ${response.status}` };
-    }
-
     const data = await response.json();
 
     if (data.status === 'Success' && data.url) {
-      // The reference_id and verification_id are needed for step 2, but they are part of the redirect from Digilocker, not this initial response.
-      // The user will be redirected to data.url, and Digilocker will redirect back to our redirect_url with those IDs in the query params.
       return { success: true, url: data.url };
     } else {
       console.error('eKYCHub API Error (JSON Response):', data);
@@ -61,7 +46,7 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
   }
 }
 
-export async function getDigilockerDocument(verification_id: string, reference_id: string, document_type: 'AADHAAR' | 'PAN') {
+export async function getVerifiedDocument(verification_id: string, reference_id: string, document_type: 'AADHAAR' | 'PAN') {
   const orderId = randomUUID();
   
   if (!ekycUsername || !ekycToken) {
@@ -70,6 +55,7 @@ export async function getDigilockerDocument(verification_id: string, reference_i
   }
 
   const baseUrl = `https://connect.ekychub.in/v3/digilocker/get_document`;
+  
   const params = new URLSearchParams({
       username: ekycUsername,
       token: ekycToken,
@@ -84,13 +70,19 @@ export async function getDigilockerDocument(verification_id: string, reference_i
   try {
     const response = await fetch(url, { method: 'GET' });
     const data = await response.json();
-    return data;
+
+    if (data.status === 'Success') {
+      return { data: data, error: null };
+    } else {
+      return { data: null, error: data.message || 'Failed to retrieve document.' };
+    }
+    
   } catch (error) {
     console.error('Error calling getDigilockerDocument:', error);
     if (error instanceof Error) {
-        return { status: 'Failure', message: `An unexpected error occurred: ${error.message}` };
+        return { data: null, error: `An unexpected error occurred: ${error.message}` };
     }
-    return { status: 'Failure', message: 'An unexpected error occurred during verification.' };
+    return { data: null, error: 'An unexpected error occurred during verification.' };
   }
 }
 
