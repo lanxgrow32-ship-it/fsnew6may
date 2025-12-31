@@ -27,6 +27,7 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
     : 'create_url_pan';
   
   const baseUrl = `https://connect.ekychub.in/v3/digilocker/${endpoint}`;
+  
   const params = new URLSearchParams({
       username: ekycUsername,
       token: ekycToken,
@@ -37,11 +38,9 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
   const url = `${baseUrl}?${params.toString()}`;
 
   try {
+    // Removed the 'headers' option as it's not specified in the API docs and might cause rejection.
     const response = await fetch(url, { 
-      method: 'GET',
-      headers: {
-        'User-Agent': 'FundedStock-NextJS-App/1.0'
-      }
+      method: 'GET'
     });
     
     const contentType = response.headers.get("content-type");
@@ -95,11 +94,9 @@ export async function getDigilockerDocument(verification_id: string, reference_i
   const url = `${baseUrl}?${params.toString()}`;
 
   try {
+    // Removed the 'headers' option as it's not specified in the API docs and might cause rejection.
     const response = await fetch(url, { 
-      method: 'GET',
-      headers: {
-        'User-Agent': 'FundedStock-NextJS-App/1.0'
-      }
+      method: 'GET'
     });
 
     const data = await response.json();
