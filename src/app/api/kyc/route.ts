@@ -25,9 +25,28 @@ export async function POST(req: NextRequest) {
 
             const orderId = randomUUID();
             const endpoint = documentType === 'AADHAAR' ? 'create_url_aadhaar' : 'create_url_pan';
-            const url = `https://connect.ekychub.in/v3/digilocker/${endpoint}?username=${ekycUsername}&token=${ekycToken}&redirect_url=${encodeURIComponent(redirectBackUrl)}&orderid=${orderId}`;
+            
+            // Correctly build the URL using URL and URLSearchParams
+            const baseUrl = `https://connect.ekychub.in/v3/digilocker/${endpoint}`;
+            const params = new URLSearchParams({
+                username: ekycUsername,
+                token: ekycToken,
+                redirect_url: redirectBackUrl,
+                orderid: orderId,
+            });
+            
+            const url = `${baseUrl}?${params.toString()}`;
 
-            const apiResponse = await fetch(url);
+            const apiResponse = await fetch(url, { method: 'GET' });
+
+            // Before parsing, check if the content-type is JSON
+            const contentType = apiResponse.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const errorBody = await apiResponse.text();
+                console.error('eKYCHub API did not return JSON. Status:', apiResponse.status, 'Body:', errorBody);
+                return NextResponse.json({ error: `Verification service returned an invalid response (not JSON). Check server logs for details. Status: ${apiResponse.status}` }, { status: 500 });
+            }
+            
             const data = await apiResponse.json();
 
             if (apiResponse.ok && data.status === 'Success') {
@@ -48,9 +67,26 @@ export async function POST(req: NextRequest) {
             }
             
             const orderId = randomUUID();
-            const url = `https://connect.ekychub.in/v3/digilocker/get_document?username=${ekycUsername}&token=${ekycToken}&verification_id=${verification_id}&reference_id=${reference_id}&orderid=${orderId}&document_type=${document_type}`;
+            const baseUrl = `https://connect.ekychub.in/v3/digilocker/get_document`;
+            const params = new URLSearchParams({
+                username: ekycUsername,
+                token: ekycToken,
+                verification_id,
+                reference_id,
+                orderid: orderId,
+                document_type,
+            });
+            const url = `${baseUrl}?${params.toString()}`;
             
-            const apiResponse = await fetch(url);
+            const apiResponse = await fetch(url, { method: 'GET' });
+
+            const contentType = apiResponse.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                 const errorBody = await apiResponse.text();
+                console.error('eKYCHub API did not return JSON. Status:', apiResponse.status, 'Body:', errorBody);
+                return NextResponse.json({ error: 'Failed to retrieve document data. The service returned a non-JSON response.' }, { status: 500 });
+            }
+
             const data = await apiResponse.json();
 
             if (apiResponse.ok) {
