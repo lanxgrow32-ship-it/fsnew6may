@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -56,7 +56,7 @@ function KycFlow() {
   const [verifiedData, setVerifiedData] = useState<any>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
-  const totalSteps = 3;
+  const totalSteps = 4; // Added a verification step
   const progress = (currentStep / totalSteps) * 100;
 
   // Effect to fetch initial profile data
@@ -77,51 +77,6 @@ function KycFlow() {
     };
     fetchProfile();
   }, [supabase, router, toast]);
-
-  // Effect to handle Digilocker redirect
-  useEffect(() => {
-    const processVerification = async () => {
-        const verification_id = sessionStorage.getItem('digilocker_verification_id');
-        const reference_id = sessionStorage.getItem('digilocker_reference_id');
-        const doc_type = sessionStorage.getItem('digilocker_doc_type') as 'AADHAAR' | 'PAN' | null;
-
-        if (verification_id && reference_id && doc_type) {
-            startTransition(async () => {
-                setVerificationError(null);
-                const result = await getVerifiedDocument(verification_id, reference_id, doc_type);
-
-                if (result.error) {
-                    setVerificationError(result.error);
-                } else {
-                    setVerifiedData(result.data);
-                    
-                    const formData = new FormData();
-                    formData.append('document_type', doc_type);
-                    formData.append('verification_id', verification_id);
-                    formData.append('api_response', JSON.stringify(result.data));
-
-                    const saveResult = await saveKycStep(1, formData);
-                    if (saveResult.error) {
-                       toast({ title: 'Save Error', description: `Could not save verification data: ${saveResult.error}`, variant: 'destructive' });
-                    } else if (saveResult.updatedProfile) {
-                       setProfile(saveResult.updatedProfile as Profile);
-                       toast({ title: `${doc_type} Verified!`, description: 'The verification was successful and data has been saved.' });
-                    }
-                }
-                // Clean up sessionStorage and URL
-                sessionStorage.removeItem('digilocker_verification_id');
-                sessionStorage.removeItem('digilocker_reference_id');
-                sessionStorage.removeItem('digilocker_doc_type');
-                router.replace('/kyc');
-            });
-        }
-    };
-    
-    processVerification();
-    // The dependency array is intentionally empty to ensure this runs only once on page load after a redirect.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
 
   const handleStepSave = async (formData: FormData) => {
       startTransition(async () => {
@@ -151,13 +106,9 @@ function KycFlow() {
   const handleVerificationClick = (docType: 'AADHAAR' | 'PAN') => {
         startTransition(async () => {
             setError(null);
-            const redirectBackUrl = window.location.origin + window.location.pathname;
-
-            const data = await createDigilockerUrl(docType, redirectBackUrl);
+            const data = await createDigilockerUrl(docType);
             
             if (data.success && data.url && data.verification_id && data.reference_id) {
-                // Save context to sessionStorage before redirecting
-                sessionStorage.setItem('digilocker_verification_id', data.verification_id);
                 sessionStorage.setItem('digilocker_reference_id', data.reference_id);
                 sessionStorage.setItem('digilocker_doc_type', docType);
                 window.location.href = data.url;
@@ -166,13 +117,52 @@ function KycFlow() {
             }
         });
     };
+    
+  const handleFetchVerification = async (formData: FormData) => {
+      startTransition(async () => {
+          setVerificationError(null);
+          setVerifiedData(null);
+          
+          const verification_id = formData.get('verification_id') as string;
+          const reference_id = sessionStorage.getItem('digilocker_reference_id');
+          const doc_type = sessionStorage.getItem('digilocker_doc_type') as 'AADHAAR' | 'PAN' | null;
+
+          if (!verification_id || !reference_id || !doc_type) {
+              setVerificationError("Could not find necessary verification details. Please start the process again.");
+              return;
+          }
+
+          const result = await getVerifiedDocument(verification_id, reference_id, doc_type);
+
+          if (result.error) {
+              setVerificationError(result.error);
+          } else {
+              setVerifiedData(result.data);
+              toast({ title: `${doc_type} Verified!`, description: 'The verification was successful and data has been saved.' });
+              // Re-fetch profile to update UI status
+              const { data: updatedProfile, error } = await supabase.from('profiles').select('*').single();
+              if (updatedProfile) setProfile(updatedProfile as Profile);
+          }
+          sessionStorage.removeItem('digilocker_reference_id');
+          sessionStorage.removeItem('digilocker_doc_type');
+      });
+  }
 
   const renderStep = () => {
       switch(currentStep) {
-          case 1: return <Step1_Verification onSave={handleStepSave} profile={profile!} error={error} handleVerificationClick={handleVerificationClick} />;
-          case 2: return <Step2_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
-          case 3: return <Step3_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
-          default: return <Step1_Verification onSave={handleStepSave} profile={profile!} error={error} handleVerificationClick={handleVerificationClick} />;
+          case 1: return <Step1_Verification 
+                            onNext={() => setCurrentStep(2)} 
+                            profile={profile!} 
+                            error={error} 
+                            handleVerificationClick={handleVerificationClick}
+                            handleFetchVerification={handleFetchVerification}
+                            verificationError={verificationError}
+                            verifiedData={verifiedData}
+                          />;
+          case 2: return <Step2_Mobile onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
+          case 3: return <Step3_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
+          case 4: return <Step4_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
+          default: return <p>Invalid Step</p>;
       }
   }
 
@@ -198,33 +188,6 @@ function KycFlow() {
             </div>
         </div>
 
-        {verificationError && (
-             <Alert variant="destructive">
-                <AlertTitle>Verification Failed</AlertTitle>
-                <AlertDescription>{verificationError}</AlertDescription>
-            </Alert>
-        )}
-
-        {verifiedData && (
-             <Card>
-                <CardHeader>
-                    <CardTitle className="text-green-600">Verification Success</CardTitle>
-                    <CardDescription>The following data was retrieved from Digilocker.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <pre className="p-4 bg-muted rounded-md text-xs overflow-auto">
-                        {JSON.stringify(verifiedData, null, 2)}
-                    </pre>
-                    {verifiedData.photo_link && (
-                        <div className="mt-4">
-                            <h4 className="font-semibold mb-2">Photo:</h4>
-                            <Image src={`data:image/jpeg;base64,${verifiedData.photo_link}`} alt="Verified Photo" width={100} height={100} className="rounded-md border"/>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        )}
-
         <Card>
             <CardHeader>
                 <Progress value={progress} className="w-full" />
@@ -243,21 +206,16 @@ function KycFlow() {
 }
 
 
-function Step1_Verification({ onSave, profile, error, handleVerificationClick }: { onSave: (formData: FormData) => void; profile: Profile; error: string | null, handleVerificationClick: (docType: 'AADHAAR' | 'PAN') => void }) {
+function Step1_Verification({ onNext, profile, error, handleVerificationClick, handleFetchVerification, verificationError, verifiedData }: { onNext: () => void; profile: Profile; error: string | null; handleVerificationClick: (docType: 'AADHAAR' | 'PAN') => void; handleFetchVerification: (formData: FormData) => void; verificationError: string | null, verifiedData: any }) {
 
     return (
-        <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg">Step 1: Automated Verification</h3>
+        <div className="space-y-6">
+            <h3 className="font-semibold text-lg">Step 1: Automated Document Verification</h3>
             <p className="text-sm text-muted-foreground">
-                Please provide your mobile number, then verify your PAN and Aadhaar using the official Digilocker service.
+                First, verify your PAN and Aadhaar using the official Digilocker service. You will be redirected to their secure website and then sent back here.
             </p>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             
-            <div className="space-y-2">
-                <Label htmlFor="mobile_number">Mobile Number *</Label>
-                <Input id="mobile_number" name="mobile_number" defaultValue={profile.mobile_number || ''} required />
-            </div>
-
             <div className="rounded-lg border p-4 space-y-4">
                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
@@ -279,7 +237,7 @@ function Step1_Verification({ onSave, profile, error, handleVerificationClick }:
                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                         <Label>Aadhaar Verification</Label>
-                        <p className="text-xs text-muted-foreground">Verify your Aadhaar card to fetch your photo and address.</p>
+                        <p className="text-xs text-muted-foreground">Verify your Aadhaar to fetch your photo and address.</p>
                     </div>
                      {profile.is_aadhaar_verified ? (
                          <div className="flex items-center gap-2 text-green-600 font-medium text-sm p-2 bg-green-50 rounded-md">
@@ -294,20 +252,79 @@ function Step1_Verification({ onSave, profile, error, handleVerificationClick }:
                     )}
                 </div>
             </div>
+            
+            <Card>
+                <form action={handleFetchVerification}>
+                    <CardHeader>
+                        <CardTitle className="text-base">Complete Verification</CardTitle>
+                        <CardDescription>After returning from Digilocker, paste the Verification ID from the URL into the box below and click "Fetch & Verify".</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            <Label htmlFor="verification_id">Verification ID from URL</Label>
+                            <Input id="verification_id" name="verification_id" placeholder="Copy and paste the ID here" required />
+                        </div>
+                        {verificationError && <Alert variant="destructive" className="mt-4"><AlertTitle>Verification Failed</AlertTitle><AlertDescription>{verificationError}</AlertDescription></Alert>}
+                    </CardContent>
+                    <CardFooter>
+                        <Button type="submit">Fetch & Verify</Button>
+                    </CardFooter>
+                </form>
+            </Card>
+
+            {verifiedData && (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="text-green-600">Verification Success</CardTitle>
+                    <CardDescription>The following data was retrieved and saved.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <pre className="p-4 bg-muted rounded-md text-xs overflow-auto">
+                        {JSON.stringify(verifiedData, null, 2)}
+                    </pre>
+                    {verifiedData.photo_link && (
+                        <div className="mt-4">
+                            <h4 className="font-semibold mb-2">Photo:</h4>
+                            <Image src={`data:image/jpeg;base64,${verifiedData.photo_link}`} alt="Verified Photo" width={100} height={100} className="rounded-md border"/>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+            )}
+
 
             <div className="flex justify-end gap-4 pt-4">
-                <Button type="submit" disabled={!profile.is_pan_verified || !profile.is_aadhaar_verified}>
+                <Button type="button" onClick={onNext} disabled={!profile.is_pan_verified || !profile.is_aadhaar_verified}>
                     Save & Continue
                 </Button>
+            </div>
+        </div>
+    );
+}
+
+function Step2_Mobile({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+    return (
+        <form action={onSave} className="space-y-6">
+            <h3 className="font-semibold text-lg">Step 2: Mobile Number</h3>
+            <p className="text-sm text-muted-foreground">Please provide your mobile number.</p>
+            {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+            <div className="space-y-2">
+                <Label htmlFor="mobile_number">Mobile Number *</Label>
+                <Input id="mobile_number" name="mobile_number" defaultValue={profile.mobile_number || ''} required />
+            </div>
+             <div className="flex justify-between gap-4 pt-4">
+                <Button type="button" variant="outline" onClick={onBack}>Back</Button>
+                <Button type="submit">Save & Continue</Button>
             </div>
         </form>
     );
 }
 
-function Step2_TradingBackground({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+
+function Step3_TradingBackground({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
     return (
         <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg">Step 2: Trading Background</h3>
+            <h3 className="font-semibold text-lg">Step 3: Trading Background</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="space-y-4">
                 <Label>Have you traded in a Prop Firm before? *</Label>
@@ -343,10 +360,10 @@ function Step2_TradingBackground({ onSave, onBack, error, profile }: { onSave: (
     );
 }
 
-function Step3_Agreements({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+function Step4_Agreements({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
     return (
         <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg">Step 3: Agreements</h3>
+            <h3 className="font-semibold text-lg">Step 4: Agreements</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="space-y-6 rounded-md border p-6">
                 <div className="space-y-4">

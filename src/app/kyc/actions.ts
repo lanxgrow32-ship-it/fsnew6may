@@ -10,7 +10,7 @@ const ekycUsername = process.env.EKYCHUB_USERNAME;
 const ekycToken = process.env.EKYCHUB_TOKEN;
 
 
-export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redirectBackUrl: string) {
+export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN') {
   const orderId = randomUUID();
 
   if (!ekycUsername || !ekycToken) {
@@ -24,6 +24,7 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
   
   const baseUrl = `https://connect.ekychub.in/v3/digilocker/${endpoint}`;
   
+  const redirectBackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/kyc`;
   const encodedRedirectUrl = encodeURIComponent(redirectBackUrl);
 
   const url = `${baseUrl}?username=${ekycUsername}&token=${ekycToken}&redirect_url=${encodedRedirectUrl}&orderid=${orderId}`;
@@ -36,17 +37,10 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN', redir
       return { success: true, url: data.url, verification_id: data.verification_id, reference_id: data.reference_id };
     } else {
       console.error('eKYCHub API Error (JSON Response):', data);
-      return { error: data.message || `Failed to create Digilocker URL from API. Status: ${response.status}` };
+      return { error: data.message || `Failed to create Digilocker URL from API. Status: ${data.status}` };
     }
   } catch (error) {
     console.error('Error calling createDigilockerUrl:', error);
-    if (error instanceof Error) {
-        // Distinguish between JSON parsing errors and other errors
-        if (error.message.includes('invalid json')) {
-             return { error: `Verification service returned an invalid response (not JSON). Check server logs for details. Status: ${(error as any).status}` };
-        }
-        return { error: `An unexpected error occurred: ${error.message}` };
-    }
     return { error: 'An unexpected error occurred while contacting the verification service.' };
   }
 }
@@ -57,6 +51,13 @@ export async function getVerifiedDocument(verification_id: string, reference_id:
   if (!ekycUsername || !ekycToken) {
     console.error('eKYCHub credentials are not set in environment variables.');
     return { error: 'Verification service is not configured on the server.' };
+  }
+  
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'You must be logged in.' };
   }
 
   const baseUrl = `https://connect.ekychub.in/v3/digilocker/get_document`;
@@ -74,16 +75,44 @@ export async function getVerifiedDocument(verification_id: string, reference_id:
 
   try {
     const response = await fetch(url, { method: 'GET' });
-    const data = await response.json();
+    const apiResponse = await response.json();
 
-    if (data.status === 'Success') {
-      return { data: data, error: null };
-    } else {
-      return { data: null, error: data.message || 'Failed to retrieve document.' };
+    if (apiResponse.status !== 'Success') {
+      return { data: null, error: apiResponse.message || 'Failed to retrieve document.' };
     }
     
+    // If successful, save the data to the profile
+    let profileUpdateData: any = {};
+     if (document_type === 'AADHAAR') {
+        profileUpdateData.is_aadhaar_verified = true;
+        profileUpdateData.aadhar_number = apiResponse.uid;
+        if (apiResponse.photo_link) {
+            const photoUrl = await uploadBase64Image(apiResponse.photo_link, 'kyc-documents', user.id);
+            profileUpdateData.selfie_url = photoUrl;
+        }
+        if (apiResponse.address) {
+            profileUpdateData.city_state = `${apiResponse.split_address?.dist}, ${apiResponse.split_address?.state}`;
+        }
+    }
+    if (document_type === 'PAN') {
+        profileUpdateData.is_pan_verified = true;
+        profileUpdateData.pan_number = apiResponse.pan_number;
+    }
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update(profileUpdateData)
+      .eq('id', user.id);
+      
+    if (updateError) {
+        throw new Error(`Failed to save KYC data to profile: ${updateError.message}`);
+    }
+    
+    revalidatePath('/kyc');
+    return { data: apiResponse, error: null };
+    
   } catch (error) {
-    console.error('Error calling getDigilockerDocument:', error);
+    console.error('Error in getVerifiedDocument:', error);
     if (error instanceof Error) {
         return { data: null, error: `An unexpected error occurred: ${error.message}` };
     }
@@ -119,76 +148,51 @@ export async function saveKycStep(step: number, formData: FormData) {
   let profileUpdateData: any = {};
 
   try {
-    if (formData.has('document_type')) {
-        // This is a Digilocker response
-        const docType = formData.get('document_type') as string;
-        const apiResponse = JSON.parse(formData.get('api_response') as string);
-        const verificationId = formData.get('verification_id') as string;
+    switch (step) {
+      case 1: // Mobile number is now part of the initial verification step, not saved separately here.
+        break;
 
-        profileUpdateData.digilocker_verification_id = verificationId;
+      case 2: // Trading Background
+        profileUpdateData = {
+          traded_before: formData.get('traded_before') === 'yes',
+          trading_experience: formData.get('trading_experience') as string,
+          comments: formData.get('comments') as string,
+          trading_style: formData.getAll('trading_style') as string[],
+        };
+        break;
 
-        if (docType === 'AADHAAR') {
-            profileUpdateData.is_aadhaar_verified = true;
-            profileUpdateData.aadhar_number = apiResponse.uid;
-            if (apiResponse.photo_link) {
-                 profileUpdateData.selfie_url = await uploadBase64Image(apiResponse.photo_link, 'kyc-documents', user.id);
-            }
-             if (apiResponse.address) {
-                profileUpdateData.city_state = `${apiResponse.split_address?.dist}, ${apiResponse.split_address?.state}`;
-            }
-        }
-        if (docType === 'PAN') {
-            profileUpdateData.is_pan_verified = true;
-            profileUpdateData.pan_number = apiResponse.pan_number;
-        }
+      case 3: // Agreements
+        profileUpdateData = {
+          drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes',
+          risk_rules_understood: formData.get('risk_rules_understood') === 'yes',
+          terms_accepted: formData.get('terms_accepted') === 'yes',
+          kyc_status: 'submitted', // Final step sets status
+        };
+        break;
 
-    } else {
-        // This is a form step submission
-        switch (step) {
-          case 1:
-            profileUpdateData = {
-              mobile_number: formData.get('mobile_number') as string,
-            };
-            break;
-
-          case 2: // Trading Background
-            profileUpdateData = {
-              traded_before: formData.get('traded_before') === 'yes',
-              trading_experience: formData.get('trading_experience') as string,
-              comments: formData.get('comments') as string,
-              trading_style: formData.getAll('trading_style') as string[],
-            };
-            break;
-
-          case 3: // Agreements
-            profileUpdateData = {
-              drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes',
-              risk_rules_understood: formData.get('risk_rules_understood') === 'yes',
-              terms_accepted: formData.get('terms_accepted') === 'yes',
-              kyc_status: 'submitted', // Final step sets status
-            };
-            break;
-
-          default:
-            return { error: 'Invalid KYC step.' };
-        }
+      default:
+        return { error: 'Invalid KYC step.' };
     }
+    
+    if (Object.keys(profileUpdateData).length > 0) {
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from('profiles')
+          .update(profileUpdateData)
+          .eq('id', user.id)
+          .select()
+          .single();
 
-    const { data: updatedProfile, error: updateError } = await supabase
-      .from('profiles')
-      .update(profileUpdateData)
-      .eq('id', user.id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error(`Error updating profile on step ${step}:`, updateError);
-      return { error: `Failed to save KYC data: ${updateError.message}` };
+        if (updateError) {
+          console.error(`Error updating profile on step ${step}:`, updateError);
+          return { error: `Failed to save KYC data: ${updateError.message}` };
+        }
+        revalidatePath('/kyc');
+        revalidatePath('/welcome');
+        return { error: null, success: true, updatedProfile };
     }
+    
+    return { error: null, success: true };
 
-    revalidatePath('/welcome');
-    revalidatePath('/kyc');
-    return { error: null, success: true, updatedProfile };
 
   } catch (error: any) {
     return { error: error.message };
