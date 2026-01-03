@@ -21,6 +21,37 @@ async function uploadBreachProof(file: File, userId: string) {
   return urlData.publicUrl;
 }
 
+// Helper function to parse plan name into account balance
+function getBalanceFromPlanName(planName: string): number {
+    if (!planName) return 0;
+
+    const name = planName.toLowerCase();
+    // Match numbers and units like K, L, Cr
+    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
+    
+    if (match) {
+        let amount = parseFloat(match[1].replace(/,/g, ''));
+        const unit = match[2];
+
+        if (unit === 'k') {
+            amount *= 1000;
+        } else if (unit === 'l' || unit === 'lakh') {
+            amount *= 100000;
+        } else if (unit === 'cr' || unit === 'crore') {
+            amount *= 10000000;
+        }
+        return amount;
+    }
+    
+    // Fallback for names like "25000" without a unit
+    const plainNumberMatch = name.match(/^[\d,.]+/);
+    if (plainNumberMatch) {
+        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+    }
+
+    return 0;
+}
+
 
 export async function updateProfile(formData: FormData) {
   const id = formData.get('id') as string;
@@ -37,7 +68,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_price, email, full_name')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name')
     .eq('id', id)
     .single();
 
@@ -86,29 +117,31 @@ export async function updateProfile(formData: FormData) {
     if (!stockmintApiKey) {
         console.error('STOCKMINT_API_KEY is not set. Cannot create user on trading platform.');
     } else {
-        try {
-            const response = await fetch('https://stockmint.io/api/users/create', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-API-Key': stockmintApiKey,
-                },
-                body: JSON.stringify({ 
-                    fullName: beforeUpdateData.full_name,
-                    email: beforeUpdateData.email,
-                    // Use email as the initial password, as requested
-                    password: beforeUpdateData.email, 
-                    initialBalance: beforeUpdateData.plan_price || 0,
-                }),
-            });
-            if (!response.ok) {
-                const errorBody = await response.text();
-                console.error(`Failed to trigger StockMint user creation webhook. Status: ${response.status}. Body: ${errorBody}`);
-                // NOTE: We are not returning an error to the admin UI here to avoid blocking other profile updates.
-                // The error is logged on the server.
+        const initialBalance = getBalanceFromPlanName(beforeUpdateData.plan_purchased || '');
+        if (initialBalance <= 0) {
+            console.error(`Could not determine initial balance from plan name: "${beforeUpdateData.plan_purchased}". Aborting StockMint account creation.`);
+        } else {
+            try {
+                const response = await fetch('https://stockmint.io/api/users/create', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-API-Key': stockmintApiKey,
+                    },
+                    body: JSON.stringify({ 
+                        fullName: beforeUpdateData.full_name,
+                        email: beforeUpdateData.email,
+                        password: beforeUpdateData.email, 
+                        initialBalance: initialBalance,
+                    }),
+                });
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error(`Failed to trigger StockMint user creation webhook. Status: ${response.status}. Body: ${errorBody}`);
+                }
+            } catch (webhookError) {
+                console.error('Failed to trigger StockMint user creation webhook:', webhookError);
             }
-        } catch (webhookError) {
-            console.error('Failed to trigger StockMint user creation webhook:', webhookError);
         }
     }
   }

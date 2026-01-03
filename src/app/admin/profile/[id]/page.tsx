@@ -55,6 +55,37 @@ type Profile = {
   digilocker_verification_id: string | null;
 };
 
+// Helper function to parse plan name into account balance
+function getBalanceFromPlanName(planName: string): number {
+    if (!planName) return 0;
+
+    const name = planName.toLowerCase();
+    // Match numbers and units like K, L, Cr
+    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
+    
+    if (match) {
+        let amount = parseFloat(match[1].replace(/,/g, ''));
+        const unit = match[2];
+
+        if (unit === 'k') {
+            amount *= 1000;
+        } else if (unit === 'l' || unit === 'lakh') {
+            amount *= 100000;
+        } else if (unit === 'cr' || unit === 'crore') {
+            amount *= 10000000;
+        }
+        return amount;
+    }
+    
+    // Fallback for names like "25000" without a unit
+    const plainNumberMatch = name.match(/^[\d,.]+/);
+    if (plainNumberMatch) {
+        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+    }
+
+    return 0;
+}
+
 function ResetPasswordForm({ userId, role }: { userId: string, role: string }) {
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
@@ -136,6 +167,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [tradingUsername, setTradingUsername] = useState('');
   const [tradingPassword, setTradingPassword] = useState('');
   const [showAutomationPreview, setShowAutomationPreview] = useState(false);
+  const [credentialsProvided, setCredentialsProvided] = useState(false);
+
 
   const { id } = use(params);
 
@@ -155,6 +188,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         setProfile(data);
         setTradingUsername(data.trading_username || '');
         setTradingPassword(data.trading_password || '');
+        setCredentialsProvided(data.credentials_provided);
       }
       setIsFetching(false);
     };
@@ -163,19 +197,27 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   }, [id, supabase]);
 
   const handleCredentialsToggle = (checked: boolean) => {
+    setCredentialsProvided(checked);
     setShowAutomationPreview(checked);
     if (checked && profile) {
         setTradingUsername(profile.email);
         setTradingPassword(profile.email);
     } else {
-        setTradingUsername('');
-        setTradingPassword('');
+        // If toggling off, clear the fields if they were auto-filled
+        if (profile && tradingUsername === profile.email) setTradingUsername('');
+        if (profile && tradingPassword === profile.email) setTradingPassword('');
     }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!profile) return;
+    
+    // Client-side validation
+    if (credentialsProvided && !profile.credentials_provided && (!tradingUsername || !tradingPassword)) {
+        toast({ title: 'Missing Information', description: 'Trading username and password are required when creating a trading account.', variant: 'destructive'});
+        return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -214,6 +256,9 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         <span>{label} {isVerified ? 'Verified' : 'Not Verified'}</span>
     </div>
   );
+  
+  const initialBalanceForPreview = getBalanceFromPlanName(profile.plan_purchased || '');
+
 
   return (
     <div className="bg-muted/40 min-h-screen">
@@ -365,7 +410,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                          <Switch 
                                             id="credentials_provided" 
                                             name="credentials_provided" 
-                                            defaultChecked={profile.credentials_provided}
+                                            checked={credentialsProvided}
                                             onCheckedChange={handleCredentialsToggle}
                                           />
                                      </div>
@@ -440,7 +485,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                             <span className="font-semibold">Password:</span> {profile.email}
                                         </div>
                                         <div className="font-mono bg-muted/80 p-2 rounded-md">
-                                            <span className="font-semibold">Initial Balance:</span> ₹{profile.plan_price?.toFixed(2) ?? '0.00'}
+                                            <span className="font-semibold">Initial Balance:</span> ₹{initialBalanceForPreview.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </div>
                                     </CardContent>
                                 </Card>
