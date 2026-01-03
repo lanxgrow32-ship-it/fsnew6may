@@ -37,7 +37,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_price, plain_password')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_price, email')
     .eq('id', id)
     .single();
 
@@ -104,14 +104,16 @@ export async function updateProfile(formData: FormData) {
                 },
                 body: JSON.stringify({ 
                     fullName: fullName,
-                    email: email,
-                    password: beforeUpdateData.plain_password, // Using the saved plain text password
+                    email: beforeUpdateData.email,
+                    password: beforeUpdateData.email, // Use email as the initial password
                     initialBalance: beforeUpdateData.plan_price || 0,
                 }),
             });
             if (!response.ok) {
                 const errorBody = await response.text();
                 console.error(`Failed to trigger StockMint user creation webhook. Status: ${response.status}. Body: ${errorBody}`);
+                // NOTE: We are not returning an error to the admin UI here to avoid blocking other profile updates.
+                // The error is logged on the server.
             }
         } catch (webhookError) {
             console.error('Failed to trigger StockMint user creation webhook:', webhookError);
@@ -214,16 +216,5 @@ export async function resetPassword(prevState: any, formData: FormData) {
     return { error: `Failed to reset password: ${error.message}` };
   }
   
-  // Also update the plain_password field for the automation
-  const { error: profileUpdateError } = await supabaseAdmin
-    .from('profiles')
-    .update({ plain_password: password })
-    .eq('id', id);
-
-  if (profileUpdateError) {
-      console.error("CRITICAL: Auth password reset but plain_password failed to update.", profileUpdateError);
-  }
-
-
   return { success: true, error: null };
 }
