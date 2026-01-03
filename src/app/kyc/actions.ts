@@ -10,19 +10,15 @@ const ekycUsername = process.env.EKYCHUB_USERNAME;
 const ekycToken = process.env.EKYCHUB_TOKEN;
 
 
-export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN') {
+export async function createDigilockerUrl() {
   const orderId = randomUUID();
 
   if (!ekycUsername || !ekycToken) {
     console.error('eKYCHub credentials are not set in environment variables.');
     return { error: 'Verification service is not configured on the server.' };
   }
-
-  const endpoint = documentType === 'AADHAAR' 
-    ? 'create_url_aadhaar' 
-    : 'create_url_pan';
   
-  const baseUrl = `https://connect.ekychub.in/v3/digilocker/${endpoint}`;
+  const baseUrl = `https://connect.ekychub.in/v3/digilocker/create_url_pan`;
   
   const redirectBackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/kyc`;
   const encodedRedirectUrl = encodeURIComponent(redirectBackUrl);
@@ -45,7 +41,7 @@ export async function createDigilockerUrl(documentType: 'AADHAAR' | 'PAN') {
   }
 }
 
-export async function getVerifiedDocument(verification_id: string, reference_id: string, document_type: 'AADHAAR' | 'PAN') {
+export async function getVerifiedPan(verification_id: string, reference_id: string) {
   const orderId = randomUUID();
   
   if (!ekycUsername || !ekycToken) {
@@ -68,7 +64,7 @@ export async function getVerifiedDocument(verification_id: string, reference_id:
       verification_id: verification_id,
       reference_id: reference_id,
       orderid: orderId,
-      document_type: document_type,
+      document_type: 'PAN',
   });
 
   const url = `${baseUrl}?${params.toString()}`;
@@ -78,26 +74,13 @@ export async function getVerifiedDocument(verification_id: string, reference_id:
     const apiResponse = await response.json();
 
     if (apiResponse.status !== 'Success') {
-      return { data: null, error: apiResponse.message || 'Failed to retrieve document.' };
+      return { data: null, error: apiResponse.message || 'Failed to retrieve PAN document.' };
     }
     
-    // If successful, save the data to the profile
-    let profileUpdateData: any = {};
-     if (document_type === 'AADHAAR') {
-        profileUpdateData.is_aadhaar_verified = true;
-        profileUpdateData.aadhar_number = apiResponse.uid;
-        if (apiResponse.photo_link) {
-            const photoUrl = await uploadBase64Image(apiResponse.photo_link, 'kyc-documents', user.id);
-            profileUpdateData.selfie_url = photoUrl;
-        }
-        if (apiResponse.address) {
-            profileUpdateData.city_state = `${apiResponse.split_address?.dist}, ${apiResponse.split_address?.state}`;
-        }
-    }
-    if (document_type === 'PAN') {
-        profileUpdateData.is_pan_verified = true;
-        profileUpdateData.pan_number = apiResponse.pan_number;
-    }
+    const profileUpdateData = {
+        is_pan_verified: true,
+        pan_number: apiResponse.pan_number,
+    };
 
     const { error: updateError } = await supabase
       .from('profiles')
@@ -105,35 +88,38 @@ export async function getVerifiedDocument(verification_id: string, reference_id:
       .eq('id', user.id);
       
     if (updateError) {
-        throw new Error(`Failed to save KYC data to profile: ${updateError.message}`);
+        throw new Error(`Failed to save PAN data to profile: ${updateError.message}`);
     }
     
     revalidatePath('/kyc');
     return { data: apiResponse, error: null };
     
   } catch (error) {
-    console.error('Error in getVerifiedDocument:', error);
+    console.error('Error in getVerifiedPan:', error);
     if (error instanceof Error) {
         return { data: null, error: `An unexpected error occurred: ${error.message}` };
     }
-    return { data: null, error: 'An unexpected error occurred during verification.' };
+    return { data: null, error: 'An unexpected error occurred during PAN verification.' };
   }
 }
 
-async function uploadBase64Image(base64: string, bucket: string, userId: string) {
-    const buffer = Buffer.from(base64, 'base64');
-    const fileName = `${userId}-photo-${Date.now()}.jpeg`;
+
+async function uploadAadhaarImage(base64: string, userId: string) {
+    // Remove data URI prefix if present
+    const base64Data = base64.split(',')[1] || base64;
+    const buffer = Buffer.from(base64Data, 'base64');
+    const fileName = `${userId}-aadhaar-${Date.now()}.jpeg`;
     
-    const { data, error } = await supabaseAdmin.storage.from(bucket).upload(fileName, buffer, {
+    const { data, error } = await supabaseAdmin.storage.from('kyc-documents').upload(fileName, buffer, {
         contentType: 'image/jpeg',
     });
 
     if (error) {
-        console.error(`Error uploading ${bucket}:`, error);
-        throw new Error(`Failed to upload ${bucket}.`);
+        console.error(`Error uploading aadhaar image:`, error);
+        throw new Error(`Failed to upload Aadhaar image.`);
     }
 
-    const { data: urlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(data.path);
+    const { data: urlData } = supabaseAdmin.storage.from('kyc-documents').getPublicUrl(data.path);
     return urlData.publicUrl;
 }
 
@@ -149,7 +135,13 @@ export async function saveKycStep(step: number, formData: FormData) {
 
   try {
     switch (step) {
-      case 1: // Mobile number is now part of the initial verification step, not saved separately here.
+      case 1:
+        const aadhaarPhoto = formData.get('aadhaar_photo') as string;
+        if (aadhaarPhoto) {
+            const aadhaarPhotoUrl = await uploadAadhaarImage(aadhaarPhoto, user.id);
+            profileUpdateData.selfie_url = aadhaarPhotoUrl; // Assuming selfie_url stores the aadhaar photo
+            profileUpdateData.is_aadhaar_verified = true; // We'll manually verify, but mark as submitted
+        }
         break;
 
       case 2: // Trading Background

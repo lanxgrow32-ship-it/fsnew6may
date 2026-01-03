@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use, useActionState, useRef } from 'react';
@@ -28,11 +29,11 @@ type Profile = {
   credentials_provided: boolean;
   trading_username: string;
   trading_password: string;
-  kyc_status: 'pending' | 'pending_pan' | 'submitted' | 'verified' | 'rejected';
+  kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected';
   mobile_number: string;
   pan_number: string;
   aadhar_number: string;
-  selfie_url: string;
+  selfie_url: string; // Now stores Aadhaar photo
   city_state: string;
   traded_before: boolean;
   trading_experience: string;
@@ -50,7 +51,7 @@ type Profile = {
   breach_image_url: string | null;
   role: string;
   is_pan_verified: boolean;
-  is_aadhaar_verified: boolean;
+  is_aadhaar_verified: boolean; // Now means Aadhaar photo submitted
   digilocker_verification_id: string | null;
 };
 
@@ -224,7 +225,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                 <CardContent className="space-y-6">
                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                                         <VerificationStatus label="PAN" isVerified={profile.is_pan_verified} />
-                                        <VerificationStatus label="Aadhaar" isVerified={profile.is_aadhaar_verified} />
+                                        <VerificationStatus label="Aadhaar Photo Submitted" isVerified={profile.is_aadhaar_verified} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm pt-4 border-t">
                                         <div className="space-y-1">
@@ -236,7 +237,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                             <p>{profile.pan_number || 'N/A'}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">Aadhar</p>
+                                            <p className="font-medium text-muted-foreground">Aadhar Number</p>
                                             <p>{profile.aadhar_number || 'N/A'}</p>
                                         </div>
                                         <div className="space-y-1">
@@ -250,8 +251,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                     </div>
                                     {profile.selfie_url && (
                                          <div className="space-y-2 pt-4 border-t">
-                                            <p className="font-medium text-muted-foreground text-sm">Digilocker Photo</p>
-                                            <Image src={profile.selfie_url} alt="User photo from Digilocker" width={100} height={100} className="rounded-md border p-1" />
+                                            <p className="font-medium text-muted-foreground text-sm">Aadhaar Photo</p>
+                                            <Image src={profile.selfie_url} alt="User Aadhaar photo" width={200} height={120} className="rounded-md border p-1" />
                                         </div>
                                     )}
                                 </CardContent>
