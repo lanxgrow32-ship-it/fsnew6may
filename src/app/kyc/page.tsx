@@ -107,12 +107,8 @@ function KycFlow() {
                             profile={profile!} 
                             error={error} 
                             startTransition={startTransition}
-                            onVerificationSuccess={() => {
-                                const fetchProfile = async () => {
-                                    const { data } = await supabase.from('profiles').select('*').single();
-                                    if(data) setProfile(data as Profile);
-                                }
-                                fetchProfile();
+                            onVerificationSuccess={(updatedProfile) => {
+                                setProfile(updatedProfile);
                             }}
                           />;
           case 2: return <Step2_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
@@ -161,7 +157,7 @@ function KycFlow() {
 }
 
 
-function Step1_DocumentVerification({ onSave, profile, error, startTransition, onVerificationSuccess }: { onSave: (formData: FormData) => void; profile: Profile; error: string | null; startTransition: any, onVerificationSuccess: () => void; }) {
+function Step1_DocumentVerification({ onSave, profile, error, startTransition, onVerificationSuccess }: { onSave: (formData: FormData) => void; profile: Profile; error: string | null; startTransition: any, onVerificationSuccess: (p: Profile) => void; }) {
     const formRef = useRef<HTMLFormElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -169,16 +165,20 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
     const [capturedImage, setCapturedImage] = useState<string | null>(profile.selfie_url);
     const [panInput, setPanInput] = useState('');
     const [verificationError, setVerificationError] = useState<string | null>(null);
+    const [verifiedPanName, setVerifiedPanName] = useState<string | null>(null);
+
     const { toast } = useToast();
 
     const isPanVerified = profile.is_pan_verified;
 
     useEffect(() => {
         if(profile.is_aadhaar_verified) return;
+        if(!isPanVerified) return;
 
+        let stream: MediaStream | null = null;
         const getCameraPermission = async () => {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 setHasCameraPermission(true);
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
@@ -188,27 +188,26 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                 setHasCameraPermission(false);
             }
         };
-        if (isPanVerified) {
-          getCameraPermission();
-        }
-
+        
+        getCameraPermission();
+        
         return () => {
-            if (videoRef.current && videoRef.current.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
-                stream.getTracks().forEach(track => track.stop());
-            }
+            stream?.getTracks().forEach(track => track.stop());
         };
-    }, [profile.is_aadhaar_verified, isPanVerified, videoRef]);
+    }, [profile.is_aadhaar_verified, isPanVerified]);
     
     const handlePanVerification = () => {
         startTransition(async () => {
             setVerificationError(null);
+            setVerifiedPanName(null);
             const result = await verifyPan(panInput);
             if (result.error) {
                 setVerificationError(result.error);
-            } else {
-                toast({ title: 'PAN Verified Successfully!', description: `Name: ${result.data.registered_name}`});
-                onVerificationSuccess();
+            } else if (result.success) {
+                const name = result.data.registered_name;
+                toast({ title: 'PAN Verified Successfully!', description: `Name: ${name}`});
+                setVerifiedPanName(name);
+                onVerificationSuccess(result.updatedProfile as Profile);
             }
         });
     }
@@ -258,6 +257,7 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                             <div>
                                 <p>PAN Verified Successfully</p>
                                 <p className="font-mono text-xs">{profile.pan_number}</p>
+                                {verifiedPanName && <p className="font-sans text-xs">Name: {verifiedPanName}</p>}
                             </div>
                         </div>
                      ) : (

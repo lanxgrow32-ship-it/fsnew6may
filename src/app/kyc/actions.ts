@@ -33,17 +33,19 @@ export async function verifyPan(panNumber: string) {
     const apiResponse = await response.json();
 
     if (apiResponse.status === 'Success') {
-      const { error: updateError } = await supabase
+      const { data: updatedProfile, error: updateError } = await supabase
         .from('profiles')
-        .update({ is_pan_verified: true, pan_number: apiResponse.pan })
-        .eq('id', user.id);
+        .update({ is_pan_verified: true, pan_number: apiResponse.pan, full_name: apiResponse.registered_name })
+        .eq('id', user.id)
+        .select()
+        .single();
       
       if (updateError) {
         throw new Error(`Failed to save PAN data to profile: ${updateError.message}`);
       }
       
       revalidatePath('/kyc');
-      return { success: true, data: apiResponse };
+      return { success: true, data: apiResponse, updatedProfile };
     } else {
       return { error: apiResponse.message || 'Failed to verify PAN. Please check the number and try again.' };
     }
