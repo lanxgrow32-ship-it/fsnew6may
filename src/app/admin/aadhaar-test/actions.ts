@@ -7,8 +7,8 @@
 
 // NOTE: This is the CORRECT documentation provided by the user.
 const IMB_API_URL = 'https://secure.imbpayment.in/api/v1/aadhaar';
-const EKYCHUB_CLIENT_ID = process.env.EKYCHUB_CLIENT_ID;
-const EKYCHUB_CLIENT_SECRET = process.env.EKYCHUB_CLIENT_SECRET;
+const IMB_CLIENT_ID = process.env.IMB_CLIENT_ID;
+const IMB_CLIENT_SECRET = process.env.IMB_CLIENT_SECRET;
 
 
 interface AadhaarState {
@@ -22,7 +22,7 @@ interface AadhaarState {
 export async function sendAadhaarOtp(prevState: AadhaarState, formData: FormData): Promise<AadhaarState> {
     const aadhaarNumber = formData.get('aadhaar_number') as string;
 
-    if (!EKYCHUB_CLIENT_ID || !EKYCHUB_CLIENT_SECRET) {
+    if (!IMB_CLIENT_ID || !IMB_CLIENT_SECRET) {
         return { error: 'API credentials are not configured on the server.', success: false };
     }
     if (!aadhaarNumber || !/^\d{12}$/.test(aadhaarNumber)) {
@@ -33,8 +33,8 @@ export async function sendAadhaarOtp(prevState: AadhaarState, formData: FormData
         const response = await fetch(`${IMB_API_URL}/send-otp`, {
             method: 'POST',
             headers: {
-                'x-client-id': EKYCHUB_CLIENT_ID,
-                'x-client-secret': EKYCHUB_CLIENT_SECRET,
+                'x-client-id': IMB_CLIENT_ID,
+                'x-client-secret': IMB_CLIENT_SECRET,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -65,7 +65,7 @@ export async function verifyAadhaarOtp(prevState: AadhaarState, formData: FormDa
     const requestId = formData.get('request_id') as string;
     const aadhaarNumber = formData.get('aadhaar_number') as string;
 
-    if (!EKYCHUB_CLIENT_ID || !EKYCHUB_CLIENT_SECRET) {
+    if (!IMB_CLIENT_ID || !IMB_CLIENT_SECRET) {
         return { error: 'API credentials are not configured on the server.', success: false };
     }
     if (!otp || !/^\d{6}$/.test(otp)) {
@@ -82,8 +82,8 @@ export async function verifyAadhaarOtp(prevState: AadhaarState, formData: FormDa
         const response = await fetch(`${IMB_API_URL}/verify-otp`, {
             method: 'POST',
             headers: {
-                'x-client-id': EKYCHUB_CLIENT_ID,
-                'x-client-secret': EKYCHUB_CLIENT_SECRET,
+                'x-client-id': IMB_CLIENT_ID,
+                'x-client-secret': IMB_CLIENT_SECRET,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
