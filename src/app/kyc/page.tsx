@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 type Profile = {
     pan_number: string | null;
@@ -89,7 +90,7 @@ function KycFlow() {
               }
 
               if (currentStep === totalSteps) {
-                  toast({ title: 'KYC Submitted', description: 'Your documents are now under review.' });
+                  toast({ title: 'KYC Verified!', description: 'Your KYC process is complete.' });
                   router.push('/welcome');
               } else {
                   setCurrentStep(prev => prev + 1);
@@ -206,6 +207,7 @@ function Step1_DocumentVerification({ onSave, profile, error, handlePanVerificat
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
     const [capturedImage, setCapturedImage] = useState<string | null>(profile.selfie_url);
+    const isPanVerified = profile.is_pan_verified;
 
     useEffect(() => {
         if(profile.is_aadhaar_verified) return;
@@ -222,7 +224,9 @@ function Step1_DocumentVerification({ onSave, profile, error, handlePanVerificat
                 setHasCameraPermission(false);
             }
         };
-        getCameraPermission();
+        if (isPanVerified) {
+          getCameraPermission();
+        }
 
         return () => {
             if (videoRef.current && videoRef.current.srcObject) {
@@ -230,7 +234,7 @@ function Step1_DocumentVerification({ onSave, profile, error, handlePanVerificat
                 stream.getTracks().forEach(track => track.stop());
             }
         };
-    }, [profile.is_aadhaar_verified]);
+    }, [profile.is_aadhaar_verified, isPanVerified]);
 
     const captureImage = () => {
         if (videoRef.current && canvasRef.current) {
@@ -308,11 +312,12 @@ function Step1_DocumentVerification({ onSave, profile, error, handlePanVerificat
 
             {/* Aadhaar Verification */}
              <form ref={formRef} onSubmit={handleSubmit}>
-                <Card>
+                <Card className={cn(!isPanVerified && "bg-muted/50 opacity-60 pointer-events-none")}>
                     <CardHeader>
                          <CardTitle className="text-base flex items-center gap-2">
                             <Camera className="w-5 h-5 text-primary" />Aadhaar Card Photo Capture
                         </CardTitle>
+                        {!isPanVerified && <CardDescription>Please complete PAN verification above to enable this step.</CardDescription>}
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {profile.is_aadhaar_verified && capturedImage ? (
@@ -443,7 +448,7 @@ function Step3_Agreements({ onSave, onBack, error, profile }: { onSave: (formDat
             </div>
              <div className="flex justify-between gap-4 pt-4">
                 <Button type="button" variant="outline" onClick={onBack}>Back</Button>
-                <Button type="submit" size="lg">Submit for Verification</Button>
+                <Button type="submit" size="lg">Submit and Verify</Button>
             </div>
         </form>
     );

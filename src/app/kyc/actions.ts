@@ -158,7 +158,7 @@ export async function saveKycStep(step: number, formData: FormData) {
           drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes',
           risk_rules_understood: formData.get('risk_rules_understood') === 'yes',
           terms_accepted: formData.get('terms_accepted') === 'yes',
-          kyc_status: 'submitted', // Final step sets status
+          kyc_status: 'verified', // Final step sets status to verified
         };
         break;
 
