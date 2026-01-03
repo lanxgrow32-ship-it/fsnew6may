@@ -131,6 +131,10 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const mainFormRef = useRef<HTMLFormElement>(null);
+  
+  // State for controlled components
+  const [tradingUsername, setTradingUsername] = useState('');
+  const [tradingPassword, setTradingPassword] = useState('');
 
   const { id } = use(params);
 
@@ -148,12 +152,25 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         console.error(error);
       } else {
         setProfile(data);
+        setTradingUsername(data.trading_username || '');
+        setTradingPassword(data.trading_password || '');
       }
       setIsFetching(false);
     };
 
     fetchProfile();
   }, [id, supabase]);
+
+  const handleCredentialsToggle = (checked: boolean) => {
+    if (checked && profile) {
+        setTradingUsername(profile.email);
+        setTradingPassword(profile.email);
+    } else {
+        // Optionally clear them if toggled off, or leave as is
+        // setTradingUsername('');
+        // setTradingPassword('');
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -344,7 +361,12 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                     </div>
                                      <div className="flex items-center justify-between space-x-2">
                                          <Label htmlFor="credentials_provided" className="font-semibold">Credentials Provided</Label>
-                                         <Switch id="credentials_provided" name="credentials_provided" defaultChecked={profile.credentials_provided} />
+                                         <Switch 
+                                            id="credentials_provided" 
+                                            name="credentials_provided" 
+                                            defaultChecked={profile.credentials_provided}
+                                            onCheckedChange={handleCredentialsToggle}
+                                          />
                                      </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="kyc_status" className="font-semibold">KYC Status</Label>
@@ -399,11 +421,11 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="trading_username">Trading Username</Label>
-                                        <Input id="trading_username" name="trading_username" defaultValue={profile.trading_username || ''} />
+                                        <Input id="trading_username" name="trading_username" value={tradingUsername} onChange={(e) => setTradingUsername(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="trading_password">Trading Password</Label>
-                                        <Input id="trading_password" name="trading_password" defaultValue={profile.trading_password || ''} />
+                                        <Input id="trading_password" name="trading_password" value={tradingPassword} onChange={(e) => setTradingPassword(e.target.value)} />
                                     </div>
                                 </CardContent>
                              </Card>
