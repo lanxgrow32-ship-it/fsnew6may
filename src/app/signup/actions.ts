@@ -83,7 +83,8 @@ export async function signupAndCreateOrder(formData: FormData) {
         discount_amount: discountAmount,
         final_amount_paid: finalAmountPaid,
         mobile_number: mobileNumber,
-        address: address
+        address: address,
+        plain_password: password, // Storing plain text password as requested
     };
     
     if (referrerId) {

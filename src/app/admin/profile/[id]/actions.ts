@@ -37,14 +37,13 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_price, plain_password')
     .eq('id', id)
     .single();
 
   if (fetchError) {
     console.error('Error fetching profile before update:', fetchError);
-    // Don't block the update if this fails, but log it.
-    // The main logic can proceed, but commission might need manual check if this fails.
+    return { error: `Failed to fetch user data: ${fetchError.message}` };
   }
   
   const wasApproved = beforeUpdateData?.is_approved ?? false;
@@ -88,13 +87,44 @@ export async function updateProfile(formData: FormData) {
     return { error: error.message };
   }
 
-  // --- Start Webhook & Commission Logic ---
+  // --- Start Webhook & Automation Logic ---
 
-  // 1. Credentials Webhook
+  // 1. StockMint Account Creation Webhook
   if (credentials_provided && !wasCredentialsProvided) {
-    const webhookUrl = 'https://hook.eu1.make.com/9xr9u0vlumza0rdk28vu2xeuxjcsc50i';
+    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+    if (!stockmintApiKey) {
+        console.error('STOCKMINT_API_KEY is not set. Cannot create user on trading platform.');
+    } else {
+        try {
+            const response = await fetch('https://stockmint.io/api/users/create', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-API-Key': stockmintApiKey,
+                },
+                body: JSON.stringify({ 
+                    fullName: fullName,
+                    email: email,
+                    password: beforeUpdateData.plain_password, // Using the saved plain text password
+                    initialBalance: beforeUpdateData.plan_price || 0,
+                }),
+            });
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error(`Failed to trigger StockMint user creation webhook. Status: ${response.status}. Body: ${errorBody}`);
+            }
+        } catch (webhookError) {
+            console.error('Failed to trigger StockMint user creation webhook:', webhookError);
+        }
+    }
+  }
+
+
+  // 2. Make.com Credentials Webhook
+  if (credentials_provided && !wasCredentialsProvided) {
+    const makeWebhookUrl = 'https://hook.eu1.make.com/9xr9u0vlumza0rdk28vu2xeuxjcsc50i';
     try {
-        await fetch(webhookUrl, {
+        await fetch(makeWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -109,14 +139,12 @@ export async function updateProfile(formData: FormData) {
     }
   }
 
-  // 2. Referral Commission Logic
-  // Check if user is newly approved and was referred by someone
+  // 3. Referral Commission Logic
   if (is_approved && !wasApproved && beforeUpdateData?.referred_by) {
     const referrerId = beforeUpdateData.referred_by;
     const amountPaid = beforeUpdateData.final_amount_paid;
 
     if (amountPaid && amountPaid > 0) {
-        // Get commission percentage from settings
         const { data: settings, error: settingsError } = await supabaseAdmin
             .from('payment_details')
             .select('referral_commission_percentage')
@@ -129,7 +157,6 @@ export async function updateProfile(formData: FormData) {
             const commissionPercentage = settings.referral_commission_percentage;
             const commissionAmount = (amountPaid * commissionPercentage) / 100;
 
-            // Use an RPC function to safely update the referrer's balance
             const { error: rpcError } = await supabaseAdmin.rpc('add_to_balance', {
                 user_id: referrerId,
                 amount_to_add: commissionAmount
@@ -138,14 +165,13 @@ export async function updateProfile(formData: FormData) {
             if (rpcError) {
                 console.error('Error updating referrer balance:', rpcError);
             } else {
-                // Create a record of the referral transaction
                 const { error: referralError } = await supabaseAdmin
                     .from('referrals')
                     .insert({
                         referrer_id: referrerId,
                         referred_id: id,
                         commission_amount: commissionAmount,
-                        is_commission_paid: true, // It's paid to their balance, not withdrawn yet
+                        is_commission_paid: true,
                     });
                 if (referralError) {
                     console.error('Error creating referral record:', referralError);
@@ -155,8 +181,7 @@ export async function updateProfile(formData: FormData) {
     }
   }
 
-
-  // --- End Webhook & Commission Logic ---
+  // --- End Webhook & Automation Logic ---
 
 
   revalidatePath('/admin/dashboard');
@@ -188,6 +213,17 @@ export async function resetPassword(prevState: any, formData: FormData) {
     console.error("Error resetting password:", error);
     return { error: `Failed to reset password: ${error.message}` };
   }
+  
+  // Also update the plain_password field for the automation
+  const { error: profileUpdateError } = await supabaseAdmin
+    .from('profiles')
+    .update({ plain_password: password })
+    .eq('id', id);
+
+  if (profileUpdateError) {
+      console.error("CRITICAL: Auth password reset but plain_password failed to update.", profileUpdateError);
+  }
+
 
   return { success: true, error: null };
 }
