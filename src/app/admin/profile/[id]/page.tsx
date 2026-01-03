@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, Download, PanelLeft, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, PanelLeft, ShieldAlert, CheckCircle, XCircle, Info, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile, resetPassword } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -135,6 +135,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   // State for controlled components
   const [tradingUsername, setTradingUsername] = useState('');
   const [tradingPassword, setTradingPassword] = useState('');
+  const [showAutomationPreview, setShowAutomationPreview] = useState(false);
 
   const { id } = use(params);
 
@@ -162,11 +163,11 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   }, [id, supabase]);
 
   const handleCredentialsToggle = (checked: boolean) => {
+    setShowAutomationPreview(checked);
     if (checked && profile) {
         setTradingUsername(profile.email);
         setTradingPassword(profile.email);
     } else {
-        // Clear them if toggled off
         setTradingUsername('');
         setTradingPassword('');
     }
@@ -360,7 +361,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                         <Switch id="is_approved" name="is_approved" defaultChecked={profile.is_approved} />
                                     </div>
                                      <div className="flex items-center justify-between space-x-2">
-                                         <Label htmlFor="credentials_provided" className="font-semibold">Credentials Provided</Label>
+                                         <Label htmlFor="credentials_provided" className="font-semibold">Create Trading Account</Label>
                                          <Switch 
                                             id="credentials_provided" 
                                             name="credentials_provided" 
@@ -413,12 +414,52 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                     </div>
                                 </CardContent>
                             </Card>
+                            {/* Automation Preview */}
+                             {showAutomationPreview && !profile.credentials_provided && (
+                                <Card className="border-dashed border-primary bg-primary/5">
+                                    <CardHeader>
+                                        <CardTitle className="text-primary flex items-center gap-2">
+                                            <Send className="h-5 w-5"/>
+                                            Automation Preview
+                                        </CardTitle>
+                                        <CardDescription>
+                                            On save, an account will be created on StockMint.io with these details.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3 text-sm">
+                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
+                                            <span className="font-semibold">Endpoint:</span> https://stockmint.io/api/users/create
+                                        </div>
+                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
+                                            <span className="font-semibold">Full Name:</span> {profile.full_name}
+                                        </div>
+                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
+                                            <span className="font-semibold">Email:</span> {profile.email}
+                                        </div>
+                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
+                                            <span className="font-semibold">Password:</span> {profile.email}
+                                        </div>
+                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
+                                            <span className="font-semibold">Initial Balance:</span> ₹{profile.plan_price?.toFixed(2) ?? '0.00'}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                              {/* Trading Credentials */}
                              <Card>
                                 <CardHeader>
                                     <CardTitle>Trading Credentials</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
+                                     <Alert variant="default" className="flex items-start gap-3">
+                                        <Info className="h-5 w-5 mt-0.5"/>
+                                        <div>
+                                        <AlertTitle>Important</AlertTitle>
+                                        <AlertDescription>
+                                            The Trading Username and Password will be automatically set to the user's email when you enable "Create Trading Account". These credentials will be sent to the user via webhook.
+                                        </AlertDescription>
+                                        </div>
+                                    </Alert>
                                     <div className="space-y-2">
                                         <Label htmlFor="trading_username">Trading Username</Label>
                                         <Input id="trading_username" name="trading_username" value={tradingUsername} onChange={(e) => setTradingUsername(e.target.value)} />

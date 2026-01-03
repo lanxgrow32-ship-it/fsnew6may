@@ -37,7 +37,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_price, email')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_price, email, full_name')
     .eq('id', id)
     .single();
 
@@ -94,9 +94,9 @@ export async function updateProfile(formData: FormData) {
                     'X-API-Key': stockmintApiKey,
                 },
                 body: JSON.stringify({ 
-                    fullName: fullName,
+                    fullName: beforeUpdateData.full_name,
                     email: beforeUpdateData.email,
-                    // Use email as the initial password
+                    // Use email as the initial password, as requested
                     password: beforeUpdateData.email, 
                     initialBalance: beforeUpdateData.plan_price || 0,
                 }),
@@ -122,8 +122,8 @@ export async function updateProfile(formData: FormData) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                full_name: fullName,
-                email: email,
+                full_name: beforeUpdateData.full_name,
+                email: beforeUpdateData.email,
                 trading_username: trading_username,
                 trading_password: trading_password 
             }),
