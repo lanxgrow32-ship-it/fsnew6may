@@ -31,6 +31,7 @@ type Profile = {
     drawdown_rules_accepted: boolean;
     risk_rules_understood: boolean;
     terms_accepted: boolean;
+    full_name: string | null;
 };
 
 const tradingStyleOptions = [
@@ -41,6 +42,97 @@ const tradingStyleOptions = [
     { id: 'futures', label: 'Futures' },
     { id: 'scalping', label: 'Scalping' },
 ];
+
+function AadhaarCamera({ onCapture, onRetake, capturedImage, isPanVerified }: { onCapture: (image: string) => void; onRetake: () => void; capturedImage: string | null; isPanVerified: boolean; }) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        let stream: MediaStream | null = null;
+        
+        const enableStream = async () => {
+            if (!isPanVerified || capturedImage) return;
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                setHasCameraPermission(true);
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                }
+            } catch (err) {
+                console.error("Camera access denied:", err);
+                setHasCameraPermission(false);
+            }
+        };
+
+        enableStream();
+
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [capturedImage, isPanVerified]);
+
+    const handleCapture = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            if (context) {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageDataUrl = canvas.toDataURL('image/jpeg');
+                onCapture(imageDataUrl);
+            }
+        }
+    };
+    
+    return (
+        <div className="space-y-4">
+            <Alert variant="destructive">
+                <AlertTitle className="font-bold">High-Quality Warning!</AlertTitle>
+                <AlertDescription>
+                    Even after your KYC is verified, if the Aadhaar image is wrongly provided, you will **not** receive your funded account. Ensure the photo is clear and legible.
+                </AlertDescription>
+            </Alert>
+            <div className="relative aspect-video w-full max-w-md mx-auto bg-muted rounded-md overflow-hidden border">
+                {hasCameraPermission === false ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        <Camera className="h-10 w-10 text-muted-foreground mb-4"/>
+                        <h4 className="font-semibold">Camera Access Required</h4>
+                        <p className="text-sm text-muted-foreground">Please allow camera access in your browser settings to continue.</p>
+                    </div>
+                ) : hasCameraPermission === null && !capturedImage ? (
+                    <div className="flex items-center justify-center h-full">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                ) : (
+                    <>
+                        <video ref={videoRef} className={`w-full h-full object-cover ${capturedImage ? 'hidden' : ''}`} autoPlay playsInline muted />
+                        <canvas ref={canvasRef} className="hidden"></canvas>
+                        {capturedImage && (
+                            <Image src={capturedImage} alt="Captured Aadhaar" layout="fill" className="object-cover" />
+                        )}
+                    </>
+                )}
+            </div>
+            <div className="flex justify-center gap-4">
+                {capturedImage ? (
+                    <Button type="button" variant="outline" onClick={onRetake}>
+                        <RefreshCw className="mr-2 h-4 w-4" /> Retake
+                    </Button>
+                ) : (
+                    <Button type="button" onClick={handleCapture} disabled={!hasCameraPermission}>
+                        <Camera className="mr-2 h-4 w-4" /> Capture Photo
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+}
 
 function KycFlow() {
   const router = useRouter();
@@ -157,101 +249,10 @@ function KycFlow() {
 }
 
 
-function AadhaarCamera({ onCapture, onRetake, capturedImage }: { onCapture: (image: string) => void; onRetake: () => void; capturedImage: string | null; }) {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-
-    useEffect(() => {
-        let stream: MediaStream | null = null;
-        
-        const enableStream = async () => {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                setHasCameraPermission(true);
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-            } catch (err) {
-                setHasCameraPermission(false);
-            }
-        };
-
-        if (!capturedImage) {
-            enableStream();
-        }
-
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [capturedImage]);
-
-    const handleCapture = () => {
-        if (videoRef.current && canvasRef.current) {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            if (context) {
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageDataUrl = canvas.toDataURL('image/jpeg');
-                onCapture(imageDataUrl);
-            }
-        }
-    };
-    
-    return (
-        <div className="space-y-4">
-            <Alert variant="destructive">
-                <AlertTitle className="font-bold">High-Quality Warning!</AlertTitle>
-                <AlertDescription>
-                    Even after your KYC is verified, if the Aadhaar image is wrongly provided, you will **not** receive your funded account. Ensure the photo is clear and legible.
-                </AlertDescription>
-            </Alert>
-            <div className="relative aspect-video w-full max-w-md mx-auto bg-muted rounded-md overflow-hidden border">
-                {hasCameraPermission === false ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                        <Camera className="h-10 w-10 text-muted-foreground mb-4"/>
-                        <h4 className="font-semibold">Camera Access Required</h4>
-                        <p className="text-sm text-muted-foreground">Please allow camera access in your browser settings to continue.</p>
-                    </div>
-                ) : hasCameraPermission === null && !capturedImage ? (
-                    <div className="flex items-center justify-center h-full">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                    </div>
-                ) : (
-                    <>
-                        <video ref={videoRef} className={`w-full h-full object-cover ${capturedImage ? 'hidden' : ''}`} autoPlay playsInline muted />
-                        <canvas ref={canvasRef} className="hidden"></canvas>
-                        {capturedImage && (
-                            <Image src={capturedImage} alt="Captured Aadhaar" layout="fill" className="object-cover" />
-                        )}
-                    </>
-                )}
-            </div>
-            <div className="flex justify-center gap-4">
-                {capturedImage ? (
-                    <Button type="button" variant="outline" onClick={onRetake}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Retake
-                    </Button>
-                ) : (
-                    <Button type="button" onClick={handleCapture} disabled={!hasCameraPermission}>
-                        <Camera className="mr-2 h-4 w-4" /> Capture Photo
-                    </Button>
-                )}
-            </div>
-        </div>
-    );
-}
-
 function Step1_DocumentVerification({ onSave, profile, error, startTransition, onVerificationSuccess }: { onSave: (formData: FormData) => void; profile: Profile; error: string | null; startTransition: any, onVerificationSuccess: (p: Profile) => void; }) {
     const [capturedImage, setCapturedImage] = useState<string | null>(profile.selfie_url);
     const [panInput, setPanInput] = useState('');
     const [verificationError, setVerificationError] = useState<string | null>(null);
-    const [verifiedPanName, setVerifiedPanName] = useState<string | null>(null);
 
     const { toast } = useToast();
 
@@ -260,14 +261,11 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
     const handlePanVerification = () => {
         startTransition(async () => {
             setVerificationError(null);
-            setVerifiedPanName(null);
             const result = await verifyPan(panInput);
             if (result.error) {
                 setVerificationError(result.error);
             } else if (result.success && result.updatedProfile) {
-                const name = result.updatedProfile.full_name;
-                toast({ title: 'PAN Verified Successfully!', description: `Name: ${name}`});
-                setVerifiedPanName(name);
+                toast({ title: 'PAN Verified Successfully!', description: `Name: ${result.updatedProfile.full_name}`});
                 onVerificationSuccess(result.updatedProfile as Profile);
             }
         });
@@ -347,6 +345,7 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                                 capturedImage={capturedImage}
                                 onCapture={(image) => setCapturedImage(image)}
                                 onRetake={() => setCapturedImage(null)}
+                                isPanVerified={profile.is_pan_verified}
                             />
                         )}
                     </CardContent>
