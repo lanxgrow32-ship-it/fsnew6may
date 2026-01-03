@@ -3,40 +3,44 @@
 
 import { randomUUID } from "crypto";
 
-// NOTE: These endpoints and headers are based on the NEW documentation provided.
-const IMB_API_URL = 'https://secure.imbpayment.in/api/v1/aadhaar';
-const EKYCHUB_CLIENT_ID = process.env.EKYCHUB_CLIENT_ID;
-const EKYCHUB_CLIENT_SECRET = process.env.EKYCHUB_CLIENT_SECRET;
+// NOTE: This is the OLD documentation that was causing issues.
+// const IMB_API_URL_WRONG = 'https://secure.imbpayment.in/api/v1/aadhaar';
+// const EKYCHUB_CLIENT_ID = process.env.EKYCHUB_CLIENT_ID;
+// const EKYCHUB_CLIENT_SECRET = process.env.EKYCHUB_CLIENT_SECRET;
+
+// NOTE: This is the CORRECT documentation provided by the user.
+const IMB_API_URL = 'https://secure.imbpayment.com/api/v1/verification/aadhaar';
+const IMB_API_TOKEN = process.env.IMB_PAYMENT_USER_TOKEN;
 
 interface AadhaarState {
     error: string | null;
     success: boolean;
-    // Changed from refId to requestId to match the new API
-    requestId?: string | null;
+    refId?: string | null;
     aadhaarNumber?: string | null;
     data?: any | null;
 }
 
 export async function sendAadhaarOtp(prevState: AadhaarState, formData: FormData): Promise<AadhaarState> {
     const aadhaarNumber = formData.get('aadhaar_number') as string;
+    const refId = `VFR${Date.now()}`; // Create a unique reference ID
 
-    if (!EKYCHUB_CLIENT_ID || !EKYCHUB_CLIENT_SECRET) {
-        return { error: 'API credentials are not configured on the server.', success: false };
+    if (!IMB_API_TOKEN) {
+        return { error: 'API token is not configured on the server.', success: false };
     }
     if (!aadhaarNumber || !/^\d{12}$/.test(aadhaarNumber)) {
         return { error: 'Please enter a valid 12-digit Aadhaar number.', success: false };
     }
 
     try {
-        const response = await fetch(`${IMB_API_URL}/send-otp`, {
+        const response = await fetch(`${IMB_API_URL}/sendotp`, {
             method: 'POST',
             headers: {
-                'x-client-id': EKYCHUB_CLIENT_ID,
-                'x-client-secret': EKYCHUB_CLIENT_SECRET,
+                'Token': IMB_API_TOKEN,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 aadhaar_number: aadhaarNumber,
+                ref_id: refId,
             }),
         });
 
@@ -46,12 +50,12 @@ export async function sendAadhaarOtp(prevState: AadhaarState, formData: FormData
 
         const result = await response.json() as any;
 
-        if (result.status === "success" && result.data?.request_id) {
+        // The correct API checks for response_code 111 or 112
+        if (result.response_code === 111 || result.response_code === 112) {
             return { 
                 error: null, 
                 success: true, 
-                // The new API returns a 'request_id' which we need for the next step
-                requestId: result.data.request_id, 
+                refId: refId, // Pass the generated refId to the next step
                 aadhaarNumber: aadhaarNumber 
             };
         } else {
@@ -65,32 +69,29 @@ export async function sendAadhaarOtp(prevState: AadhaarState, formData: FormData
 
 export async function verifyAadhaarOtp(prevState: AadhaarState, formData: FormData): Promise<AadhaarState> {
     const otp = formData.get('otp') as string;
-    // Changed from ref_id to request_id
-    const requestId = formData.get('request_id') as string; 
+    const refId = formData.get('ref_id') as string; 
     const aadhaarNumber = formData.get('aadhaar_number') as string;
 
-     if (!EKYCHUB_CLIENT_ID || !EKYCHUB_CLIENT_SECRET) {
-        return { error: 'API credentials are not configured on the server.', success: false };
+     if (!IMB_API_TOKEN) {
+        return { error: 'API token is not configured on the server.', success: false };
     }
     if (!otp || !/^\d{6}$/.test(otp)) {
         return { error: 'Please enter a valid 6-digit OTP.', success: false };
     }
-    if (!requestId) {
-        return { error: 'Request ID is missing. Please start over.', success: false };
+    if (!refId) {
+        return { error: 'Reference ID is missing. Please start over.', success: false };
     }
 
     try {
-        const response = await fetch(`${IMB_API_URL}/verify-otp`, {
+        const response = await fetch(`${IMB_API_URL}/verify`, {
             method: 'POST',
             headers: {
-                'x-client-id': EKYCHUB_CLIENT_ID,
-                'x-client-secret': EKYCHUB_CLIENT_SECRET,
+                'Token': IMB_API_TOKEN,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 otp: otp,
-                request_id: requestId,
-                aadhaar_number: aadhaarNumber
+                ref_id: refId,
             }),
         });
 
@@ -100,9 +101,9 @@ export async function verifyAadhaarOtp(prevState: AadhaarState, formData: FormDa
 
         const result = await response.json() as any;
         
-        if (result.status === "success") {
-             // The verified data is now nested inside `aadhaar_details`
-            return { error: null, success: true, data: result.data?.aadhaar_details, aadhaarNumber };
+        // The correct API checks for response_code 111 or 112
+        if (result.response_code === 111 || result.response_code === 112) {
+            return { error: null, success: true, data: result.data, aadhaarNumber };
         } else {
             return { ...prevState, error: result.message || 'OTP verification failed.', success: false };
         }

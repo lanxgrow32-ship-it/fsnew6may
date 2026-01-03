@@ -11,14 +11,14 @@ import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { sendAadhaarOtp, verifyAadhaarOtp } from './actions';
 
 // This component handles the first step: sending the OTP
-function SendOtpForm({ onOtpSent }: { onOtpSent: (requestId: string, aadhaar: string) => void }) {
-    const [state, formAction, isPending] = useActionState(sendAadhaarOtp, { error: null, success: false, requestId: null, aadhaarNumber: null });
+function SendOtpForm({ onOtpSent }: { onOtpSent: (refId: string, aadhaar: string) => void }) {
+    const [state, formAction, isPending] = useActionState(sendAadhaarOtp, { error: null, success: false, refId: null, aadhaarNumber: null });
 
     useEffect(() => {
-        if (state.success && state.requestId && state.aadhaarNumber) {
-            onOtpSent(state.requestId, state.aadhaarNumber);
+        if (state.success && state.refId && state.aadhaarNumber) {
+            onOtpSent(state.refId, state.aadhaarNumber);
         }
-    }, [state.success, state.requestId, state.aadhaarNumber, onOtpSent]);
+    }, [state.success, state.refId, state.aadhaarNumber, onOtpSent]);
     
     return (
         <form action={formAction} className="space-y-4">
@@ -42,8 +42,8 @@ function SendOtpForm({ onOtpSent }: { onOtpSent: (requestId: string, aadhaar: st
 }
 
 // This component handles the second step: verifying the OTP
-function VerifyOtpForm({ requestId, aadhaarNumber, onVerified }: { requestId: string; aadhaarNumber: string; onVerified: (data: any) => void }) {
-    const initialState = { error: null, success: false, data: null, requestId, aadhaarNumber };
+function VerifyOtpForm({ refId, aadhaarNumber, onVerified }: { refId: string; aadhaarNumber: string; onVerified: (data: any) => void }) {
+    const initialState = { error: null, success: false, data: null, refId, aadhaarNumber };
     const [state, formAction, isPending] = useActionState(verifyAadhaarOtp, initialState);
     
     useEffect(() => {
@@ -55,7 +55,7 @@ function VerifyOtpForm({ requestId, aadhaarNumber, onVerified }: { requestId: st
     return (
         <form action={formAction} className="space-y-4">
             {/* Hidden inputs to pass necessary data to the server action */}
-            <input type="hidden" name="request_id" value={requestId} />
+            <input type="hidden" name="ref_id" value={refId} />
             <input type="hidden" name="aadhaar_number" value={aadhaarNumber} />
 
             <Alert>
@@ -90,13 +90,13 @@ function VerifyOtpForm({ requestId, aadhaarNumber, onVerified }: { requestId: st
 // Main page component to manage the flow
 export default function AadhaarTestPage() {
     const [step, setStep] = useState<'send' | 'verify' | 'result'>('send');
-    const [requestId, setRequestId] = useState('');
+    const [refId, setRefId] = useState('');
     const [aadhaarNumber, setAadhaarNumber] = useState('');
     const [verifiedData, setVerifiedData] = useState<any>(null);
 
     // Callback when OTP is successfully sent
-    const handleOtpSent = (newRequestId: string, newAadhaarNumber: string) => {
-        setRequestId(newRequestId);
+    const handleOtpSent = (newRefId: string, newAadhaarNumber: string) => {
+        setRefId(newRefId);
         setAadhaarNumber(newAadhaarNumber);
         setStep('verify');
     };
@@ -110,7 +110,7 @@ export default function AadhaarTestPage() {
     // Function to restart the process
     const resetFlow = () => {
         setStep('send');
-        setRequestId('');
+        setRefId('');
         setAadhaarNumber('');
         setVerifiedData(null);
     }
@@ -120,7 +120,7 @@ export default function AadhaarTestPage() {
             case 'send':
                 return <SendOtpForm onOtpSent={handleOtpSent} />;
             case 'verify':
-                return <VerifyOtpForm requestId={requestId} aadhaarNumber={aadhaarNumber} onVerified={handleVerified} />;
+                return <VerifyOtpForm refId={refId} aadhaarNumber={aadhaarNumber} onVerified={handleVerified} />;
             case 'result':
                 return (
                     <div className="space-y-4">
@@ -133,10 +133,10 @@ export default function AadhaarTestPage() {
                              <Card className="bg-muted/50">
                                  <CardHeader><CardTitle className="text-base">Verified Data</CardTitle></CardHeader>
                                 <CardContent className="text-sm space-y-2">
-                                     <p><strong>Name:</strong> {verifiedData.full_name}</p>
+                                     <p><strong>Name:</strong> {verifiedData.name}</p>
                                      <p><strong>Gender:</strong> {verifiedData.gender}</p>
                                      <p><strong>DOB:</strong> {verifiedData.dob}</p>
-                                     <p><strong>Address:</strong> {verifiedData.address_details?.address_line}</p>
+                                     <p><strong>Address:</strong> {verifiedData.address}</p>
                                 </CardContent>
                              </Card>
                         )}
@@ -155,7 +155,7 @@ export default function AadhaarTestPage() {
                 <CardHeader>
                     <CardTitle>Aadhaar OTP Verification Test</CardTitle>
                     <CardDescription>
-                        Use this page to test the new IMB Aadhaar OTP verification flow.
+                        Use this page to test the IMB Aadhaar OTP verification flow.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
