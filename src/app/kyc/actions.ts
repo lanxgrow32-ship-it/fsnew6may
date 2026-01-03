@@ -168,10 +168,9 @@ export async function saveKycStep(step: number, formData: FormData) {
     if (isFinalStep && updatedProfile) {
         // Automatically create trading account
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-        const makeWebhookUrl = process.env.MAKE_WEBHOOK_URL_CREDENTIALS;
         const initialBalance = getBalanceFromPlanName(updatedProfile.plan_purchased || '');
         const tradingUsername = updatedProfile.email;
-        const tradingPassword = updatedProfile.email;
+        const tradingPassword = updatedProfile.email; // Using email as password as planned
 
         // 1. StockMint Account Creation
         if (stockmintApiKey && initialBalance > 0) {
@@ -185,13 +184,14 @@ export async function saveKycStep(step: number, formData: FormData) {
                     body: JSON.stringify({ 
                         fullName: updatedProfile.full_name,
                         email: updatedProfile.email,
-                        password: tradingPassword, // Use email as password
+                        password: tradingPassword,
                         initialBalance: initialBalance,
                     }),
                 });
                 if (!response.ok) {
                     const errorBody = await response.text();
                     console.error(`Failed to trigger StockMint webhook. Status: ${response.status}. Body: ${errorBody}`);
+                    // Even if this fails, don't block the user. Log it for admin.
                 }
             } catch (webhookError) {
                 console.error('Failed to trigger StockMint webhook:', webhookError);
@@ -200,25 +200,7 @@ export async function saveKycStep(step: number, formData: FormData) {
              console.error('StockMint API key not set or initial balance is zero. Aborting account creation.');
         }
 
-        // 2. Make.com Credentials Webhook
-        if (makeWebhookUrl) {
-            try {
-                await fetch(makeWebhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        full_name: updatedProfile.full_name,
-                        email: updatedProfile.email,
-                        trading_username: tradingUsername,
-                        trading_password: tradingPassword 
-                    }),
-                });
-            } catch (webhookError) {
-                console.error('Failed to trigger credentials webhook:', webhookError);
-            }
-        }
-        
-        // 3. Update profile with credentials
+        // 2. Update profile with credentials in our database
         await supabaseAdmin.from('profiles').update({
             credentials_provided: true,
             trading_username: tradingUsername,

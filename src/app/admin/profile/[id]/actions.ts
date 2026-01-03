@@ -112,20 +112,18 @@ export async function updateProfile(formData: FormData) {
 
   // --- Start Webhook & Automation Logic ---
 
-  // Check if KYC status was *just* changed to 'verified' by the admin.
-  // This serves as a manual backup/override to the automatic KYC flow.
+  // Manual admin override for KYC verification
+  // This logic is now a backup. The primary automation happens in kyc/actions.ts
   if (kyc_status === 'verified' && !wasKycVerified) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-    const makeWebhookUrl = process.env.MAKE_WEBHOOK_URL_CREDENTIALS;
-    if (!stockmintApiKey || !makeWebhookUrl) {
-        console.error('AUTOMATION SKIPPED: StockMint API Key or Make.com Webhook URL is not set.');
+    if (!stockmintApiKey) {
+        console.error('AUTOMATION SKIPPED: StockMint API Key is not set.');
     } else {
         const initialBalance = getBalanceFromPlanName(beforeUpdateData.plan_purchased || '');
-        const autoFilledUsername = beforeUpdateData.email; // Default to email
-        const autoFilledPassword = beforeUpdateData.email; // Default to email
+        const autoFilledUsername = beforeUpdateData.email;
+        const autoFilledPassword = beforeUpdateData.email;
         
         if (initialBalance > 0) {
-            // 1. StockMint Account Creation
             try {
                 const response = await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
@@ -142,29 +140,12 @@ export async function updateProfile(formData: FormData) {
                 });
                 if (!response.ok) {
                     const errorBody = await response.text();
-                    console.error(`Failed to trigger StockMint user creation webhook. Status: ${response.status}. Body: ${errorBody}`);
+                    console.error(`Failed to trigger StockMint user creation. Status: ${response.status}. Body: ${errorBody}`);
                 }
-            } catch (webhookError) {
-                console.error('Failed to trigger StockMint user creation webhook:', webhookError);
-            }
-
-            // 2. Make.com Credentials Webhook
-            try {
-                await fetch(makeWebhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        full_name: beforeUpdateData.full_name,
-                        email: beforeUpdateData.email,
-                        trading_username: autoFilledUsername,
-                        trading_password: autoFilledPassword 
-                    }),
-                });
-            } catch (webhookError) {
-                console.error('Failed to trigger credentials webhook:', webhookError);
+            } catch (apiError) {
+                console.error('Failed to call StockMint user creation API:', apiError);
             }
             
-            // 3. Final update to set credentials_provided
             await supabaseAdmin.from('profiles').update({
                 credentials_provided: true,
                 trading_username: autoFilledUsername,
@@ -178,7 +159,7 @@ export async function updateProfile(formData: FormData) {
   }
 
 
-  // 3. Referral Commission Logic (triggered on first payment approval)
+  // Referral Commission Logic (triggered on first payment approval)
   if (is_approved && !wasApproved && beforeUpdateData?.referred_by) {
     const referrerId = beforeUpdateData.referred_by;
     const amountPaid = beforeUpdateData.final_amount_paid;
