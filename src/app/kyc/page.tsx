@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveKycStep, createDigilockerUrl, getVerifiedPan } from './actions';
+import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -52,9 +52,6 @@ function KycFlow() {
   const [error, setError] = useState<string | null>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isActionPending, startTransition] = useTransition();
-  
-  const [panVerifiedData, setPanVerifiedData] = useState<any>(null);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
@@ -103,57 +100,20 @@ function KycFlow() {
     setCurrentStep(prev => prev > 1 ? prev - 1 : 1);
   }
 
-  const handlePanVerificationClick = () => {
-        startTransition(async () => {
-            setError(null);
-            const data = await createDigilockerUrl();
-            if (data.success && data.url && data.reference_id) {
-                sessionStorage.setItem('digilocker_reference_id', data.reference_id);
-                window.location.href = data.url;
-            } else {
-                setError(data.error || 'Failed to start PAN verification process.');
-            }
-        });
-    };
-    
-  const handleFetchPanVerification = async (formData: FormData) => {
-      startTransition(async () => {
-          setVerificationError(null);
-          setPanVerifiedData(null);
-          
-          const verification_id = formData.get('verification_id') as string;
-          const reference_id = sessionStorage.getItem('digilocker_reference_id');
-
-          if (!verification_id || !reference_id) {
-              setVerificationError("Could not find necessary verification details. Please start the process again.");
-              return;
-          }
-
-          const result = await getVerifiedPan(verification_id, reference_id);
-
-          if (result.error) {
-              setVerificationError(result.error);
-          } else {
-              setPanVerifiedData(result.data);
-              toast({ title: `PAN Verified!`, description: 'Your PAN verification was successful.' });
-              // Re-fetch profile to update UI status
-              const { data: updatedProfile } = await supabase.from('profiles').select('*').single();
-              if (updatedProfile) setProfile(updatedProfile as Profile);
-          }
-          sessionStorage.removeItem('digilocker_reference_id');
-      });
-  }
-
   const renderStep = () => {
       switch(currentStep) {
           case 1: return <Step1_DocumentVerification 
                             onSave={handleStepSave}
                             profile={profile!} 
                             error={error} 
-                            handlePanVerificationClick={handlePanVerificationClick}
-                            handleFetchPanVerification={handleFetchPanVerification}
-                            verificationError={verificationError}
-                            panVerifiedData={panVerifiedData}
+                            startTransition={startTransition}
+                            onVerificationSuccess={() => {
+                                const fetchProfile = async () => {
+                                    const { data } = await supabase.from('profiles').select('*').single();
+                                    if(data) setProfile(data as Profile);
+                                }
+                                fetchProfile();
+                            }}
                           />;
           case 2: return <Step2_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
           case 3: return <Step3_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
@@ -201,12 +161,16 @@ function KycFlow() {
 }
 
 
-function Step1_DocumentVerification({ onSave, profile, error, handlePanVerificationClick, handleFetchPanVerification, verificationError, panVerifiedData }: { onSave: (formData: FormData) => void; profile: Profile; error: string | null; handlePanVerificationClick: () => void; handleFetchPanVerification: (formData: FormData) => void; verificationError: string | null, panVerifiedData: any }) {
+function Step1_DocumentVerification({ onSave, profile, error, startTransition, onVerificationSuccess }: { onSave: (formData: FormData) => void; profile: Profile; error: string | null; startTransition: any, onVerificationSuccess: () => void; }) {
     const formRef = useRef<HTMLFormElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
     const [capturedImage, setCapturedImage] = useState<string | null>(profile.selfie_url);
+    const [panInput, setPanInput] = useState('');
+    const [verificationError, setVerificationError] = useState<string | null>(null);
+    const { toast } = useToast();
+
     const isPanVerified = profile.is_pan_verified;
 
     useEffect(() => {
@@ -235,6 +199,19 @@ function Step1_DocumentVerification({ onSave, profile, error, handlePanVerificat
             }
         };
     }, [profile.is_aadhaar_verified, isPanVerified]);
+    
+    const handlePanVerification = () => {
+        startTransition(async () => {
+            setVerificationError(null);
+            const result = await verifyPan(panInput);
+            if (result.error) {
+                setVerificationError(result.error);
+            } else {
+                toast({ title: 'PAN Verified Successfully!', description: `Name: ${result.data.registered_name}`});
+                onVerificationSuccess();
+            }
+        });
+    }
 
     const captureImage = () => {
         if (videoRef.current && canvasRef.current) {
@@ -264,11 +241,10 @@ function Step1_DocumentVerification({ onSave, profile, error, handlePanVerificat
         <div className="space-y-8">
             <h3 className="font-semibold text-lg">Step 1: Document Verification</h3>
             <p className="text-sm text-muted-foreground">
-                First, verify your PAN via Digilocker. Then, capture a live photo of your Aadhaar card.
+                First, verify your PAN. Then, capture a live photo of your Aadhaar card.
             </p>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             
-            {/* PAN Verification */}
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
@@ -276,37 +252,31 @@ function Step1_DocumentVerification({ onSave, profile, error, handlePanVerificat
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <div>
-                            <Label>PAN Card Verification</Label>
-                            <p className="text-xs text-muted-foreground">Verify your PAN card instantly using Digilocker.</p>
-                        </div>
-                        {profile.is_pan_verified ? (
-                             <div className="flex items-center gap-2 text-green-600 font-medium text-sm p-2 bg-green-50 rounded-md">
-                                <CheckCircle className="h-5 w-5" />
-                                PAN Verified
+                     {isPanVerified ? (
+                         <div className="flex items-center gap-2 text-green-600 font-medium text-sm p-3 bg-green-50 rounded-md">
+                            <CheckCircle className="h-5 w-5" />
+                            <div>
+                                <p>PAN Verified Successfully</p>
+                                <p className="font-mono text-xs">{profile.pan_number}</p>
                             </div>
-                        ) : (
-                            <Button type="button" onClick={handlePanVerificationClick}>
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                Verify PAN via Digilocker
-                            </Button>
-                        )}
-                    </div>
-                     <form action={handleFetchPanVerification}>
-                        <CardDescription>After returning from Digilocker, paste the Verification ID from the URL into the box below and click "Fetch & Verify".</CardDescription>
-                        <div className="flex gap-2 mt-2">
-                            <Input id="verification_id" name="verification_id" placeholder="Copy and paste the ID here" required />
-                            <Button type="submit" variant="secondary">Fetch & Verify</Button>
                         </div>
-                        {verificationError && <Alert variant="destructive" className="mt-4"><AlertTitle>Verification Failed</AlertTitle><AlertDescription>{verificationError}</AlertDescription></Alert>}
-                         {panVerifiedData && (
-                            <Alert variant="default" className="mt-4 bg-green-50 border-green-200">
-                                <AlertTitle className="text-green-800">PAN Verification Success</AlertTitle>
-                                <AlertDescription className="text-green-700">PAN Number: {panVerifiedData.pan_number}</AlertDescription>
-                            </Alert>
-                         )}
-                    </form>
+                     ) : (
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    id="pan_number" 
+                                    name="pan_number"
+                                    placeholder="Enter your PAN number"
+                                    value={panInput}
+                                    onChange={(e) => setPanInput(e.target.value.toUpperCase())}
+                                    maxLength={10}
+                                    className="uppercase"
+                                />
+                                <Button type="button" onClick={handlePanVerification}>Verify PAN</Button>
+                            </div>
+                            {verificationError && <p className="text-sm text-destructive mt-2">{verificationError}</p>}
+                        </div>
+                     )}
                 </CardContent>
             </Card>
 

@@ -9,100 +9,49 @@ import { randomUUID } from 'crypto';
 const ekycUsername = process.env.EKYCHUB_USERNAME;
 const ekycToken = process.env.EKYCHUB_TOKEN;
 
-
-export async function createDigilockerUrl() {
-  const orderId = randomUUID();
+export async function verifyPan(panNumber: string) {
+  if (!panNumber) {
+    return { error: 'PAN number is required.' };
+  }
 
   if (!ekycUsername || !ekycToken) {
     console.error('eKYCHub credentials are not set in environment variables.');
     return { error: 'Verification service is not configured on the server.' };
   }
-  
-  const baseUrl = `https://connect.ekychub.in/v3/digilocker/create_url_pan`;
-  
-  const redirectBackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/kyc`;
-  const encodedRedirectUrl = encodeURIComponent(redirectBackUrl);
 
-  const url = `${baseUrl}?username=${ekycUsername}&token=${ekycToken}&redirect_url=${encodedRedirectUrl}&orderid=${orderId}`;
-
-  try {
-    const response = await fetch(url, { method: 'GET' });
-    const data = await response.json();
-
-    if (data.status === 'Success' && data.url) {
-      return { success: true, url: data.url, verification_id: data.verification_id, reference_id: data.reference_id };
-    } else {
-      console.error('eKYCHub API Error (JSON Response):', data);
-      return { error: data.message || `Failed to create Digilocker URL from API. Status: ${data.status}` };
-    }
-  } catch (error) {
-    console.error('Error calling createDigilockerUrl:', error);
-    return { error: 'An unexpected error occurred while contacting the verification service.' };
-  }
-}
-
-export async function getVerifiedPan(verification_id: string, reference_id: string) {
-  const orderId = randomUUID();
-  
-  if (!ekycUsername || !ekycToken) {
-    console.error('eKYCHub credentials are not set in environment variables.');
-    return { error: 'Verification service is not configured on the server.' };
-  }
-  
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) {
     return { error: 'You must be logged in.' };
   }
-
-  const baseUrl = `https://connect.ekychub.in/v3/digilocker/get_document`;
   
-  const params = new URLSearchParams({
-      username: ekycUsername,
-      token: ekycToken,
-      verification_id: verification_id,
-      reference_id: reference_id,
-      orderid: orderId,
-      document_type: 'PAN',
-  });
-
-  const url = `${baseUrl}?${params.toString()}`;
+  const orderId = randomUUID();
+  const url = `https://connect.ekychub.in/v3/verification/pan_verification?username=${ekycUsername}&token=${ekycToken}&pan=${panNumber}&orderid=${orderId}`;
 
   try {
     const response = await fetch(url, { method: 'GET' });
     const apiResponse = await response.json();
 
-    if (apiResponse.status !== 'Success') {
-      return { data: null, error: apiResponse.message || 'Failed to retrieve PAN document.' };
-    }
-    
-    const profileUpdateData = {
-        is_pan_verified: true,
-        pan_number: apiResponse.pan_number,
-    };
-
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update(profileUpdateData)
-      .eq('id', user.id);
+    if (apiResponse.status === 'Success') {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ is_pan_verified: true, pan_number: apiResponse.pan })
+        .eq('id', user.id);
       
-    if (updateError) {
+      if (updateError) {
         throw new Error(`Failed to save PAN data to profile: ${updateError.message}`);
+      }
+      
+      revalidatePath('/kyc');
+      return { success: true, data: apiResponse };
+    } else {
+      return { error: apiResponse.message || 'Failed to verify PAN. Please check the number and try again.' };
     }
-    
-    revalidatePath('/kyc');
-    return { data: apiResponse, error: null };
-    
   } catch (error) {
-    console.error('Error in getVerifiedPan:', error);
-    if (error instanceof Error) {
-        return { data: null, error: `An unexpected error occurred: ${error.message}` };
-    }
-    return { data: null, error: 'An unexpected error occurred during PAN verification.' };
+    console.error('Error calling verifyPan API:', error);
+    return { error: 'An unexpected error occurred while contacting the verification service.' };
   }
 }
-
 
 async function uploadAadhaarImage(base64: string, userId: string) {
     // Remove data URI prefix if present
