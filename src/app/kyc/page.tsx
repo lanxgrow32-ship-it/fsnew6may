@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,50 +43,18 @@ const tradingStyleOptions = [
     { id: 'scalping', label: 'Scalping' },
 ];
 
-function AadhaarCamera({ onCapture, onRetake, capturedImage, isPanVerified }: { onCapture: (image: string) => void; onRetake: () => void; capturedImage: string | null; isPanVerified: boolean; }) {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified }: { onFileSelect: (file: File) => void; existingImageUrl: string | null; isPanVerified: boolean; }) {
+    const [preview, setPreview] = useState<string | null>(existingImageUrl);
 
-    useEffect(() => {
-        let stream: MediaStream | null = null;
-        
-        const enableStream = async () => {
-            if (!isPanVerified || capturedImage) return;
-
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                setHasCameraPermission(true);
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-            } catch (err) {
-                console.error("Camera access denied:", err);
-                setHasCameraPermission(false);
-            }
-        };
-
-        enableStream();
-
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [capturedImage, isPanVerified]);
-
-    const handleCapture = () => {
-        if (videoRef.current && canvasRef.current) {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            if (context) {
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageDataUrl = canvas.toDataURL('image/jpeg');
-                onCapture(imageDataUrl);
-            }
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            onFileSelect(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
     
@@ -98,38 +66,30 @@ function AadhaarCamera({ onCapture, onRetake, capturedImage, isPanVerified }: { 
                     Even after your KYC is verified, if the Aadhaar image is wrongly provided, you will **not** receive your funded account. Ensure the photo is clear and legible.
                 </AlertDescription>
             </Alert>
-            <div className="relative aspect-video w-full max-w-md mx-auto bg-muted rounded-md overflow-hidden border">
-                {hasCameraPermission === false ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                        <Camera className="h-10 w-10 text-muted-foreground mb-4"/>
-                        <h4 className="font-semibold">Camera Access Required</h4>
-                        <p className="text-sm text-muted-foreground">Please allow camera access in your browser settings to continue.</p>
+            <div className="relative w-full max-w-md mx-auto bg-muted rounded-md overflow-hidden border-2 border-dashed border-muted-foreground/50 p-4 text-center h-48 flex flex-col justify-center items-center">
+                 {!preview ? (
+                     <>
+                        <Upload className="h-10 w-10 text-muted-foreground mb-2"/>
+                        <Label htmlFor="aadhaar-upload" className="font-semibold text-primary cursor-pointer">
+                            Click to upload
+                            <span className="text-muted-foreground font-normal"> or drag and drop</span>
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-1">PNG, JPG, JPEG up to 10MB</p>
+                        <Input id="aadhaar-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/png, image/jpeg, image/jpg" disabled={!isPanVerified} />
+                     </>
+                 ) : (
+                    <div className="relative w-full h-full">
+                        <Image src={preview} alt="Aadhaar preview" layout="fill" className="object-contain rounded-md" />
                     </div>
-                ) : hasCameraPermission === null && !capturedImage ? (
-                    <div className="flex items-center justify-center h-full">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                    </div>
-                ) : (
-                    <>
-                        <video ref={videoRef} className={`w-full h-full object-cover ${capturedImage ? 'hidden' : ''}`} autoPlay playsInline muted />
-                        <canvas ref={canvasRef} className="hidden"></canvas>
-                        {capturedImage && (
-                            <Image src={capturedImage} alt="Captured Aadhaar" layout="fill" className="object-cover" />
-                        )}
-                    </>
-                )}
+                 )}
             </div>
-            <div className="flex justify-center gap-4">
-                {capturedImage ? (
-                    <Button type="button" variant="outline" onClick={onRetake}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Retake
+             {preview && (
+                 <div className="flex justify-center">
+                    <Button type="button" variant="outline" onClick={() => { setPreview(null); onFileSelect(null as any); (document.getElementById('aadhaar-upload') as HTMLInputElement).value = ''; }}>
+                        <RefreshCw className="mr-2 h-4 w-4" /> Change Photo
                     </Button>
-                ) : (
-                    <Button type="button" onClick={handleCapture} disabled={!hasCameraPermission}>
-                        <Camera className="mr-2 h-4 w-4" /> Capture Photo
-                    </Button>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -250,13 +210,21 @@ function KycFlow() {
 
 
 function Step1_DocumentVerification({ onSave, profile, error, startTransition, onVerificationSuccess }: { onSave: (formData: FormData) => void; profile: Profile; error: string | null; startTransition: any, onVerificationSuccess: (p: Profile) => void; }) {
-    const [capturedImage, setCapturedImage] = useState<string | null>(profile.selfie_url);
+    const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
     const [panInput, setPanInput] = useState('');
     const [verificationError, setVerificationError] = useState<string | null>(null);
+    const [verifiedName, setVerifiedName] = useState<string | null>(profile.full_name);
 
     const { toast } = useToast();
 
     const isPanVerified = profile.is_pan_verified;
+    
+    const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 
     const handlePanVerification = () => {
         startTransition(async () => {
@@ -264,18 +232,21 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
             const result = await verifyPan(panInput);
             if (result.error) {
                 setVerificationError(result.error);
+                setVerifiedName(null);
             } else if (result.success && result.updatedProfile) {
                 toast({ title: 'PAN Verified Successfully!', description: `Name: ${result.updatedProfile.full_name}`});
+                setVerifiedName(result.updatedProfile.full_name);
                 onVerificationSuccess(result.updatedProfile as Profile);
             }
         });
     }
     
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (capturedImage) {
+        if (aadhaarFile) {
             const formData = new FormData();
-            formData.append('aadhaar_photo', capturedImage);
+            const base64Image = await fileToDataUri(aadhaarFile);
+            formData.append('aadhaar_photo', base64Image);
             onSave(formData);
         }
     };
@@ -284,7 +255,7 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
         <div className="space-y-8">
             <h3 className="font-semibold text-lg">Step 1: Document Verification</h3>
             <p className="text-sm text-muted-foreground">
-                First, verify your PAN. Then, capture a live photo of your Aadhaar card.
+                First, verify your PAN. Then, upload a clear photo of your Aadhaar card.
             </p>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             
@@ -299,7 +270,7 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                          <div className="flex items-center gap-2 text-green-600 font-medium text-sm p-3 bg-green-50 rounded-md">
                             <CheckCircle className="h-5 w-5" />
                             <div>
-                                <p>PAN Verified: {profile.full_name}</p>
+                                <p>PAN Verified: {verifiedName || profile.full_name}</p>
                                 <p className="font-mono text-xs">{profile.pan_number}</p>
                             </div>
                         </div>
@@ -328,29 +299,19 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                 <Card className={cn(!isPanVerified && "bg-muted/50 opacity-60 pointer-events-none")}>
                     <CardHeader>
                          <CardTitle className="text-base flex items-center gap-2">
-                            <Camera className="w-5 h-5 text-primary" />Aadhaar Card Photo Capture
+                            <Camera className="w-5 h-5 text-primary" />Aadhaar Card Photo Upload
                         </CardTitle>
                         {!isPanVerified && <CardDescription>Please complete PAN verification above to enable this step.</CardDescription>}
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {profile.is_aadhaar_verified && capturedImage ? (
-                             <div className="flex flex-col items-center gap-4">
-                                <div className="flex items-center gap-2 text-green-600 font-medium text-sm p-2 bg-green-50 rounded-md">
-                                    <CheckCircle className="h-5 w-5" /> Aadhaar Photo Submitted
-                                </div>
-                                <Image src={capturedImage} alt="Submitted Aadhaar Photo" width={300} height={180} className="rounded-md border" />
-                            </div>
-                        ) : (
-                            <AadhaarCamera 
-                                capturedImage={capturedImage}
-                                onCapture={(image) => setCapturedImage(image)}
-                                onRetake={() => setCapturedImage(null)}
-                                isPanVerified={profile.is_pan_verified}
-                            />
-                        )}
+                        <AadhaarUploader 
+                            onFileSelect={(file) => setAadhaarFile(file)}
+                            existingImageUrl={profile.selfie_url}
+                            isPanVerified={profile.is_pan_verified}
+                        />
                     </CardContent>
                      <CardFooter className="flex justify-end gap-4 pt-4">
-                        <Button type="submit" disabled={!capturedImage || !profile.is_pan_verified}>Save & Continue</Button>
+                        <Button type="submit" disabled={!aadhaarFile || !profile.is_pan_verified}>Save & Continue</Button>
                     </CardFooter>
                 </Card>
             </form>
