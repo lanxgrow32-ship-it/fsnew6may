@@ -14,6 +14,7 @@ import { signupAndCreateOrder, validateCoupon, validateReferralCode } from './ac
 import { ClientOnly } from '@/components/ui/client-only';
 import { useDebounce } from 'use-debounce';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 
 
 function SignupForm() {
@@ -206,6 +207,10 @@ function SignupForm() {
                      <div className="space-y-2">
                         <Label htmlFor="mobile_number">Mobile Number</Label>
                         <Input id="mobile_number" name="mobile_number" type="tel" required />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="address">Full Address</Label>
+                        <Textarea id="address" name="address" required />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>

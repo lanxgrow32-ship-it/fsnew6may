@@ -12,6 +12,7 @@ export async function signupAndCreateOrder(formData: FormData) {
   const planPurchased = formData.get('plan_purchased') as string;
   const referralCode = formData.get('referral_code') as string | null;
   const mobileNumber = formData.get('mobile_number') as string;
+  const address = formData.get('address') as string;
 
   const planPrice = parseFloat(formData.get('plan_price') as string);
   const couponCode = formData.get('coupon_code') as string;
@@ -21,6 +22,10 @@ export async function signupAndCreateOrder(formData: FormData) {
   if (!mobileNumber) {
     return { error: 'Mobile number is required.' };
   }
+  if (!address) {
+    return { error: 'Address is required.' };
+  }
+
 
   const supabase = createClient();
   
@@ -59,7 +64,8 @@ export async function signupAndCreateOrder(formData: FormData) {
       data: {
         full_name: fullName,
         role: 'user',
-        mobile_number: mobileNumber
+        mobile_number: mobileNumber,
+        address: address,
       },
     },
   });
@@ -76,7 +82,8 @@ export async function signupAndCreateOrder(formData: FormData) {
         coupon_code: couponCode,
         discount_amount: discountAmount,
         final_amount_paid: finalAmountPaid,
-        mobile_number: mobileNumber
+        mobile_number: mobileNumber,
+        address: address
     };
     
     if (referrerId) {

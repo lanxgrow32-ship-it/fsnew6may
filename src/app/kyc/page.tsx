@@ -32,6 +32,7 @@ type Profile = {
     risk_rules_understood: boolean;
     terms_accepted: boolean;
     full_name: string | null;
+    address: string | null;
 };
 
 const tradingStyleOptions = [
@@ -43,21 +44,29 @@ const tradingStyleOptions = [
     { id: 'scalping', label: 'Scalping' },
 ];
 
-function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified }: { onFileSelect: (file: File) => void; existingImageUrl: string | null; isPanVerified: boolean; }) {
+function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified }: { onFileSelect: (base64: string | null) => void; existingImageUrl: string | null; isPanVerified: boolean; }) {
     const [preview, setPreview] = useState<string | null>(existingImageUrl);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            onFileSelect(file);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setPreview(reader.result as string);
+                const base64String = reader.result as string;
+                setPreview(base64String);
+                onFileSelect(base64String);
             };
             reader.readAsDataURL(file);
         }
     };
     
+    const resetUpload = () => {
+        setPreview(null);
+        onFileSelect(null);
+        const input = document.getElementById('aadhaar-upload') as HTMLInputElement;
+        if (input) input.value = '';
+    }
+
     return (
         <div className="space-y-4">
             <Alert variant="destructive">
@@ -85,7 +94,7 @@ function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified }: { on
             </div>
              {preview && (
                  <div className="flex justify-center">
-                    <Button type="button" variant="outline" onClick={() => { setPreview(null); onFileSelect(null as any); (document.getElementById('aadhaar-upload') as HTMLInputElement).value = ''; }}>
+                    <Button type="button" variant="outline" onClick={resetUpload}>
                         <RefreshCw className="mr-2 h-4 w-4" /> Change Photo
                     </Button>
                 </div>
@@ -210,7 +219,7 @@ function KycFlow() {
 
 
 function Step1_DocumentVerification({ onSave, profile, error, startTransition, onVerificationSuccess }: { onSave: (formData: FormData) => void; profile: Profile; error: string | null; startTransition: any, onVerificationSuccess: (p: Profile) => void; }) {
-    const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
+    const [aadhaarBase64, setAadhaarBase64] = useState<string | null>(null);
     const [panInput, setPanInput] = useState('');
     const [verificationError, setVerificationError] = useState<string | null>(null);
     const [verifiedName, setVerifiedName] = useState<string | null>(profile.full_name);
@@ -219,13 +228,6 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
 
     const isPanVerified = profile.is_pan_verified;
     
-    const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-
     const handlePanVerification = () => {
         startTransition(async () => {
             setVerificationError(null);
@@ -243,10 +245,9 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
     
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (aadhaarFile) {
+        if (aadhaarBase64) {
             const formData = new FormData();
-            const base64Image = await fileToDataUri(aadhaarFile);
-            formData.append('aadhaar_photo', base64Image);
+            formData.append('aadhaar_photo', aadhaarBase64);
             onSave(formData);
         }
     };
@@ -305,13 +306,13 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <AadhaarUploader 
-                            onFileSelect={(file) => setAadhaarFile(file)}
+                            onFileSelect={setAadhaarBase64}
                             existingImageUrl={profile.selfie_url}
                             isPanVerified={profile.is_pan_verified}
                         />
                     </CardContent>
                      <CardFooter className="flex justify-end gap-4 pt-4">
-                        <Button type="submit" disabled={!aadhaarFile || !profile.is_pan_verified}>Save & Continue</Button>
+                        <Button type="submit" disabled={!aadhaarBase64 || !profile.is_pan_verified}>Save & Continue</Button>
                     </CardFooter>
                 </Card>
             </form>
