@@ -1,6 +1,8 @@
+
 'use server';
 
 import { randomUUID } from "crypto";
+import { fetch } from 'undici';
 
 const IMB_API_URL = 'https://secure.imbpayment.com/api/v1/verification/aadhaar';
 const IMB_TOKEN = process.env.IMB_PAYMENT_USER_TOKEN;
@@ -38,7 +40,7 @@ export async function sendAadhaarOtp(prevState: AadhaarState, formData: FormData
             }),
         });
 
-        const result = await response.json();
+        const result = await response.json() as any;
 
         if (result.response_code === 111 || result.response_code === 112) {
             return { error: null, success: true, refId: result.RequestId || refId, aadhaarNumber: aadhaarNumber };
@@ -78,7 +80,7 @@ export async function verifyAadhaarOtp(prevState: AadhaarState, formData: FormDa
             }),
         });
 
-        const result = await response.json();
+        const result = await response.json() as any;
         
         if (result.response_code === 111 || result.response_code === 112) {
             return { error: null, success: true, data: result.data };
