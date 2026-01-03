@@ -37,7 +37,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_price, email, plain_password')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_price, email')
     .eq('id', id)
     .single();
 
@@ -59,13 +59,6 @@ export async function updateProfile(formData: FormData) {
     trading_password,
   };
   
-  // This validation is now moved to the client-side for better UX,
-  // but we keep a server-side check as a safeguard.
-  if (credentials_provided && (!trading_username || !trading_password)) {
-    return { error: "Trading username and password are required when 'Credentials Provided' is on." };
-  }
-
-
   try {
       if (breach_image && breach_image.size > 0) {
         updateData.breach_image_url = await uploadBreachProof(breach_image, id);
@@ -213,17 +206,6 @@ export async function resetPassword(prevState: any, formData: FormData) {
   if (authError) {
     console.error("Error resetting password:", authError);
     return { error: `Failed to reset password: ${authError.message}` };
-  }
-  
-  // Also update the plain text password if the column exists
-  const { error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .update({ plain_password: password })
-    .eq('id', id);
-    
-  if (profileError) {
-    // Log this error but don't block the success message, as auth password change is more critical
-    console.error("Failed to update plain_password during reset:", profileError);
   }
 
   return { success: true, error: null };

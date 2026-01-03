@@ -166,9 +166,9 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         setTradingUsername(profile.email);
         setTradingPassword(profile.email);
     } else {
-        // Optionally clear them if toggled off, or leave as is
-        // setTradingUsername('');
-        // setTradingPassword('');
+        // Clear them if toggled off
+        setTradingUsername('');
+        setTradingPassword('');
     }
   }
 
