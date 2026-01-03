@@ -198,7 +198,7 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                 stream.getTracks().forEach(track => track.stop());
             }
         };
-    }, [profile.is_aadhaar_verified, isPanVerified]);
+    }, [profile.is_aadhaar_verified, isPanVerified, videoRef]);
     
     const handlePanVerification = () => {
         startTransition(async () => {
