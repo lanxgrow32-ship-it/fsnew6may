@@ -68,7 +68,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name, kyc_status')
     .eq('id', id)
     .single();
 
@@ -78,13 +78,14 @@ export async function updateProfile(formData: FormData) {
   }
   
   const wasApproved = beforeUpdateData?.is_approved ?? false;
-  const wasCredentialsProvided = beforeUpdateData?.credentials_provided ?? false;
+  const wasKycVerified = beforeUpdateData?.kyc_status === 'verified';
 
   const updateData: any = {
     is_approved,
     kyc_status,
     is_breached,
     breach_reason,
+    // These are now set automatically, but an admin can override them.
     credentials_provided,
     trading_username,
     trading_password,
@@ -111,16 +112,20 @@ export async function updateProfile(formData: FormData) {
 
   // --- Start Webhook & Automation Logic ---
 
-  // 1. StockMint Account Creation Webhook
-  if (credentials_provided && !wasCredentialsProvided) {
+  // Check if KYC status was *just* changed to 'verified' by the admin.
+  // This serves as a manual backup/override to the automatic KYC flow.
+  if (kyc_status === 'verified' && !wasKycVerified) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-    if (!stockmintApiKey) {
-        console.error('STOCKMINT_API_KEY is not set. Cannot create user on trading platform.');
+    const makeWebhookUrl = process.env.MAKE_WEBHOOK_URL_CREDENTIALS;
+    if (!stockmintApiKey || !makeWebhookUrl) {
+        console.error('AUTOMATION SKIPPED: StockMint API Key or Make.com Webhook URL is not set.');
     } else {
         const initialBalance = getBalanceFromPlanName(beforeUpdateData.plan_purchased || '');
-        if (initialBalance <= 0) {
-            console.error(`Could not determine initial balance from plan name: "${beforeUpdateData.plan_purchased}". Aborting StockMint account creation.`);
-        } else {
+        const autoFilledUsername = beforeUpdateData.email; // Default to email
+        const autoFilledPassword = beforeUpdateData.email; // Default to email
+        
+        if (initialBalance > 0) {
+            // 1. StockMint Account Creation
             try {
                 const response = await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
@@ -131,7 +136,7 @@ export async function updateProfile(formData: FormData) {
                     body: JSON.stringify({ 
                         fullName: beforeUpdateData.full_name,
                         email: beforeUpdateData.email,
-                        password: beforeUpdateData.email, 
+                        password: autoFilledPassword, 
                         initialBalance: initialBalance,
                     }),
                 });
@@ -142,31 +147,38 @@ export async function updateProfile(formData: FormData) {
             } catch (webhookError) {
                 console.error('Failed to trigger StockMint user creation webhook:', webhookError);
             }
+
+            // 2. Make.com Credentials Webhook
+            try {
+                await fetch(makeWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        full_name: beforeUpdateData.full_name,
+                        email: beforeUpdateData.email,
+                        trading_username: autoFilledUsername,
+                        trading_password: autoFilledPassword 
+                    }),
+                });
+            } catch (webhookError) {
+                console.error('Failed to trigger credentials webhook:', webhookError);
+            }
+            
+            // 3. Final update to set credentials_provided
+            await supabaseAdmin.from('profiles').update({
+                credentials_provided: true,
+                trading_username: autoFilledUsername,
+                trading_password: autoFilledPassword
+            }).eq('id', id);
+
+        } else {
+             console.error(`Could not determine initial balance from plan name: "${beforeUpdateData.plan_purchased}". Aborting StockMint account creation.`);
         }
     }
   }
 
 
-  // 2. Make.com Credentials Webhook
-  if (credentials_provided && !wasCredentialsProvided) {
-    const makeWebhookUrl = 'https://hook.eu1.make.com/9xr9u0vlumza0rdk28vu2xeuxjcsc50i';
-    try {
-        await fetch(makeWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                full_name: beforeUpdateData.full_name,
-                email: beforeUpdateData.email,
-                trading_username: trading_username,
-                trading_password: trading_password 
-            }),
-        });
-    } catch (webhookError) {
-        console.error('Failed to trigger credentials webhook:', webhookError);
-    }
-  }
-
-  // 3. Referral Commission Logic
+  // 3. Referral Commission Logic (triggered on first payment approval)
   if (is_approved && !wasApproved && beforeUpdateData?.referred_by) {
     const referrerId = beforeUpdateData.referred_by;
     const amountPaid = beforeUpdateData.final_amount_paid;

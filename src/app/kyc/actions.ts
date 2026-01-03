@@ -9,6 +9,38 @@ import { randomUUID } from 'crypto';
 const ekycUsername = process.env.EKYCHUB_USERNAME;
 const ekycToken = process.env.EKYCHUB_TOKEN;
 
+// Helper function to parse plan name into account balance
+function getBalanceFromPlanName(planName: string): number {
+    if (!planName) return 0;
+
+    const name = planName.toLowerCase();
+    // Match numbers and units like K, L, Cr
+    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
+    
+    if (match) {
+        let amount = parseFloat(match[1].replace(/,/g, ''));
+        const unit = match[2];
+
+        if (unit === 'k') {
+            amount *= 1000;
+        } else if (unit === 'l' || unit === 'lakh') {
+            amount *= 100000;
+        } else if (unit === 'cr' || unit === 'crore') {
+            amount *= 10000000;
+        }
+        return amount;
+    }
+    
+    // Fallback for names like "25000" without a unit
+    const plainNumberMatch = name.match(/^[\d,.]+/);
+    if (plainNumberMatch) {
+        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+    }
+
+    return 0;
+}
+
+
 export async function verifyPan(panNumber: string) {
   if (!panNumber) {
     return { error: 'PAN number is required.' };
@@ -83,6 +115,7 @@ export async function saveKycStep(step: number, formData: FormData) {
   }
 
   let profileUpdateData: any = {};
+  let isFinalStep = false;
 
   try {
     switch (step) {
@@ -105,6 +138,7 @@ export async function saveKycStep(step: number, formData: FormData) {
         break;
 
       case 3: // Agreements
+        isFinalStep = true;
         profileUpdateData = {
           drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes',
           risk_rules_understood: formData.get('risk_rules_understood') === 'yes',
@@ -117,24 +151,86 @@ export async function saveKycStep(step: number, formData: FormData) {
         return { error: 'Invalid KYC step.' };
     }
     
-    if (Object.keys(profileUpdateData).length > 0) {
-        const { data: updatedProfile, error: updateError } = await supabase
-          .from('profiles')
-          .update(profileUpdateData)
-          .eq('id', user.id)
-          .select()
-          .single();
+    // --- DATABASE UPDATE ---
+    const { data: updatedProfile, error: updateError } = await supabase
+      .from('profiles')
+      .update(profileUpdateData)
+      .eq('id', user.id)
+      .select()
+      .single();
 
-        if (updateError) {
-          console.error(`Error updating profile on step ${step}:`, updateError);
-          return { error: `Failed to save KYC data: ${updateError.message}` };
-        }
-        revalidatePath('/kyc');
-        revalidatePath('/welcome');
-        return { error: null, success: true, updatedProfile };
+    if (updateError) {
+      console.error(`Error updating profile on step ${step}:`, updateError);
+      return { error: `Failed to save KYC data: ${updateError.message}` };
     }
     
-    return { error: null, success: true };
+    // --- AUTOMATION ON FINAL STEP ---
+    if (isFinalStep && updatedProfile) {
+        // Automatically create trading account
+        const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+        const makeWebhookUrl = process.env.MAKE_WEBHOOK_URL_CREDENTIALS;
+        const initialBalance = getBalanceFromPlanName(updatedProfile.plan_purchased || '');
+        const tradingUsername = updatedProfile.email;
+        const tradingPassword = updatedProfile.email;
+
+        // 1. StockMint Account Creation
+        if (stockmintApiKey && initialBalance > 0) {
+             try {
+                const response = await fetch('https://stockmint.io/api/users/create', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-API-Key': stockmintApiKey,
+                    },
+                    body: JSON.stringify({ 
+                        fullName: updatedProfile.full_name,
+                        email: updatedProfile.email,
+                        password: tradingPassword, // Use email as password
+                        initialBalance: initialBalance,
+                    }),
+                });
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error(`Failed to trigger StockMint webhook. Status: ${response.status}. Body: ${errorBody}`);
+                }
+            } catch (webhookError) {
+                console.error('Failed to trigger StockMint webhook:', webhookError);
+            }
+        } else {
+             console.error('StockMint API key not set or initial balance is zero. Aborting account creation.');
+        }
+
+        // 2. Make.com Credentials Webhook
+        if (makeWebhookUrl) {
+            try {
+                await fetch(makeWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        full_name: updatedProfile.full_name,
+                        email: updatedProfile.email,
+                        trading_username: tradingUsername,
+                        trading_password: tradingPassword 
+                    }),
+                });
+            } catch (webhookError) {
+                console.error('Failed to trigger credentials webhook:', webhookError);
+            }
+        }
+        
+        // 3. Update profile with credentials
+        await supabaseAdmin.from('profiles').update({
+            credentials_provided: true,
+            trading_username: tradingUsername,
+            trading_password: tradingPassword
+        }).eq('id', user.id);
+    }
+    
+    revalidatePath('/kyc');
+    revalidatePath('/welcome');
+    revalidatePath('/admin/dashboard');
+    revalidatePath(`/admin/profile/${user.id}`);
+    return { error: null, success: true, updatedProfile };
 
 
   } catch (error: any) {
