@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useActionState, useRef } from 'react';
+import { useState, useActionState, useRef, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,15 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { sendAadhaarOtp, verifyAadhaarOtp } from './actions';
-import { Separator } from '@/components/ui/separator';
 
 function SendOtpForm({ onOtpSent }: { onOtpSent: (refId: string, aadhaar: string) => void }) {
-    const [state, formAction] = useActionState(sendAadhaarOtp, { error: null, success: false, refId: null, aadhaarNumber: null });
-    const { pending } = useFormStatus();
+    const [state, formAction, isPending] = useActionState(sendAadhaarOtp, { error: null, success: false, refId: null, aadhaarNumber: null });
 
-    if (state.success && state.refId && state.aadhaarNumber) {
-        onOtpSent(state.refId, state.aadhaarNumber);
-    }
+    useEffect(() => {
+        if (state.success && state.refId && state.aadhaarNumber) {
+            onOtpSent(state.refId, state.aadhaarNumber);
+        }
+    }, [state.success, state.refId, state.aadhaarNumber, onOtpSent]);
     
     return (
         <form action={formAction} className="space-y-4">
@@ -32,8 +33,8 @@ function SendOtpForm({ onOtpSent }: { onOtpSent: (refId: string, aadhaar: string
                     required
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={pending}>
-                {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Send OTP
             </Button>
         </form>
@@ -41,21 +42,24 @@ function SendOtpForm({ onOtpSent }: { onOtpSent: (refId: string, aadhaar: string
 }
 
 function VerifyOtpForm({ refId, aadhaarNumber, onVerified }: { refId: string; aadhaarNumber: string; onVerified: (data: any) => void }) {
-    const [state, formAction] = useActionState(verifyAadhaarOtp, { error: null, success: false, data: null });
-    const { pending } = useFormStatus();
+    const initialState = { error: null, success: false, data: null, refId, aadhaarNumber };
+    const [state, formAction, isPending] = useActionState(verifyAadhaarOtp, initialState);
     
-    if (state.success && state.data) {
-        onVerified(state.data);
-    }
+    useEffect(() => {
+        if (state.success && state.data) {
+            onVerified(state.data);
+        }
+    }, [state.success, state.data, onVerified]);
 
     return (
         <form action={formAction} className="space-y-4">
             <input type="hidden" name="ref_id" value={refId} />
+            <input type="hidden" name="aadhaar_number" value={aadhaarNumber} />
             <Alert>
                 <CheckCircle className="h-4 w-4" />
                 <AlertTitle>OTP Sent!</AlertTitle>
                 <AlertDescription>
-                    An OTP has been sent to the mobile number linked with Aadhaar ending in ...{aadhaarNumber.slice(-4)}.
+                    An OTP has been sent to the mobile number linked with Aadhaar number {aadhaarNumber}.
                 </AlertDescription>
             </Alert>
 
@@ -72,8 +76,8 @@ function VerifyOtpForm({ refId, aadhaarNumber, onVerified }: { refId: string; aa
                 />
             </div>
 
-            <Button type="submit" className="w-full" disabled={pending}>
-                {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Verify Aadhaar
             </Button>
         </form>
