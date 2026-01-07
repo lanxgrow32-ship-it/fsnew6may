@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
@@ -24,13 +24,16 @@ type PaymentDetails = {
     upi_id: string;
     qr_code_url: string;
     referral_commission_percentage: number;
+    usdt_to_inr_rate: number;
+    crypto_wallet_address: string;
+    crypto_qr_code_url: string;
 };
 
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending}>
-            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Settings'}
+        <Button type="submit" disabled={pending} className="w-full">
+            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save All Settings'}
         </Button>
     );
 }
@@ -38,8 +41,10 @@ function SubmitButton() {
 function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDetails | null }) {
     const { toast } = useToast();
     const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
-    const [previewUrl, setPreviewUrl] = useState<string | null>(currentSettings?.qr_code_url || null);
-    const [commission, setCommission] = useState(currentSettings?.referral_commission_percentage ?? 10);
+    
+    const [upiQrPreview, setUpiQrPreview] = useState<string | null>(currentSettings?.qr_code_url || null);
+    const [cryptoQrPreview, setCryptoQrPreview] = useState<string | null>(currentSettings?.crypto_qr_code_url || null);
+    
     const formRef = useRef<HTMLFormElement>(null);
 
 
@@ -51,59 +56,75 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
             toast({ title: 'Success', description: state.success });
         }
     }, [state, toast]);
-
-    useEffect(() => {
-        // This ensures the form's value updates if the parent's data re-fetches successfully.
-        if (currentSettings) {
-            setCommission(currentSettings.referral_commission_percentage);
-            setPreviewUrl(currentSettings.qr_code_url);
-        }
-    }, [currentSettings]);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    
+    const handleUpiFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setPreviewUrl(URL.createObjectURL(file));
+            setUpiQrPreview(URL.createObjectURL(file));
         }
     }
     
-    // Wrapper for form action to reset file input state
-    const handleFormAction = (formData: FormData) => {
-        formAction(formData);
-        // We optimistically assume success. If it fails, the user might have to re-select the file.
-        // A more complex setup would be needed to retain file state upon server action failure.
-        const fileInput = formRef.current?.querySelector('input[type="file"]') as HTMLInputElement;
-        if (fileInput) {
-            fileInput.value = ""; // Clear file input
+    const handleCryptoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setCryptoQrPreview(URL.createObjectURL(file));
         }
     }
 
     return (
-        <form ref={formRef} action={handleFormAction}>
-            <div className="space-y-8">
+        <form ref={formRef} action={formAction} className="space-y-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>User Payment Details</CardTitle>
-                        <CardDescription>Update the UPI ID and QR code shown to users during signup.</CardDescription>
+                        <CardDescription>Update the payment options shown to users during signup.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="upi_id">UPI ID</Label>
-                            <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi-id@okhdfcbank" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="qr_code">QR Code Image</Label>
-                            <Input id="qr_code" name="qr_code" type="file" accept="image/*" onChange={handleFileChange} />
-                            <p className="text-xs text-muted-foreground">Upload a new image to replace the current one.</p>
-                        </div>
-                        {previewUrl && (
-                            <div>
-                                <Label>Current QR Code Preview</Label>
-                                <div className="mt-2 rounded-md border p-4 w-fit bg-white">
-                                    <Image src={previewUrl} alt="QR Code Preview" width={200} height={200} className="object-contain" />
-                                </div>
+                    <CardContent className="space-y-8">
+                        {/* UPI Section */}
+                        <div className="space-y-6 p-4 border rounded-lg">
+                             <h3 className="font-semibold text-lg flex items-center gap-2"><IndianRupee className="w-5 h-5"/> UPI Settings</h3>
+                             <div className="space-y-2">
+                                <Label htmlFor="upi_id">UPI ID</Label>
+                                <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi-id@okhdfcbank" />
                             </div>
-                        )}
+                            <div className="space-y-2">
+                                <Label htmlFor="qr_code">UPI QR Code Image</Label>
+                                <Input id="qr_code" name="qr_code" type="file" accept="image/*" onChange={handleUpiFileChange} />
+                                <p className="text-xs text-muted-foreground">Upload a new image to replace the current one.</p>
+                            </div>
+                            {upiQrPreview && (
+                                <div>
+                                    <Label>Current UPI QR Code Preview</Label>
+                                    <div className="mt-2 rounded-md border p-4 w-fit bg-white">
+                                        <Image src={upiQrPreview} alt="UPI QR Code Preview" width={150} height={150} className="object-contain" />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Crypto Section */}
+                        <div className="space-y-6 p-4 border rounded-lg">
+                            <h3 className="font-semibold text-lg flex items-center gap-2"><Wallet className="w-5 h-5"/> Crypto (USDT) Settings</h3>
+                            <div className="space-y-2">
+                                <Label htmlFor="usdt_to_inr_rate">USDT to INR Rate</Label>
+                                <Input id="usdt_to_inr_rate" name="usdt_to_inr_rate" type="number" step="0.01" defaultValue={currentSettings?.usdt_to_inr_rate || 90} placeholder="e.g., 90" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="crypto_wallet_address">USDT Wallet Address (TRC20)</Label>
+                                <Input id="crypto_wallet_address" name="crypto_wallet_address" defaultValue={currentSettings?.crypto_wallet_address || ''} placeholder="T..." />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="crypto_qr_code">Crypto Wallet QR Code</Label>
+                                <Input id="crypto_qr_code" name="crypto_qr_code" type="file" accept="image/*" onChange={handleCryptoFileChange} />
+                            </div>
+                            {cryptoQrPreview && (
+                                <div>
+                                    <Label>Current Crypto QR Code Preview</Label>
+                                    <div className="mt-2 rounded-md border p-4 w-fit bg-white">
+                                        <Image src={cryptoQrPreview} alt="Crypto QR Code Preview" width={150} height={150} className="object-contain" />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
                  <Card>
@@ -119,8 +140,7 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                                     id="referral_commission_percentage" 
                                     name="referral_commission_percentage" 
                                     type="number"
-                                    value={commission}
-                                    onChange={(e) => setCommission(parseFloat(e.target.value) || 0)}
+                                    defaultValue={currentSettings?.referral_commission_percentage ?? 10}
                                     placeholder="e.g. 10" 
                                     required 
                                     min="0"
@@ -136,7 +156,6 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                  <div className="flex justify-end">
                     <SubmitButton />
                 </div>
-            </div>
         </form>
     );
 }

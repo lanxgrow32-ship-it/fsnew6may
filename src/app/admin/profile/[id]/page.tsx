@@ -25,6 +25,7 @@ type Profile = {
   email: string;
   plan_purchased: string;
   transaction_id: string;
+  crypto_transaction_hash: string | null;
   is_approved: boolean;
   credentials_provided: boolean;
   trading_username: string;
@@ -375,6 +376,12 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                         <p>Final Amount Paid</p>
                                         <p>₹{profile.final_amount_paid?.toFixed(2) ?? 'N/A'}</p>
                                     </div>
+                                    {profile.crypto_transaction_hash && (
+                                        <div className="flex items-center justify-between border-t pt-4">
+                                            <p className="text-sm font-medium">Crypto Tx Hash:</p>
+                                            <p className="text-sm font-mono truncate max-w-[200px]">{profile.crypto_transaction_hash}</p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
@@ -547,5 +554,3 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-    

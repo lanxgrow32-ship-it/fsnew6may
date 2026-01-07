@@ -3,7 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { randomUUID } from 'crypto';
+import { redirect } from 'next/navigation';
 
 export async function signupAndCreateOrder(formData: FormData) {
   const email = formData.get('email') as string;
@@ -12,6 +12,8 @@ export async function signupAndCreateOrder(formData: FormData) {
   const planPurchased = formData.get('plan_purchased') as string;
   const referralCode = formData.get('referral_code') as string | null;
   const mobileNumber = formData.get('mobile_number') as string;
+  const paymentMethod = formData.get('payment_method') as 'upi' | 'crypto';
+  const cryptoTransactionHash = formData.get('crypto_transaction_hash') as string | null;
 
   const planPrice = parseFloat(formData.get('plan_price') as string);
   const couponCode = formData.get('coupon_code') as string;
@@ -72,19 +74,19 @@ export async function signupAndCreateOrder(formData: FormData) {
   if (user) {
     const profileData: any = { 
         plan_purchased: planPurchased,
-        is_approved: false,
+        is_approved: false, // All signups start as not approved
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
         final_amount_paid: finalAmountPaid,
         mobile_number: mobileNumber,
+        crypto_transaction_hash: paymentMethod === 'crypto' ? cryptoTransactionHash : null,
     };
     
     if (referrerId) {
         profileData.referred_by = referrerId;
     }
     
-    // The `order_id` for IMB will be the user's UUID
     const orderId = user.id; 
 
     const { error: profileError } = await supabase
@@ -96,43 +98,47 @@ export async function signupAndCreateOrder(formData: FormData) {
       console.error('Failed to update profile:', profileError.message);
       return { error: `Could not save registration details: ${profileError.message}` };
     }
+    
+    revalidatePath('/admin/dashboard');
 
-    // 3. Create the order with IMB Payment Gateway
-    const imbUserToken = process.env.IMB_PAYMENT_USER_TOKEN;
-    if (!imbUserToken) {
-        console.error('IMB Payment Gateway user token is not configured.');
-        return { error: 'Payment gateway is not configured on the server. Cannot proceed.'};
-    }
-
-    try {
-        const orderPayload = new FormData();
-        orderPayload.append('customer_mobile', mobileNumber);
-        orderPayload.append('user_token', imbUserToken);
-        orderPayload.append('amount', String(finalAmountPaid));
-        orderPayload.append('order_id', orderId);
-        // Correct redirect URL to prevent double path segments
-        orderPayload.append('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?order_id=${orderId}`);
-        orderPayload.append('remark1', email);
-        orderPayload.append('remark2', `Signup for ${planPurchased}`);
-        
-
-        const response = await fetch('https://pay.imb.org.in/api/create-order', {
-            method: 'POST',
-            body: orderPayload,
-        });
-        
-        const imbResult = await response.json();
-        
-        if (imbResult.status === true && imbResult.result?.payment_url) {
-            revalidatePath('/admin/dashboard');
-            return { success: true, payment_url: imbResult.result.payment_url };
-        } else {
-            console.error('IMB Order Creation Failed:', imbResult);
-            return { error: `Failed to create payment order: ${imbResult.message || 'Unknown error from payment gateway.'}` };
+    if (paymentMethod === 'upi') {
+        const imbUserToken = process.env.IMB_PAYMENT_USER_TOKEN;
+        if (!imbUserToken) {
+            console.error('IMB Payment Gateway user token is not configured.');
+            return { error: 'Payment gateway is not configured on the server. Cannot proceed.'};
         }
-    } catch (apiError: any) {
-        console.error('Error calling IMB API:', apiError);
-        return { error: `An unexpected error occurred while contacting the payment gateway: ${apiError.message}` };
+
+        try {
+            const orderPayload = new FormData();
+            orderPayload.append('customer_mobile', mobileNumber);
+            orderPayload.append('user_token', imbUserToken);
+            orderPayload.append('amount', String(finalAmountPaid));
+            orderPayload.append('order_id', orderId);
+            orderPayload.append('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?order_id=${orderId}`);
+            orderPayload.append('remark1', email);
+            orderPayload.append('remark2', `Signup for ${planPurchased}`);
+            
+            const response = await fetch('https://pay.imb.org.in/api/create-order', {
+                method: 'POST',
+                body: orderPayload,
+            });
+            
+            const imbResult = await response.json();
+            
+            if (imbResult.status === true && imbResult.result?.payment_url) {
+                return { success: true, payment_url: imbResult.result.payment_url, orderId: orderId };
+            } else {
+                console.error('IMB Order Creation Failed:', imbResult);
+                return { error: `Failed to create payment order: ${imbResult.message || 'Unknown error from payment gateway.'}` };
+            }
+        } catch (apiError: any) {
+            console.error('Error calling IMB API:', apiError);
+            return { error: `An unexpected error occurred while contacting the payment gateway: ${apiError.message}` };
+        }
+    } else { // Crypto payment
+        // For crypto, we don't redirect to a payment gateway. The user has manually paid.
+        // We just return a success state to redirect them to the success page.
+        return { success: true, orderId: orderId };
     }
   }
 

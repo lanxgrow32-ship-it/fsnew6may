@@ -12,13 +12,19 @@ import { checkPaymentStatus } from './actions';
 function PaymentStatusContent() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('order_id');
-    const [status, setStatus] = useState<'loading' | 'success' | 'failed' | 'error'>('loading');
+    const method = searchParams.get('method');
+    const [status, setStatus] = useState<'loading' | 'success' | 'pending_crypto' | 'failed' | 'error'>('loading');
     const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         if (!orderId) {
             setStatus('error');
             setErrorMessage('No order information found in the URL.');
+            return;
+        }
+
+        if (method === 'crypto') {
+            setStatus('pending_crypto');
             return;
         }
 
@@ -36,7 +42,7 @@ function PaymentStatusContent() {
         };
 
         verifyStatus();
-    }, [orderId]);
+    }, [orderId, method]);
 
     if (status === 'loading') {
         return (
@@ -57,16 +63,19 @@ function PaymentStatusContent() {
         );
     }
     
-    if (status === 'success') {
+    if (status === 'success' || status === 'pending_crypto') {
+        const isCrypto = status === 'pending_crypto';
         return (
             <Card className="w-full max-w-md text-center">
                 <CardHeader>
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                         <CheckCircle className="h-6 w-6 text-green-600" />
                     </div>
-                    <CardTitle className="mt-4 text-2xl">Payment Successful!</CardTitle>
+                    <CardTitle className="mt-4 text-2xl">{isCrypto ? 'Submission Received!' : 'Payment Successful!'}</CardTitle>
                     <CardDescription>
-                        Your account has been created and your payment was processed successfully.
+                        {isCrypto
+                            ? "Your submission has been received. An admin will verify your crypto payment and approve your account shortly."
+                            : "Your account has been created and your payment was processed successfully."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

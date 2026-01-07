@@ -31,6 +31,7 @@ type Profile = {
     is_approved: boolean;
     plan_purchased: string | null;
     transaction_id: string | null;
+    crypto_transaction_hash: string | null;
     kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected';
     credentials_provided: boolean;
     role: string;
@@ -191,7 +192,7 @@ function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError, onCle
                 </div>
                  <div>
                     <div className="font-medium text-muted-foreground">Transaction ID</div>
-                    <div className="truncate">{profile.transaction_id || 'N/A'}</div>
+                    <div className="truncate">{profile.transaction_id || profile.crypto_transaction_hash ||'N/A'}</div>
                 </div>
                 <PaymentSummary profile={profile} />
             </CardContent>
@@ -305,7 +306,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
             'Account Status': profile.is_breached ? 'Breached' : 'Active',
             'KYC Status': profile.kyc_status,
             'Plan': profile.plan_purchased,
-            'Transaction ID': profile.transaction_id,
+            'Transaction ID': profile.transaction_id || profile.crypto_transaction_hash,
             'Plan Price': profile.plan_price,
             'Discount': profile.discount_amount,
             'Final Amount Paid': profile.final_amount_paid,
@@ -473,15 +474,15 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                                 </TableCell>
                                                 <TableCell>{profile.plan_purchased || 'N/A'}</TableCell>
                                                 <TableCell>
-                                                    {profile.transaction_id ? (
+                                                    {profile.transaction_id || profile.crypto_transaction_hash ? (
                                                         <Tooltip>
                                                             <TooltipTrigger>
-                                                                <span className="block max-w-32 truncate">
-                                                                    {profile.transaction_id}
+                                                                <span className="block max-w-32 truncate font-mono">
+                                                                    {profile.transaction_id || profile.crypto_transaction_hash}
                                                                 </span>
                                                             </TooltipTrigger>
                                                             <TooltipContent>
-                                                                <p>{profile.transaction_id}</p>
+                                                                <p>{profile.transaction_id || profile.crypto_transaction_hash}</p>
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     ) : (
