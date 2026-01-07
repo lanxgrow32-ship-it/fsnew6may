@@ -23,6 +23,7 @@ type Profile = {
     pan_number: string | null;
     is_pan_verified: boolean;
     selfie_url: string | null; // Will now store Aadhaar image
+    selfie_with_aadhaar_url: string | null; // The new selfie with aadhaar
     is_aadhaar_verified: boolean; // Will represent if Aadhaar image is submitted
     traded_before: boolean;
     trading_experience: string | null;
@@ -44,7 +45,7 @@ const tradingStyleOptions = [
     { id: 'scalping', label: 'Scalping' },
 ];
 
-function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified }: { onFileSelect: (base64: string | null) => void; existingImageUrl: string | null; isPanVerified: boolean; }) {
+function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified, title, description }: { onFileSelect: (base64: string | null) => void; existingImageUrl: string | null; isPanVerified: boolean; title: string; description: string; }) {
     const [preview, setPreview] = useState<string | null>(existingImageUrl);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,36 +70,47 @@ function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified }: { on
 
     return (
         <div className="space-y-4">
-            <Alert variant="destructive">
-                <AlertTitle className="font-bold">High-Quality Warning!</AlertTitle>
-                <AlertDescription>
-                    Even after your KYC is verified, if the Aadhaar image is wrongly provided, you will **not** receive your funded account. Ensure the photo is clear and legible.
-                </AlertDescription>
-            </Alert>
-            <div className="relative w-full max-w-md mx-auto bg-muted rounded-md overflow-hidden border-2 border-dashed border-muted-foreground/50 p-4 text-center h-48 flex flex-col justify-center items-center">
-                 {!preview ? (
-                     <>
-                        <Upload className="h-10 w-10 text-muted-foreground mb-2"/>
-                        <Label htmlFor="aadhaar-upload" className="font-semibold text-primary cursor-pointer">
-                            Click to upload
-                            <span className="text-muted-foreground font-normal"> or drag and drop</span>
-                        </Label>
-                        <p className="text-xs text-muted-foreground mt-1">PNG, JPG, JPEG up to 10MB</p>
-                        <Input id="aadhaar-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/png, image/jpeg, image/jpg" disabled={!isPanVerified} />
-                     </>
-                 ) : (
-                    <div className="relative w-full h-full">
-                        <Image src={preview} alt="Aadhaar preview" layout="fill" className="object-contain rounded-md" />
+             <Card className={cn(!isPanVerified && "bg-muted/50 opacity-60 pointer-events-none")}>
+                <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                        <Camera className="w-5 h-5 text-primary" />{title}
+                        </CardTitle>
+                        <CardDescription>{description}</CardDescription>
+                        {!isPanVerified && <CardDescription>Please complete PAN verification above to enable this step.</CardDescription>}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Alert variant="destructive">
+                        <AlertTitle className="font-bold">High-Quality Warning!</AlertTitle>
+                        <AlertDescription>
+                            Even after your KYC is verified, if the image is wrongly provided, you will **not** receive your funded account. Ensure the photo is clear and legible.
+                        </AlertDescription>
+                    </Alert>
+                    <div className="relative w-full max-w-md mx-auto bg-muted rounded-md overflow-hidden border-2 border-dashed border-muted-foreground/50 p-4 text-center h-48 flex flex-col justify-center items-center">
+                        {!preview ? (
+                            <>
+                                <Upload className="h-10 w-10 text-muted-foreground mb-2"/>
+                                <Label htmlFor="aadhaar-upload" className="font-semibold text-primary cursor-pointer">
+                                    Click to upload
+                                    <span className="text-muted-foreground font-normal"> or drag and drop</span>
+                                </Label>
+                                <p className="text-xs text-muted-foreground mt-1">PNG, JPG, JPEG up to 10MB</p>
+                                <Input id="aadhaar-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/png, image/jpeg, image/jpg" disabled={!isPanVerified} />
+                            </>
+                        ) : (
+                            <div className="relative w-full h-full">
+                                <Image src={preview} alt="Aadhaar preview" layout="fill" className="object-contain rounded-md" />
+                            </div>
+                        )}
                     </div>
-                 )}
-            </div>
-             {preview && (
-                 <div className="flex justify-center">
-                    <Button type="button" variant="outline" onClick={resetUpload}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Change Photo
-                    </Button>
-                </div>
-            )}
+                    {preview && (
+                        <div className="flex justify-center">
+                            <Button type="button" variant="outline" onClick={resetUpload}>
+                                <RefreshCw className="mr-2 h-4 w-4" /> Change Photo
+                            </Button>
+                        </div>
+                    )}
+                 </CardContent>
+            </Card>
         </div>
     );
 }
@@ -114,7 +126,7 @@ function KycFlow() {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isActionPending, startTransition] = useTransition();
 
-  const totalSteps = 3;
+  const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
 
   // Effect to fetch initial profile data
@@ -172,8 +184,9 @@ function KycFlow() {
                                 setProfile(updatedProfile);
                             }}
                           />;
-          case 2: return <Step2_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
-          case 3: return <Step3_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
+          case 2: return <Step2_SelfieWithAadhaar onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
+          case 3: return <Step3_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
+          case 4: return <Step4_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
           default: return <p>Invalid Step</p>;
       }
   }
@@ -254,10 +267,7 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
 
     return (
         <div className="space-y-8">
-            <h3 className="font-semibold text-lg">Step 1: Document Verification</h3>
-            <p className="text-sm text-muted-foreground">
-                First, verify your PAN. Then, upload a clear photo of your Aadhaar card.
-            </p>
+            <h3 className="font-semibold text-lg">Step 1 of 4: Document Verification</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             
             <Card>
@@ -295,35 +305,61 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                 </CardContent>
             </Card>
 
-            {/* Aadhaar Verification */}
              <form onSubmit={handleSubmit}>
-                <Card className={cn(!isPanVerified && "bg-muted/50 opacity-60 pointer-events-none")}>
-                    <CardHeader>
-                         <CardTitle className="text-base flex items-center gap-2">
-                            <Camera className="w-5 h-5 text-primary" />Aadhaar Card Photo Upload
-                        </CardTitle>
-                        {!isPanVerified && <CardDescription>Please complete PAN verification above to enable this step.</CardDescription>}
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <AadhaarUploader 
-                            onFileSelect={setAadhaarBase64}
-                            existingImageUrl={profile.selfie_url}
-                            isPanVerified={profile.is_pan_verified}
-                        />
-                    </CardContent>
-                     <CardFooter className="flex justify-end gap-4 pt-4">
-                        <Button type="submit" disabled={!aadhaarBase64 || !profile.is_pan_verified}>Save & Continue</Button>
-                    </CardFooter>
-                </Card>
+                <AadhaarUploader 
+                    onFileSelect={setAadhaarBase64}
+                    existingImageUrl={profile.selfie_url}
+                    isPanVerified={profile.is_pan_verified}
+                    title="Aadhaar Card Photo Upload"
+                    description="Upload a clear photo of your Aadhaar card."
+                />
+                <CardFooter className="flex justify-end gap-4 pt-4">
+                    <Button type="submit" disabled={!aadhaarBase64 || !profile.is_pan_verified}>Save & Continue</Button>
+                </CardFooter>
             </form>
         </div>
     );
 }
 
-function Step2_TradingBackground({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+    const [selfieWithAadhaarBase64, setSelfieWithAadhaarBase64] = useState<string | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (selfieWithAadhaarBase64) {
+            const formData = new FormData();
+            formData.append('selfie_with_aadhaar_photo', selfieWithAadhaarBase64);
+            onSave(formData);
+        }
+    };
+    
+    return (
+        <div className="space-y-8">
+            <h3 className="font-semibold text-lg">Step 2 of 4: Selfie Verification</h3>
+             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+
+             <form onSubmit={handleSubmit}>
+                <AadhaarUploader 
+                    onFileSelect={setSelfieWithAadhaarBase64}
+                    existingImageUrl={profile.selfie_with_aadhaar_url}
+                    isPanVerified={true} // Always enabled on this step
+                    title="Selfie with Aadhaar Card"
+                    description="Upload a clear selfie of yourself holding your Aadhaar card next to your face."
+                />
+                <CardFooter className="flex justify-between gap-4 pt-4">
+                    <Button type="button" variant="outline" onClick={onBack}>Back</Button>
+                    <Button type="submit" disabled={!selfieWithAadhaarBase64}>Save & Continue</Button>
+                </CardFooter>
+            </form>
+        </div>
+    );
+}
+
+
+function Step3_TradingBackground({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
     return (
         <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg">Step 2: Trading Background</h3>
+            <h3 className="font-semibold text-lg">Step 3 of 4: Trading Background</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="space-y-4">
                 <Label>Have you traded in a Prop Firm before? *</Label>
@@ -359,10 +395,10 @@ function Step2_TradingBackground({ onSave, onBack, error, profile }: { onSave: (
     );
 }
 
-function Step3_Agreements({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+function Step4_Agreements({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
     return (
         <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg">Step 3: Agreements</h3>
+            <h3 className="font-semibold text-lg">Step 4 of 4: Agreements</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="space-y-6 rounded-md border p-6">
                 <div className="space-y-4">

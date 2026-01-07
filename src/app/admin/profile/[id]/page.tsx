@@ -34,6 +34,7 @@ type Profile = {
   pan_number: string;
   aadhar_number: string;
   selfie_url: string; // Now stores Aadhaar photo
+  selfie_with_aadhaar_url: string | null; // The new selfie with aadhaar
   city_state: string;
   traded_before: boolean;
   trading_experience: string;
@@ -312,12 +313,20 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                             <p>{profile.traded_before ? 'Yes' : 'No'}</p>
                                         </div>
                                     </div>
-                                    {profile.selfie_url && (
-                                         <div className="space-y-2 pt-4 border-t">
-                                            <p className="font-medium text-muted-foreground text-sm">Aadhaar Photo</p>
-                                            <Image src={profile.selfie_url} alt="User Aadhaar photo" width={200} height={120} className="rounded-md border p-1" />
-                                        </div>
-                                    )}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                                        {profile.selfie_url && (
+                                            <div className="space-y-2">
+                                                <p className="font-medium text-muted-foreground text-sm">Aadhaar Photo</p>
+                                                <Image src={profile.selfie_url} alt="User Aadhaar photo" width={200} height={120} className="rounded-md border p-1" />
+                                            </div>
+                                        )}
+                                        {profile.selfie_with_aadhaar_url && (
+                                            <div className="space-y-2">
+                                                <p className="font-medium text-muted-foreground text-sm">Selfie with Aadhaar</p>
+                                                <Image src={profile.selfie_with_aadhaar_url} alt="User selfie with Aadhaar" width={200} height={120} className="rounded-md border p-1" />
+                                            </div>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
 

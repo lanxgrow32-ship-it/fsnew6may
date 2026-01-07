@@ -87,19 +87,19 @@ export async function verifyPan(panNumber: string) {
   }
 }
 
-async function uploadAadhaarImage(base64: string, userId: string) {
+async function uploadKycImage(base64: string, userId: string, type: 'aadhaar' | 'selfie-with-aadhaar') {
     // Remove data URI prefix if present
     const base64Data = base64.split(',')[1] || base64;
     const buffer = Buffer.from(base64Data, 'base64');
-    const fileName = `${userId}-aadhaar-${Date.now()}.jpeg`;
+    const fileName = `${userId}-${type}-${Date.now()}.jpeg`;
     
     const { data, error } = await supabaseAdmin.storage.from('kyc-documents').upload(fileName, buffer, {
         contentType: 'image/jpeg',
     });
 
     if (error) {
-        console.error(`Error uploading aadhaar image:`, error);
-        throw new Error(`Failed to upload Aadhaar image.`);
+        console.error(`Error uploading ${type} image:`, error);
+        throw new Error(`Failed to upload ${type} image.`);
     }
 
     const { data: urlData } = supabaseAdmin.storage.from('kyc-documents').getPublicUrl(data.path);
@@ -122,13 +122,21 @@ export async function saveKycStep(step: number, formData: FormData) {
       case 1:
         const aadhaarPhoto = formData.get('aadhaar_photo') as string;
         if (aadhaarPhoto) {
-            const aadhaarPhotoUrl = await uploadAadhaarImage(aadhaarPhoto, user.id);
-            profileUpdateData.selfie_url = aadhaarPhotoUrl; // Assuming selfie_url stores the aadhaar photo
-            profileUpdateData.is_aadhaar_verified = true; // We'll manually verify, but mark as submitted
+            const aadhaarPhotoUrl = await uploadKycImage(aadhaarPhoto, user.id, 'aadhaar');
+            profileUpdateData.selfie_url = aadhaarPhotoUrl; // This is the Aadhaar photo
+            profileUpdateData.is_aadhaar_verified = true; // Mark as submitted for manual verification
         }
         break;
 
-      case 2: // Trading Background
+      case 2:
+        const selfieWithAadhaarPhoto = formData.get('selfie_with_aadhaar_photo') as string;
+        if (selfieWithAadhaarPhoto) {
+            const selfieUrl = await uploadKycImage(selfieWithAadhaarPhoto, user.id, 'selfie-with-aadhaar');
+            profileUpdateData.selfie_with_aadhaar_url = selfieUrl;
+        }
+        break;
+
+      case 3: // Trading Background
         profileUpdateData = {
           traded_before: formData.get('traded_before') === 'yes',
           trading_experience: formData.get('trading_experience') as string,
@@ -137,7 +145,7 @@ export async function saveKycStep(step: number, formData: FormData) {
         };
         break;
 
-      case 3: // Agreements
+      case 4: // Agreements
         isFinalStep = true;
         profileUpdateData = {
           drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes',
