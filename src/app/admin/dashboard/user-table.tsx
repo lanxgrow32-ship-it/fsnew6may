@@ -513,5 +513,3 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
         </Card>
     );
 }
-
-    

@@ -407,7 +407,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-sm font-medium text-muted-foreground">Transaction ID</p>
-                                        <p className="truncate">{profile.transaction_id}</p>
+                                        <p className="truncate">{profile.transaction_id || profile.crypto_transaction_hash}</p>
                                     </div>
                                 </CardContent>
                             </Card>
