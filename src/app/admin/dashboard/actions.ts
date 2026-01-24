@@ -58,6 +58,30 @@ export async function deleteUser(userId: string) {
     return { success: true };
 }
 
+export async function deleteMultipleUsers(userIds: string[]) {
+  if (!userIds || userIds.length === 0) {
+    return { error: 'No user IDs provided.' };
+  }
+
+  // The admin API's deleteUser method takes a single ID, so we iterate.
+  // We run them in parallel for performance.
+  const deletePromises = userIds.map(id => supabaseAdmin.auth.admin.deleteUser(id));
+  
+  const results = await Promise.allSettled(deletePromises);
+
+  const errors = results.filter(r => r.status === 'rejected');
+
+  if (errors.length > 0) {
+      console.error(`Error deleting ${errors.length} users:`, errors);
+      // Reporting the first error is usually sufficient for the UI.
+      const firstError = (errors[0] as PromiseRejectedResult).reason;
+      return { error: `Failed to delete ${errors.length} user(s). First error: ${firstError.message}` };
+  }
+
+  revalidatePath('/admin/dashboard');
+  return { success: true };
+}
+
 
 export async function clearPaymentData(userId: string) {
     if (!userId) {

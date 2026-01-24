@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser, Calendar as CalendarIcon } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { deleteUser, clearPaymentData } from './actions';
+import { deleteUser, clearPaymentData, deleteMultipleUsers } from './actions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -22,6 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 type Profile = {
@@ -167,25 +168,33 @@ const PaymentSummary = ({ profile }: { profile: Profile }) => {
     )
 }
 
-function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError, onClearSuccess, onClearError }: { profile: Profile, index: number, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void, onClearSuccess: () => void, onClearError: (msg: string) => void }) {
+function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError, onClearSuccess, onClearError, isSelected, onRowSelect }: { profile: Profile, index: number, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void, onClearSuccess: () => void, onClearError: (msg: string) => void, isSelected: boolean, onRowSelect: (id: string, checked: boolean) => void }) {
     return (
         <Card className="mb-4">
             <CardHeader>
                  <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm text-muted-foreground">#{index + 1}</p>
-                            <CardTitle className="text-base">{profile.full_name}</CardTitle>
-                            <CardDescription>{profile.email}</CardDescription>
+                        <div className="flex items-start gap-4">
+                            <Checkbox 
+                                checked={isSelected}
+                                onCheckedChange={(checked) => onRowSelect(profile.id, checked as boolean)}
+                                aria-label="Select user"
+                                className="mt-1"
+                            />
+                            <div>
+                                <p className="text-sm text-muted-foreground">#{index + 1}</p>
+                                <CardTitle className="text-base">{profile.full_name}</CardTitle>
+                                <CardDescription>{profile.email}</CardDescription>
+                            </div>
                         </div>
                         <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} onClearSuccess={onClearSuccess} onClearError={onClearError} />
                     </div>
-                    <div className="self-start">
+                    <div className="self-start ml-12">
                         <StatusBadge profile={profile} />
                     </div>
                  </div>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm">
+            <CardContent className="space-y-4 text-sm pl-12">
                 <div>
                     <div className="font-medium text-muted-foreground">Plan</div>
                     <div className='truncate'>{profile.plan_purchased || 'N/A'}</div>
@@ -256,6 +265,8 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
         credentials_provided: '',
         is_breached: '',
     });
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     const filteredProfiles = useMemo(() => {
         const lowercasedFilter = searchTerm.toLowerCase();
@@ -280,6 +291,11 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
         });
     }, [searchTerm, profiles, filters, date]);
     
+    // Reset selection when filters change
+    useEffect(() => {
+        setSelectedUserIds([]);
+    }, [searchTerm, filters, date]);
+
     const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
         setFilters(prev => ({...prev, [filterName]: value}));
     }
@@ -324,6 +340,45 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
             document.body.removeChild(link);
         }
     }
+
+    const handleSelectAllOnPage = (checked: boolean) => {
+        if (checked) {
+            setSelectedUserIds(filteredProfiles.map(p => p.id));
+        } else {
+            setSelectedUserIds([]);
+        }
+    };
+    
+    const handleSelectPending = () => {
+        const pendingUserIds = profiles
+            .filter(p => !p.is_approved && p.role !== 'admin')
+            .map(p => p.id);
+        setSelectedUserIds(pendingUserIds);
+    };
+
+    const handleRowSelect = (userId: string, checked: boolean) => {
+        setSelectedUserIds(prev => 
+            checked ? [...prev, userId] : prev.filter(id => id !== userId)
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        setIsBulkDeleting(true);
+        const result = await deleteMultipleUsers(selectedUserIds);
+        if (result.error) {
+            onUserDeleteError(result.error);
+        } else {
+            // onUserUpdate will trigger a re-fetch which re-renders this component
+            onUserUpdate(); 
+            setSelectedUserIds([]);
+        }
+        setIsBulkDeleting(false);
+    }
+    
+    const numSelected = selectedUserIds.length;
+    const numOnPage = filteredProfiles.length;
+    const isAllOnPageSelected = numOnPage > 0 && numSelected === numOnPage && filteredProfiles.every(p => selectedUserIds.includes(p.id));
+    const isSomeOnPageSelected = numSelected > 0 && !isAllOnPageSelected;
 
     return (
         <Card className="shadow-sm">
@@ -432,13 +487,49 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                             Download CSV
                         </Button>
                     </div>
+
+                    {selectedUserIds.length > 0 && (
+                        <div className="flex items-center gap-4 rounded-md border bg-muted p-2.5">
+                            <p className="text-sm font-medium">{selectedUserIds.length} user(s) selected.</p>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" disabled={isBulkDeleting}>
+                                        {isBulkDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4" />}
+                                        Delete Selected
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the selected <span className="font-bold">{selectedUserIds.length} user account(s)</span>.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleBulkDelete}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    )}
                 </div>
 
                 <ClientOnly>
                     {/* Mobile View */}
                     <div className="md:hidden mt-4">
                         {filteredProfiles.length > 0 ? filteredProfiles.map((profile, index) => (
-                           <UserMobileCard key={profile.id} profile={profile} index={index} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} onClearSuccess={onUserUpdate} onClearError={onUserDeleteError}/>
+                           <UserMobileCard 
+                                key={profile.id} 
+                                profile={profile} 
+                                index={index} 
+                                onUserDelete={onUserDelete} 
+                                onUserDeleteError={onUserDeleteError} 
+                                onClearSuccess={onUserUpdate} 
+                                onClearError={onUserDeleteError}
+                                isSelected={selectedUserIds.includes(profile.id)}
+                                onRowSelect={handleRowSelect}
+                           />
                         )) : (
                             <div className="text-center h-24 flex items-center justify-center">
                                 <p>No users found matching your filters.</p>
@@ -453,6 +544,25 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead className="w-12">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <Checkbox
+                                                                checked={isAllOnPageSelected}
+                                                                aria-checked={isSomeOnPageSelected ? "mixed" : isAllOnPageSelected}
+                                                                onCheckedChange={(checked) => handleSelectAllOnPage(checked as boolean)}
+                                                                aria-label="Select all on page"
+                                                            />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                     <DropdownMenuContent align="start">
+                                                        <DropdownMenuItem onClick={handleSelectPending}>Select all pending users</DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onClick={() => setSelectedUserIds([])}>Deselect all</DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableHead>
                                             <TableHead>S.No.</TableHead>
                                             <TableHead>Full Name</TableHead>
                                             <TableHead>Email</TableHead>
@@ -465,7 +575,14 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                     </TableHeader>
                                     <TableBody>
                                         {filteredProfiles.length > 0 ? filteredProfiles.map((profile, index) => (
-                                            <TableRow key={profile.id}>
+                                            <TableRow key={profile.id} data-state={selectedUserIds.includes(profile.id) && "selected"}>
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedUserIds.includes(profile.id)}
+                                                        onCheckedChange={(checked) => handleRowSelect(profile.id, checked as boolean)}
+                                                        aria-label="Select row"
+                                                    />
+                                                </TableCell>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell className="font-medium">{profile.full_name}</TableCell>
                                                 <TableCell>{profile.email}</TableCell>
@@ -498,7 +615,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                             </TableRow>
                                         )) : (
                                             <TableRow>
-                                                <TableCell colSpan={8} className="text-center h-24">
+                                                <TableCell colSpan={9} className="text-center h-24">
                                                     No users found matching your filters.
                                                 </TableCell>
                                             </TableRow>
