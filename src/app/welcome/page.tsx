@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser, Gift, MessageSquare, ShieldAlert, BrainCircuit } from 'lucide-react';
+import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser, Gift, MessageSquare, ShieldAlert, BrainCircuit, Swords } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -127,7 +127,9 @@ function AccountStatusBanner({ profile }: { profile: any }) {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold">Welcome back, {profile.full_name || 'User'}!</h2>
-                        <p className="opacity-90">Your account is fully active. Here are your trading credentials.</p>
+                        <p className="opacity-90">
+                           {profile.account_type === 'competition' ? 'Your competition account is ready.' : 'Your account is fully active. Here are your trading credentials.'}
+                        </p>
                     </div>
                 </div>
                  {profile.account_type === 'standard' && <ReceiptButton profile={profile} />}
@@ -195,6 +197,184 @@ function UserNav({ profile }: { profile: any}) {
         </DropdownMenu>
     )
 }
+
+const StandardDashboard = ({ profile }: { profile: any }) => (
+    <SidebarProvider>
+        <Sidebar>
+            <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
+                <Link href="/welcome" className="flex items-center gap-2 font-bold text-lg">
+                    <FundedStockLogo className="w-8 h-8 text-primary" />
+                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
+                </Link>
+            </SidebarHeader>
+            <SidebarContent>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/welcome" isActive tooltip="Dashboard">
+                            <Home />
+                            Dashboard
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/pricing" tooltip="Purchase New Account">
+                            <DollarSign />
+                            Purchase New Account
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/kyc" tooltip="KYC">
+                            <FileCheck />
+                            KYC
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/referrals" tooltip="Referrals">
+                            <Gift />
+                            Referrals
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/tickets" tooltip="Support">
+                            <MessageSquare />
+                            Support
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/mentor" tooltip="AI Mentor">
+                            <BrainCircuit />
+                            AI Mentor
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/guide" tooltip="Trading Guide">
+                            <BookUser />
+                            Trading Guide
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarContent>
+            <SidebarFooter className="border-t p-2">
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <form action={signOut} className="w-full">
+                            <SidebarMenuButton tooltip="Logout" asChild>
+                                <button type="submit" className="w-full">
+                                    <LogOut />
+                                    Logout
+                                </button>
+                            </SidebarMenuButton>
+                        </form>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+            <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                    <SidebarTrigger className="md:hidden" />
+                    <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                        <Bell className="h-5 w-5" />
+                        <span className="sr-only">Notifications</span>
+                    </Button>
+                    <UserNav profile={profile} />
+                </div>
+            </header>
+            <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
+                <div className="max-w-6xl mx-auto space-y-8">
+                    <AccountStatusBanner profile={profile} />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-8">
+                            {(() => {
+                                switch (profile.kyc_status) {
+                                    case 'verified':
+                                        return <CredentialsView profile={profile} />;
+                                    case 'submitted':
+                                        return <KycUnderReview />;
+                                    case 'rejected':
+                                        return <KycRejected />;
+                                    case 'pending':
+                                    default:
+                                        return <KycPrompt />;
+                                }
+                            })()}
+                        </div>
+                        <div className="lg:col-span-1">
+                            <OnboardingGuide profile={profile} />
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </SidebarInset>
+    </SidebarProvider>
+);
+
+const CompetitionDashboard = ({ profile }: { profile: any }) => (
+    <SidebarProvider>
+        <Sidebar>
+            <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
+                <Link href="/welcome" className="flex items-center gap-2 font-bold text-lg">
+                    <FundedStockLogo className="w-8 h-8 text-primary" />
+                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
+                </Link>
+            </SidebarHeader>
+            <SidebarContent>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/welcome" isActive tooltip="Competition Dashboard">
+                            <Swords />
+                            Dashboard
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton href="/tickets" tooltip="Support">
+                            <MessageSquare />
+                            Support
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/guide" tooltip="Trading Guide">
+                            <BookUser />
+                            Trading Guide
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarContent>
+            <SidebarFooter className="border-t p-2">
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <form action={signOut} className="w-full">
+                            <SidebarMenuButton tooltip="Logout" asChild>
+                                <button type="submit" className="w-full">
+                                    <LogOut />
+                                    Logout
+                                </button>
+                            </SidebarMenuButton>
+                        </form>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+            <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                    <SidebarTrigger className="md:hidden" />
+                    <h1 className="text-xl font-semibold hidden md:block">Competition Dashboard</h1>
+                </div>
+                <UserNav profile={profile} />
+            </header>
+            <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
+                <div className="max-w-6xl mx-auto space-y-8">
+                     <AccountStatusBanner profile={profile} />
+                     <CompetitionView />
+                </div>
+            </main>
+        </SidebarInset>
+    </SidebarProvider>
+);
+
 
 export default async function WelcomePage() {
   const supabase = createClient();
@@ -279,121 +459,10 @@ export default async function WelcomePage() {
         </main>
     )
   }
-  
-  const renderStandardContent = () => {
-    switch (profile.kyc_status) {
-      case 'verified':
-        return <CredentialsView profile={profile} />;
-      case 'submitted':
-        return <KycUnderReview />;
-      case 'rejected':
-        return <KycRejected />;
-      case 'pending':
-      default:
-        return <KycPrompt />;
-    }
+
+  if (profile.account_type === 'competition') {
+      return <CompetitionDashboard profile={profile} />;
   }
 
-
-  return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
-            <Link href="/welcome" className="flex items-center gap-2 font-bold text-lg">
-                <FundedStockLogo className="w-8 h-8 text-primary" />
-                <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
-            </Link>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/welcome" isActive tooltip="Dashboard">
-                <Home />
-                Dashboard
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/pricing" tooltip="Purchase New Account">
-                <DollarSign />
-                Purchase New Account
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton href="/kyc" tooltip="KYC">
-                <FileCheck />
-                KYC
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/referrals" tooltip="Referrals">
-                    <Gift />
-                    Referrals
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/tickets" tooltip="Support">
-                    <MessageSquare />
-                    Support
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/mentor" tooltip="AI Mentor">
-                    <BrainCircuit />
-                    AI Mentor
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/guide" tooltip="Trading Guide">
-                <BookUser />
-                Trading Guide
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter className="border-t p-2">
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <form action={signOut} className="w-full">
-                        <SidebarMenuButton tooltip="Logout" asChild>
-                            <button type="submit" className="w-full">
-                                <LogOut />
-                                Logout
-                            </button>
-                        </SidebarMenuButton>
-                    </form>
-                </SidebarMenuItem>
-            </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-           <div className="flex items-center gap-4">
-                <SidebarTrigger className="md:hidden" />
-                <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
-           </div>
-           <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="rounded-full">
-                    <Bell className="h-5 w-5" />
-                    <span className="sr-only">Notifications</span>
-                </Button>
-                <UserNav profile={profile} />
-           </div>
-        </header>
-        <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
-          <div className="max-w-6xl mx-auto space-y-8">
-            <AccountStatusBanner profile={profile} />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                  {profile.account_type === 'competition' ? <CompetitionView /> : renderStandardContent()}
-                </div>
-                <div className="lg:col-span-1">
-                    {profile.account_type === 'standard' && <OnboardingGuide profile={profile} />}
-                </div>
-            </div>
-          </div>
-        </main>      
-      </SidebarInset>
-    </SidebarProvider>
-  );
+  return <StandardDashboard profile={profile} />;
 }
