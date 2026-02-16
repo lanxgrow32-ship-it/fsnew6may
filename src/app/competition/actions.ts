@@ -1,9 +1,7 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { randomUUID } from 'crypto';
-import bcrypt from 'bcryptjs';
 
 export async function preRegisterForCompetition(formData: FormData) {
   const name = formData.get('full_name') as string;
@@ -19,7 +17,8 @@ export async function preRegisterForCompetition(formData: FormData) {
   }
 
   try {
-    const passwordHash = await bcrypt.hash(password, 10);
+    // DO NOT HASH THE PASSWORD. Store it temporarily as plain text.
+    // The webhook will use it to create the user, and Supabase will hash it correctly.
     const sessionId = randomUUID();
 
     const { error: insertError } = await supabaseAdmin
@@ -28,7 +27,7 @@ export async function preRegisterForCompetition(formData: FormData) {
         id: sessionId,
         name,
         email,
-        password_hash: passwordHash,
+        password_hash: password, // Storing plain password in a column named password_hash
         plan_type: planType,
       });
 

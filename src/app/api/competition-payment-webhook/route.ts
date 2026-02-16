@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
             // Create the user in Auth
             const { data: authUser, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
                 email,
-                password: password_hash, // This should be the real password, but we have the hash. Let's send a recovery link instead.
+                password: password_hash, // The plain-text password from the payment_sessions table. Supabase will hash it.
                 email_confirm: true,
                  user_metadata: {
                     full_name: name,
