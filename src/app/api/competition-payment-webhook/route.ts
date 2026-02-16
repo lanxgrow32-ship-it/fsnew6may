@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
              return NextResponse.json({ message: 'This payment session has already been processed.' });
         }
 
-        const { name, email, password_hash, plan_type } = session;
+        const { name, email, plain_password, plan_type, mobile_number } = session;
 
         // 2. Find or create the user in profiles
         let userId: string;
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
             // Create the user in Auth if they don't exist
             const { data: authUser, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
                 email,
-                password: password_hash, // The plain-text password from the payment_sessions table. Supabase will hash it.
+                password: plain_password, // Use the correct plain_password field
                 email_confirm: true,
                  user_metadata: {
                     full_name: name,
@@ -72,9 +72,10 @@ export async function POST(req: NextRequest) {
             }
             userId = authUser.user.id;
             
-            // The database trigger will create the profile, now we update it with the account type.
+            // The database trigger will create the profile, now we update it.
             await supabaseAdmin.from('profiles').update({ 
                 account_type: 'competition',
+                mobile_number: mobile_number,
              }).eq('id', userId);
         }
 
