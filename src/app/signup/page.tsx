@@ -199,10 +199,10 @@ function SignupForm() {
                             <span>Crypto (USDT)</span>
                         </Button>
                     </div>
-                     {paymentMethod === 'upi' && !paymentDetails?.is_upi_enabled && (
-                        <Alert variant="default" className="mt-2 text-center">
+                     {paymentDetails && !paymentDetails.is_upi_enabled && (
+                        <Alert variant="default" className="mt-4 text-center">
                             <AlertDescription>
-                                UPI payments are currently unavailable. To pay via UPI, please 
+                                UPI payments are currently unavailable. To pay via UPI, please{' '}
                                 <Button asChild variant="link" className="p-1 h-auto">
                                     <a href="https://wa.me/9184213004817" target="_blank" rel="noopener noreferrer">
                                         contact us on WhatsApp
