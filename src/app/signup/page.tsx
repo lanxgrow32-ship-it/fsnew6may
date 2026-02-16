@@ -204,9 +204,9 @@ function SignupForm() {
                             <AlertTitle className="font-bold">UPI Payments Unavailable</AlertTitle>
                             <AlertDescription>
                                 <p className="mb-2">
-                                    UPI payments are currently unavailable. To pay via UPI, please{' '}
+                                    To pay via UPI, please{' '}
                                     <Button asChild variant="link" className="p-0 h-auto">
-                                        <a href="https://wa.me/9184213004817" target="_blank" rel="noopener noreferrer">
+                                        <a href="https://wa.me/918432306244" target="_blank" rel="noopener noreferrer">
                                             contact us on WhatsApp
                                         </a>
                                     </Button>
@@ -392,5 +392,7 @@ export default function SignupPage() {
     </div>
   )
 }
+
+    
 
     
