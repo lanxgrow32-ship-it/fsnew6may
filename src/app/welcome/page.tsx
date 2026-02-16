@@ -311,7 +311,7 @@ const StandardDashboard = ({ profile }: { profile: any }) => (
     </SidebarProvider>
 );
 
-const CompetitionDashboard = ({ profile }: { profile: any }) => (
+const CompetitionDashboard = ({ profile, entries }: { profile: any, entries: any[] }) => (
     <SidebarProvider>
         <Sidebar>
             <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
@@ -368,7 +368,7 @@ const CompetitionDashboard = ({ profile }: { profile: any }) => (
             <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
                 <div className="max-w-6xl mx-auto space-y-8">
                      <AccountStatusBanner profile={profile} />
-                     <CompetitionView />
+                     <CompetitionView initialEntries={entries} />
                 </div>
             </main>
         </SidebarInset>
@@ -461,7 +461,13 @@ export default async function WelcomePage() {
   }
 
   if (profile.account_type === 'competition') {
-      return <CompetitionDashboard profile={profile} />;
+      const { data: entries } = await supabase
+        .from('competition_entries')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+        
+      return <CompetitionDashboard profile={profile} entries={entries || []} />;
   }
 
   return <StandardDashboard profile={profile} />;

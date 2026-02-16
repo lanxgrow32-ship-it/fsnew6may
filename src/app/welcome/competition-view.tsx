@@ -56,7 +56,7 @@ function GetCredentialsForm({ entry }: { entry: CompetitionEntry }) {
                 <input type="hidden" name="entry_id" value={entry.id} />
                 <CardHeader>
                     <CardTitle>Get Your Trading Account</CardTitle>
-                    <CardDescription>Enter your mobile number to generate your credentials for this week's competition.</CardDescription>
+                    <CardDescription>You've successfully joined the <span className="font-bold">{entry.week_identifier}</span> competition! Enter your mobile number to generate your credentials.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      {state.error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{state.error}</AlertDescription></Alert>}
@@ -73,43 +73,37 @@ function GetCredentialsForm({ entry }: { entry: CompetitionEntry }) {
     )
 }
 
-export function CompetitionView() {
+export function CompetitionView({ initialEntries }: { initialEntries: CompetitionEntry[] }) {
     const supabase = createClient();
     const { toast } = useToast();
-    const [entries, setEntries] = useState<CompetitionEntry[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [entries, setEntries] = useState<CompetitionEntry[]>(initialEntries);
+    const [isLoading, setIsLoading] = useState(false);
     const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
-
+    
+    // This effect handles realtime updates after the initial server-side load
     useEffect(() => {
-        const fetchEntries = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                setIsLoading(false);
-                return;
-            }
-
-            const { data, error } = await supabase
-                .from('competition_entries')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false });
-
-            if (data) {
-                setEntries(data);
-            }
-            setIsLoading(false);
-        };
-        fetchEntries();
-        
         const channel = supabase.channel('realtime competition entries')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'competition_entries' },
-                () => { fetchEntries(); }
+                async (payload) => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if(user) {
+                        const { data: freshEntries } = await supabase
+                            .from('competition_entries')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .order('created_at', { ascending: false });
+                        if(freshEntries) {
+                            setEntries(freshEntries);
+                        }
+                    }
+                }
             )
             .subscribe();
 
         return () => { supabase.removeChannel(channel) };
 
     }, [supabase]);
+
 
     const togglePasswordVisibility = (id: number) => {
         setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
@@ -120,26 +114,6 @@ export function CompetitionView() {
         toast({ title: "Copied to clipboard!" });
     }
 
-    const SkeletonLoader = () => (
-         <Card>
-            <CardHeader>
-                <Skeleton className="h-7 w-1/2" />
-                <Skeleton className="h-4 w-3/4" />
-            </CardHeader>
-            <CardContent>
-                 <div className="space-y-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-            </CardContent>
-        </Card>
-    )
-
-    if (isLoading) {
-        return <SkeletonLoader />;
-    }
-    
     if (entries.length === 0) {
         return (
             <Card className="w-full shadow-sm text-center">
