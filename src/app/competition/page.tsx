@@ -75,7 +75,7 @@ function CompetitionSignupForm() {
                                 <Label htmlFor="plan_monthly" className="flex items-center justify-between rounded-lg border p-4 cursor-pointer has-[[data-state=checked]]:border-primary">
                                     <div>
                                         <p className="font-bold">Monthly Challenge</p>
-                                        <p className="text-muted-foreground">₹899.00 / month</p>
+                                        <p className="text-muted-foreground">₹549.00 / month</p>
                                     </div>
                                     <RadioGroupItem value="monthly" id="plan_monthly" />
                                 </Label>
