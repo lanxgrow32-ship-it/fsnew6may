@@ -201,14 +201,20 @@ function SignupForm() {
                     </div>
                      {paymentDetails && !paymentDetails.is_upi_enabled && (
                         <Alert variant="default" className="mt-4 text-center">
+                            <AlertTitle className="font-bold">UPI Payments Unavailable</AlertTitle>
                             <AlertDescription>
-                                UPI payments are currently unavailable. To pay via UPI, please{' '}
-                                <Button asChild variant="link" className="p-1 h-auto">
-                                    <a href="https://wa.me/9184213004817" target="_blank" rel="noopener noreferrer">
-                                        contact us on WhatsApp
-                                    </a>
-                                </Button>
-                                .
+                                <p className="mb-2">
+                                    UPI payments are currently unavailable. To pay via UPI, please{' '}
+                                    <Button asChild variant="link" className="p-0 h-auto">
+                                        <a href="https://wa.me/9184213004817" target="_blank" rel="noopener noreferrer">
+                                            contact us on WhatsApp
+                                        </a>
+                                    </Button>
+                                    .
+                                </p>
+                                <p className="text-muted-foreground">
+                                    यूपीआई भुगतान वर्तमान में अनुपलब्ध हैं। यूपीआई के माध्यम से भुगतान करने के लिए, कृपया हमें व्हाट्सएप पर संपर्क करें।
+                                </p>
                             </AlertDescription>
                         </Alert>
                     )}
@@ -386,3 +392,5 @@ export default function SignupPage() {
     </div>
   )
 }
+
+    
