@@ -200,20 +200,20 @@ function SignupForm() {
                         </Button>
                     </div>
                      {paymentDetails && !paymentDetails.is_upi_enabled && (
-                        <Alert variant="default" className="mt-4 text-center">
-                            <AlertTitle className="font-bold">UPI Payments Unavailable</AlertTitle>
+                        <Alert variant="default" className="mt-4 text-center border-yellow-400 dark:border-yellow-500 bg-yellow-50 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-200">
+                            <AlertTitle className="font-bold text-yellow-950 dark:text-yellow-100">UPI Payments Unavailable</AlertTitle>
                             <AlertDescription>
                                 <p className="mb-2">
                                     To pay via UPI, please{' '}
-                                    <Button asChild variant="link" className="p-0 h-auto">
+                                    <Button asChild variant="link" className="p-0 h-auto text-current font-bold underline">
                                         <a href="https://wa.me/918432306244" target="_blank" rel="noopener noreferrer">
                                             contact us on WhatsApp
                                         </a>
                                     </Button>
                                     .
                                 </p>
-                                <p className="text-muted-foreground">
-                                    यूपीआई भुगतान वर्तमान में अनुपलब्ध हैं। यूपीआई के माध्यम से भुगतान करने के लिए, कृपया हमें व्हाट्सएप पर संपर्क करें।
+                                <p>
+                                यूपीआई भुगतान वर्तमान में अनुपलब्ध हैं। यूपीआई के माध्यम से भुगतान करने के लिए, कृपया हमें व्हाट्सएप पर संपर्क करें।
                                 </p>
                             </AlertDescription>
                         </Alert>
@@ -392,7 +392,3 @@ export default function SignupPage() {
     </div>
   )
 }
-
-    
-
-    
