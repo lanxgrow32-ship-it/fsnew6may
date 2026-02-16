@@ -26,6 +26,8 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const usdtToInrRate = formData.get('usdt_to_inr_rate') as string;
   const cryptoWalletAddress = formData.get('crypto_wallet_address') as string;
   const cryptoQrCodeFile = formData.get('crypto_qr_code') as File;
+  const is_upi_enabled = formData.get('is_upi_enabled') === 'on';
+  const is_crypto_enabled = formData.get('is_crypto_enabled') === 'on';
 
   const commission = parseFloat(commissionPercentage);
   if (isNaN(commission) || commission < 0 || commission > 100) {
@@ -43,6 +45,8 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
     referral_commission_percentage: commission,
     usdt_to_inr_rate: usdtRate,
     crypto_wallet_address: cryptoWalletAddress,
+    is_upi_enabled,
+    is_crypto_enabled,
   };
 
   try {

@@ -60,6 +60,9 @@ function SignupForm() {
       const { data, error } = await supabase.from('payment_details').select('*').eq('id', 1).single();
       if (data) {
         setPaymentDetails(data);
+        if (!data.is_upi_enabled && data.is_crypto_enabled) {
+          setPaymentMethod('crypto');
+        }
       }
     }
     fetchPaymentDetails();
@@ -182,13 +185,13 @@ function SignupForm() {
                  <CardHeader>
                     <CardTitle>Choose Payment Method</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-2">
                      <div className="grid grid-cols-2 gap-4">
-                        <Button type="button" variant={paymentMethod === 'upi' ? 'default' : 'outline'} onClick={() => setPaymentMethod('upi')} className="h-16 flex-col gap-1">
+                        <Button type="button" variant={paymentMethod === 'upi' ? 'default' : 'outline'} onClick={() => setPaymentMethod('upi')} disabled={!paymentDetails?.is_upi_enabled} className="h-16 flex-col gap-1">
                             <IndianRupee />
                             <span>UPI / Cards</span>
                         </Button>
-                        <Button type="button" variant={paymentMethod === 'crypto' ? 'default' : 'outline'} onClick={() => setPaymentMethod('crypto')} className="h-16 flex-col gap-1">
+                        <Button type="button" variant={paymentMethod === 'crypto' ? 'default' : 'outline'} onClick={() => setPaymentMethod('crypto')} disabled={!paymentDetails?.is_crypto_enabled} className="h-16 flex-col gap-1">
                              <div className="relative w-full flex justify-center items-center">
                                 <Wallet />
                                 <Badge variant="destructive" className="absolute -top-3 -right-2 text-xs">5% OFF</Badge>
@@ -196,11 +199,23 @@ function SignupForm() {
                             <span>Crypto (USDT)</span>
                         </Button>
                     </div>
+                     {paymentMethod === 'upi' && !paymentDetails?.is_upi_enabled && (
+                        <Alert variant="default" className="mt-2 text-center">
+                            <AlertDescription>
+                                UPI payments are currently unavailable. To pay via UPI, please 
+                                <Button asChild variant="link" className="p-1 h-auto">
+                                    <a href="https://wa.me/9184213004817" target="_blank" rel="noopener noreferrer">
+                                        contact us on WhatsApp
+                                    </a>
+                                </Button>
+                                .
+                            </AlertDescription>
+                        </Alert>
+                    )}
                 </CardContent>
             </Card>
 
-
-            {!isTrialPlan && paymentMethod === 'upi' && (
+            {!isTrialPlan && (
                 <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
@@ -223,6 +238,7 @@ function SignupForm() {
                     </CardContent>
                 </Card>
             )}
+
 
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>

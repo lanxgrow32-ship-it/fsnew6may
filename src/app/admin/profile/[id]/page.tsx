@@ -328,6 +328,16 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                             </div>
                                         )}
                                     </div>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="admin_aadhaar_photo">Upload/Replace Aadhaar Photo</Label>
+                                            <Input id="admin_aadhaar_photo" name="admin_aadhaar_photo" type="file" accept="image/*" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="admin_selfie_with_aadhaar">Upload/Replace Selfie with Aadhaar</Label>
+                                            <Input id="admin_selfie_with_aadhaar" name="admin_selfie_with_aadhaar" type="file" accept="image/*" />
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
 

@@ -18,6 +18,7 @@ import { FundedStockLogo } from '@/components/ui/logo';
 import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Switch } from '@/components/ui/switch';
 
 type PaymentDetails = {
     id: number;
@@ -27,6 +28,8 @@ type PaymentDetails = {
     usdt_to_inr_rate: number;
     crypto_wallet_address: string;
     crypto_qr_code_url: string;
+    is_upi_enabled: boolean;
+    is_crypto_enabled: boolean;
 };
 
 function SubmitButton() {
@@ -127,6 +130,38 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                         </div>
                     </CardContent>
                 </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Payment Method Availability</CardTitle>
+                        <CardDescription>Toggle which payment methods are available to users during signup.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="is_upi_enabled" className="text-base">UPI / Cards</Label>
+                                <p className="text-sm text-muted-foreground">Enable or disable the standard payment gateway.</p>
+                            </div>
+                            <Switch
+                                id="is_upi_enabled"
+                                name="is_upi_enabled"
+                                defaultChecked={currentSettings?.is_upi_enabled ?? true}
+                            />
+                        </div>
+                         <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="is_crypto_enabled" className="text-base">Crypto (USDT)</Label>
+                                <p className="text-sm text-muted-foreground">Enable or disable manual crypto payments.</p>
+                            </div>
+                            <Switch
+                                id="is_crypto_enabled"
+                                name="is_crypto_enabled"
+                                defaultChecked={currentSettings?.is_crypto_enabled ?? true}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
                  <Card>
                     <CardHeader>
                         <CardTitle>Referral Program Settings</CardTitle>

@@ -21,6 +21,23 @@ async function uploadBreachProof(file: File, userId: string) {
   return urlData.publicUrl;
 }
 
+async function uploadKycDocument(file: File, userId: string, type: 'aadhaar' | 'selfie-with-aadhaar') {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${userId}-${type}-${Date.now()}.${fileExt}`;
+  const { data, error } = await supabaseAdmin.storage.from('kyc-documents').upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: true,
+  });
+
+  if (error) {
+    console.error(`Error uploading ${type} image:`, error);
+    throw new Error(`Failed to upload ${type} image.`);
+  }
+
+  const { data: urlData } = supabaseAdmin.storage.from('kyc-documents').getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
+
 // Helper function to parse plan name into account balance
 function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
@@ -65,6 +82,8 @@ export async function updateProfile(formData: FormData) {
   const is_breached = formData.get('is_breached') === 'on';
   const breach_reason = formData.get('breach_reason') as string;
   const breach_image = formData.get('breach_image') as File;
+  const admin_aadhaar_photo = formData.get('admin_aadhaar_photo') as File;
+  const admin_selfie_with_aadhaar = formData.get('admin_selfie_with_aadhaar') as File;
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
@@ -94,6 +113,12 @@ export async function updateProfile(formData: FormData) {
   try {
       if (breach_image && breach_image.size > 0) {
         updateData.breach_image_url = await uploadBreachProof(breach_image, id);
+      }
+      if (admin_aadhaar_photo && admin_aadhaar_photo.size > 0) {
+        updateData.selfie_url = await uploadKycDocument(admin_aadhaar_photo, id, 'aadhaar');
+      }
+      if (admin_selfie_with_aadhaar && admin_selfie_with_aadhaar.size > 0) {
+          updateData.selfie_with_aadhaar_url = await uploadKycDocument(admin_selfie_with_aadhaar, id, 'selfie-with-aadhaar');
       }
   } catch (uploadError: any) {
       return { error: uploadError.message };
