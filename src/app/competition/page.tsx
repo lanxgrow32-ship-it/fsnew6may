@@ -99,6 +99,10 @@ function CompetitionSignupForm() {
                                 <Input id="email" name="email" type="email" required />
                             </div>
                             <div className="space-y-2">
+                                <Label htmlFor="mobile_number">Mobile Number</Label>
+                                <Input id="mobile_number" name="mobile_number" type="tel" required />
+                            </div>
+                            <div className="space-y-2">
                                 <Label htmlFor="password">Password</Label>
                                 <Input id="password" name="password" type="password" required />
                             </div>
