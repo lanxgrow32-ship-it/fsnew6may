@@ -8,9 +8,8 @@ export async function preRegisterForCompetition(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const planType = formData.get('plan_type') as 'weekly' | 'monthly';
-  const mobileNumber = formData.get('mobile_number') as string;
 
-  if (!name || !email || !password || !planType || !mobileNumber) {
+  if (!name || !email || !password || !planType) {
     return { error: 'All fields are required.' };
   }
   if (password.length < 6) {
@@ -29,7 +28,6 @@ export async function preRegisterForCompetition(formData: FormData) {
         email,
         password_hash: password, 
         plan_type: planType,
-        mobile_number: mobileNumber,
       });
 
     if (insertError) {

@@ -1,32 +1,77 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Eye, EyeOff, Check, History, Copy } from 'lucide-react';
+import { Loader2, ExternalLink, Eye, EyeOff, Check, History, Copy, KeyRound } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { generateCompetitionCredentials } from './actions';
 
 type CompetitionEntry = {
     id: number;
     week_identifier: string;
-    stockmint_username: string;
-    stockmint_password: string;
+    stockmint_username: string | null;
+    stockmint_password: string | null;
     account_balance: number;
     created_at: string;
 };
+
+function GetCredentialsForm({ entry }: { entry: CompetitionEntry }) {
+    const ref = useRef<HTMLFormElement>(null);
+    const { toast } = useToast();
+    const [state, formAction] = useActionState(generateCompetitionCredentials, { error: null, success: false });
+
+    useEffect(() => {
+        if (state.error) {
+            toast({ title: "Error", description: state.error, variant: "destructive" });
+        }
+        if (state.success) {
+            toast({ title: "Success!", description: "Your credentials have been generated." });
+            // The page will re-render via revalidatePath, no need to do anything else here.
+        }
+    }, [state, toast]);
+
+    function SubmitButton() {
+        const { pending } = useFormStatus();
+        return (
+            <Button type="submit" className="w-full" size="lg" disabled={pending}>
+                {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                Get My Trading Credentials
+            </Button>
+        );
+    }
+
+    return (
+        <Card className="w-full shadow-sm">
+            <form action={formAction} ref={ref}>
+                <input type="hidden" name="entry_id" value={entry.id} />
+                <CardHeader>
+                    <CardTitle>Get Your Trading Account</CardTitle>
+                    <CardDescription>Enter your mobile number to generate your credentials for this week's competition.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     {state.error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{state.error}</AlertDescription></Alert>}
+                    <div className="space-y-2">
+                        <Label htmlFor="mobile_number">Mobile Number</Label>
+                        <Input id="mobile_number" name="mobile_number" type="tel" placeholder="Enter your 10-digit mobile number" required />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <SubmitButton />
+                </CardFooter>
+            </form>
+        </Card>
+    )
+}
 
 export function CompetitionView() {
     const supabase = createClient();
@@ -48,6 +93,15 @@ export function CompetitionView() {
             setIsLoading(false);
         };
         fetchEntries();
+        
+        const channel = supabase.channel('realtime competition entries')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'competition_entries' },
+                () => { fetchEntries(); }
+            )
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel) };
+
     }, [supabase]);
 
     const togglePasswordVisibility = (id: number) => {
@@ -95,7 +149,12 @@ export function CompetitionView() {
         )
     }
     
-    const activeEntry = entries[0]; // The most recent entry is the active one
+    const activeEntry = entries[0]; // The most recent entry
+
+    // If the active entry doesn't have credentials yet, show the form
+    if (!activeEntry.stockmint_username || !activeEntry.stockmint_password) {
+        return <GetCredentialsForm entry={activeEntry} />;
+    }
 
     return (
         <div className="space-y-8">
@@ -121,7 +180,7 @@ export function CompetitionView() {
                                 <Label>Trading Username</Label>
                                 <div className="flex items-center gap-2">
                                     <p className="text-base font-semibold tracking-wider truncate">{activeEntry.stockmint_username}</p>
-                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(activeEntry.stockmint_username)}>
+                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(activeEntry.stockmint_username!)}>
                                         <Copy className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -136,7 +195,7 @@ export function CompetitionView() {
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePasswordVisibility(activeEntry.id)}>
                                             {visiblePasswords[activeEntry.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(activeEntry.stockmint_password)}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(activeEntry.stockmint_password!)}>
                                             <Copy className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -171,8 +230,8 @@ export function CompetitionView() {
                             {entries.map((entry) => (
                                 <TableRow key={entry.id}>
                                     <TableCell className="font-medium">{entry.week_identifier}</TableCell>
-                                    <TableCell>{entry.stockmint_username}</TableCell>
-                                    <TableCell>••••••••••</TableCell>
+                                    <TableCell>{entry.stockmint_username || 'N/A'}</TableCell>
+                                    <TableCell>{entry.stockmint_password ? '••••••••••' : 'N/A'}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
