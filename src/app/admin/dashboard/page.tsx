@@ -4,7 +4,7 @@ import AdminDashboardClient from './dashboard-client';
 
 export default async function AdminDashboardPage() {
   const supabase = createClient();
-  const { data: profiles, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+  const { data: profiles, error } = await supabase.from('profiles').select('*').eq('account_type', 'standard').order('created_at', { ascending: false });
 
   if (error) {
     console.error("Error fetching profiles:", error);

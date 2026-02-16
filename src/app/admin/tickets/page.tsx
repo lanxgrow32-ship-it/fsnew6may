@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'; // Use admin client
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Swords } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -103,6 +103,12 @@ export default async function AdminTicketsPage() {
                             <SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard">
                                 <Home />
                                 Dashboard
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                         <SidebarMenuItem>
+                            <SidebarMenuButton href="/admin/competition" tooltip="Competition">
+                                <Swords />
+                                Competition
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>

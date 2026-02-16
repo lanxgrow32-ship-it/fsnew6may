@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CredentialsView } from './credentials-view';
 import Image from 'next/image';
 import { ReceiptButton } from './receipt-button';
+import { CompetitionView } from './competition-view';
 
 
 function OnboardingGuide({ profile }: { profile: any }) {
@@ -116,7 +117,7 @@ function KycRejected() {
 }
 
 function AccountStatusBanner({ profile }: { profile: any }) {
-    if (profile.credentials_provided) {
+    if (profile.credentials_provided || profile.account_type === 'competition') {
         return (
           <div className="p-6 rounded-lg bg-primary text-primary-foreground mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -129,7 +130,7 @@ function AccountStatusBanner({ profile }: { profile: any }) {
                         <p className="opacity-90">Your account is fully active. Here are your trading credentials.</p>
                     </div>
                 </div>
-                <ReceiptButton profile={profile} />
+                 {profile.account_type === 'standard' && <ReceiptButton profile={profile} />}
             </div>
           </div>
         );
@@ -214,7 +215,7 @@ export default async function WelcomePage() {
     return <div className="flex h-screen items-center justify-center">Could not load your profile. Please contact support.</div>;
   }
   
-  if (!profile.is_approved) {
+  if (profile.account_type === 'standard' && !profile.is_approved) {
     return (
         <main className="flex min-h-screen items-center justify-center p-4 bg-muted/40">
             <Card className="w-full max-w-lg text-center">
@@ -279,7 +280,7 @@ export default async function WelcomePage() {
     )
   }
   
-  const renderContent = () => {
+  const renderStandardContent = () => {
     switch (profile.kyc_status) {
       case 'verified':
         return <CredentialsView profile={profile} />;
@@ -384,10 +385,10 @@ export default async function WelcomePage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
-                  {renderContent()}
+                  {profile.account_type === 'competition' ? <CompetitionView /> : renderStandardContent()}
                 </div>
                 <div className="lg:col-span-1">
-                    <OnboardingGuide profile={profile} />
+                    {profile.account_type === 'standard' && <OnboardingGuide profile={profile} />}
                 </div>
             </div>
           </div>
