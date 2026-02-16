@@ -8,8 +8,9 @@ export async function preRegisterForCompetition(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const planType = formData.get('plan_type') as 'weekly' | 'monthly';
+  const mobileNumber = formData.get('mobile_number') as string;
 
-  if (!name || !email || !password || !planType) {
+  if (!name || !email || !password || !planType || !mobileNumber) {
     return { error: 'All fields are required.' };
   }
   if (password.length < 6) {
@@ -17,8 +18,7 @@ export async function preRegisterForCompetition(formData: FormData) {
   }
 
   try {
-    // DO NOT HASH THE PASSWORD. Store it temporarily as plain text.
-    // The webhook will use it to create the user, and Supabase will hash it correctly.
+    // Store plain text password temporarily. The webhook will use it, and Supabase will hash it correctly.
     const sessionId = randomUUID();
 
     const { error: insertError } = await supabaseAdmin
@@ -27,13 +27,13 @@ export async function preRegisterForCompetition(formData: FormData) {
         id: sessionId,
         name,
         email,
-        password_hash: password, // Storing plain password in a column named password_hash
+        password_hash: password, 
         plan_type: planType,
+        mobile_number: mobileNumber,
       });
 
     if (insertError) {
       console.error('Error creating payment session:', insertError);
-      // Check for unique constraint violation on email if you add one
       return { error: `Could not initiate registration: ${insertError.message}` };
     }
 
