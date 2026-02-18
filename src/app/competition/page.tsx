@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -10,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { preRegisterForCompetition } from './actions';
+import { createCompetitionUserAndSession } from './actions';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -26,13 +25,13 @@ function CompetitionSignupForm() {
         setIsLoading(true);
         setError(null);
         const formData = new FormData(e.currentTarget);
-        const result = await preRegisterForCompetition(formData);
+        const result = await createCompetitionUserAndSession(formData);
 
         if (result.error) {
             setError(result.error);
             setIsLoading(false);
         } else if (result.redirectUrl) {
-            // Redirect to the payment gateway
+            // User created, now redirect to payment
             window.location.href = result.redirectUrl;
         } else {
             setError('Could not get payment URL. Please try again.');

@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
@@ -117,7 +116,7 @@ function KycRejected() {
 }
 
 function AccountStatusBanner({ profile }: { profile: any }) {
-    if (profile.credentials_provided || profile.account_type === 'competition') {
+    if (profile.credentials_provided || (profile.account_type === 'competition' && profile.has_credentials)) {
         return (
           <div className="p-6 rounded-lg bg-primary text-primary-foreground mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -143,9 +142,9 @@ function AccountStatusBanner({ profile }: { profile: any }) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold">Welcome, {profile.full_name || 'User'}!</h2>
-                    <p className="text-muted-foreground">Your account has been approved. Please complete the final steps to start trading.</p>
+                    <p className="text-muted-foreground">Your account has been created. Please complete the final steps to start trading.</p>
                 </div>
-                <ReceiptButton profile={profile} />
+                {profile.account_type === 'standard' && <ReceiptButton profile={profile} />}
             </div>
         </div>
     );
@@ -284,7 +283,7 @@ const StandardDashboard = ({ profile }: { profile: any }) => (
             </header>
             <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
                 <div className="max-w-6xl mx-auto space-y-8">
-                    <AccountStatusBanner profile={profile} />
+                    <AccountStatusBanner profile={{...profile, has_credentials: profile.credentials_provided}} />
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-8">
                             {(() => {
@@ -311,7 +310,7 @@ const StandardDashboard = ({ profile }: { profile: any }) => (
     </SidebarProvider>
 );
 
-const CompetitionDashboard = ({ profile, entries }: { profile: any, entries: any[] }) => (
+const CompetitionDashboard = ({ profile, entries, session }: { profile: any, entries: any[], session: any }) => (
     <SidebarProvider>
         <Sidebar>
             <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
@@ -367,8 +366,8 @@ const CompetitionDashboard = ({ profile, entries }: { profile: any, entries: any
             </header>
             <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
                 <div className="max-w-6xl mx-auto space-y-8">
-                     <AccountStatusBanner profile={profile} />
-                     <CompetitionView initialEntries={entries} />
+                     <AccountStatusBanner profile={{...profile, has_credentials: entries.length > 0 && entries[0].stockmint_username}} />
+                     <CompetitionView initialEntries={entries} paymentSession={session} />
                 </div>
             </main>
         </SidebarInset>
@@ -391,7 +390,6 @@ export default async function WelcomePage() {
     .single();
 
   if (!profile) {
-    // This should not happen if the trigger is set up correctly
     return <div className="flex h-screen items-center justify-center">Could not load your profile. Please contact support.</div>;
   }
   
@@ -466,8 +464,16 @@ export default async function WelcomePage() {
         .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
+      
+      const { data: paymentSession } = await supabase
+        .from('payment_sessions')
+        .select('status')
+        .eq('email', profile.email)
+        .order('created_at', {ascending: false})
+        .limit(1)
+        .single();
         
-      return <CompetitionDashboard profile={profile} entries={entries || []} />;
+      return <CompetitionDashboard profile={profile} entries={entries || []} session={paymentSession} />;
   }
 
   return <StandardDashboard profile={profile} />;

@@ -1,20 +1,6 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { format } from 'date-fns';
-
-// Helper function to parse plan name into account balance
-function getBalanceFromPlanType(planType: string): number {
-    switch (planType) {
-        case 'weekly':
-            return 100000; // 1L for weekly
-        case 'monthly':
-            return 500000; // 5L for monthly
-        default:
-            return 0;
-    }
-}
 
 export async function POST(req: NextRequest) {
     try {
@@ -23,91 +9,29 @@ export async function POST(req: NextRequest) {
         if (!session_id) {
             return NextResponse.json({ error: 'session_id is missing' }, { status: 400 });
         }
+        
+        console.log(`Webhook received for session_id: ${session_id}`);
 
-        // 1. Retrieve the session details from our temporary table
-        const { data: session, error: sessionError } = await supabaseAdmin
+        const { error: updateError } = await supabaseAdmin
             .from('payment_sessions')
-            .select('*')
-            .eq('id', session_id)
-            .single();
-
-        if (sessionError || !session) {
-            console.error(`Webhook Error: Payment session with ID ${session_id} not found.`);
-            return NextResponse.json({ error: 'Payment session not found' }, { status: 404 });
-        }
+            .update({ status: 'completed' })
+            .eq('id', session_id);
         
-        // Prevent reprocessing the same payment
-        if (session.status === 'completed') {
-             return NextResponse.json({ message: 'This payment session has already been processed.' });
+        if (updateError) {
+            console.error(`Webhook Error: Could not update payment session ${session_id} to completed.`, updateError);
+            // Don't return a 500. The user can trigger credential creation manually if this fails.
+            return NextResponse.json({ message: 'Failed to update session status, but webhook acknowledged.' });
         }
 
-        const { name, email, plain_password, plan_type, mobile_number } = session;
-
-        // 2. Find or create the user in profiles
-        let userId: string;
-
-        const { data: existingProfile, error: profileLookupError } = await supabaseAdmin
-            .from('profiles')
-            .select('id')
-            .eq('email', email)
-            .single();
+        console.log(`Payment session ${session_id} marked as completed.`);
         
-        if (existingProfile) {
-            userId = existingProfile.id;
-        } else {
-            // Create the user in Auth if they don't exist
-            const { data: authUser, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
-                email,
-                password: plain_password, // Use the correct plain_password field
-                email_confirm: true,
-                 user_metadata: {
-                    full_name: name,
-                    role: 'user',
-                },
-            });
-            
-            if (signUpError) {
-                console.error(`Webhook DB Error: Failed to create auth user for ${email}`, signUpError);
-                return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
-            }
-            userId = authUser.user.id;
-            
-            // The database trigger will create the profile, now we update it.
-            await supabaseAdmin.from('profiles').update({ 
-                account_type: 'competition',
-                mobile_number: mobile_number,
-             }).eq('id', userId);
-        }
-
-        // 3. Create the competition entry record (without credentials yet)
-        const weekIdentifier = format(new Date(), 'yyyy-WW');
-        const accountBalance = getBalanceFromPlanType(plan_type);
-        
-        const { error: entryInsertError } = await supabaseAdmin.from('competition_entries').insert({
-            user_id: userId,
-            week_identifier: weekIdentifier,
-            account_balance: accountBalance,
-            // Credentials will be added later by the user action
-            stockmint_username: null,
-            stockmint_password: null,
-        });
-
-        if (entryInsertError) {
-            console.error(`CRITICAL: Payment processed for ${email}, but failed to save initial entry to our DB.`, entryInsertError);
-            return NextResponse.json({ error: 'Failed to save competition entry.' }, { status: 500 });
-        }
-
-        // 4. Mark session as complete
-        await supabaseAdmin.from('payment_sessions').update({ status: 'completed' }).eq('id', session_id);
-        
-        revalidatePath('/admin/competition');
-        revalidatePath(`/admin/competition/${userId}`);
+        // Revalidate the welcome page. When the user logs in, they will now see the "Get Credentials" button.
         revalidatePath('/welcome');
 
-        return NextResponse.json({ message: 'Competition entry processed successfully.' });
+        return NextResponse.json({ message: 'Session status updated to completed.' });
 
     } catch (error: any) {
-        console.error('Error processing competition webhook:', error);
+        console.error('Error processing simplified competition webhook:', error);
         return NextResponse.json({ error: `Internal server error: ${error.message}` }, { status: 500 });
     }
 }

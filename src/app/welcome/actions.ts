@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { format } from 'date-fns';
 
 // Helper function to parse plan name into account balance
 function getBalanceFromPlanType(planType: string): number {
@@ -20,7 +21,7 @@ async function createStockMintAccount(fullName: string, email: string, initialBa
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
     if (!stockmintApiKey || initialBalance <= 0) {
         console.error('StockMint API key not set or initial balance is zero. Aborting account creation.');
-        return { success: false, error: 'StockMint API key not configured or zero balance.' };
+        return { success: false, error: 'Trading platform integration is not configured. Please contact support.' };
     }
 
     try {
@@ -40,24 +41,17 @@ async function createStockMintAccount(fullName: string, email: string, initialBa
         if (!response.ok) {
             const errorBody = await response.text();
             console.error(`Failed to create StockMint account. Status: ${response.status}. Body: ${errorBody}`);
-            return { success: false, error: `StockMint API Error: ${errorBody}` };
+            return { success: false, error: `Trading Platform API Error: ${errorBody}` };
         }
         return { success: true };
     } catch (apiError: any) {
         console.error('Failed to call StockMint user creation API:', apiError);
-        return { success: false, error: `StockMint API call failed: ${apiError.message}` };
+        return { success: false, error: `Trading Platform API call failed: ${apiError.message}` };
     }
 }
 
 
-export async function generateCompetitionCredentials(formData: FormData) {
-    const mobileNumber = formData.get('mobile_number') as string;
-    const entryId = Number(formData.get('entry_id'));
-    
-    if (!mobileNumber || !entryId) {
-        return { error: 'Mobile number and entry ID are required.' };
-    }
-
+export async function generateCompetitionCredentials() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -65,52 +59,71 @@ export async function generateCompetitionCredentials(formData: FormData) {
         return { error: 'You must be logged in.' };
     }
     
-    // 1. Update profile with mobile number
-    await supabaseAdmin.from('profiles').update({ mobile_number: mobileNumber }).eq('id', user.id);
-
-    // 2. Get the competition entry and user's email
-    const { data: entry, error: entryError } = await supabaseAdmin
-        .from('competition_entries')
-        .select(`*, profiles(email, full_name)`)
-        .eq('id', entryId)
-        .eq('user_id', user.id)
+    // 1. Find the user's completed payment session
+    const { data: session, error: sessionError } = await supabaseAdmin
+        .from('payment_sessions')
+        .select('*')
+        .eq('email', user.email)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
     
-    if (entryError || !entry || !entry.profiles) {
-        return { error: 'Could not find the specified competition entry.' };
+    if (sessionError || !session) {
+        return { error: 'No completed payment found for your account. Please complete your payment or contact support if you believe this is an error.' };
     }
-    
-    // 3. Count past entries to version the username
-    const { data: pastEntries, error: countError } = await supabaseAdmin
+
+    // 2. Check if an entry has already been created for this payment's week
+    const weekIdentifier = format(new Date(session.created_at), 'yyyy-WW');
+    const { data: existingEntry, error: checkError } = await supabaseAdmin
         .from('competition_entries')
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id);
-
-    if (countError) {
-         return { error: 'Failed to count past entries.' };
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('week_identifier', weekIdentifier)
+        .limit(1)
+        .single();
+        
+    if (existingEntry) {
+        // This case should be rare, but prevents creating duplicate accounts.
+        // We'll revalidate and let the UI show the existing credentials.
+        revalidatePath('/welcome');
+        return { success: true };
     }
-    const weekCount = (pastEntries?.length || 0);
 
-    const stockmintUsername = `${entry.profiles.email.split('@')[0]}-w${weekCount}@${entry.profiles.email.split('@')[1]}`;
-    const stockmintPassword = stockmintUsername; // Keep it simple
+    // 3. Get user's full name from their profile
+    const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('full_name').eq('id', user.id).single();
+    if (profileError || !profile) {
+        return { error: 'Could not find your user profile.'};
+    }
+    const fullName = profile.full_name;
 
-    // 4. Create the StockMint account
-    const stockmintResult = await createStockMintAccount(entry.profiles.full_name, stockmintUsername, entry.account_balance);
+    // 4. Count past entries to create a versioned username
+    const { count: weekCount } = await supabaseAdmin.from('competition_entries').select('id', { count: 'exact' }).eq('user_id', user.id);
+    const version = (weekCount || 0) + 1;
+    const stockmintUsername = `${user.email!.split('@')[0]}-w${version}@${user.email!.split('@')[1]}`;
+    const stockmintPassword = stockmintUsername; // Password is the same as the username
+    const accountBalance = getBalanceFromPlanType(session.plan_type);
+
+    // 5. Create the StockMint account via their API
+    const stockmintResult = await createStockMintAccount(fullName, stockmintUsername, accountBalance);
     if (!stockmintResult.success) {
         return { error: `Could not create your trading account: ${stockmintResult.error}` };
     }
 
-    // 5. Update our competition_entries table with the new credentials
-    const { error: updateError } = await supabaseAdmin
+    // 6. Create the competition_entries record in our DB with the new credentials
+    const { error: entryError } = await supabaseAdmin
         .from('competition_entries')
-        .update({
+        .insert({
+            user_id: user.id,
+            week_identifier: weekIdentifier,
             stockmint_username: stockmintUsername,
             stockmint_password: stockmintPassword,
-        })
-        .eq('id', entryId);
+            account_balance: accountBalance
+        });
 
-    if (updateError) {
-        return { error: 'Failed to save your new credentials. Please contact support.' };
+    if (entryError) {
+        console.error("CRITICAL: StockMint account created, but failed to save credentials to our DB.", entryError);
+        return { error: 'Your trading account was created, but we failed to save the credentials. Please contact support immediately.' };
     }
 
     revalidatePath('/welcome');
