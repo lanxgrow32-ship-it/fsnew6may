@@ -1,17 +1,14 @@
+
 'use client';
 
-import { useState, useEffect, useActionState, useRef } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useEffect, useActionState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Eye, EyeOff, Check, History, Copy, KeyRound } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { Loader2, ExternalLink, Eye, EyeOff, Check, History, Copy, KeyRound, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { generateCompetitionCredentials } from './actions';
 
@@ -41,16 +38,6 @@ function GetCredentialsFlow({ paymentSession }: { paymentSession: PaymentSession
         }
     }, [actionState, toast]);
 
-    function SubmitButton() {
-        const { pending } = useFormStatus();
-        return (
-            <Button type="submit" className="w-full" size="lg" disabled={pending}>
-                {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                Get My Trading Credentials
-            </Button>
-        );
-    }
-
     if (!paymentSession || paymentSession.status === 'initiated') {
         return (
             <Card className="w-full shadow-sm text-center">
@@ -77,11 +64,48 @@ function GetCredentialsFlow({ paymentSession }: { paymentSession: PaymentSession
                     {actionState.error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{actionState.error}</AlertDescription></Alert>}
                 </CardContent>
                 <CardFooter>
-                    <SubmitButton />
+                    <Button type="submit" className="w-full" size="lg" disabled={isPending}>
+                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                        Get My Trading Credentials
+                    </Button>
                 </CardFooter>
             </form>
         </Card>
     )
+}
+
+function RenewalFlow() {
+    const { toast } = useToast();
+    const [actionState, formAction, isPending] = useActionState(generateCompetitionCredentials, { error: null, success: false });
+
+     useEffect(() => {
+        if (actionState.error) {
+            toast({ title: "Renewal Failed", description: actionState.error, variant: "destructive" });
+        }
+        if (actionState.success) {
+            toast({ title: "Renewal Success!", description: "Your new credentials for this period are now active." });
+        }
+    }, [actionState, toast]);
+
+    return (
+        <Card>
+            <form action={formAction}>
+                <CardHeader>
+                    <CardTitle>Weekly Renewal</CardTitle>
+                    <CardDescription>If your weekly/monthly subscription has renewed, click here to generate your trading account for the new period.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {actionState.error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{actionState.error}</AlertDescription></Alert>}
+                </CardContent>
+                <CardFooter>
+                    <Button type="submit" className="w-full" disabled={isPending}>
+                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                        Generate New Credentials
+                    </Button>
+                </CardFooter>
+            </form>
+        </Card>
+    );
 }
 
 export function CompetitionView({ initialEntries, paymentSession }: { initialEntries: CompetitionEntry[], paymentSession: PaymentSession | null }) {
@@ -166,6 +190,8 @@ export function CompetitionView({ initialEntries, paymentSession }: { initialEnt
                 </CardContent>
             </Card>
 
+            <RenewalFlow />
+
              <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><History /> Competition History</CardTitle>
@@ -181,13 +207,18 @@ export function CompetitionView({ initialEntries, paymentSession }: { initialEnt
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {entries.map((entry) => (
+                            {entries.slice(1).map((entry) => (
                                 <TableRow key={entry.id}>
                                     <TableCell className="font-medium">{entry.week_identifier}</TableCell>
                                     <TableCell>{entry.stockmint_username || 'N/A'}</TableCell>
                                     <TableCell>{entry.stockmint_password ? '••••••••••' : 'N/A'}</TableCell>
                                 </TableRow>
                             ))}
+                             {entries.length <= 1 && (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="h-24 text-center">No previous entries found.</TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
