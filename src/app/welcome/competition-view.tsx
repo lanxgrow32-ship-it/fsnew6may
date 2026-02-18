@@ -76,14 +76,14 @@ function GetCredentialsFlow({ paymentSession }: { paymentSession: PaymentSession
 
 function RenewalFlow() {
     const { toast } = useToast();
-    const [actionState, formAction, isPending] = useActionState(generateCompetitionCredentials, { error: null, success: false });
+    const [actionState, formAction, isPending] = useActionState(generateCompetitionCredentials, { error: null, success: false, message: '' });
 
      useEffect(() => {
         if (actionState.error) {
             toast({ title: "Renewal Failed", description: actionState.error, variant: "destructive" });
         }
         if (actionState.success) {
-            toast({ title: "Renewal Success!", description: "Your new credentials for this period are now active." });
+            toast({ title: "Success!", description: actionState.message || "Your new credentials for this period are now active." });
         }
     }, [actionState, toast]);
 
@@ -91,8 +91,8 @@ function RenewalFlow() {
         <Card>
             <form action={formAction}>
                 <CardHeader>
-                    <CardTitle>Weekly Renewal</CardTitle>
-                    <CardDescription>If your weekly/monthly subscription has renewed, click here to generate your trading account for the new period.</CardDescription>
+                    <CardTitle>Subscription Renewal</CardTitle>
+                    <CardDescription>If your weekly or monthly subscription has renewed, click here to generate your trading account for the new period.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      {actionState.error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{actionState.error}</AlertDescription></Alert>}
@@ -144,7 +144,7 @@ export function CompetitionView({ initialEntries, paymentSession }: { initialEnt
                 <CardContent className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-4">
                         <div className="rounded-lg border bg-muted/40 p-4">
-                            <p className="text-sm font-medium text-muted-foreground">Current Week/Month</p>
+                            <p className="text-sm font-medium text-muted-foreground">Current Period</p>
                             <p className="text-lg font-semibold">{activeEntry.week_identifier}</p>
                         </div>
                          <div className="rounded-lg border bg-muted/40 p-4">

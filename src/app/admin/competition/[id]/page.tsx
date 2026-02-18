@@ -61,7 +61,7 @@ export default async function CompetitionUserDetailsPage({ params }: { params: {
                              <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Week ID</TableHead>
+                                        <TableHead>Period ID</TableHead>
                                         <TableHead>StockMint Username</TableHead>
                                         <TableHead>StockMint Password</TableHead>
                                         <TableHead>Balance</TableHead>

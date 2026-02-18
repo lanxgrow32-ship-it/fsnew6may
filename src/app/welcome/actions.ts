@@ -65,7 +65,7 @@ export async function generateCompetitionCredentials() {
             return { error: 'Your user account does not have an email associated with it. Please contact support.' };
         }
         
-        // 1. Find the user's completed payment session
+        // Find the user's LATEST completed payment session
         const { data: session, error: sessionError } = await supabaseAdmin
             .from('payment_sessions')
             .select('*')
@@ -79,22 +79,28 @@ export async function generateCompetitionCredentials() {
             return { error: 'No completed payment found for your account. Please complete your payment or contact support if you believe this is an error.' };
         }
 
-        // 2. Check if an entry has already been created for this payment's week
-        const weekIdentifier = format(new Date(session.created_at), 'yyyy-II');
+        // Determine the current period identifier based on the plan type
+        const now = new Date();
+        const periodIdentifier = session.plan_type === 'monthly'
+            ? format(now, 'yyyy-MM') // e.g., 2024-07
+            : format(now, 'yyyy-II'); // e.g., 2024-30
+
+
+        // Check if an entry has already been created for this payment's period
         const { data: existingEntry } = await supabaseAdmin
             .from('competition_entries')
             .select('id')
             .eq('user_id', user.id)
-            .eq('week_identifier', weekIdentifier)
+            .eq('week_identifier', periodIdentifier)
             .limit(1)
             .single();
             
         if (existingEntry) {
             revalidatePath('/welcome');
-            return { success: true };
+            return { success: true, message: "Credentials for the current period already exist." };
         }
 
-        // 3. Get user's full name from their profile
+        // Get user's full name from their profile
         const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('full_name').eq('id', user.id).single();
         if (profileError || !profile) {
             return { error: 'Could not find your user profile.'};
@@ -104,25 +110,25 @@ export async function generateCompetitionCredentials() {
         }
         const fullName = profile.full_name;
 
-        // 4. Count past entries to create a versioned username
-        const { count: weekCount } = await supabaseAdmin.from('competition_entries').select('id', { count: 'exact' }).eq('user_id', user.id);
-        const version = (weekCount || 0) + 1;
-        const stockmintUsername = `${user.email.split('@')[0]}-w${version}@${user.email.split('@')[1]}`;
+        // Count past entries to create a versioned username
+        const { count: entryCount } = await supabaseAdmin.from('competition_entries').select('id', { count: 'exact' }).eq('user_id', user.id);
+        const version = (entryCount || 0) + 1;
+        const stockmintUsername = `${user.email.split('@')[0]}-p${version}@${user.email.split('@')[1]}`;
         const stockmintPassword = stockmintUsername;
         const accountBalance = getBalanceFromPlanType(session.plan_type);
 
-        // 5. Create the StockMint account via their API
+        // Create the StockMint account via their API
         const stockmintResult = await createStockMintAccount(fullName, stockmintUsername, accountBalance);
         if (!stockmintResult.success) {
             return { error: `Could not create your trading account: ${stockmintResult.error}` };
         }
 
-        // 6. Create the competition_entries record in our DB with the new credentials
+        // Create the competition_entries record in our DB with the new credentials
         const { error: entryError } = await supabaseAdmin
             .from('competition_entries')
             .insert({
                 user_id: user.id,
-                week_identifier: weekIdentifier,
+                week_identifier: periodIdentifier,
                 stockmint_username: stockmintUsername,
                 stockmint_password: stockmintPassword,
                 account_balance: accountBalance
