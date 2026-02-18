@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -79,7 +80,7 @@ export async function generateCompetitionCredentials() {
         }
 
         // 2. Check if an entry has already been created for this payment's week
-        const weekIdentifier = format(new Date(session.created_at), 'yyyy-WW');
+        const weekIdentifier = format(new Date(session.created_at), 'yyyy-II');
         const { data: existingEntry } = await supabaseAdmin
             .from('competition_entries')
             .select('id')
