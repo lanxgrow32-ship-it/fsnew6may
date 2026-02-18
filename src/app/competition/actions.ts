@@ -27,6 +27,7 @@ export async function createCompetitionUserAndSession(formData: FormData) {
       data: {
         full_name: fullName,
         role: 'user', // Default role
+        // mobile_number is not part of auth user data
       },
     },
   });
@@ -64,7 +65,7 @@ export async function createCompetitionUserAndSession(formData: FormData) {
         id: sessionId,
         name: fullName,
         email,
-        plain_password: password, // Still needed for potential manual recovery, but not used in automated flow
+        plain_password: password,
         plan_type: planType,
         mobile_number: mobileNumber,
       });
