@@ -18,7 +18,7 @@ import { ClientOnly } from '@/components/ui/client-only';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const navItems = [
     { href: "https://www.fundedstock.io/funding", label: "Funded Plans" },
@@ -87,6 +87,7 @@ function CompetitionSignupForm() {
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="left" className="w-[300px] bg-background">
+                                <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
                                 <nav className="flex flex-col gap-6 pt-12">
                                     <Link href="https://www.fundedstock.io" className="mb-4" aria-label="FundedStock Home">
                                         <FundedStockLogo className="h-8 w-auto text-primary" />
