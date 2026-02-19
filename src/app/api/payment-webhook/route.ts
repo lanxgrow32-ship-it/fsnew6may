@@ -8,13 +8,15 @@ export async function POST(req: NextRequest) {
         // This webhook now expects a JSON payload from styfashion.in
         const body = await req.json();
         
-        console.log("Styfashion Webhook Received - Full Payload:", body);
+        console.log("Styfashion Webhook Received - Full Payload:", JSON.stringify(body, null, 2));
 
-        const { order_id, status, result } = body;
+        // Make the webhook more robust by accepting 'user_id' as well as 'order_id'
+        const order_id = body.order_id || body.user_id;
+        const { status, result } = body;
 
         if (!status || !order_id) {
-            console.error("Webhook missing status or order_id", { status, order_id });
-            return NextResponse.json({ error: 'Missing required webhook parameters: status and order_id' }, { status: 400 });
+            console.error("Webhook missing status or user/order_id", { status, order_id });
+            return NextResponse.json({ error: 'Missing required webhook parameters: status and a user/order ID' }, { status: 400 });
         }
 
         if (status.toUpperCase() === 'SUCCESS') {
