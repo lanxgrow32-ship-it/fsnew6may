@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, ArrowRight, Award } from 'lucide-react';
+import { Loader2, ArrowRight, Award, Menu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createCompetitionUserAndSession } from './actions';
 import Link from 'next/link';
@@ -15,6 +15,17 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ClientOnly } from '@/components/ui/client-only';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { FundedStockLogo } from '@/components/ui/logo';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+
+const navItems = [
+    { href: "https://www.fundedstock.io/funding", label: "Funded Plans" },
+    { href: "https://www.fundedstock.io/payouts", label: "Live Payouts" },
+    { href: "https://www.fundedstock.io/trading-terminal", label: "Trading Terminal" },
+    { href: "https://www.fundedstock.io/about", label: "About Us" },
+    { href: "https://www.fundedstock.io/contact", label: "Contact Us" },
+];
+
 
 function CompetitionSignupForm() {
     const router = useRouter();
@@ -45,13 +56,54 @@ function CompetitionSignupForm() {
             <div className="absolute inset-0 h-full w-full bg-transparent bg-[linear-gradient(to_right,hsl(var(--border)_/_0.4)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)_/_0.4)_1px,transparent_1px)] bg-auto" style={{ backgroundSize: '48px 48px' }}></div>
             <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_200px,hsl(var(--primary)/0.1),transparent)]"></div>
 
-            <header className="absolute top-0 left-0 right-0 p-4 z-10">
-                <Button asChild variant="ghost" className="hover:bg-accent/50">
-                    <Link href="/">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Home
+            <header className="absolute top-0 left-0 right-0 z-20">
+                <div className="container mx-auto flex items-center justify-between p-4 h-20">
+                    <Link href="https://www.fundedstock.io" aria-label="FundedStock Home">
+                        <FundedStockLogo className="h-8 w-auto text-primary" />
                     </Link>
-                </Button>
+
+                    <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-muted-foreground">
+                        {navItems.map(item => (
+                            <Link key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                                {item.label}
+                            </Link>
+                        ))}
+                    </nav>
+
+                    <div className="flex items-center gap-4">
+                         <Button asChild className="hidden lg:flex rounded-full">
+                            <Link href="/login">
+                                Login <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon" className="lg:hidden">
+                                    <Menu className="h-6 w-6" />
+                                    <span className="sr-only">Open menu</span>
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="w-[300px] bg-background">
+                                <nav className="flex flex-col gap-6 pt-12">
+                                    <Link href="https://www.fundedstock.io" className="mb-4" aria-label="FundedStock Home">
+                                        <FundedStockLogo className="h-8 w-auto text-primary" />
+                                    </Link>
+                                    {navItems.map(item => (
+                                        <Link key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className="text-lg font-medium hover:text-primary transition-colors">
+                                            {item.label}
+                                        </Link>
+                                    ))}
+                                    <div className="border-t border-border pt-6 mt-6">
+                                        <Button asChild className="w-full">
+                                            <Link href="/login">Login</Link>
+                                        </Button>
+                                    </div>
+                                </nav>
+                            </SheetContent>
+                        </Sheet>
+                    </div>
+                </div>
             </header>
             
             <div className="relative">
