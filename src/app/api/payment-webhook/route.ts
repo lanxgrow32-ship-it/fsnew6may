@@ -3,77 +3,84 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
+// --- This is the new, more robust webhook logic ---
+
 export async function POST(req: NextRequest) {
     try {
-        // This webhook now expects a JSON payload from styfashion.in
         const body = await req.json();
         
         console.log("Styfashion Webhook Received - Full Payload:", JSON.stringify(body, null, 2));
 
-        // Make the webhook more robust by accepting 'user_id' as well as 'order_id'
-        const order_id = body.order_id || body.user_id;
-        const { status, result } = body;
+        let userId: string | null = null;
+        let transactionId: string | null = null;
+        let isSuccess = false;
 
-        if (!status || !order_id) {
-            console.error("Webhook missing status or user/order_id", { status, order_id });
-            return NextResponse.json({ error: 'Missing required webhook parameters: status and a user/order ID' }, { status: 400 });
+        // --- Scenario 1: It's the custom payload we designed ---
+        if (body.status?.toUpperCase() === 'SUCCESS') {
+            console.log("Processing as custom 'SUCCESS' payload.");
+            isSuccess = true;
+            userId = body.order_id || body.user_id;
+            transactionId = body.result?.utr || null;
+        }
+        // --- Scenario 2: It's a raw Razorpay 'payment.captured' webhook ---
+        else if (body.event === 'payment.captured') {
+            console.log("Processing as raw Razorpay 'payment.captured' payload.");
+            isSuccess = true;
+            userId = body.payload?.payment?.entity?.notes?.user_id || null;
+            transactionId = body.payload?.payment?.entity?.id || null;
         }
 
-        if (status.toUpperCase() === 'SUCCESS') {
-            console.log(`Processing successful payment for order_id: ${order_id}`);
-
-            const utr = result?.utr || null;
-            
-            // The order_id from our new flow is the user's ID.
-            const { data: profile, error: fetchError } = await supabaseAdmin
-                .from('profiles')
-                .select('id, is_approved')
-                .eq('id', order_id)
-                .single();
-
-            if (fetchError || !profile) {
-                console.error(`Webhook Error: User with order_id (user_id) ${order_id} not found.`, fetchError);
-                return NextResponse.json({ error: 'User for this order not found' }, { status: 404 });
-            }
-
-            if (profile.is_approved) {
-                console.log(`User ${order_id} is already approved. No action taken.`);
-                return NextResponse.json({ message: 'User already approved' });
-            }
-            
-            const updatePayload: { is_approved: boolean, transaction_id?: string } = { is_approved: true };
-            if (utr) {
-                updatePayload.transaction_id = utr;
-            } else {
-                // Fallback to a generic ID if utr is not available
-                updatePayload.transaction_id = `RAZORPAY_${order_id.substring(0, 8)}`;
-            }
-
-            const { error: updateError } = await supabaseAdmin
-                .from('profiles')
-                .update(updatePayload)
-                .eq('id', order_id);
-
-            if (updateError) {
-                console.error(`Webhook DB Error: Failed to update profile for user ${order_id}`, updateError);
-                return NextResponse.json({ error: 'Failed to update user profile in database' }, { status: 500 });
-            }
-            
-            // Revalidate paths to ensure UI updates across the app for the user and admin
-            revalidatePath('/welcome', 'page');
-            revalidatePath('/admin/dashboard', 'page');
-            revalidatePath(`/admin/profile/${order_id}`, 'page');
-
-            console.log(`User ${order_id} has been successfully approved.`);
-            return NextResponse.json({ message: 'User approved successfully' });
-
-        } else {
-            console.log(`Received non-success webhook for order ${order_id}: ${status}. No action taken.`);
+        if (!isSuccess) {
+            console.log("Webhook received, but it was not a success signal. No action taken.", { event: body.event, status: body.status });
             return NextResponse.json({ message: 'Webhook received for non-success status. No action taken.' });
         }
+        
+        if (!userId) {
+            console.error("Webhook processing failed: Could not find user_id in any expected location of the payload.");
+            return NextResponse.json({ error: 'User ID was not found in the webhook payload.' }, { status: 400 });
+        }
+
+        console.log(`Processing successful payment for User ID: ${userId}`);
+
+        const { data: profile, error: fetchError } = await supabaseAdmin
+            .from('profiles')
+            .select('id, is_approved')
+            .eq('id', userId)
+            .single();
+
+        if (fetchError || !profile) {
+            console.error(`Webhook DB Error: User with ID ${userId} not found.`, fetchError);
+            return NextResponse.json({ error: 'User for this order not found' }, { status: 404 });
+        }
+
+        if (profile.is_approved) {
+            console.log(`User ${userId} is already approved. No action taken.`);
+            return NextResponse.json({ message: 'User already approved' });
+        }
+        
+        const { error: updateError } = await supabaseAdmin
+            .from('profiles')
+            .update({ 
+                is_approved: true,
+                transaction_id: transactionId 
+            })
+            .eq('id', userId);
+
+        if (updateError) {
+            console.error(`Webhook DB Error: Failed to update profile for user ${userId}`, updateError);
+            return NextResponse.json({ error: 'Failed to update user profile in database' }, { status: 500 });
+        }
+        
+        // Revalidate paths to ensure UI updates across the app for the user and admin
+        revalidatePath('/welcome', 'page');
+        revalidatePath('/admin/dashboard', 'page');
+        revalidatePath(`/admin/profile/${userId}`, 'page');
+
+        console.log(`User ${userId} has been successfully approved.`);
+        return NextResponse.json({ message: 'User approved successfully' });
 
     } catch (error: any) {
-        console.error('Error processing styfashion payment webhook:', error);
+        console.error('CRITICAL: Error processing payment webhook:', error);
         return NextResponse.json({ error: `Internal server error: ${error.message}` }, { status: 500 });
     }
 }
