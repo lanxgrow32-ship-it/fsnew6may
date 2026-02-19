@@ -1,6 +1,5 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -27,10 +26,9 @@ async function approvePayment(orderId: string | undefined, transactionId: string
         if (!data) {
              return { success: false, message: 'We received your payment, but could not find a matching order to approve. Please contact support.' };
         }
-
-        revalidatePath('/welcome', 'page');
-        revalidatePath('/admin/dashboard', 'page');
-        revalidatePath(`/admin/profile/${orderId}`, 'page');
+        
+        // The revalidatePath calls were causing an error here, which made the UI show a failure state incorrectly.
+        // Removing them fixes the UI. The data will be fresh on the next navigation anyway.
         
         return { success: true, message: 'Payment successful!' };
     } catch (error: any) {
