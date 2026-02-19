@@ -5,8 +5,20 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { GatewaySwitcher } from './gateway-switcher';
 import { Shield } from 'lucide-react';
+import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+};
 
 export default async function SecretGatewayControlPage() {
     const supabase = createClient();
@@ -31,21 +43,10 @@ export default async function SecretGatewayControlPage() {
     }
     
     return (
-        <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-            <Card className="w-full max-w-2xl">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Shield className="w-6 h-6 text-destructive" />
-                        Secret Gateway Control
-                    </CardTitle>
-                    <CardDescription>
-                        This is a hidden control panel for the platform owner. Use this to switch the active payment gateway for new user signups.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <GatewaySwitcher currentSettings={settings} />
-                </CardContent>
-            </Card>
+        <main className="flex min-h-screen items-center justify-center bg-background text-foreground p-4">
+            <div className="w-full max-w-xs">
+               <GatewaySwitcher currentSettings={settings} />
+            </div>
         </main>
     )
 }

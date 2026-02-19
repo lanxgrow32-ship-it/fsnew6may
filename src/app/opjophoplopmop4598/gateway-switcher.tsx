@@ -29,39 +29,44 @@ export function GatewaySwitcher({ currentSettings }: { currentSettings: Settings
                 toast({ title: "Error", description: result.error, variant: 'destructive' });
             }
             if (result.success) {
-                toast({ title: "Success!", description: result.success });
+                toast({ title: "Gateway updated" });
             }
         });
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <RadioGroup 
-                name="active_payment_url"
                 value={selectedGateway}
                 onValueChange={(value: 'primary' | 'secondary') => setSelectedGateway(value)}
-                className="space-y-4"
+                className="flex justify-center items-center gap-2 rounded-lg bg-muted p-1.5"
             >
-                <Label htmlFor="active_primary" className={cn("flex flex-col md:flex-row items-start md:items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5")}>
-                    <div className="mb-4 md:mb-0">
-                        <p className="font-bold text-lg">Primary Gateway</p>
-                        <p className="text-muted-foreground text-sm">Main payment gateway for all standard users.</p>
-                        <p className="text-muted-foreground text-xs font-mono mt-2 truncate max-w-xs md:max-w-md">{currentSettings.primary_payment_url || 'Not Set'}</p>
-                    </div>
-                    <RadioGroupItem value="primary" id="active_primary" />
+                <RadioGroupItem value="secondary" id="gateway_s" className="sr-only" />
+                <Label 
+                    htmlFor="gateway_s" 
+                    className={cn(
+                        "flex-1 cursor-pointer rounded-md p-2 text-center text-xl font-bold transition-all",
+                        selectedGateway === 'secondary' ? 'bg-card shadow text-foreground' : 'text-muted-foreground'
+                    )}
+                >
+                    S
                 </Label>
-                <Label htmlFor="active_secondary" className={cn("flex flex-col md:flex-row items-start md:items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-destructive has-[[data-state=checked]]:bg-destructive/5 has-[[data-state=checked]]:text-destructive-foreground")}>
-                     <div className="mb-4 md:mb-0">
-                        <p className="font-bold text-lg text-destructive">Secondary (Hidden) Gateway</p>
-                        <p className="text-muted-foreground">When active, new users will be hidden from the admin panel.</p>
-                        <p className="text-muted-foreground text-xs font-mono mt-2 truncate max-w-xs md:max-w-md">{currentSettings.secondary_payment_url || 'Not Set'}</p>
-                    </div>
-                    <RadioGroupItem value="secondary" id="active_secondary" />
+
+                <RadioGroupItem value="primary" id="gateway_p" className="sr-only" />
+                 <Label 
+                    htmlFor="gateway_p" 
+                    className={cn(
+                        "flex-1 cursor-pointer rounded-md p-2 text-center text-xl font-bold transition-all",
+                        selectedGateway === 'primary' ? 'bg-card shadow text-foreground' : 'text-muted-foreground'
+                    )}
+                >
+                    P
                 </Label>
+
             </RadioGroup>
             <Button onClick={handleSubmit} className="w-full" size="lg" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save and Activate
+                Save
             </Button>
         </div>
     );
