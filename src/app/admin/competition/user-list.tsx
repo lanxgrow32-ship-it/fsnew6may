@@ -20,7 +20,7 @@ type Profile = {
 
 export function CompetitionUserList({ initialProfiles }: { initialProfiles: Profile[] }) {
     const supabase = createClient();
-    const [profiles, setProfiles] = useState(initialProfiles.filter(p => !p.is_hidden));
+    const [profiles, setProfiles] = useState(initialProfiles);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -34,7 +34,6 @@ export function CompetitionUserList({ initialProfiles }: { initialProfiles: Prof
                           .from('profiles')
                           .select('*')
                           .eq('account_type', 'competition')
-                          .or('is_hidden.is.false,is_hidden.is.null')
                           .order('created_at', { ascending: false });
 
                         if (error) {
