@@ -32,9 +32,6 @@ type PaymentDetails = {
     crypto_qr_code_url: string;
     is_upi_enabled: boolean;
     is_crypto_enabled: boolean;
-    primary_payment_url: string | null;
-    secondary_payment_url: string | null;
-    active_payment_url: 'primary' | 'secondary' | null;
 };
 
 function SubmitButton() {

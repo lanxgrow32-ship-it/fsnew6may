@@ -29,11 +29,6 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const is_upi_enabled = formData.get('is_upi_enabled') === 'on';
   const is_crypto_enabled = formData.get('is_crypto_enabled') === 'on';
 
-  const primary_payment_url = formData.get('primary_payment_url') as string;
-  const secondary_payment_url = formData.get('secondary_payment_url') as string;
-  const active_payment_url = formData.get('active_payment_url') as string;
-
-
   const commission = parseFloat(commissionPercentage);
   if (isNaN(commission) || commission < 0 || commission > 100) {
     return { error: 'Commission percentage must be a number between 0 and 100.' };
@@ -52,9 +47,6 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
     crypto_wallet_address: cryptoWalletAddress,
     is_upi_enabled,
     is_crypto_enabled,
-    primary_payment_url,
-    secondary_payment_url,
-    active_payment_url,
   };
 
   try {
