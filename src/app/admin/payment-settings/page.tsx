@@ -182,7 +182,7 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
-                                <Label htmlFor="is_upi_enabled" className="text-base">Standard Gateway / Manual UPI</Label>
+                                <Label htmlFor="is_upi_enabled" className="text-base">Standard Gateway (INR)</Label>
                                 <p className="text-sm text-muted-foreground">Enable or disable all INR payment methods.</p>
                             </div>
                             <Switch
