@@ -15,11 +15,12 @@ type Profile = {
     full_name: string;
     email: string;
     created_at: string;
+    is_hidden: boolean | null;
 };
 
 export function CompetitionUserList({ initialProfiles }: { initialProfiles: Profile[] }) {
     const supabase = createClient();
-    const [profiles, setProfiles] = useState(initialProfiles);
+    const [profiles, setProfiles] = useState(initialProfiles.filter(p => !p.is_hidden));
     const { toast } = useToast();
 
     useEffect(() => {
@@ -29,7 +30,13 @@ export function CompetitionUserList({ initialProfiles }: { initialProfiles: Prof
                 (payload) => {
                     // This is a simple implementation. A more robust one would merge changes.
                     const fetchProfiles = async () => {
-                        const { data, error } = await supabase.from('profiles').select('*').eq('account_type', 'competition').order('created_at', { ascending: false });
+                        const { data, error } = await supabase
+                          .from('profiles')
+                          .select('*')
+                          .eq('account_type', 'competition')
+                          .or('is_hidden.is.false,is_hidden.is.null')
+                          .order('created_at', { ascending: false });
+
                         if (error) {
                             toast({ title: 'Error fetching updated profiles', variant: 'destructive' });
                         } else {

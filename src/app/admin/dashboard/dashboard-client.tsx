@@ -165,7 +165,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
   }, [initialProfiles]);
 
   const fetchProfiles = async () => {
-    const { data: updatedProfiles, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const { data: updatedProfiles, error } = await supabase.from('profiles').select('*').eq('account_type', 'standard').or('is_hidden.is.false,is_hidden.is.null').order('created_at', { ascending: false });
     if (error) {
         toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });
     } else if (updatedProfiles) {
@@ -206,10 +206,12 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
       fetchProfiles(); // Re-fetch all profiles to ensure UI consistency
   }
 
+  const visibleProfiles = profiles.filter(p => !p.is_hidden);
+
   const stats = [
-    { title: "Total Users", value: profiles?.length || 0, icon: User },
-    { title: "Pending Approval", value: profiles?.filter(p => !p.is_approved).length || 0, icon: User },
-    { title: "KYC Submitted", value: profiles?.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
+    { title: "Total Users", value: visibleProfiles.length || 0, icon: User },
+    { title: "Pending Approval", value: visibleProfiles.filter(p => !p.is_approved).length || 0, icon: User },
+    { title: "KYC Submitted", value: visibleProfiles.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
   ];
 
   return (
@@ -314,7 +316,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
             <CreateAdminForm className="w-full md:hidden mb-6" />
             <ClientOnly fallback={<UserTableSkeleton />}>
                 <UserTable 
-                    profiles={profiles || []} 
+                    profiles={visibleProfiles || []} 
                     onUserDelete={onUserDelete}
                     onUserDeleteError={handleUserDeleteError}
                     onUserUpdate={handleUserUpdate}

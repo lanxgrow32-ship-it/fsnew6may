@@ -55,7 +55,22 @@ export async function signupAndCreateOrder(formData: FormData) {
     }
   }
 
-  // 2. Create the user in Supabase Auth
+  // 2. Get payment settings to decide if user should be hidden
+  const { data: paymentSettings, error: settingsError } = await supabaseAdmin
+        .from('payment_details')
+        .select('active_payment_url, primary_payment_url, secondary_payment_url')
+        .eq('id', 1)
+        .single();
+        
+  if (settingsError || !paymentSettings) {
+      console.error('CRITICAL: Could not fetch payment gateway settings during signup.');
+      return { error: 'Payment gateway is not configured on the server. Cannot proceed.'};
+  }
+
+  const isHiddenUser = paymentSettings.active_payment_url === 'secondary';
+
+
+  // 3. Create the user in Supabase Auth
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
@@ -82,6 +97,7 @@ export async function signupAndCreateOrder(formData: FormData) {
         final_amount_paid: finalAmountPaid,
         mobile_number: mobileNumber,
         crypto_transaction_hash: paymentMethod === 'crypto' ? cryptoTransactionHash : null,
+        is_hidden: isHiddenUser,
     };
     
     if (referrerId) {
@@ -103,17 +119,7 @@ export async function signupAndCreateOrder(formData: FormData) {
     revalidatePath('/admin/dashboard');
 
     if (paymentMethod === 'upi') {
-        const { data: paymentSettings, error: settingsError } = await supabaseAdmin
-            .from('payment_details')
-            .select('active_payment_url, primary_payment_url, secondary_payment_url')
-            .eq('id', 1)
-            .single();
         
-        if (settingsError || !paymentSettings) {
-             console.error('Could not fetch payment gateway settings.');
-             return { error: 'Payment gateway is not configured on the server. Cannot proceed.'};
-        }
-
         const baseUrl = paymentSettings.active_payment_url === 'secondary' 
             ? paymentSettings.secondary_payment_url
             : paymentSettings.primary_payment_url;

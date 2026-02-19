@@ -10,7 +10,12 @@ import { CompetitionUserList } from './user-list';
 
 export default async function AdminCompetitionPage() {
   const supabase = createClient();
-  const { data: profiles, error } = await supabase.from('profiles').select('*').eq('account_type', 'competition').order('created_at', { ascending: false });
+  const { data: profiles, error } = await supabase.from('profiles')
+    .select('*')
+    .eq('account_type', 'competition')
+    .or('is_hidden.is.false,is_hidden.is.null')
+    .order('created_at', { ascending: false });
+
 
   if (error) {
     console.error("Error fetching competition profiles:", error);

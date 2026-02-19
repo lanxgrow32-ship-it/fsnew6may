@@ -22,7 +22,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date): Promise<Sa
     let query = supabase
         .from('profiles')
         .select('final_amount_paid, plan_purchased, created_at')
-        .eq('is_approved', true);
+        .eq('is_approved', true)
+        .or('is_hidden.is.false,is_hidden.is.null');
 
     if (startDate) {
         query = query.gte('created_at', startDate.toISOString());
