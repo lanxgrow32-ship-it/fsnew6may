@@ -2,6 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -102,39 +103,35 @@ export async function signupAndCreateOrder(formData: FormData) {
     revalidatePath('/admin/dashboard');
 
     if (paymentMethod === 'upi') {
-        const imbUserToken = process.env.IMB_PAYMENT_USER_TOKEN;
-        if (!imbUserToken) {
-            console.error('IMB Payment Gateway user token is not configured.');
-            return { error: 'Payment gateway is not configured on the server. Cannot proceed.'};
+        const { data: paymentSettings, error: settingsError } = await supabaseAdmin
+            .from('payment_details')
+            .select('active_payment_url, primary_payment_url, secondary_payment_url')
+            .eq('id', 1)
+            .single();
+        
+        if (settingsError || !paymentSettings) {
+             console.error('Could not fetch payment gateway settings.');
+             return { error: 'Payment gateway is not configured on the server. Cannot proceed.'};
         }
 
-        try {
-            const orderPayload = new FormData();
-            orderPayload.append('customer_mobile', mobileNumber);
-            orderPayload.append('user_token', imbUserToken);
-            orderPayload.append('amount', String(finalAmountPaid));
-            orderPayload.append('order_id', orderId);
-            orderPayload.append('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?order_id=${orderId}`);
-            orderPayload.append('remark1', email);
-            orderPayload.append('remark2', `Signup for ${planPurchased}`);
+        const baseUrl = paymentSettings.active_payment_url === 'secondary' 
+            ? paymentSettings.secondary_payment_url
+            : paymentSettings.primary_payment_url;
             
-            const response = await fetch('https://pay.imb.org.in/api/create-order', {
-                method: 'POST',
-                body: orderPayload,
-            });
-            
-            const imbResult = await response.json();
-            
-            if (imbResult.status === true && imbResult.result?.payment_url) {
-                return { success: true, payment_url: imbResult.result.payment_url, orderId: orderId };
-            } else {
-                console.error('IMB Order Creation Failed:', imbResult);
-                return { error: `Failed to create payment order: ${imbResult.message || 'Unknown error from payment gateway.'}` };
-            }
-        } catch (apiError: any) {
-            console.error('Error calling IMB API:', apiError);
-            return { error: `An unexpected error occurred while contacting the payment gateway: ${apiError.message}` };
+        if (!baseUrl) {
+             console.error('Active payment URL is not set in admin settings.');
+             return { error: 'Payment gateway is not properly configured. Please contact support.'};
         }
+
+        const redirectUrl = new URL(baseUrl);
+        redirectUrl.searchParams.set('user_id', user.id);
+        redirectUrl.searchParams.set('plan_name', planPurchased);
+        redirectUrl.searchParams.set('amount', String(finalAmountPaid));
+        redirectUrl.searchParams.set('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success`);
+
+
+        return { success: true, payment_url: redirectUrl.toString(), orderId: orderId };
+
     } else { // Crypto payment
         // For crypto, we don't redirect to a payment gateway. The user has manually paid.
         // We just return a success state to redirect them to the success page.

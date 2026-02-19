@@ -15,10 +15,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords, Link2 } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 
 type PaymentDetails = {
     id: number;
@@ -30,6 +32,9 @@ type PaymentDetails = {
     crypto_qr_code_url: string;
     is_upi_enabled: boolean;
     is_crypto_enabled: boolean;
+    primary_payment_url: string | null;
+    secondary_payment_url: string | null;
+    active_payment_url: 'primary' | 'secondary' | null;
 };
 
 function SubmitButton() {
@@ -78,8 +83,46 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
         <form ref={formRef} action={formAction} className="space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>User Payment Details</CardTitle>
-                        <CardDescription>Update the payment options shown to users during signup.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Link2 className="w-5 h-5"/> Funded Plan Payment URLs</CardTitle>
+                        <CardDescription>
+                            Configure the `styfashion.in` payment page URLs. Select which URL is currently active for new signups.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="primary_payment_url">Primary Payment URL (Razorpay Account #1)</Label>
+                            <Input id="primary_payment_url" name="primary_payment_url" defaultValue={currentSettings?.primary_payment_url || ''} placeholder="https://styfashion.in/funded-access/primary" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="secondary_payment_url">Secondary Payment URL (Razorpay Account #2)</Label>
+                            <Input id="secondary_payment_url" name="secondary_payment_url" defaultValue={currentSettings?.secondary_payment_url || ''} placeholder="https://styfashion.in/funded-access/secondary" />
+                        </div>
+                         <div className="space-y-2">
+                             <Label>Active Payment Account</Label>
+                            <RadioGroup name="active_payment_url" defaultValue={currentSettings?.active_payment_url || 'primary'} className="space-y-2">
+                                 <Label htmlFor="active_primary" className={cn("flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5")}>
+                                     <div>
+                                        <p className="font-bold">Primary URL</p>
+                                        <p className="text-muted-foreground text-sm truncate">{currentSettings?.primary_payment_url || 'Not set'}</p>
+                                    </div>
+                                    <RadioGroupItem value="primary" id="active_primary" />
+                                </Label>
+                                 <Label htmlFor="active_secondary" className={cn("flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5")}>
+                                     <div>
+                                        <p className="font-bold">Secondary URL</p>
+                                        <p className="text-muted-foreground text-sm truncate">{currentSettings?.secondary_payment_url || 'Not set'}</p>
+                                    </div>
+                                    <RadioGroupItem value="secondary" id="active_secondary" />
+                                </Label>
+                            </RadioGroup>
+                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Manual Payment Details</CardTitle>
+                        <CardDescription>Update the manual payment options shown to users during signup.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8">
                         {/* UPI Section */}
@@ -139,8 +182,8 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
-                                <Label htmlFor="is_upi_enabled" className="text-base">UPI / Cards</Label>
-                                <p className="text-sm text-muted-foreground">Enable or disable the standard payment gateway.</p>
+                                <Label htmlFor="is_upi_enabled" className="text-base">Standard Gateway / Manual UPI</Label>
+                                <p className="text-sm text-muted-foreground">Enable or disable all INR payment methods.</p>
                             </div>
                             <Switch
                                 id="is_upi_enabled"

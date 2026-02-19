@@ -5,14 +5,12 @@ import { revalidatePath } from 'next/cache';
 
 export async function POST(req: NextRequest) {
     try {
-        const formData = await req.formData();
-        const status = formData.get('status') as string;
-        const order_id = formData.get('order_id') as string;
+        // This webhook now expects a JSON payload from styfashion.in
+        const body = await req.json();
         
-        // The result is a JSON string within the form data
-        const resultString = formData.get('result') as string | null;
+        console.log("Styfashion Webhook Received - Full Payload:", body);
 
-        console.log("IMB Webhook Received - Full Payload:", Object.fromEntries(formData.entries()));
+        const { order_id, status, result } = body;
 
         if (!status || !order_id) {
             console.error("Webhook missing status or order_id", { status, order_id });
@@ -22,19 +20,9 @@ export async function POST(req: NextRequest) {
         if (status.toUpperCase() === 'SUCCESS') {
             console.log(`Processing successful payment for order_id: ${order_id}`);
 
-            // Parse the nested result JSON
-            let utr: string | null = null;
-            if (resultString) {
-                try {
-                    const resultData = JSON.parse(resultString);
-                    utr = resultData.utr || null;
-                } catch (parseError) {
-                    console.error("Failed to parse 'result' JSON from webhook:", parseError);
-                    // Continue without UTR, but log the issue
-                }
-            }
+            const utr = result?.utr || null;
             
-            // The order_id from IMB is our user's ID.
+            // The order_id from our new flow is the user's ID.
             const { data: profile, error: fetchError } = await supabaseAdmin
                 .from('profiles')
                 .select('id, is_approved')
@@ -55,8 +43,8 @@ export async function POST(req: NextRequest) {
             if (utr) {
                 updatePayload.transaction_id = utr;
             } else {
-                // Fallback to the order_id if utr is not available
-                updatePayload.transaction_id = order_id;
+                // Fallback to a generic ID if utr is not available
+                updatePayload.transaction_id = `RAZORPAY_${order_id.substring(0, 8)}`;
             }
 
             const { error: updateError } = await supabaseAdmin
@@ -83,7 +71,7 @@ export async function POST(req: NextRequest) {
         }
 
     } catch (error: any) {
-        console.error('Error processing IMB webhook:', error);
+        console.error('Error processing styfashion payment webhook:', error);
         return NextResponse.json({ error: `Internal server error: ${error.message}` }, { status: 500 });
     }
 }
