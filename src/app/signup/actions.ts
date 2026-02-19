@@ -127,7 +127,7 @@ export async function signupAndCreateOrder(formData: FormData) {
         redirectUrl.searchParams.set('user_id', user.id);
         redirectUrl.searchParams.set('plan_name', planPurchased);
         redirectUrl.searchParams.set('amount', String(finalAmountPaid));
-        redirectUrl.searchParams.set('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success`);
+        redirectUrl.searchParams.set('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?order_id=${user.id}`);
 
 
         return { success: true, payment_url: redirectUrl.toString(), orderId: orderId };
