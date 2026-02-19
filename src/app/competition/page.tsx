@@ -7,12 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createCompetitionUserAndSession } from './actions';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ClientOnly } from '@/components/ui/client-only';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 function CompetitionSignupForm() {
     const router = useRouter();
@@ -31,7 +33,6 @@ function CompetitionSignupForm() {
             setError(result.error);
             setIsLoading(false);
         } else if (result.redirectUrl) {
-            // User created, now redirect to payment
             window.location.href = result.redirectUrl;
         } else {
             setError('Could not get payment URL. Please try again.');
@@ -40,78 +41,117 @@ function CompetitionSignupForm() {
     };
 
     return (
-        <main className="flex min-h-screen items-center justify-center bg-background p-4 md:py-12">
-            <div className="w-full max-w-lg space-y-6">
-                <div className="flex justify-center">
-                    <Button asChild variant="ghost">
-                        <Link href="/">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Home
-                        </Link>
-                    </Button>
-                </div>
-                <div className="flex flex-col items-center justify-center text-center">
-                    <h1 className="text-3xl font-bold mt-4 text-primary">Join the Trading Competition</h1>
-                    <p className="text-muted-foreground">
-                        Register below to enter the weekly or monthly challenge.
-                    </p>
-                </div>
+        <main className="bg-background text-foreground min-h-screen relative overflow-hidden">
+            <div className="absolute inset-0 h-full w-full bg-transparent bg-[linear-gradient(to_right,hsl(var(--border)_/_0.4)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)_/_0.4)_1px,transparent_1px)] bg-auto" style={{ backgroundSize: '48px 48px' }}></div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_200px,hsl(var(--primary)/0.1),transparent)]"></div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Choose Your Challenge</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <RadioGroup name="plan_type" defaultValue="weekly" className="space-y-4">
-                                <Label htmlFor="plan_weekly" className="flex items-center justify-between rounded-lg border p-4 cursor-pointer has-[[data-state=checked]]:border-primary">
-                                    <div>
-                                        <p className="font-bold">Weekly Challenge</p>
-                                        <p className="text-muted-foreground">₹249.00 / week</p>
-                                    </div>
-                                    <RadioGroupItem value="weekly" id="plan_weekly" />
-                                </Label>
-                                <Label htmlFor="plan_monthly" className="flex items-center justify-between rounded-lg border p-4 cursor-pointer has-[[data-state=checked]]:border-primary">
-                                    <div>
-                                        <p className="font-bold">Monthly Challenge</p>
-                                        <p className="text-muted-foreground">₹549.00 / month</p>
-                                    </div>
-                                    <RadioGroupItem value="monthly" id="plan_monthly" />
-                                </Label>
-                            </RadioGroup>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Your Details</CardTitle>
-                            <CardDescription>This will create your account on FundedStock.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-
-                            <div className="space-y-2">
-                                <Label htmlFor="full_name">Full Name</Label>
-                                <Input id="full_name" name="full_name" required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" name="email" type="email" required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="mobile_number">Mobile Number</Label>
-                                <Input id="mobile_number" name="mobile_number" type="tel" required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input id="password" name="password" type="password" required />
-                            </div>
-
-                            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}
+            <header className="absolute top-0 left-0 right-0 p-4 z-10">
+                <Button asChild variant="ghost" className="hover:bg-accent/50">
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Link>
+                </Button>
+            </header>
+            
+            <div className="relative">
+                <section className="container mx-auto grid lg:grid-cols-2 items-center min-h-screen pt-24 pb-12 lg:pt-0 lg:pb-0">
+                    <div className="space-y-8 text-center lg:text-left animate-fade-in">
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter !leading-[1.1]">
+                            Where Traders <br /> Become Champions.
+                        </h1>
+                        <p className="text-muted-foreground max-w-md mx-auto lg:mx-0 text-lg">
+                            Compete with thousands of traders in a simulated challenge. Put your skills to the test and win cash prizes. Don't miss your chance to prove yourself and take home amazing rewards!
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                             <Button size="lg" className="h-12 px-8 text-base bg-primary hover:bg-primary/90 text-primary-foreground rounded-full" asChild>
+                               <a href="#join-form">
+                                 Join Competition
+                                 <ArrowRight className="ml-2 h-5 w-5" />
+                               </a>
                             </Button>
-                        </CardContent>
-                    </Card>
-                </form>
+                            <Button size="lg" variant="outline" className="h-12 px-8 text-base rounded-full">
+                                Leaderboard
+                                <Award className="ml-2 h-5 w-5" />
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="relative h-full flex items-center justify-center min-h-[300px] lg:min-h-0">
+                        <Image
+                            src="/competition.png"
+                            alt="Competition Trophy"
+                            width={600}
+                            height={600}
+                            priority
+                            className="object-contain animate-fade-in-up"
+                        />
+                    </div>
+                </section>
+
+                <section id="join-form" className="py-20 bg-background/80 backdrop-blur-sm">
+                    <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-6 mx-auto">
+                         <div className="flex flex-col items-center justify-center text-center mb-10">
+                            <h2 className="text-3xl font-bold mt-4 text-primary">Join the Trading Competition</h2>
+                            <p className="text-muted-foreground">
+                                Register below to enter the weekly or monthly challenge.
+                            </p>
+                        </div>
+
+                        <Card className="bg-card/50 border">
+                            <CardHeader>
+                                <CardTitle>Choose Your Challenge</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <RadioGroup name="plan_type" defaultValue="weekly" className="space-y-4">
+                                    <Label htmlFor="plan_weekly" className={cn("flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:shadow-[0_0_15px_hsl(var(--primary)/0.4)]")}>
+                                        <div>
+                                            <p className="font-bold">Weekly Challenge</p>
+                                            <p className="text-muted-foreground">₹249.00 / week</p>
+                                        </div>
+                                        <RadioGroupItem value="weekly" id="plan_weekly" />
+                                    </Label>
+                                    <Label htmlFor="plan_monthly" className={cn("flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:shadow-[0_0_15px_hsl(var(--primary)/0.4)]")}>
+                                        <div>
+                                            <p className="font-bold">Monthly Challenge</p>
+                                            <p className="text-muted-foreground">₹549.00 / month</p>
+                                        </div>
+                                        <RadioGroupItem value="monthly" id="plan_monthly" />
+                                    </Label>
+                                </RadioGroup>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-card/50 border">
+                            <CardHeader>
+                                <CardTitle>Your Details</CardTitle>
+                                <CardDescription>This will create your account on FundedStock.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="full_name">Full Name</Label>
+                                    <Input id="full_name" name="full_name" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input id="email" name="email" type="email" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="mobile_number">Mobile Number</Label>
+                                    <Input id="mobile_number" name="mobile_number" type="tel" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Password</Label>
+                                    <Input id="password" name="password" type="password" required />
+                                </div>
+
+                                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </form>
+                </section>
             </div>
         </main>
     );
@@ -119,7 +159,23 @@ function CompetitionSignupForm() {
 
 export default function CompetitionPage() {
     return (
-        <div className="dark-theme">
+        <div className="dark">
+             <style jsx global>{`
+                @keyframes fade-in {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in {
+                    animation: fade-in 1s ease-out forwards;
+                }
+                .animate-fade-in-up {
+                    animation: fade-in-up 1s ease-out forwards;
+                }
+            `}</style>
             <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>}>
                 <ClientOnly>
                     <CompetitionSignupForm />
