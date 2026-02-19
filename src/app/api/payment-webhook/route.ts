@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         
-        // CRITICAL: Log the entire raw payload as soon as it's received.
+        // CRITICAL: Log the entire raw payload as soon as it's received for debugging.
         console.log("Styfashion Webhook Received - Full Raw Payload:", JSON.stringify(body, null, 2));
 
         let userId: string | null = null;
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
             if (userId) console.log(`Found userId: ${userId} in Razorpay notes.`);
         }
 
-        // --- Fallback Scenario: If no user ID found yet, log and fail gracefully ---
+        // --- Fallback Scenario: If not a recognized success event, do nothing. ---
         if (!isSuccess) {
             console.log("Webhook received, but it was not a recognized success event. No action taken.", { event: body.event, status: body.status });
             return NextResponse.json({ message: 'Webhook received for non-success event. No action taken.' });
@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
         revalidatePath('/welcome', 'page');
         revalidatePath('/admin/dashboard', 'page');
         revalidatePath(`/admin/profile/${userId}`, 'page');
+        revalidatePath(`/payment-success`, 'page'); // Revalidate the success page
 
         console.log(`User ${userId} has been successfully approved via webhook.`);
         return NextResponse.json({ message: 'User approved successfully.' });
