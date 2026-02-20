@@ -194,6 +194,7 @@ export async function saveKycStep(step: number, formData: FormData) {
                         email: updatedProfile.email,
                         password: tradingPassword,
                         initialBalance: initialBalance,
+                        isHidden: updatedProfile.is_hidden || false,
                     }),
                 });
                 if (!response.ok) {

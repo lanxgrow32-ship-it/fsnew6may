@@ -87,7 +87,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name, kyc_status')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name, kyc_status, is_hidden')
     .eq('id', id)
     .single();
 
@@ -161,6 +161,7 @@ export async function updateProfile(formData: FormData) {
                         email: beforeUpdateData.email,
                         password: autoFilledPassword, 
                         initialBalance: initialBalance,
+                        isHidden: beforeUpdateData.is_hidden || false,
                     }),
                 });
                 if (!response.ok) {
