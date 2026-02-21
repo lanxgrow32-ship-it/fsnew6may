@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser, Calendar as CalendarIcon } from 'lucide-react';
+import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteUser, clearPaymentData, deleteMultipleUsers } from './actions';
@@ -544,24 +544,27 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-12">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <Checkbox
-                                                                checked={isAllOnPageSelected}
-                                                                aria-checked={isSomeOnPageSelected ? "mixed" : isAllOnPageSelected}
-                                                                onCheckedChange={(checked) => handleSelectAllOnPage(checked as boolean)}
-                                                                aria-label="Select all on page"
-                                                            />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                     <DropdownMenuContent align="start">
-                                                        <DropdownMenuItem onClick={handleSelectPending}>Select all pending users</DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onClick={() => setSelectedUserIds([])}>Deselect all</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                            <TableHead className="w-20">
+                                                <div className="flex items-center">
+                                                    <Checkbox
+                                                        checked={isAllOnPageSelected}
+                                                        aria-checked={isSomeOnPageSelected ? "mixed" : isAllOnPageSelected}
+                                                        onCheckedChange={(checked) => handleSelectAllOnPage(checked as boolean)}
+                                                        aria-label="Select all on page"
+                                                    />
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 ml-1 data-[state=open]:bg-muted">
+                                                                <ChevronDown className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="start">
+                                                            <DropdownMenuItem onClick={handleSelectPending}>Select all pending users</DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onClick={() => setSelectedUserIds([])}>Deselect all</DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
                                             </TableHead>
                                             <TableHead>S.No.</TableHead>
                                             <TableHead>Full Name</TableHead>
@@ -630,3 +633,5 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
         </Card>
     );
 }
+
+    
