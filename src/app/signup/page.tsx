@@ -79,10 +79,12 @@ function SignupForm() {
     setCouponDiscountAmount(couponDiscount);
     setReferralDiscountAmount(referralDiscount);
     setCryptoDiscountAmount(cryptoDiscount);
-    setFinalPrice(newFinalPrice > 0 ? newFinalPrice : 0);
+    
+    const roundedUpPrice = Math.ceil(newFinalPrice > 0 ? newFinalPrice : 0);
+    setFinalPrice(roundedUpPrice);
     
     if (paymentMethod === 'crypto' && paymentDetails?.usdt_to_inr_rate > 0) {
-      setUsdtAmount(newFinalPrice / paymentDetails.usdt_to_inr_rate);
+      setUsdtAmount(roundedUpPrice / paymentDetails.usdt_to_inr_rate);
     }
 
   }, [price, discountPercent, originalPrice, isReferralDiscountApplied, paymentMethod, paymentDetails]);
