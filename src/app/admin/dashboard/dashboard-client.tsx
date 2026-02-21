@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function CreateAdminForm({ className }: { className?: string }) {
     const ref = useRef<HTMLFormElement>(null);
@@ -155,7 +156,7 @@ function UserTableSkeleton() {
 }
 
 // Changed to a client component to use hooks
-export default function AdminDashboardClient({ initialProfiles }: { initialProfiles: any[] }) {
+export default function AdminDashboardClient({ initialProfiles, masterView }: { initialProfiles: any[], masterView: boolean }) {
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
   const { toast } = useToast();
@@ -165,7 +166,14 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
   }, [initialProfiles]);
 
   const fetchProfiles = async () => {
-    const { data: updatedProfiles, error } = await supabase.from('profiles').select('*').eq('account_type', 'standard').or('is_hidden.is.false,is_hidden.is.null').order('created_at', { ascending: false });
+    let query = supabase.from('profiles').select('*').eq('account_type', 'standard');
+    if (masterView) {
+      query = query.eq('is_hidden', true);
+    } else {
+      query = query.or('is_hidden.is.false,is_hidden.is.null');
+    }
+    const { data: updatedProfiles, error } = await query.order('created_at', { ascending: false });
+
     if (error) {
         toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });
     } else if (updatedProfiles) {
@@ -186,7 +194,7 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase]);
+  }, [supabase, masterView]);
   
   const onUserDelete = (deletedUserId: string) => {
     setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== deletedUserId));
@@ -206,10 +214,10 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
       fetchProfiles(); // Re-fetch all profiles to ensure UI consistency
   }
 
-  const visibleProfiles = profiles.filter(p => !p.is_hidden);
+  const visibleProfiles = profiles;
 
   const stats = [
-    { title: "Total Users", value: visibleProfiles.length || 0, icon: User },
+    { title: masterView ? "Total Hidden Users" : "Total Users", value: visibleProfiles.length || 0, icon: User },
     { title: "Pending Approval", value: visibleProfiles.filter(p => !p.is_approved).length || 0, icon: User },
     { title: "KYC Submitted", value: visibleProfiles.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
   ];
@@ -299,6 +307,15 @@ export default function AdminDashboardClient({ initialProfiles }: { initialProfi
            </div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
+            {masterView && (
+                <Alert variant="destructive" className="mb-8">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Master View Activated</AlertTitle>
+                    <AlertDescription>
+                        You are viewing hidden users and their data only.
+                    </AlertDescription>
+                </Alert>
+            )}
             
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
                 {stats.map(stat => (

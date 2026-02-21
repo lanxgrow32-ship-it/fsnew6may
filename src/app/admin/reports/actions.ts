@@ -17,13 +17,18 @@ export interface SalesData {
     totalSalesCount: number;
 }
 
-export async function getSalesData(startDate?: Date, endDate?: Date): Promise<SalesData | null> {
+export async function getSalesData(startDate?: Date, endDate?: Date, masterView?: boolean): Promise<SalesData | null> {
     const supabase = createClient();
     let query = supabase
         .from('profiles')
         .select('final_amount_paid, plan_purchased, created_at')
-        .eq('is_approved', true)
-        .or('is_hidden.is.false,is_hidden.is.null');
+        .eq('is_approved', true);
+
+    if (masterView) {
+        query = query.eq('is_hidden', true);
+    } else {
+        query = query.or('is_hidden.is.false,is_hidden.is.null');
+    }
 
     if (startDate) {
         query = query.gte('created_at', startDate.toISOString());

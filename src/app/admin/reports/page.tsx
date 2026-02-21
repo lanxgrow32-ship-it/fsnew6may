@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import {
@@ -31,14 +32,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download, Swords } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download, Swords, ShieldAlert } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-function SalesDashboard({ initialData }: { initialData: SalesData }) {
+function SalesDashboard({ initialData, masterView }: { initialData: SalesData, masterView: boolean }) {
     const [data, setData] = useState(initialData);
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -70,7 +72,7 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
 
     const fetchAndSetData = async (from?: Date, to?: Date) => {
         setIsLoading(true);
-        const result = await getSalesData(from, to);
+        const result = await getSalesData(from, to, masterView);
         if (result) {
             setData(result);
         }
@@ -78,12 +80,8 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
     };
 
     useEffect(() => {
-        if (date?.from || date?.to) {
-            fetchAndSetData(date.from, date.to);
-        } else {
-            // This case handles the "All Time" scenario when dates are cleared
-            fetchAndSetData();
-        }
+        // This effect will run when the date range changes
+        fetchAndSetData(date?.from, date?.to);
     }, [date]);
     
     const setDatePreset = (days: number | null) => {
@@ -104,7 +102,8 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
         // 1. Add Title
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('Sales Performance Report', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        const reportTitle = masterView ? 'Hidden Users Sales Report' : 'Sales Performance Report';
+        doc.text(reportTitle, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
         yPos += 10;
         
         // 2. Add Date Range
@@ -265,9 +264,18 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
 
     return (
          <div className="space-y-6">
+             {masterView && (
+                <Alert variant="destructive">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Master View Activated</AlertTitle>
+                    <AlertDescription>
+                        You are viewing sales reports for hidden users only.
+                    </AlertDescription>
+                </Alert>
+            )}
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Sales Dashboard</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{masterView ? 'Hidden Sales Dashboard' : 'Sales Dashboard'}</h2>
                     <p className="text-muted-foreground">Here's an overview of your sales performance.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2">
@@ -428,13 +436,14 @@ function SalesDashboard({ initialData }: { initialData: SalesData }) {
     );
 }
 
-
-export default function ReportsPage() {
+function ReportsPageContent() {
+    const searchParams = useSearchParams();
+    const masterView = searchParams.get('master_view') === 'true';
     const [initialData, setInitialData] = useState<SalesData | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        getSalesData()
+        getSalesData(undefined, undefined, masterView)
             .then(data => {
                 if (data) {
                     setInitialData(data);
@@ -446,7 +455,7 @@ export default function ReportsPage() {
                  console.error("Error fetching initial sales data:", err);
                  setError('Failed to load sales data. Please check the server logs.');
             });
-    }, []);
+    }, [masterView]);
 
     return (
         <SidebarProvider>
@@ -536,7 +545,7 @@ export default function ReportsPage() {
                                 </CardContent>
                             </Card>
                         ) : initialData ? (
-                            <SalesDashboard initialData={initialData} />
+                            <SalesDashboard initialData={initialData} masterView={masterView} />
                         ) : (
                              <div className="flex items-center justify-center h-96">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -547,4 +556,16 @@ export default function ReportsPage() {
             </SidebarInset>
         </SidebarProvider>
     );
+}
+
+export default function ReportsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <ReportsPageContent />
+        </Suspense>
+    )
 }
