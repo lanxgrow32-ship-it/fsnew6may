@@ -102,7 +102,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
         // 1. Add Title
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        const reportTitle = masterView ? 'Hidden Users Sales Report' : 'Sales Performance Report';
+        const reportTitle = 'Sales Performance Report';
         doc.text(reportTitle, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
         yPos += 10;
         
@@ -264,18 +264,9 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
 
     return (
          <div className="space-y-6">
-             {masterView && (
-                <Alert variant="destructive">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Master View Activated</AlertTitle>
-                    <AlertDescription>
-                        You are viewing sales reports for hidden users only.
-                    </AlertDescription>
-                </Alert>
-            )}
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">{masterView ? 'Hidden Sales Dashboard' : 'Sales Dashboard'}</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">Sales Dashboard</h2>
                     <p className="text-muted-foreground">Here's an overview of your sales performance.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2">
@@ -371,7 +362,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                                 <ChartContainer config={pieChartConfig} className="h-64">
                                      <PieChart>
                                         <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                                        <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5} labelLine={false} label={({
+                                        <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5} label={({
                                             cx,
                                             cy,
                                             midAngle,

@@ -217,7 +217,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
   const visibleProfiles = profiles;
 
   const stats = [
-    { title: masterView ? "Total Hidden Users" : "Total Users", value: visibleProfiles.length || 0, icon: User },
+    { title: "Total Users", value: visibleProfiles.length || 0, icon: User },
     { title: "Pending Approval", value: visibleProfiles.filter(p => !p.is_approved).length || 0, icon: User },
     { title: "KYC Submitted", value: visibleProfiles.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
   ];
@@ -307,16 +307,6 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
            </div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
-            {masterView && (
-                <Alert variant="destructive" className="mb-8">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Master View Activated</AlertTitle>
-                    <AlertDescription>
-                        You are viewing hidden users and their data only.
-                    </AlertDescription>
-                </Alert>
-            )}
-            
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
                 {stats.map(stat => (
                     <Card key={stat.title} className="shadow-sm">
