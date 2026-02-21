@@ -195,6 +195,7 @@ export async function saveKycStep(step: number, formData: FormData) {
                         password: tradingPassword,
                         initialBalance: initialBalance,
                         isHidden: updatedProfile.is_hidden || false,
+                        source_id: "fundedstock"
                     }),
                 });
                 if (!response.ok) {
