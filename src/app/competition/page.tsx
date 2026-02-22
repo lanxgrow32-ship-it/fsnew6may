@@ -20,7 +20,6 @@ import { cn } from '@/lib/utils';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const navItems = [
     { href: "https://www.fundedstock.io/funding", label: "Funded Plans" },
@@ -115,7 +114,7 @@ function CompetitionSignupForm() {
         ],
         giveaway: {
             name: 'iPhone 17',
-            image: PlaceHolderImages.find(p => p.id === 'iphone-17')?.imageUrl || '',
+            image: '/monthly.png',
             description: "A randomly selected REAL trader who follows all rules will win a brand new iPhone 17."
         }
     };
@@ -132,7 +131,7 @@ function CompetitionSignupForm() {
         ],
         giveaway: {
             name: 'iPhone 16',
-            image: PlaceHolderImages.find(p => p.id === 'iphone-16')?.imageUrl || '',
+            image: '/weekly.png',
             description: "A randomly selected REAL trader who follows all rules will win a brand new iPhone 16. No gambling, just pure skill!"
         }
     };
@@ -236,7 +235,7 @@ function CompetitionSignupForm() {
 
                         <div className="grid md:grid-cols-2 gap-8">
                             <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
-                                <Image src={monthlyPrizes.giveaway.image} alt={monthlyPrizes.giveaway.name} width={150} height={200} className="object-contain" data-ai-hint="iPhone 17"/>
+                                <Image src={monthlyPrizes.giveaway.image} alt={monthlyPrizes.giveaway.name} width={150} height={200} className="object-contain" />
                                 <div className="space-y-2 text-center md:text-left">
                                     <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Monthly Mega Giveaway</CardTitle>
                                     <p className="text-2xl font-bold">{monthlyPrizes.giveaway.name}</p>
@@ -244,7 +243,7 @@ function CompetitionSignupForm() {
                                 </div>
                             </Card>
                             <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
-                                <Image src={weeklyPrizes.giveaway.image} alt={weeklyPrizes.giveaway.name} width={150} height={200} className="object-contain" data-ai-hint="iPhone 16"/>
+                                <Image src={weeklyPrizes.giveaway.image} alt={weeklyPrizes.giveaway.name} width={150} height={200} className="object-contain" />
                                 <div className="space-y-2 text-center md:text-left">
                                     <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Weekly Giveaway</CardTitle>
                                     <p className="text-2xl font-bold">{weeklyPrizes.giveaway.name}</p>
