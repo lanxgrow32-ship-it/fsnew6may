@@ -32,12 +32,25 @@ export interface SalesData {
 }
 
 async function fetchRevenueForPeriod(queryBuilder: any, startDate: Date, endDate: Date): Promise<number> {
-    const { data, error } = await queryBuilder().gte('created_at', startDate.toISOString()).lte('created_at', endDate.toISOString());
-    if (error) {
-        console.error(`Error fetching revenue for period ${startDate}-${endDate}:`, error);
+    const { data, error, count } = await queryBuilder()
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .select('final_amount_paid', { count: 'exact', head: true });
+    
+    // The head:true trick doesn't work for SUM, so we must fetch.
+    // However, if we need just revenue, we can do this more efficiently if needed.
+    // For now, let's stick to the simpler fetch.
+    const { data: revenueData, error: revenueError } = await queryBuilder()
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .select('final_amount_paid');
+
+
+    if (revenueError) {
+        console.error(`Error fetching revenue for period ${startDate}-${endDate}:`, revenueError);
         return 0;
     }
-    return data.reduce((sum: number, sale: any) => sum + (sale.final_amount_paid || 0), 0);
+    return revenueData.reduce((sum: number, sale: any) => sum + (sale.final_amount_paid || 0), 0);
 }
 
 
@@ -76,9 +89,9 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     }
 
     // --- Growth Metrics Calculation ---
-    const startOfThisWeek = startOfWeek(now);
-    const startOfLastWeek = startOfWeek(subWeeks(now, 1));
-    const endOfLastWeek = endOfWeek(subWeeks(now, 1));
+    const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+    const startOfLastWeek = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+    const endOfLastWeek = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
     
     const [thisWeekRevenue, lastWeekRevenue, thisMonthRevenue, lastMonthRevenue] = await Promise.all([
         fetchRevenueForPeriod(baseQuery, startOfThisWeek, now),
@@ -130,23 +143,34 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         initialData.totalGrossRevenue += gross;
         
         const saleDate = new Date(sale.created_at);
-        const saleDateString = saleDate.toISOString().split('T')[0];
+
+        // --- Timezone-Corrected Aggregation ---
+        // For Daily Trend Chart
+        const year = saleDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' });
+        const month = saleDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata', month: '2-digit' });
+        const day = saleDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' });
+        const saleDateString = `${year}-${month}-${day}`;
         if (!salesByDay[saleDateString]) {
             salesByDay[saleDateString] = { revenue: 0, sales: 0 };
         }
         salesByDay[saleDateString].revenue += revenue;
         salesByDay[saleDateString].sales += 1;
 
-        // Timezone-corrected aggregation for IST (UTC+5:30)
+        // For Hourly Chart
         const istHourString = saleDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', hour12: false, hourCycle: 'h23' });
-        salesByHour[parseInt(istHourString, 10)] += revenue;
+        const hourIndex = parseInt(istHourString, 10);
+        if (!isNaN(hourIndex) && hourIndex >= 0 && hourIndex < 24) {
+            salesByHour[hourIndex] += revenue;
+        }
 
+        // For Day-of-Week Chart
         const istDayString = saleDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' });
         const dayIndex = dayMap[istDayString];
         if (dayIndex !== undefined) {
             salesByDayOfWeek[dayIndex] += revenue;
         }
-
+        
+        // For Plan Breakdowns
         const lowerPlanName = sale.plan_purchased.toLowerCase();
         if (lowerPlanName.includes('instant')) planCategoryBreakdown['Instant'] += revenue;
         else if (lowerPlanName.includes('1-step')) planCategoryBreakdown['1-Step'] += revenue;
@@ -178,7 +202,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 5),
         salesByDayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => ({ day, revenue: salesByDayOfWeek[i] })),
-        salesByHour: Array.from({ length: 24 }, (_, i) => ({ hour: `${i}:00`, revenue: salesByHour[i] })),
+        salesByHour: Array.from({ length: 24 }, (_, i) => ({ hour: `${i}:00`, revenue: salesByHour[i] || 0 })),
         allPlansBreakdown: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue),
