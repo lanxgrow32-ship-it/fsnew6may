@@ -141,7 +141,7 @@ function CompetitionSignupForm() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_200px,hsl(var(--primary)/0.1),transparent)]"></div>
 
             <header className="sticky top-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border">
-                <div className="container mx-auto flex items-center justify-between p-4 h-20">
+                <div className="container mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-20">
                     <Link href="https://www.fundedstock.io" aria-label="FundedStock Home" className="flex items-center gap-2">
                         <FundedStockLogo className="h-8 w-auto text-primary" />
                         <span className="font-bold text-lg">FundedStock</span>
@@ -194,7 +194,7 @@ function CompetitionSignupForm() {
             </header>
             
             <div className="relative">
-                <section className="container mx-auto px-4 grid lg:grid-cols-2 items-center min-h-screen pt-12 lg:pt-24 pb-12">
+                <section className="container mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 items-center min-h-screen pt-8 md:pt-12 lg:pt-24 pb-12">
                     <div className="space-y-8 text-center lg:text-left animate-fade-in">
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter !leading-[1.1]">
                             Where Traders <br /> Become Champions.
@@ -228,7 +228,7 @@ function CompetitionSignupForm() {
                 </section>
                 
                 <section id="prizes" className="py-20 bg-background/80 backdrop-blur-sm">
-                    <div className="container mx-auto px-4 space-y-16">
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
                         <div className="text-center space-y-4">
                             <h2 className="text-4xl font-bold tracking-tighter">Competition Prizes & Giveaways</h2>
                             <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Win up to <span className="text-primary font-semibold">10 Lakh funding account + iPhone</span> every month!</p>
@@ -278,7 +278,7 @@ function CompetitionSignupForm() {
                             </TabsList>
                             <TabsContent value="monthly" className="mt-12">
                                 <div className="grid md:grid-cols-3 items-center md:items-end gap-8 pt-8 relative">
-                                    <div className="md:order-2 w-full md:relative z-10 md:transform md:scale-110 order-1">
+                                    <div className="md:order-2 w-full md:relative z-10 md:scale-110 order-1">
                                         <PrizeCard prize={monthlyPrizes.top[1]} />
                                     </div>
                                     <div className="md:order-1 w-full order-2">
@@ -357,7 +357,7 @@ function CompetitionSignupForm() {
                 </section>
 
                 <section id="rules" className="py-20 bg-background/80 backdrop-blur-sm">
-                    <div className="container mx-auto px-4 space-y-12">
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
                         <div className="text-center">
                             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">FUNDEDSTOCK TRADING COMPETITION RULES</h2>
                         </div>
@@ -407,7 +407,7 @@ function CompetitionSignupForm() {
                 </section>
 
                 <section id="join-form" className="py-20 bg-background/80 backdrop-blur-sm">
-                    <div className="container mx-auto px-4">
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                         <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-6 mx-auto">
                             <div className="flex flex-col items-center justify-center text-center mb-10">
                                 <h2 className="text-3xl font-bold mt-4 text-primary">Join the Trading Competition</h2>
