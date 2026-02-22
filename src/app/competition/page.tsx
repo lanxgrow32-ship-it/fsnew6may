@@ -141,7 +141,7 @@ function CompetitionSignupForm() {
             <div className="absolute inset-0 h-full w-full bg-transparent bg-[linear-gradient(to_right,hsl(var(--border)_/_0.4)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)_/_0.4)_1px,transparent_1px)] bg-auto" style={{ backgroundSize: '48px 48px' }}></div>
             <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_200px,hsl(var(--primary)/0.1),transparent)]"></div>
 
-            <header className="absolute top-0 left-0 right-0 z-20">
+            <header className="sticky top-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border">
                 <div className="container mx-auto flex items-center justify-between p-4 h-20">
                     <Link href="https://www.fundedstock.io" aria-label="FundedStock Home">
                         <FundedStockLogo className="h-8 w-auto text-primary" />
@@ -193,7 +193,7 @@ function CompetitionSignupForm() {
             </header>
             
             <div className="relative">
-                <section className="container mx-auto grid lg:grid-cols-2 items-center min-h-screen pt-36 pb-12 lg:pt-24">
+                <section className="container mx-auto px-4 grid lg:grid-cols-2 items-center min-h-screen pt-36 pb-12 lg:pt-24">
                     <div className="space-y-8 text-center lg:text-left animate-fade-in">
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter !leading-[1.1]">
                             Where Traders <br /> Become Champions.
@@ -227,7 +227,7 @@ function CompetitionSignupForm() {
                 </section>
                 
                 <section id="prizes" className="py-20 bg-background/80 backdrop-blur-sm">
-                    <div className="container mx-auto space-y-16">
+                    <div className="container mx-auto px-4 space-y-16">
                         <div className="text-center space-y-4">
                             <h2 className="text-4xl font-bold tracking-tighter">Competition Prizes & Giveaways</h2>
                             <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Win up to <span className="text-primary font-semibold">10 Lakh funding account + iPhone</span> every month!</p>
@@ -356,7 +356,7 @@ function CompetitionSignupForm() {
                 </section>
 
                 <section id="rules" className="py-20 bg-background/80 backdrop-blur-sm">
-                    <div className="container mx-auto space-y-12">
+                    <div className="container mx-auto px-4 space-y-12">
                         <div className="text-center">
                             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">FUNDEDSTOCK TRADING COMPETITION RULES</h2>
                         </div>
@@ -406,7 +406,7 @@ function CompetitionSignupForm() {
                 </section>
 
                 <section id="join-form" className="py-20 bg-background/80 backdrop-blur-sm">
-                    <div className="container mx-auto">
+                    <div className="container mx-auto px-4">
                         <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-6 mx-auto">
                             <div className="flex flex-col items-center justify-center text-center mb-10">
                                 <h2 className="text-3xl font-bold mt-4 text-primary">Join the Trading Competition</h2>
