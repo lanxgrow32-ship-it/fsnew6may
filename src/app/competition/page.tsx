@@ -193,7 +193,7 @@ function CompetitionSignupForm() {
             </header>
             
             <div className="relative">
-                <section className="container mx-auto px-4 grid lg:grid-cols-2 items-center min-h-screen pt-36 pb-12 lg:pt-24">
+                <section className="container mx-auto px-4 grid lg:grid-cols-2 items-center min-h-screen pt-24 pb-12">
                     <div className="space-y-8 text-center lg:text-left animate-fade-in">
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter !leading-[1.1]">
                             Where Traders <br /> Become Champions.
