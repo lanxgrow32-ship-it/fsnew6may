@@ -234,25 +234,39 @@ function CompetitionSignupForm() {
                         </div>
                         
                         <div className="grid md:grid-cols-2 gap-8">
-                            <Card className="bg-card/50">
-                                <CardHeader className="p-0">
-                                    <Image src={monthlyPrizes.giveaway.image} alt={monthlyPrizes.giveaway.name} width={500} height={300} className="object-cover rounded-t-lg w-full" />
-                                </CardHeader>
-                                <CardContent className="p-6 space-y-2">
-                                     <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/> Monthly Mega Giveaway</CardTitle>
-                                    <p className="text-2xl font-bold">{monthlyPrizes.giveaway.name}</p>
-                                    <p className="text-muted-foreground text-sm">{monthlyPrizes.giveaway.description}</p>
-                                </CardContent>
+                            <Card className="bg-card/50 overflow-hidden">
+                                <div className="grid md:grid-cols-2 items-center">
+                                    <div className="p-6 space-y-2 order-2 md:order-1">
+                                        <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/> Monthly Mega Giveaway</CardTitle>
+                                        <p className="text-2xl font-bold">{monthlyPrizes.giveaway.name}</p>
+                                        <p className="text-muted-foreground text-sm">{monthlyPrizes.giveaway.description}</p>
+                                        <Button asChild className="mt-4">
+                                            <a href="#join-form">
+                                                Join Now <ArrowRight className="ml-2 h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                    <div className="order-1 md:order-2 h-full w-full min-h-[200px] md:min-h-0">
+                                        <Image src="/monthly.png" alt={monthlyPrizes.giveaway.name} width={500} height={300} className="object-cover w-full h-full" />
+                                    </div>
+                                </div>
                             </Card>
-                             <Card className="bg-card/50">
-                                <CardHeader className="p-0">
-                                    <Image src={weeklyPrizes.giveaway.image} alt={weeklyPrizes.giveaway.name} width={500} height={300} className="object-cover rounded-t-lg w-full" />
-                                </CardHeader>
-                                <CardContent className="p-6 space-y-2">
-                                     <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/> Weekly Giveaway</CardTitle>
-                                    <p className="text-2xl font-bold">{weeklyPrizes.giveaway.name}</p>
-                                    <p className="text-muted-foreground text-sm">{weeklyPrizes.giveaway.description}</p>
-                                </CardContent>
+                             <Card className="bg-card/50 overflow-hidden">
+                                <div className="grid md:grid-cols-2 items-center">
+                                    <div className="p-6 space-y-2 order-2 md:order-1">
+                                        <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/> Weekly Giveaway</CardTitle>
+                                        <p className="text-2xl font-bold">{weeklyPrizes.giveaway.name}</p>
+                                        <p className="text-muted-foreground text-sm">{weeklyPrizes.giveaway.description}</p>
+                                         <Button asChild className="mt-4">
+                                            <a href="#join-form">
+                                                Join Now <ArrowRight className="ml-2 h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                    <div className="order-1 md:order-2 h-full w-full min-h-[200px] md:min-h-0">
+                                        <Image src="/weekly.png" alt={weeklyPrizes.giveaway.name} width={500} height={300} className="object-cover w-full h-full" />
+                                    </div>
+                                </div>
                             </Card>
                         </div>
 
@@ -262,14 +276,14 @@ function CompetitionSignupForm() {
                                 <TabsTrigger value="weekly" className="py-2.5 text-base">🏅 Weekly Prizes</TabsTrigger>
                             </TabsList>
                             <TabsContent value="monthly" className="mt-12">
-                                <div className="flex flex-col md:grid md:grid-cols-3 items-center md:items-end gap-8 pt-8">
-                                    <div className="order-2 md:order-1 w-full">
-                                        <PrizeCard prize={monthlyPrizes.top[0]} />
-                                    </div>
-                                    <div className="order-1 md:order-2 w-full md:transform-none -translate-y-4">
+                                <div className="grid md:grid-cols-3 items-center md:items-end gap-8 pt-8 relative">
+                                    <div className="md:order-2 w-full md:relative z-10 md:transform md:scale-110">
                                         <PrizeCard prize={monthlyPrizes.top[1]} />
                                     </div>
-                                    <div className="order-3 md:order-3 w-full">
+                                    <div className="md:order-1 w-full order-2">
+                                        <PrizeCard prize={monthlyPrizes.top[0]} />
+                                    </div>
+                                    <div className="md:order-3 w-full order-3">
                                         <PrizeCard prize={monthlyPrizes.top[2]} />
                                     </div>
                                 </div>
@@ -296,14 +310,14 @@ function CompetitionSignupForm() {
                                 </div>
                             </TabsContent>
                             <TabsContent value="weekly" className="mt-12">
-                                <div className="flex flex-col md:grid md:grid-cols-3 items-center md:items-end gap-8 pt-8">
-                                     <div className="order-2 md:order-1 w-full">
-                                        <PrizeCard prize={weeklyPrizes.top[0]} />
-                                    </div>
-                                    <div className="order-1 md:order-2 w-full md:transform-none -translate-y-4">
+                                 <div className="grid md:grid-cols-3 items-center md:items-end gap-8 pt-8 relative">
+                                     <div className="md:order-2 w-full md:relative z-10 md:transform md:scale-110">
                                         <PrizeCard prize={weeklyPrizes.top[1]} />
                                     </div>
-                                    <div className="order-3 md:order-3 w-full">
+                                     <div className="md:order-1 w-full order-2">
+                                        <PrizeCard prize={weeklyPrizes.top[0]} />
+                                    </div>
+                                    <div className="md:order-3 w-full order-3">
                                         <PrizeCard prize={weeklyPrizes.top[2]} />
                                     </div>
                                 </div>
@@ -330,6 +344,14 @@ function CompetitionSignupForm() {
                                 </div>
                             </TabsContent>
                         </Tabs>
+                        <div className="text-center mt-16">
+                            <Button size="lg" className="h-12 px-8 text-base rounded-full" asChild>
+                               <a href="#join-form">
+                                 Join The Challenge Now
+                                 <ArrowRight className="ml-2 h-5 w-5" />
+                               </a>
+                            </Button>
+                        </div>
                     </div>
                 </section>
 
