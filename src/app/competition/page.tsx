@@ -95,9 +95,9 @@ function CompetitionSignupForm() {
             { place: '3rd', funding: '2 Lakh', type: 'Instant Funding', price: '9,999', theme: 'bronze' as const },
         ],
         runnerUps: [
-            "2 Winners: 1 Lakh Instant Funding Account",
-            "3 Winners: 2 Lakh 2-Step Funding Account",
-            "2 Winners: 50K Instant Funding Account"
+            { rank: "2 Winners", prize: "1 Lakh Instant Funding Account" },
+            { rank: "3 Winners", prize: "2 Lakh 2-Step Funding Account" },
+            { rank: "2 Winners", prize: "50K Instant Funding Account" },
         ],
         giveaway: {
             name: 'iPhone 17',
@@ -113,7 +113,8 @@ function CompetitionSignupForm() {
             { place: '3rd', funding: '1 Lakh', type: 'Instant Funding', price: '5,999', theme: 'bronze' as const },
         ],
         runnerUps: [
-           "Random prizes including 50K instant funding accounts and 1 Lakh 2-step accounts."
+           { rank: "Random Winners", prize: "50K Instant Funding Account" },
+           { rank: "Random Winners", prize: "1 Lakh 2-Step Funding Account" },
         ],
         giveaway: {
             name: 'iPhone 16',
@@ -250,15 +251,23 @@ function CompetitionSignupForm() {
                                     <PrizeCard prize={monthlyPrizes.top[1]} />
                                     <PrizeCard prize={monthlyPrizes.top[2]} />
                                 </div>
-                                <div className="grid md:grid-cols-1 gap-8 mt-12 max-w-lg mx-auto">
+                                <div className="grid md:grid-cols-1 gap-8 mt-12 max-w-2xl mx-auto">
                                     <Card className="bg-card/50">
                                         <CardHeader>
                                             <CardTitle className="flex items-center gap-2"><Award className="text-primary"/> 4th - 10th Place</CardTitle>
                                             <CardDescription>Randomly selected winners from the top performers.</CardDescription>
                                         </CardHeader>
-                                        <CardContent className="space-y-2">
-                                            {monthlyPrizes.runnerUps.map((text, i) => (
-                                                <p key={i} className="text-muted-foreground flex items-center gap-2"><Star className="w-4 h-4 text-primary/70"/>{text}</p>
+                                        <CardContent className="space-y-3">
+                                            {monthlyPrizes.runnerUps.map((item, i) => (
+                                                <div key={i} className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border border-border/30">
+                                                  <div className="flex items-center gap-4">
+                                                    <div className="bg-primary/20 text-primary font-semibold rounded-full px-3 py-1 text-sm w-28 text-center">
+                                                      {item.rank}
+                                                    </div>
+                                                    <p className="font-medium text-foreground">{item.prize}</p>
+                                                  </div>
+                                                  <Award className="text-muted-foreground w-5 h-5 shrink-0" />
+                                                </div>
                                             ))}
                                         </CardContent>
                                     </Card>
@@ -270,15 +279,23 @@ function CompetitionSignupForm() {
                                     <PrizeCard prize={weeklyPrizes.top[1]} />
                                     <PrizeCard prize={weeklyPrizes.top[2]} />
                                 </div>
-                                 <div className="grid md:grid-cols-1 gap-8 mt-12 max-w-lg mx-auto">
+                                 <div className="grid md:grid-cols-1 gap-8 mt-12 max-w-2xl mx-auto">
                                     <Card className="bg-card/50">
                                         <CardHeader>
                                             <CardTitle className="flex items-center gap-2"><Award className="text-primary"/> 4th - 10th Place</CardTitle>
                                             <CardDescription>Randomly selected winners from the top performers.</CardDescription>
                                         </CardHeader>
-                                        <CardContent className="space-y-2">
-                                             {weeklyPrizes.runnerUps.map((text, i) => (
-                                                <p key={i} className="text-muted-foreground flex items-center gap-2"><Star className="w-4 h-4 text-primary/70"/>{text}</p>
+                                        <CardContent className="space-y-3">
+                                            {weeklyPrizes.runnerUps.map((item, i) => (
+                                                <div key={i} className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border border-border/30">
+                                                  <div className="flex items-center gap-4">
+                                                    <div className="bg-primary/20 text-primary font-semibold rounded-full px-3 py-1 text-sm w-40 text-center">
+                                                      {item.rank}
+                                                    </div>
+                                                    <p className="font-medium text-foreground">{item.prize}</p>
+                                                  </div>
+                                                  <Award className="text-muted-foreground w-5 h-5 shrink-0" />
+                                                </div>
                                             ))}
                                         </CardContent>
                                     </Card>
