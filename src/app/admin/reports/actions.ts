@@ -62,7 +62,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     // Main data query for the selected period
     let mainQuery = baseQuery();
     const now = new Date();
-    // Do not re-apply startOfDay/endOfDay. The client sends dates with the correct time boundaries.
+    
     const periodStart = startDate || new Date(0);
     const periodEnd = endDate || now;
 
@@ -76,25 +76,22 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     }
 
     // --- Growth Metrics Calculation ---
-    // WoW Growth
-    const startOfThisWeek = startOfWeek(periodEnd);
-    const endOfThisWeek = periodEnd;
-    const startOfLastWeek = startOfWeek(subWeeks(periodEnd, 1));
-    const endOfLastWeek = endOfWeek(subWeeks(periodEnd, 1));
-    const thisWeekRevenue = await fetchRevenueForPeriod(baseQuery(), startOfThisWeek, endOfThisWeek);
-    const lastWeekRevenue = await fetchRevenueForPeriod(baseQuery(), startOfLastWeek, endOfLastWeek);
+    const startOfThisWeek = startOfWeek(now);
+    const startOfLastWeek = startOfWeek(subWeeks(now, 1));
+    const endOfLastWeek = endOfWeek(subWeeks(now, 1));
+    
+    const [thisWeekRevenue, lastWeekRevenue, thisMonthRevenue, lastMonthRevenue] = await Promise.all([
+        fetchRevenueForPeriod(baseQuery(), startOfThisWeek, now),
+        fetchRevenueForPeriod(baseQuery(), startOfLastWeek, endOfLastWeek),
+        fetchRevenueForPeriod(baseQuery(), startOfMonth(now), now),
+        fetchRevenueForPeriod(baseQuery(), startOfMonth(subMonths(now, 1)), endOfMonth(subMonths(now, 1)))
+    ]);
+
     let wowRevenueGrowth: number | null = null;
     if (lastWeekRevenue > 0) {
         wowRevenueGrowth = ((thisWeekRevenue - lastWeekRevenue) / lastWeekRevenue) * 100;
     }
 
-    // MoM Growth
-    const startOfThisMonth = startOfMonth(periodEnd);
-    const endOfThisMonth = periodEnd;
-    const startOfLastMonth = startOfMonth(subMonths(periodEnd, 1));
-    const endOfLastMonth = endOfMonth(subMonths(periodEnd, 1));
-    const thisMonthRevenue = await fetchRevenueForPeriod(baseQuery(), startOfThisMonth, endOfThisMonth);
-    const lastMonthRevenue = await fetchRevenueForPeriod(baseQuery(), startOfLastMonth, endOfLastMonth);
     let momRevenueGrowth: number | null = null;
     if (lastMonthRevenue > 0) {
         momRevenueGrowth = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
@@ -106,8 +103,9 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const planBreakdown: { [key: string]: { revenue: number, sales: number } } = {};
     const salesByDayOfWeek: number[] = Array(7).fill(0); // 0=Sun, 1=Mon, ...
     const salesByHour: number[] = Array(24).fill(0);
+    const dayMap: { [key: string]: number } = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
 
-    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'topPlans' | 'recentSales' | 'thisWeekRevenue' | 'thisMonthRevenue' | 'allPlansBreakdown' | 'salesByHour' | 'salesByDate' | 'planCategoryBreakdown' | 'salesByDayOfWeek'> = {
+    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'thisWeekRevenue' | 'thisMonthRevenue' | 'allPlansBreakdown' | 'salesByHour' | 'salesByDate' | 'planCategoryBreakdown' | 'salesByDayOfWeek'> = {
         totalNetRevenue: 0,
         totalGrossRevenue: 0,
         totalDiscounts: 0,
@@ -134,8 +132,15 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         salesByDay[saleDateString].revenue += revenue;
         salesByDay[saleDateString].sales += 1;
 
-        salesByDayOfWeek[saleDate.getDay()] += revenue;
-        salesByHour[saleDate.getHours()] += revenue;
+        // Timezone-corrected aggregation for IST (UTC+5:30)
+        const istHourString = saleDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', hour12: false, hourCycle: 'h23' });
+        salesByHour[parseInt(istHourString, 10)] += revenue;
+
+        const istDayString = saleDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' });
+        const dayIndex = dayMap[istDayString];
+        if (dayIndex !== undefined) {
+            salesByDayOfWeek[dayIndex] += revenue;
+        }
 
         const lowerPlanName = sale.plan_purchased.toLowerCase();
         if (lowerPlanName.includes('instant')) planCategoryBreakdown['Instant'] += revenue;
