@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowRight, Award, Menu, Gift, Crown, Star } from 'lucide-react';
+import { Loader2, ArrowRight, Award, Menu, Gift, Star, UserCheck, TrendingDown, BarChart, Ban, Gavel } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createCompetitionUserAndSession } from './actions';
 import Link from 'next/link';
@@ -62,6 +62,20 @@ const PrizeCard = ({ prize }: { prize: Prize }) => {
 
 const Separator = ({ className }: { className?: string }) => (
     <div className={cn("h-px w-20 bg-gradient-to-r from-transparent via-current to-transparent", className)} />
+);
+
+const RuleCard = ({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) => (
+    <Card className="bg-card/50">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-lg">
+                <div className="bg-primary/10 text-primary p-2 rounded-lg">{icon}</div>
+                <span>{title}</span>
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="text-muted-foreground space-y-2 text-sm">
+            {children}
+        </CardContent>
+    </Card>
 );
 
 function CompetitionSignupForm() {
@@ -239,7 +253,6 @@ function CompetitionSignupForm() {
                             </Card>
                         </div>
 
-
                          <Tabs defaultValue="monthly" className="w-full">
                             <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto h-auto p-1.5 bg-muted/50 border-border">
                                 <TabsTrigger value="monthly" className="py-2.5 text-base">🏆 Monthly Prizes</TabsTrigger>
@@ -302,6 +315,56 @@ function CompetitionSignupForm() {
                                 </div>
                             </TabsContent>
                         </Tabs>
+                    </div>
+                </section>
+
+                <section id="rules" className="py-20 bg-background/80 backdrop-blur-sm">
+                    <div className="container mx-auto space-y-12">
+                        <div className="text-center">
+                            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">FUNDEDSTOCK TRADING COMPETITION RULES</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <RuleCard title="Eligibility" icon={<UserCheck className="w-6 h-6"/>}>
+                                <ul className="list-disc list-inside space-y-1">
+                                    <li>Age must be 18+</li>
+                                    <li>Entry fee must be successfully paid</li>
+                                </ul>
+                            </RuleCard>
+                             <RuleCard title="Drawdown Rules" icon={<TrendingDown className="w-6 h-6"/>}>
+                                <p><strong>Hitting the drawdown limit at any time = account disqualified.</strong></p>
+                                <ul className="list-disc list-inside space-y-1">
+                                    <li>Maximum Daily Drawdown limit must not be breached</li>
+                                    <li>Maximum Overall Drawdown limit must not be breached</li>
+                                </ul>
+                            </RuleCard>
+                             <RuleCard title="Ranking Criteria" icon={<BarChart className="w-6 h-6"/>}>
+                                <p>Top 3 winners are selected based on:</p>
+                                 <ul className="list-disc list-inside space-y-1">
+                                    <li>Highest % Return (ROI Based)</li>
+                                    <li>Proper risk management & no rule violations</li>
+                                    <li>Minimum required trading days completed</li>
+                                </ul>
+                            </RuleCard>
+                            <RuleCard title="Prohibited Activities" icon={<Ban className="w-6 h-6"/>}>
+                                <p>Violation = Immediate removal from competition.</p>
+                                <ul className="list-disc list-inside space-y-1">
+                                    <li>Gambling-style trading & Martingale strategy</li>
+                                    <li>Overleveraging</li>
+                                    <li>Copy trading / signal-based automation</li>
+                                </ul>
+                            </RuleCard>
+                            <RuleCard title="Prize Distribution" icon={<Award className="w-6 h-6"/>}>
+                                 <ul className="list-disc list-inside space-y-1">
+                                    <li><strong>Top 3:</strong> Performance Based</li>
+                                    <li><strong>4th to 10th:</strong> Random selection (eligible, disciplined traders only)</li>
+                                    <li><strong>iPhone Giveaway:</strong> Must follow all rules, no violations, and complete required trading days.</li>
+                                </ul>
+                            </RuleCard>
+                            <RuleCard title="Final Authority" icon={<Gavel className="w-6 h-6"/>}>
+                                <p>FundedStock reserves the right to disqualify any participant violating rules, cancel suspicious accounts, and take the final decision on all disputes.</p>
+                                <p className="font-bold pt-2">All decisions will be final and binding.</p>
+                            </RuleCard>
+                        </div>
                     </div>
                 </section>
 
