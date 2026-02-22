@@ -48,14 +48,10 @@ const PrizeCard = ({ prize }: { prize: Prize }) => {
     };
 
     const currentTheme = themeClasses[prize.theme];
-    const crownImage = PlaceHolderImages.find(p => p.id === `${prize.theme}-crown`)?.imageUrl || '';
     
     return (
         <Card className={cn('relative flex flex-col text-center items-center p-6 border-2 transition-all duration-300 hover:scale-105', currentTheme.bg, currentTheme.border, currentTheme.shadow)}>
-            <div className="absolute -top-12">
-                {crownImage && <Image src={crownImage} alt={`${prize.theme} crown`} width={100} height={100} data-ai-hint={`${prize.theme} crown`} />}
-            </div>
-            <h3 className="text-3xl font-bold mt-12">{prize.place}</h3>
+            <h3 className="text-3xl font-bold">{prize.place}</h3>
             <Separator className={cn('my-4', currentTheme.border)} />
             <p className={cn('text-2xl font-bold', currentTheme.text)}>{prize.funding}</p>
             <p className="text-lg font-semibold">{prize.type}</p>
@@ -223,18 +219,38 @@ function CompetitionSignupForm() {
                             <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Win up to <span className="text-primary font-semibold">10 Lakh funding account + iPhone</span> every month!</p>
                         </div>
 
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
+                                <Image src={monthlyPrizes.giveaway.image} alt={monthlyPrizes.giveaway.name} width={150} height={200} className="object-contain" data-ai-hint="iPhone 17"/>
+                                <div className="space-y-2 text-center md:text-left">
+                                    <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Monthly Mega Giveaway</CardTitle>
+                                    <p className="text-2xl font-bold">{monthlyPrizes.giveaway.name}</p>
+                                    <p className="text-muted-foreground text-sm">{monthlyPrizes.giveaway.description}</p>
+                                </div>
+                            </Card>
+                            <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
+                                <Image src={weeklyPrizes.giveaway.image} alt={weeklyPrizes.giveaway.name} width={150} height={200} className="object-contain" data-ai-hint="iPhone 16"/>
+                                <div className="space-y-2 text-center md:text-left">
+                                    <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Weekly Giveaway</CardTitle>
+                                    <p className="text-2xl font-bold">{weeklyPrizes.giveaway.name}</p>
+                                    <p className="text-muted-foreground text-sm">{weeklyPrizes.giveaway.description}</p>
+                                </div>
+                            </Card>
+                        </div>
+
+
                          <Tabs defaultValue="monthly" className="w-full">
                             <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto h-auto p-1.5 bg-muted/50 border-border">
                                 <TabsTrigger value="monthly" className="py-2.5 text-base">🏆 Monthly Prizes</TabsTrigger>
                                 <TabsTrigger value="weekly" className="py-2.5 text-base">🏅 Weekly Prizes</TabsTrigger>
                             </TabsList>
                             <TabsContent value="monthly" className="mt-12">
-                                <div className="grid md:grid-cols-3 gap-8 items-end pt-12">
+                                <div className="grid md:grid-cols-3 gap-8 items-end pt-8">
                                     <PrizeCard prize={monthlyPrizes.top[0]} />
                                     <PrizeCard prize={monthlyPrizes.top[1]} />
                                     <PrizeCard prize={monthlyPrizes.top[2]} />
                                 </div>
-                                <div className="grid md:grid-cols-2 gap-8 mt-12">
+                                <div className="grid md:grid-cols-1 gap-8 mt-12 max-w-lg mx-auto">
                                     <Card className="bg-card/50">
                                         <CardHeader>
                                             <CardTitle className="flex items-center gap-2"><Award className="text-primary"/> 4th - 10th Place</CardTitle>
@@ -246,23 +262,15 @@ function CompetitionSignupForm() {
                                             ))}
                                         </CardContent>
                                     </Card>
-                                     <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
-                                        <Image src={monthlyPrizes.giveaway.image} alt={monthlyPrizes.giveaway.name} width={150} height={200} className="object-contain" data-ai-hint="iPhone 17"/>
-                                        <div className="space-y-2 text-center md:text-left">
-                                            <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Monthly Mega Giveaway</CardTitle>
-                                            <p className="text-2xl font-bold">{monthlyPrizes.giveaway.name}</p>
-                                            <p className="text-muted-foreground text-sm">{monthlyPrizes.giveaway.description}</p>
-                                        </div>
-                                    </Card>
                                 </div>
                             </TabsContent>
                             <TabsContent value="weekly" className="mt-12">
-                                <div className="grid md:grid-cols-3 gap-8 items-end pt-12">
+                                <div className="grid md:grid-cols-3 gap-8 items-end pt-8">
                                      <PrizeCard prize={weeklyPrizes.top[0]} />
                                     <PrizeCard prize={weeklyPrizes.top[1]} />
                                     <PrizeCard prize={weeklyPrizes.top[2]} />
                                 </div>
-                                 <div className="grid md:grid-cols-2 gap-8 mt-12">
+                                 <div className="grid md:grid-cols-1 gap-8 mt-12 max-w-lg mx-auto">
                                     <Card className="bg-card/50">
                                         <CardHeader>
                                             <CardTitle className="flex items-center gap-2"><Award className="text-primary"/> 4th - 10th Place</CardTitle>
@@ -273,14 +281,6 @@ function CompetitionSignupForm() {
                                                 <p key={i} className="text-muted-foreground flex items-center gap-2"><Star className="w-4 h-4 text-primary/70"/>{text}</p>
                                             ))}
                                         </CardContent>
-                                    </Card>
-                                     <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
-                                        <Image src={weeklyPrizes.giveaway.image} alt={weeklyPrizes.giveaway.name} width={150} height={200} className="object-contain" data-ai-hint="iPhone 16"/>
-                                        <div className="space-y-2 text-center md:text-left">
-                                            <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Weekly Giveaway</CardTitle>
-                                            <p className="text-2xl font-bold">{weeklyPrizes.giveaway.name}</p>
-                                            <p className="text-muted-foreground text-sm">{weeklyPrizes.giveaway.description}</p>
-                                        </div>
                                     </Card>
                                 </div>
                             </TabsContent>
