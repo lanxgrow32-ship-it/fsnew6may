@@ -226,8 +226,8 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
 
     const DashboardSkeleton = () => (
         <div className="space-y-6 animate-pulse">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-28" />)}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <Skeleton className="h-80 lg:col-span-3" />
@@ -268,8 +268,10 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
 
             {isFetching ? <DashboardSkeleton /> : (
                 <>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                        <StatCard title="Gross Revenue" value={data.totalGrossRevenue} description="Before discounts" />
                         <StatCard title="Net Revenue" value={data.totalNetRevenue} description={`from ${data.totalSalesCount} sales`} />
+                        <StatCard title="Total Discounts" value={data.totalDiscounts} description="Coupons & Referrals"/>
                         <StatCard title="Average Revenue / User" value={data.arpu} description="ARPU" />
                         <StatCard title="WoW Revenue" value={data.thisWeekRevenue} change={data.wowRevenueGrowth} description="vs. last week"/>
                         <StatCard title="MoM Revenue" value={data.thisMonthRevenue} change={data.momRevenueGrowth} description="vs. last month"/>

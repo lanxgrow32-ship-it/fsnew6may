@@ -47,10 +47,11 @@ async function fetchRevenueForPeriod(queryBuilder: any, startDate: Date, endDate
 
 export async function getSalesData(startDate?: Date, endDate?: Date, masterView?: boolean): Promise<SalesData | null> {
     const supabase = createClient();
-    const now = new Date();
+    
 
-    const periodStart = startDate || new Date(0);
-    const periodEnd = endDate || now;
+    const periodStart = startDate ? startOfDay(startDate) : new Date(0);
+    const periodEnd = endDate ? endOfDay(endDate) : new Date();
+    const now = new Date();
     
     const baseQuery = () => {
         let query = supabase
@@ -147,10 +148,11 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
 
     const totalSalesCount = sales.length;
     const arpu = totalSalesCount > 0 ? totalNetRevenue / totalSalesCount : 0;
+    const totalGrossRevenue = totalNetRevenue + totalDiscounts;
 
     const finalData: SalesData = {
         totalNetRevenue,
-        totalGrossRevenue: totalNetRevenue + totalDiscounts,
+        totalGrossRevenue,
         totalDiscounts,
         totalSalesCount,
         arpu,
