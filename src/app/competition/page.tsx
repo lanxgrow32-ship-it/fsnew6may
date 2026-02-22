@@ -229,7 +229,7 @@ function CompetitionSignupForm() {
                 <section id="prizes" className="py-20 bg-background/80 backdrop-blur-sm">
                     <div className="container mx-auto space-y-16">
                         <div className="text-center space-y-4">
-                            <h2 className="text-4xl font-bold tracking-tighter">Competition Prizes</h2>
+                            <h2 className="text-4xl font-bold tracking-tighter">Competition Prizes & Giveaways</h2>
                             <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Win up to <span className="text-primary font-semibold">10 Lakh funding account + iPhone</span> every month!</p>
                         </div>
 
@@ -368,68 +368,70 @@ function CompetitionSignupForm() {
                 </section>
 
                 <section id="join-form" className="py-20 bg-background/80 backdrop-blur-sm">
-                    <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-6 mx-auto">
-                         <div className="flex flex-col items-center justify-center text-center mb-10">
-                            <h2 className="text-3xl font-bold mt-4 text-primary">Join the Trading Competition</h2>
-                            <p className="text-muted-foreground">
-                                Register below to enter the weekly or monthly challenge.
-                            </p>
-                        </div>
+                    <div className="container mx-auto">
+                        <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-6 mx-auto">
+                            <div className="flex flex-col items-center justify-center text-center mb-10">
+                                <h2 className="text-3xl font-bold mt-4 text-primary">Join the Trading Competition</h2>
+                                <p className="text-muted-foreground">
+                                    Register below to enter the weekly or monthly challenge.
+                                </p>
+                            </div>
 
-                        <Card className="bg-card/50 border">
-                            <CardHeader>
-                                <CardTitle>Choose Your Challenge</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <RadioGroup name="plan_type" defaultValue="weekly" className="space-y-4">
-                                    <Label htmlFor="plan_weekly" className={cn("flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:shadow-[0_0_15px_hsl(var(--primary)/0.4)]")}>
-                                        <div>
-                                            <p className="font-bold">Weekly Challenge</p>
-                                            <p className="text-muted-foreground">₹249.00 / week</p>
-                                        </div>
-                                        <RadioGroupItem value="weekly" id="plan_weekly" />
-                                    </Label>
-                                    <Label htmlFor="plan_monthly" className={cn("flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:shadow-[0_0_15px_hsl(var(--primary)/0.4)]")}>
-                                        <div>
-                                            <p className="font-bold">Monthly Challenge</p>
-                                            <p className="text-muted-foreground">₹549.00 / month</p>
-                                        </div>
-                                        <RadioGroupItem value="monthly" id="plan_monthly" />
-                                    </Label>
-                                </RadioGroup>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-card/50 border">
-                            <CardHeader>
-                                <CardTitle>Your Details</CardTitle>
-                                <CardDescription>This will create your account on FundedStock.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+                            <Card className="bg-card/50 border">
+                                <CardHeader>
+                                    <CardTitle>Choose Your Challenge</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <RadioGroup name="plan_type" defaultValue="weekly" className="space-y-4">
+                                        <Label htmlFor="plan_weekly" className={cn("flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:shadow-[0_0_15px_hsl(var(--primary)/0.4)]")}>
+                                            <div>
+                                                <p className="font-bold">Weekly Challenge</p>
+                                                <p className="text-muted-foreground">₹249.00 / week</p>
+                                            </div>
+                                            <RadioGroupItem value="weekly" id="plan_weekly" />
+                                        </Label>
+                                        <Label htmlFor="plan_monthly" className={cn("flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all", "has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:shadow-[0_0_15px_hsl(var(--primary)/0.4)]")}>
+                                            <div>
+                                                <p className="font-bold">Monthly Challenge</p>
+                                                <p className="text-muted-foreground">₹549.00 / month</p>
+                                            </div>
+                                            <RadioGroupItem value="monthly" id="plan_monthly" />
+                                        </Label>
+                                    </RadioGroup>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-card/50 border">
+                                <CardHeader>
+                                    <CardTitle>Your Details</CardTitle>
+                                    <CardDescription>This will create your account on FundedStock.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="full_name">Full Name</Label>
-                                    <Input id="full_name" name="full_name" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input id="email" name="email" type="email" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="mobile_number">Mobile Number</Label>
-                                    <Input id="mobile_number" name="mobile_number" type="tel" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Input id="password" name="password" type="password" required />
-                                </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="full_name">Full Name</Label>
+                                        <Input id="full_name" name="full_name" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input id="email" name="email" type="email" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="mobile_number">Mobile Number</Label>
+                                        <Input id="mobile_number" name="mobile_number" type="tel" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="password">Password</Label>
+                                        <Input id="password" name="password" type="password" required />
+                                    </div>
 
-                                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </form>
+                                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </form>
+                    </div>
                 </section>
             </div>
         </main>
