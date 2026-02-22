@@ -32,7 +32,7 @@ export interface SalesData {
 }
 
 async function fetchRevenueForPeriod(queryBuilder: any, startDate: Date, endDate: Date): Promise<number> {
-    const { data, error } = await queryBuilder.gte('created_at', startDate.toISOString()).lte('created_at', endDate.toISOString());
+    const { data, error } = await queryBuilder().gte('created_at', startDate.toISOString()).lte('created_at', endDate.toISOString());
     if (error) {
         console.error(`Error fetching revenue for period ${startDate}-${endDate}:`, error);
         return 0;
@@ -81,20 +81,25 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const endOfLastWeek = endOfWeek(subWeeks(now, 1));
     
     const [thisWeekRevenue, lastWeekRevenue, thisMonthRevenue, lastMonthRevenue] = await Promise.all([
-        fetchRevenueForPeriod(baseQuery(), startOfThisWeek, now),
-        fetchRevenueForPeriod(baseQuery(), startOfLastWeek, endOfLastWeek),
-        fetchRevenueForPeriod(baseQuery(), startOfMonth(now), now),
-        fetchRevenueForPeriod(baseQuery(), startOfMonth(subMonths(now, 1)), endOfMonth(subMonths(now, 1)))
+        fetchRevenueForPeriod(baseQuery, startOfThisWeek, now),
+        fetchRevenueForPeriod(baseQuery, startOfLastWeek, endOfLastWeek),
+        fetchRevenueForPeriod(baseQuery, startOfMonth(now), now),
+        fetchRevenueForPeriod(baseQuery, startOfMonth(subMonths(now, 1)), endOfMonth(subMonths(now, 1)))
     ]);
 
     let wowRevenueGrowth: number | null = null;
     if (lastWeekRevenue > 0) {
         wowRevenueGrowth = ((thisWeekRevenue - lastWeekRevenue) / lastWeekRevenue) * 100;
+    } else if (thisWeekRevenue > 0) {
+        wowRevenueGrowth = 100; // If last week was 0, any revenue is infinite growth, show 100%
     }
+
 
     let momRevenueGrowth: number | null = null;
     if (lastMonthRevenue > 0) {
         momRevenueGrowth = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+    } else if (thisMonthRevenue > 0) {
+        momRevenueGrowth = 100; // If last month was 0, any revenue is infinite growth, show 100%
     }
 
 
@@ -105,7 +110,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const salesByHour: number[] = Array(24).fill(0);
     const dayMap: { [key: string]: number } = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
 
-    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'thisWeekRevenue' | 'thisMonthRevenue' | 'allPlansBreakdown' | 'salesByHour' | 'salesByDate' | 'planCategoryBreakdown' | 'salesByDayOfWeek'> = {
+    const initialData = {
         totalNetRevenue: 0,
         totalGrossRevenue: 0,
         totalDiscounts: 0,
@@ -177,7 +182,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         allPlansBreakdown: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue),
-        recentSales: sales.slice(0, 25).map(s => ({ id: s.id, name: s.full_name, email: s.email, plan: s.plan_purchased, amount: s.final_amount_paid, date: s.created_at })),
+        recentSales: sales.slice(0, 25).map(s => ({ id: s.id, name: s.full_name, email: s.email, plan: s.plan_purchased || 'N/A', amount: s.final_amount_paid, date: s.created_at })),
     };
 
     return finalData;
