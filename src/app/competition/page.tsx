@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -194,7 +195,7 @@ function CompetitionSignupForm() {
             </header>
             
             <div className="relative">
-                <section className="container mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 items-center min-h-screen pt-8 md:pt-12 lg:pt-24 pb-12">
+                <section className="container mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 items-center min-h-screen pt-8 md:pt-12 lg:pt-0 pb-12">
                     <div className="space-y-8 text-center lg:text-left animate-fade-in">
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter !leading-[1.1]">
                             Where Traders <br /> Become Champions.
@@ -234,7 +235,7 @@ function CompetitionSignupForm() {
                             <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Win up to <span className="text-primary font-semibold">10 Lakh funding account + iPhone</span> every month!</p>
                         </div>
                         
-                        <div className="grid md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 gap-8">
                             <Card className="bg-card/50 overflow-hidden">
                                 <div className="grid md:grid-cols-2 items-center">
                                     <div className="p-6 space-y-2 order-2 md:order-1">
@@ -277,7 +278,7 @@ function CompetitionSignupForm() {
                                 <TabsTrigger value="weekly" className="py-2.5 text-base">🏅 Weekly Prizes</TabsTrigger>
                             </TabsList>
                             <TabsContent value="monthly" className="mt-12">
-                                <div className="grid md:grid-cols-3 items-center md:items-end gap-8 pt-8 relative">
+                                <div className="grid md:grid-cols-3 items-end gap-8 pt-8 relative">
                                     <div className="md:order-2 w-full md:relative z-10 md:scale-110 order-1">
                                         <PrizeCard prize={monthlyPrizes.top[1]} />
                                     </div>
@@ -311,7 +312,7 @@ function CompetitionSignupForm() {
                                 </div>
                             </TabsContent>
                             <TabsContent value="weekly" className="mt-12">
-                                 <div className="grid md:grid-cols-3 items-center md:items-end gap-8 pt-8 relative">
+                                 <div className="grid md:grid-cols-3 items-end gap-8 pt-8 relative">
                                      <div className="md:order-2 w-full md:relative z-10 md:transform md:scale-110 order-1">
                                         <PrizeCard prize={weeklyPrizes.top[1]} />
                                     </div>
@@ -504,3 +505,4 @@ export default function CompetitionPage() {
         </div>
     )
 }
+
