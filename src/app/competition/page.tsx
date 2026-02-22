@@ -232,23 +232,27 @@ function CompetitionSignupForm() {
                             <h2 className="text-4xl font-bold tracking-tighter">Competition Prizes & Giveaways</h2>
                             <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Win up to <span className="text-primary font-semibold">10 Lakh funding account + iPhone</span> every month!</p>
                         </div>
-
+                        
                         <div className="grid md:grid-cols-2 gap-8">
-                            <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
-                                <Image src={monthlyPrizes.giveaway.image} alt={monthlyPrizes.giveaway.name} width={150} height={200} className="object-contain" />
-                                <div className="space-y-2 text-center md:text-left">
-                                    <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Monthly Mega Giveaway</CardTitle>
+                            <Card className="bg-card/50">
+                                <CardHeader className="p-0">
+                                    <Image src={monthlyPrizes.giveaway.image} alt={monthlyPrizes.giveaway.name} width={500} height={300} className="object-cover rounded-t-lg w-full" />
+                                </CardHeader>
+                                <CardContent className="p-6 space-y-2">
+                                     <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/> Monthly Mega Giveaway</CardTitle>
                                     <p className="text-2xl font-bold">{monthlyPrizes.giveaway.name}</p>
                                     <p className="text-muted-foreground text-sm">{monthlyPrizes.giveaway.description}</p>
-                                </div>
+                                </CardContent>
                             </Card>
-                            <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
-                                <Image src={weeklyPrizes.giveaway.image} alt={weeklyPrizes.giveaway.name} width={150} height={200} className="object-contain" />
-                                <div className="space-y-2 text-center md:text-left">
-                                    <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Weekly Giveaway</CardTitle>
+                             <Card className="bg-card/50">
+                                <CardHeader className="p-0">
+                                    <Image src={weeklyPrizes.giveaway.image} alt={weeklyPrizes.giveaway.name} width={500} height={300} className="object-cover rounded-t-lg w-full" />
+                                </CardHeader>
+                                <CardContent className="p-6 space-y-2">
+                                     <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/> Weekly Giveaway</CardTitle>
                                     <p className="text-2xl font-bold">{weeklyPrizes.giveaway.name}</p>
                                     <p className="text-muted-foreground text-sm">{weeklyPrizes.giveaway.description}</p>
-                                </div>
+                                </CardContent>
                             </Card>
                         </div>
 
@@ -258,10 +262,16 @@ function CompetitionSignupForm() {
                                 <TabsTrigger value="weekly" className="py-2.5 text-base">🏅 Weekly Prizes</TabsTrigger>
                             </TabsList>
                             <TabsContent value="monthly" className="mt-12">
-                                <div className="grid md:grid-cols-3 gap-8 items-end pt-8">
-                                    <PrizeCard prize={monthlyPrizes.top[0]} />
-                                    <PrizeCard prize={monthlyPrizes.top[1]} />
-                                    <PrizeCard prize={monthlyPrizes.top[2]} />
+                                <div className="flex flex-col md:grid md:grid-cols-3 items-center md:items-end gap-8 pt-8">
+                                    <div className="order-2 md:order-1 w-full">
+                                        <PrizeCard prize={monthlyPrizes.top[0]} />
+                                    </div>
+                                    <div className="order-1 md:order-2 w-full md:transform-none -translate-y-4">
+                                        <PrizeCard prize={monthlyPrizes.top[1]} />
+                                    </div>
+                                    <div className="order-3 md:order-3 w-full">
+                                        <PrizeCard prize={monthlyPrizes.top[2]} />
+                                    </div>
                                 </div>
                                 <div className="grid md:grid-cols-1 gap-8 mt-12 max-w-2xl mx-auto">
                                     <Card className="bg-card/50">
@@ -286,10 +296,16 @@ function CompetitionSignupForm() {
                                 </div>
                             </TabsContent>
                             <TabsContent value="weekly" className="mt-12">
-                                <div className="grid md:grid-cols-3 gap-8 items-end pt-8">
-                                     <PrizeCard prize={weeklyPrizes.top[0]} />
-                                    <PrizeCard prize={weeklyPrizes.top[1]} />
-                                    <PrizeCard prize={weeklyPrizes.top[2]} />
+                                <div className="flex flex-col md:grid md:grid-cols-3 items-center md:items-end gap-8 pt-8">
+                                     <div className="order-2 md:order-1 w-full">
+                                        <PrizeCard prize={weeklyPrizes.top[0]} />
+                                    </div>
+                                    <div className="order-1 md:order-2 w-full md:transform-none -translate-y-4">
+                                        <PrizeCard prize={weeklyPrizes.top[1]} />
+                                    </div>
+                                    <div className="order-3 md:order-3 w-full">
+                                        <PrizeCard prize={weeklyPrizes.top[2]} />
+                                    </div>
                                 </div>
                                  <div className="grid md:grid-cols-1 gap-8 mt-12 max-w-2xl mx-auto">
                                     <Card className="bg-card/50">
