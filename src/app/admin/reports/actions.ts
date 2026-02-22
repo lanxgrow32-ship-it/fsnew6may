@@ -15,6 +15,8 @@ export interface SalesData {
     // Growth Metrics
     wowRevenueGrowth: number | null;
     momRevenueGrowth: number | null;
+    thisWeekRevenue: number;
+    thisMonthRevenue: number;
 
     // Chart Data
     salesByDate: { date: string, revenue: number, sales: number }[];
@@ -100,7 +102,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const planBreakdown: { [key: string]: { revenue: number, sales: number } } = {};
     const salesByDayOfWeek: number[] = Array(7).fill(0); // 0=Sun, 1=Mon, ...
 
-    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'topPlans' | 'recentSales'> = {
+    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'topPlans' | 'recentSales' | 'thisWeekRevenue' | 'thisMonthRevenue'> = {
         totalNetRevenue: 0,
         totalGrossRevenue: 0,
         totalDiscounts: 0,
@@ -152,6 +154,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         ...initialData,
         wowRevenueGrowth,
         momRevenueGrowth,
+        thisWeekRevenue,
+        thisMonthRevenue,
         salesByDate: Object.entries(salesByDay)
             .map(([date, { revenue, sales }]) => ({ date, revenue, sales }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),

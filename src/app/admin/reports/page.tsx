@@ -267,8 +267,8 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <StatCard title="Net Revenue" value={data.totalNetRevenue} description={`from ${data.totalSalesCount} sales`} />
                         <StatCard title="Average Revenue / User" value={data.arpu} description="ARPU" />
-                        <StatCard title="WoW Revenue" value={thisWeekRevenue} change={data.wowRevenueGrowth} description="vs. last week"/>
-                        <StatCard title="MoM Revenue" value={thisMonthRevenue} change={data.momRevenueGrowth} description="vs. last month"/>
+                        <StatCard title="WoW Revenue" value={data.thisWeekRevenue} change={data.wowRevenueGrowth} description="vs. last week"/>
+                        <StatCard title="MoM Revenue" value={data.thisMonthRevenue} change={data.momRevenueGrowth} description="vs. last month"/>
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -455,4 +455,3 @@ export default function ReportsPage() {
         </Suspense>
     )
 }
-
