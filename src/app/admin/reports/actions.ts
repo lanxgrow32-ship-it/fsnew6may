@@ -114,15 +114,14 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         
         // --- Timezone-Corrected Aggregation ---
         const utcDate = new Date(sale.created_at);
-        
-        // Use toLocaleString to get a string representation in the target timezone, then parse it back.
-        // This is a reliable way to get a Date object representing local time.
-        const istDate = new Date(utcDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-        
+        const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+        const istTime = utcDate.getTime() + istOffset;
+        const istDate = new Date(istTime);
+
         // For Daily Trend Chart
-        const year = istDate.getFullYear();
-        const month = String(istDate.getMonth() + 1).padStart(2, '0');
-        const day = String(istDate.getDate()).padStart(2, '0');
+        const year = istDate.getUTCFullYear();
+        const month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(istDate.getUTCDate()).padStart(2, '0');
         const saleDateString = `${year}-${month}-${day}`;
 
         if (!salesByDay[saleDateString]) {
@@ -132,11 +131,11 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         salesByDay[saleDateString].sales += 1;
 
         // For Hourly Chart
-        const hourIndex = istDate.getHours(); // Reliable 0-23
+        const hourIndex = istDate.getUTCHours();
         salesByHour[hourIndex] = (salesByHour[hourIndex] || 0) + revenue;
 
         // For Day-of-Week Chart
-        const dayIndex = istDate.getDay(); // 0 for Sunday, 1 for Monday...
+        const dayIndex = istDate.getUTCDay(); // 0 for Sunday
         salesByDayOfWeek[dayIndex] = (salesByDayOfWeek[dayIndex] || 0) + revenue;
         
         // For Plan Breakdowns
