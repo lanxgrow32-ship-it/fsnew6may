@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -143,8 +142,9 @@ function CompetitionSignupForm() {
 
             <header className="sticky top-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border">
                 <div className="container mx-auto flex items-center justify-between p-4 h-20">
-                    <Link href="https://www.fundedstock.io" aria-label="FundedStock Home">
+                    <Link href="https://www.fundedstock.io" aria-label="FundedStock Home" className="flex items-center gap-2">
                         <FundedStockLogo className="h-8 w-auto text-primary" />
+                        <span className="font-bold text-lg">FundedStock</span>
                     </Link>
 
                     <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-muted-foreground">
@@ -172,8 +172,9 @@ function CompetitionSignupForm() {
                             <SheetContent side="left" className="w-[300px] bg-background">
                                 <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
                                 <nav className="flex flex-col gap-6 pt-12">
-                                    <Link href="https://www.fundedstock.io" className="mb-4" aria-label="FundedStock Home">
+                                    <Link href="https://www.fundedstock.io" className="mb-4 flex items-center gap-2" aria-label="FundedStock Home">
                                         <FundedStockLogo className="h-8 w-auto text-primary" />
+                                        <span className="font-bold text-lg">FundedStock</span>
                                     </Link>
                                     {navItems.map(item => (
                                         <Link key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className="text-lg font-medium hover:text-primary transition-colors">
@@ -193,7 +194,7 @@ function CompetitionSignupForm() {
             </header>
             
             <div className="relative">
-                <section className="container mx-auto px-4 grid lg:grid-cols-2 items-center min-h-screen pt-24 pb-12">
+                <section className="container mx-auto px-4 grid lg:grid-cols-2 items-center min-h-screen pt-12 lg:pt-24 pb-12">
                     <div className="space-y-8 text-center lg:text-left animate-fade-in">
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter !leading-[1.1]">
                             Where Traders <br /> Become Champions.
@@ -277,7 +278,7 @@ function CompetitionSignupForm() {
                             </TabsList>
                             <TabsContent value="monthly" className="mt-12">
                                 <div className="grid md:grid-cols-3 items-center md:items-end gap-8 pt-8 relative">
-                                    <div className="md:order-2 w-full md:relative z-10 md:transform md:scale-110">
+                                    <div className="md:order-2 w-full md:relative z-10 md:transform md:scale-110 order-1">
                                         <PrizeCard prize={monthlyPrizes.top[1]} />
                                     </div>
                                     <div className="md:order-1 w-full order-2">
@@ -311,7 +312,7 @@ function CompetitionSignupForm() {
                             </TabsContent>
                             <TabsContent value="weekly" className="mt-12">
                                  <div className="grid md:grid-cols-3 items-center md:items-end gap-8 pt-8 relative">
-                                     <div className="md:order-2 w-full md:relative z-10 md:transform md:scale-110">
+                                     <div className="md:order-2 w-full md:relative z-10 md:transform md:scale-110 order-1">
                                         <PrizeCard prize={weeklyPrizes.top[1]} />
                                     </div>
                                      <div className="md:order-1 w-full order-2">
