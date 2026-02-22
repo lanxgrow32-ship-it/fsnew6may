@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,14 @@ export default function RootLayout({
             {children}
             <Toaster />
         </ThemeProvider>
+        {/* Privacy-friendly analytics by Plausible */}
+        <Script async src="https://plausible.io/js/pa-3-GFhYUD4yXBFYMWqacSC.js" />
+        <Script id="plausible-init">
+          {`
+            window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+            plausible.init()
+          `}
+        </Script>
       </body>
     </html>
   );
