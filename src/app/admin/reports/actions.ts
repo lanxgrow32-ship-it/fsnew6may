@@ -49,8 +49,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const supabase = createClient();
     const now = new Date();
 
-    const periodStart = startDate ? startOfDay(startDate) : new Date(0);
-    const periodEnd = endDate ? endOfDay(endDate) : now;
+    const periodStart = startDate || new Date(0);
+    const periodEnd = endDate || now;
     
     const baseQuery = () => {
         let query = supabase
@@ -99,7 +99,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const salesByDay: { [key: string]: { revenue: number, sales: number } } = {};
     const planCategoryBreakdown: { [key: string]: number } = { 'Instant': 0, '1-Step': 0, '2-Step': 0 };
     const planBreakdown: { [key: string]: { revenue: number, sales: number } } = {};
-    const salesByDayOfWeek: number[] = Array(7).fill(0); // 0=Sun, 1=Mon, ...
+    const salesByDayOfWeek: { [day: number]: number } = {};
     const salesByHour: { [hour: number]: number } = {};
     
     // --- Single Loop for Data Aggregation ---
@@ -112,13 +112,10 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         totalNetRevenue += revenue;
         totalDiscounts += discount;
         
-        // --- Timezone-Corrected Aggregation ---
         const utcDate = new Date(sale.created_at);
-        const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-        const istTime = utcDate.getTime() + istOffset;
-        const istDate = new Date(istTime);
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istDate = new Date(utcDate.getTime() + istOffset);
 
-        // For Daily Trend Chart
         const year = istDate.getUTCFullYear();
         const month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
         const day = String(istDate.getUTCDate()).padStart(2, '0');
@@ -130,15 +127,12 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         salesByDay[saleDateString].revenue += revenue;
         salesByDay[saleDateString].sales += 1;
 
-        // For Hourly Chart
         const hourIndex = istDate.getUTCHours();
         salesByHour[hourIndex] = (salesByHour[hourIndex] || 0) + revenue;
-
-        // For Day-of-Week Chart
+        
         const dayIndex = istDate.getUTCDay(); // 0 for Sunday
         salesByDayOfWeek[dayIndex] = (salesByDayOfWeek[dayIndex] || 0) + revenue;
         
-        // For Plan Breakdowns
         const lowerPlanName = sale.plan_purchased.toLowerCase();
         if (lowerPlanName.includes('instant')) planCategoryBreakdown['Instant'] += revenue;
         else if (lowerPlanName.includes('1-step')) planCategoryBreakdown['1-Step'] += revenue;
