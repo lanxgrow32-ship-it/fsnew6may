@@ -62,8 +62,9 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     // Main data query for the selected period
     let mainQuery = baseQuery();
     const now = new Date();
-    const periodStart = startDate ? startOfDay(startDate) : new Date(0);
-    const periodEnd = endDate ? endOfDay(endDate) : now;
+    // Do not re-apply startOfDay/endOfDay. The client sends dates with the correct time boundaries.
+    const periodStart = startDate || new Date(0);
+    const periodEnd = endDate || now;
 
     mainQuery = mainQuery.gte('created_at', periodStart.toISOString()).lte('created_at', periodEnd.toISOString());
 
@@ -106,15 +107,12 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const salesByDayOfWeek: number[] = Array(7).fill(0); // 0=Sun, 1=Mon, ...
     const salesByHour: number[] = Array(24).fill(0);
 
-    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'topPlans' | 'recentSales' | 'thisWeekRevenue' | 'thisMonthRevenue' | 'allPlansBreakdown' | 'salesByHour'> = {
+    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'topPlans' | 'recentSales' | 'thisWeekRevenue' | 'thisMonthRevenue' | 'allPlansBreakdown' | 'salesByHour' | 'salesByDate' | 'planCategoryBreakdown' | 'salesByDayOfWeek'> = {
         totalNetRevenue: 0,
         totalGrossRevenue: 0,
         totalDiscounts: 0,
         totalSalesCount: sales.length,
         arpu: 0,
-        salesByDate: [],
-        planCategoryBreakdown: [],
-        salesByDayOfWeek: [],
     };
     
     sales.forEach(sale => {
