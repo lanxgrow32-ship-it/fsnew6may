@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowRight, Award, Menu } from 'lucide-react';
+import { Loader2, ArrowRight, Award, Menu, Gift, Crown, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createCompetitionUserAndSession } from './actions';
 import Link from 'next/link';
@@ -19,6 +19,8 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const navItems = [
     { href: "https://www.fundedstock.io/funding", label: "Funded Plans" },
@@ -28,6 +30,43 @@ const navItems = [
     { href: "https://www.fundedstock.io/contact", label: "Contact Us" },
 ];
 
+
+type PrizeTier = 'gold' | 'silver' | 'bronze';
+type Prize = {
+    place: string;
+    funding: string;
+    type: string;
+    price: string;
+    theme: PrizeTier;
+};
+
+const PrizeCard = ({ prize }: { prize: Prize }) => {
+    const themeClasses: Record<PrizeTier, { bg: string, border: string, shadow: string, text: string }> = {
+        gold: { bg: 'bg-gradient-to-b from-yellow-300/20 to-yellow-600/20', border: 'border-yellow-400', shadow: 'shadow-[0_0_20px_theme(colors.yellow.400/0.5)]', text: 'text-yellow-300' },
+        silver: { bg: 'bg-gradient-to-b from-slate-300/20 to-slate-500/20', border: 'border-slate-400', shadow: 'shadow-[0_0_20px_theme(colors.slate.400/0.5)]', text: 'text-slate-300' },
+        bronze: { bg: 'bg-gradient-to-b from-orange-400/20 to-orange-700/20', border: 'border-orange-500', shadow: 'shadow-[0_0_20px_theme(colors.orange.500/0.5)]', text: 'text-orange-400' },
+    };
+
+    const currentTheme = themeClasses[prize.theme];
+    const crownImage = PlaceHolderImages.find(p => p.id === `${prize.theme}-crown`)?.imageUrl || '';
+    
+    return (
+        <Card className={cn('relative flex flex-col text-center items-center p-6 border-2 transition-all duration-300 hover:scale-105', currentTheme.bg, currentTheme.border, currentTheme.shadow)}>
+            <div className="absolute -top-12">
+                {crownImage && <Image src={crownImage} alt={`${prize.theme} crown`} width={100} height={100} data-ai-hint={`${prize.theme} crown`} />}
+            </div>
+            <h3 className="text-3xl font-bold mt-12">{prize.place}</h3>
+            <Separator className={cn('my-4', currentTheme.border)} />
+            <p className={cn('text-2xl font-bold', currentTheme.text)}>{prize.funding}</p>
+            <p className="text-lg font-semibold">{prize.type}</p>
+            <p className="text-sm text-muted-foreground">(Worth ₹{prize.price})</p>
+        </Card>
+    );
+};
+
+const Separator = ({ className }: { className?: string }) => (
+    <div className={cn("h-px w-20 bg-gradient-to-r from-transparent via-current to-transparent", className)} />
+);
 
 function CompetitionSignupForm() {
     const router = useRouter();
@@ -50,6 +89,40 @@ function CompetitionSignupForm() {
         } else {
             setError('Could not get payment URL. Please try again.');
             setIsLoading(false);
+        }
+    };
+
+    const monthlyPrizes = {
+        top: [
+            { place: '2nd', funding: '5 Lakh', type: 'Instant Funding', price: '17,999', theme: 'silver' as const },
+            { place: '1st', funding: '10 Lakh', type: 'Instant Funding', price: '29,999', theme: 'gold' as const },
+            { place: '3rd', funding: '2 Lakh', type: 'Instant Funding', price: '9,999', theme: 'bronze' as const },
+        ],
+        runnerUps: [
+            "2 Winners: 1 Lakh Instant Funding Account",
+            "3 Winners: 2 Lakh 2-Step Funding Account",
+            "2 Winners: 50K Instant Funding Account"
+        ],
+        giveaway: {
+            name: 'iPhone 17',
+            image: PlaceHolderImages.find(p => p.id === 'iphone-17')?.imageUrl || '',
+            description: "A randomly selected REAL trader who follows all rules will win a brand new iPhone 17."
+        }
+    };
+
+    const weeklyPrizes = {
+        top: [
+            { place: '2nd', funding: '2 Lakh', type: 'Instant Funding', price: '9,999', theme: 'silver' as const },
+            { place: '1st', funding: '5 Lakh', type: 'Instant Funding', price: '17,999', theme: 'gold' as const },
+            { place: '3rd', funding: '1 Lakh', type: 'Instant Funding', price: '5,999', theme: 'bronze' as const },
+        ],
+        runnerUps: [
+           "Random prizes including 50K instant funding accounts and 1 Lakh 2-step accounts."
+        ],
+        giveaway: {
+            name: 'iPhone 16',
+            image: PlaceHolderImages.find(p => p.id === 'iphone-16')?.imageUrl || '',
+            description: "A randomly selected REAL trader who follows all rules will win a brand new iPhone 16. No gambling, just pure skill!"
         }
     };
 
@@ -140,6 +213,78 @@ function CompetitionSignupForm() {
                             priority
                             className="object-contain animate-fade-in-up"
                         />
+                    </div>
+                </section>
+                
+                <section id="prizes" className="py-20 bg-background/80 backdrop-blur-sm">
+                    <div className="container mx-auto space-y-16">
+                        <div className="text-center space-y-4">
+                            <h2 className="text-4xl font-bold tracking-tighter">Competition Prizes</h2>
+                            <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Win up to <span className="text-primary font-semibold">10 Lakh funding account + iPhone</span> every month!</p>
+                        </div>
+
+                         <Tabs defaultValue="monthly" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto h-auto p-1.5 bg-muted/50 border-border">
+                                <TabsTrigger value="monthly" className="py-2.5 text-base">🏆 Monthly Prizes</TabsTrigger>
+                                <TabsTrigger value="weekly" className="py-2.5 text-base">🏅 Weekly Prizes</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="monthly" className="mt-12">
+                                <div className="grid md:grid-cols-3 gap-8 items-end pt-12">
+                                    <PrizeCard prize={monthlyPrizes.top[0]} />
+                                    <PrizeCard prize={monthlyPrizes.top[1]} />
+                                    <PrizeCard prize={monthlyPrizes.top[2]} />
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-8 mt-12">
+                                    <Card className="bg-card/50">
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2"><Award className="text-primary"/> 4th - 10th Place</CardTitle>
+                                            <CardDescription>Randomly selected winners from the top performers.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2">
+                                            {monthlyPrizes.runnerUps.map((text, i) => (
+                                                <p key={i} className="text-muted-foreground flex items-center gap-2"><Star className="w-4 h-4 text-primary/70"/>{text}</p>
+                                            ))}
+                                        </CardContent>
+                                    </Card>
+                                     <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
+                                        <Image src={monthlyPrizes.giveaway.image} alt={monthlyPrizes.giveaway.name} width={150} height={200} className="object-contain" data-ai-hint="iPhone 17"/>
+                                        <div className="space-y-2 text-center md:text-left">
+                                            <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Monthly Mega Giveaway</CardTitle>
+                                            <p className="text-2xl font-bold">{monthlyPrizes.giveaway.name}</p>
+                                            <p className="text-muted-foreground text-sm">{monthlyPrizes.giveaway.description}</p>
+                                        </div>
+                                    </Card>
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="weekly" className="mt-12">
+                                <div className="grid md:grid-cols-3 gap-8 items-end pt-12">
+                                     <PrizeCard prize={weeklyPrizes.top[0]} />
+                                    <PrizeCard prize={weeklyPrizes.top[1]} />
+                                    <PrizeCard prize={weeklyPrizes.top[2]} />
+                                </div>
+                                 <div className="grid md:grid-cols-2 gap-8 mt-12">
+                                    <Card className="bg-card/50">
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2"><Award className="text-primary"/> 4th - 10th Place</CardTitle>
+                                            <CardDescription>Randomly selected winners from the top performers.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2">
+                                             {weeklyPrizes.runnerUps.map((text, i) => (
+                                                <p key={i} className="text-muted-foreground flex items-center gap-2"><Star className="w-4 h-4 text-primary/70"/>{text}</p>
+                                            ))}
+                                        </CardContent>
+                                    </Card>
+                                     <Card className="bg-card/50 flex flex-col md:flex-row items-center gap-6 p-6">
+                                        <Image src={weeklyPrizes.giveaway.image} alt={weeklyPrizes.giveaway.name} width={150} height={200} className="object-contain" data-ai-hint="iPhone 16"/>
+                                        <div className="space-y-2 text-center md:text-left">
+                                            <CardTitle className="flex items-center gap-2 justify-center md:justify-start"><Gift className="text-primary"/> Weekly Giveaway</CardTitle>
+                                            <p className="text-2xl font-bold">{weeklyPrizes.giveaway.name}</p>
+                                            <p className="text-muted-foreground text-sm">{weeklyPrizes.giveaway.description}</p>
+                                        </div>
+                                    </Card>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
                     </div>
                 </section>
 
