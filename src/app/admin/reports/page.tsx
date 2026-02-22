@@ -39,6 +39,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ClientOnly } from '@/components/ui/client-only';
+
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -67,30 +69,32 @@ const StatCard = ({ title, value, change, description, prefix = '₹', suffix = 
 );
 
 const PlanBreakdownTable = ({ plans }: { plans: { name: string, revenue: number, sales: number }[] }) => (
-    <Table>
-        <TableHeader>
-            <TableRow>
-                <TableHead>Plan Name</TableHead>
-                <TableHead className="text-center">Sales Count</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            {plans.length > 0 ? (
-                plans.map(({ name, revenue, sales }) => (
-                    <TableRow key={name}>
-                        <TableCell className="font-medium">{name}</TableCell>
-                        <TableCell className="text-center">{sales}</TableCell>
-                        <TableCell className="text-right">₹{revenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                    </TableRow>
-                ))
-            ) : (
+    <div className="max-h-80 overflow-y-auto">
+        <Table>
+            <TableHeader>
                 <TableRow>
-                    <TableCell colSpan={3} className="text-center h-24">No sales data for the selected period.</TableCell>
+                    <TableHead>Plan Name</TableHead>
+                    <TableHead className="text-center">Sales Count</TableHead>
+                    <TableHead className="text-right">Revenue</TableHead>
                 </TableRow>
-            )}
-        </TableBody>
-    </Table>
+            </TableHeader>
+            <TableBody>
+                {plans.length > 0 ? (
+                    plans.map(({ name, revenue, sales }) => (
+                        <TableRow key={name}>
+                            <TableCell className="font-medium">{name}</TableCell>
+                            <TableCell className="text-center">{sales}</TableCell>
+                            <TableCell className="text-right">₹{revenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                        </TableRow>
+                    ))
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={3} className="text-center h-24">No sales data for the selected period.</TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
+    </div>
 );
 
 
@@ -277,17 +281,19 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                                 <CardTitle>Revenue vs. Sales Trend</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <ChartContainer config={chartConfig} className="h-72">
-                                    <RechartsLineChart data={data.salesByDate} margin={{ top: 5, right: 10, left: isMobile ? -30 : -10, bottom: 5 }}>
-                                        <CartesianGrid vertical={false} />
-                                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(new Date(value), "MMM d")} />
-                                        <YAxis yAxisId="left" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
-                                        <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tickMargin={8} />
-                                        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                        <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                                        <Line yAxisId="right" type="monotone" dataKey="sales" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} />
-                                    </RechartsLineChart>
-                                </ChartContainer>
+                                <ClientOnly fallback={<Skeleton className="h-72" />}>
+                                    <ChartContainer config={chartConfig} className="h-72">
+                                        <RechartsLineChart data={data.salesByDate} margin={{ top: 5, right: 10, left: isMobile ? -30 : -10, bottom: 5 }}>
+                                            <CartesianGrid vertical={false} />
+                                            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(new Date(value), "MMM d")} />
+                                            <YAxis yAxisId="left" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
+                                            <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tickMargin={8} />
+                                            <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                            <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                                            <Line yAxisId="right" type="monotone" dataKey="sales" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} />
+                                        </RechartsLineChart>
+                                    </ChartContainer>
+                                </ClientOnly>
                             </CardContent>
                         </Card>
                          <Card className="lg:col-span-2">
@@ -295,14 +301,16 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                                 <CardTitle>Revenue by Category</CardTitle>
                             </CardHeader>
                             <CardContent className="flex items-center justify-center">
-                                <ChartContainer config={pieChartConfig} className="h-72 w-full">
-                                     <PieChart>
-                                        <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                                        <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius="60%" label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                                            {pieChartData.map((entry) => (<Cell key={entry.name} fill={entry.fill} />))}
-                                        </Pie>
-                                    </PieChart>
-                                </ChartContainer>
+                                <ClientOnly fallback={<Skeleton className="h-72" />}>
+                                    <ChartContainer config={pieChartConfig} className="h-72 w-full">
+                                        <PieChart>
+                                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                                            <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius="60%" label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                                                {pieChartData.map((entry) => (<Cell key={entry.name} fill={entry.fill} />))}
+                                            </Pie>
+                                        </PieChart>
+                                    </ChartContainer>
+                                </ClientOnly>
                             </CardContent>
                         </Card>
                     </div>
@@ -315,15 +323,40 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                         <Card>
                             <CardHeader><CardTitle>Peak Activity by Day</CardTitle></CardHeader>
                             <CardContent>
-                               <ChartContainer config={{}} className="h-64">
-                                     <BarChart data={data.salesByDayOfWeek} margin={{ top: 5, right: 10, left: isMobile ? -30 : -10, bottom: 5 }}>
-                                        <CartesianGrid vertical={false} />
-                                        <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
-                                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
-                                        <ChartTooltip content={<ChartTooltipContent hideIndicator />} />
-                                        <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={4} />
-                                    </BarChart>
-                                </ChartContainer>
+                               <ClientOnly fallback={<Skeleton className="h-64" />}>
+                                    <ChartContainer config={{}} className="h-64">
+                                        <BarChart data={data.salesByDayOfWeek} margin={{ top: 5, right: 10, left: isMobile ? -30 : -10, bottom: 5 }}>
+                                            <CartesianGrid vertical={false} />
+                                            <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
+                                            <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
+                                            <ChartTooltip content={<ChartTooltipContent hideIndicator />} />
+                                            <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={4} />
+                                        </BarChart>
+                                    </ChartContainer>
+                                </ClientOnly>
+                            </CardContent>
+                        </Card>
+                     </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card>
+                             <CardHeader><CardTitle>Full Plan Performance</CardTitle></CardHeader>
+                             <CardContent><PlanBreakdownTable plans={data.allPlansBreakdown} /></CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader><CardTitle>Peak Activity by Hour</CardTitle></CardHeader>
+                            <CardContent>
+                               <ClientOnly fallback={<Skeleton className="h-64" />}>
+                                    <ChartContainer config={{}} className="h-64">
+                                        <BarChart data={data.salesByHour} margin={{ top: 5, right: 10, left: isMobile ? -30 : -10, bottom: 5 }}>
+                                            <CartesianGrid vertical={false} />
+                                            <XAxis dataKey="hour" tickLine={false} axisLine={false} tickMargin={8} />
+                                            <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
+                                            <ChartTooltip content={<ChartTooltipContent hideIndicator />} />
+                                            <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={4} />
+                                        </BarChart>
+                                    </ChartContainer>
+                                </ClientOnly>
                             </CardContent>
                         </Card>
                      </div>
@@ -423,7 +456,12 @@ function ReportsPageContent() {
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <form action={signOut} className="w-full">
-                                <SidebarMenuButton tooltip="Logout" asChild><button type="submit" className="w-full"><LogOut />Logout</button></SidebarMenuButton>
+                                <SidebarMenuButton tooltip="Logout" asChild>
+                                    <button type="submit" className="w-full">
+                                        <LogOut />
+                                        Logout
+                                    </button>
+                                </SidebarMenuButton>
                             </form>
                         </SidebarMenuItem>
                     </SidebarMenu>

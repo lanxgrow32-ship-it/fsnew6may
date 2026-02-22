@@ -23,6 +23,9 @@ export interface SalesData {
     planCategoryBreakdown: { name: string, value: number }[];
     topPlans: { name: string, revenue: number, sales: number }[];
     salesByDayOfWeek: { day: string, revenue: number }[];
+    salesByHour: { hour: string, revenue: number }[];
+    allPlansBreakdown: { name: string, revenue: number, sales: number }[];
+
     
     // Detailed Log
     recentSales: { id: string, name: string | null, email: string | null, plan: string, amount: number, date: string }[];
@@ -101,8 +104,9 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const planCategoryBreakdown: { [key: string]: number } = { 'Instant': 0, '1-Step': 0, '2-Step': 0 };
     const planBreakdown: { [key: string]: { revenue: number, sales: number } } = {};
     const salesByDayOfWeek: number[] = Array(7).fill(0); // 0=Sun, 1=Mon, ...
+    const salesByHour: number[] = Array(24).fill(0);
 
-    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'topPlans' | 'recentSales' | 'thisWeekRevenue' | 'thisMonthRevenue'> = {
+    const initialData: Omit<SalesData, 'wowRevenueGrowth' | 'momRevenueGrowth' | 'topPlans' | 'recentSales' | 'thisWeekRevenue' | 'thisMonthRevenue' | 'allPlansBreakdown' | 'salesByHour'> = {
         totalNetRevenue: 0,
         totalGrossRevenue: 0,
         totalDiscounts: 0,
@@ -133,6 +137,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         salesByDay[saleDateString].sales += 1;
 
         salesByDayOfWeek[saleDate.getDay()] += revenue;
+        salesByHour[saleDate.getHours()] += revenue;
 
         const lowerPlanName = sale.plan_purchased.toLowerCase();
         if (lowerPlanName.includes('instant')) planCategoryBreakdown['Instant'] += revenue;
@@ -165,6 +170,10 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 5),
         salesByDayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => ({ day, revenue: salesByDayOfWeek[i] })),
+        salesByHour: Array.from({ length: 24 }, (_, i) => ({ hour: `${i}:00`, revenue: salesByHour[i] })),
+        allPlansBreakdown: Object.entries(planBreakdown)
+            .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
+            .sort((a, b) => b.revenue - a.revenue),
         recentSales: sales.slice(0, 25).map(s => ({ id: s.id, name: s.full_name, email: s.email, plan: s.plan_purchased, amount: s.final_amount_paid, date: s.created_at })),
     };
 
