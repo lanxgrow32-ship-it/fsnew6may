@@ -48,9 +48,9 @@ async function fetchRevenueForPeriod(queryBuilder: any, startDate: Date, endDate
 export async function getSalesData(startDate?: Date, endDate?: Date, masterView?: boolean): Promise<SalesData | null> {
     const supabase = createClient();
     
-
-    const periodStart = startDate ? startOfDay(startDate) : new Date(0);
-    const periodEnd = endDate ? endOfDay(endDate) : new Date();
+    // Do not re-process the dates on the server. Trust the client's local timezone.
+    const periodStart = startDate || new Date(0);
+    const periodEnd = endDate || new Date();
     const now = new Date();
     
     const baseQuery = () => {
@@ -113,9 +113,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         totalNetRevenue += revenue;
         totalDiscounts += discount;
         
-        const utcDate = new Date(sale.created_at);
         const istOffset = 5.5 * 60 * 60 * 1000;
-        const istDate = new Date(utcDate.getTime() + istOffset);
+        const istDate = new Date(new Date(sale.created_at).getTime() + istOffset);
 
         const year = istDate.getUTCFullYear();
         const month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
