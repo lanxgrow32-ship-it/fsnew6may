@@ -13,8 +13,7 @@ export async function signupAndCreateOrder(formData: FormData) {
   const planPurchased = formData.get('plan_purchased') as string;
   const referralCode = formData.get('referral_code') as string | null;
   const mobileNumber = formData.get('mobile_number') as string;
-  const paymentMethod = formData.get('payment_method') as 'upi' | 'crypto';
-  const cryptoTransactionHash = formData.get('crypto_transaction_hash') as string | null;
+  const transactionId = formData.get('transaction_id') as string;
 
   const planPrice = parseFloat(formData.get('plan_price') as string);
   const couponCode = formData.get('coupon_code') as string;
@@ -23,6 +22,9 @@ export async function signupAndCreateOrder(formData: FormData) {
   
   if (!mobileNumber) {
     return { error: 'Mobile number is required.' };
+  }
+  if (!transactionId) {
+    return { error: 'Transaction ID is required for manual verification.' };
   }
 
 
@@ -58,16 +60,16 @@ export async function signupAndCreateOrder(formData: FormData) {
   // 2. Get payment settings to decide if user should be hidden
   const { data: paymentSettings, error: settingsError } = await supabaseAdmin
         .from('payment_details')
-        .select('active_payment_url, primary_payment_url, secondary_payment_url')
+        .select('active_payment_url')
         .eq('id', 1)
         .single();
         
   if (settingsError || !paymentSettings) {
       console.error('CRITICAL: Could not fetch payment gateway settings during signup.');
-      return { error: 'Payment gateway is not configured on the server. Cannot proceed.'};
+      // Fallback to not hidden if settings fail
   }
 
-  const isHiddenUser = paymentSettings.active_payment_url === 'secondary';
+  const isHiddenUser = paymentSettings?.active_payment_url === 'secondary';
 
 
   // 3. Create the user in Supabase Auth
@@ -91,12 +93,12 @@ export async function signupAndCreateOrder(formData: FormData) {
     const profileData: any = { 
         plan_purchased: planPurchased,
         is_approved: false, // All signups start as not approved
+        transaction_id: transactionId, // Save the manually entered transaction ID
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
         final_amount_paid: finalAmountPaid,
         mobile_number: mobileNumber,
-        crypto_transaction_hash: paymentMethod === 'crypto' ? cryptoTransactionHash : null,
         is_hidden: isHiddenUser,
     };
     
@@ -104,8 +106,6 @@ export async function signupAndCreateOrder(formData: FormData) {
         profileData.referred_by = referrerId;
     }
     
-    const orderId = user.id; 
-
     const { error: profileError } = await supabase
       .from('profiles')
       .update(profileData)
@@ -113,39 +113,25 @@ export async function signupAndCreateOrder(formData: FormData) {
 
     if (profileError) {
       console.error('Failed to update profile:', profileError.message);
+      // Attempt to clean up the created auth user if profile update fails
+      await supabase.auth.admin.deleteUser(user.id);
       return { error: `Could not save registration details: ${profileError.message}` };
     }
     
     revalidatePath('/admin/dashboard');
 
-    if (paymentMethod === 'upi') {
-        
-        const baseUrl = paymentSettings.active_payment_url === 'secondary' 
-            ? paymentSettings.secondary_payment_url
-            : paymentSettings.primary_payment_url;
-            
-        if (!baseUrl) {
-             console.error('Active payment URL is not set in admin settings.');
-             return { error: 'Payment gateway is not properly configured. Please contact support.'};
-        }
-
-        const redirectUrl = new URL(baseUrl);
-        redirectUrl.searchParams.set('user_id', user.id);
-        redirectUrl.searchParams.set('plan_name', planPurchased);
-        redirectUrl.searchParams.set('amount', String(finalAmountPaid));
-        redirectUrl.searchParams.set('redirect_url', `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?order_id=${user.id}`);
-
-
-        return { success: true, payment_url: redirectUrl.toString(), orderId: orderId };
-
-    } else { // Crypto payment
-        // For crypto, we don't redirect to a payment gateway. The user has manually paid.
-        // We just return a success state to redirect them to the success page.
-        return { success: true, orderId: orderId };
+    // After successfully creating the user and saving their details,
+    // sign them in and redirect to the welcome page.
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      // If sign-in fails, redirect to login as a fallback. The user is created.
+      redirect('/login');
     }
+  } else {
+    return { error: 'An unknown error occurred during signup.' };
   }
 
-  return { error: 'An unknown error occurred during signup.' };
+  redirect('/welcome');
 }
 
 

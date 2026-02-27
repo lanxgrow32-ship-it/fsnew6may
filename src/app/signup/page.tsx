@@ -29,7 +29,6 @@ function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'crypto'>('upi');
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
 
   const plan = searchParams.get('plan');
@@ -48,8 +47,6 @@ function SignupForm() {
   const [finalPrice, setFinalPrice] = useState(price ? parseFloat(price.replace(/,/g, '')) : 0);
   const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
   const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
-  const [cryptoDiscountAmount, setCryptoDiscountAmount] = useState(0);
-  const [usdtAmount, setUsdtAmount] = useState(0);
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
   const isTrialPlan = plan === '25K Try First Plan';
@@ -60,9 +57,6 @@ function SignupForm() {
       const { data, error } = await supabase.from('payment_details').select('*').eq('id', 1).single();
       if (data) {
         setPaymentDetails(data);
-        if (!data.is_upi_enabled && data.is_crypto_enabled) {
-          setPaymentMethod('crypto');
-        }
       }
     }
     fetchPaymentDetails();
@@ -72,22 +66,15 @@ function SignupForm() {
     const couponDiscount = (originalPrice * discountPercent) / 100;
     const priceAfterCoupon = originalPrice - couponDiscount;
     const referralDiscount = isReferralDiscountApplied ? priceAfterCoupon * 0.05 : 0;
-    const priceAfterReferral = priceAfterCoupon - referralDiscount;
-    const cryptoDiscount = paymentMethod === 'crypto' ? priceAfterReferral * 0.05 : 0;
-    const newFinalPrice = priceAfterReferral - cryptoDiscount;
+    const newFinalPrice = priceAfterCoupon - referralDiscount;
 
     setCouponDiscountAmount(couponDiscount);
     setReferralDiscountAmount(referralDiscount);
-    setCryptoDiscountAmount(cryptoDiscount);
     
     const roundedUpPrice = Math.ceil(newFinalPrice > 0 ? newFinalPrice : 0);
     setFinalPrice(roundedUpPrice);
-    
-    if (paymentMethod === 'crypto' && paymentDetails?.usdt_to_inr_rate > 0) {
-      setUsdtAmount(roundedUpPrice / paymentDetails.usdt_to_inr_rate);
-    }
 
-  }, [price, discountPercent, originalPrice, isReferralDiscountApplied, paymentMethod, paymentDetails]);
+  }, [price, discountPercent, originalPrice, isReferralDiscountApplied]);
 
    useEffect(() => {
     if (debouncedReferralCode) {
@@ -132,12 +119,11 @@ function SignupForm() {
         setError('The entered referral code is not valid. Please remove it or enter a valid one.');
         return;
     }
-     if (paymentMethod === 'crypto') {
-        const hash = (e.currentTarget.elements.namedItem('crypto_transaction_hash') as HTMLInputElement).value;
-        if (!hash) {
-            setError('Please enter the transaction hash after making the payment.');
-            return;
-        }
+    
+    const transactionId = (e.currentTarget.elements.namedItem('transaction_id') as HTMLInputElement).value;
+    if (!transactionId) {
+        setError('Please enter the transaction ID after making the payment.');
+        return;
     }
 
     setIsLoading(true);
@@ -147,27 +133,17 @@ function SignupForm() {
     formData.append('plan_purchased', plan || '');
     formData.append('plan_price', String(originalPrice));
     formData.append('coupon_code', discountPercent > 0 ? couponCode : '');
-    const totalDiscount = couponDiscountAmount + referralDiscountAmount + cryptoDiscountAmount;
+    const totalDiscount = couponDiscountAmount + referralDiscountAmount;
     formData.append('discount_amount', String(totalDiscount));
     formData.append('final_amount_paid', String(finalPrice));
-    formData.append('payment_method', paymentMethod);
     
     const result = await signupAndCreateOrder(formData);
 
-    if (result.error) {
+    if (result?.error) {
       setError(result.error);
       setIsLoading(false);
-    } else if (result.success) {
-        if(paymentMethod === 'upi' && result.payment_url) {
-            window.location.href = result.payment_url;
-        } else {
-            // For crypto, redirect to a success/pending page
-            router.push(`/payment-success?order_id=${result.orderId}&method=crypto`);
-        }
-    } else {
-        setError('Could not get payment URL. Please try again.');
-        setIsLoading(false);
     }
+    // The action now handles the redirect, so we don't need client-side redirection.
   };
 
   return (
@@ -182,44 +158,21 @@ function SignupForm() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Payment Method Selection */}
             <Card>
-                 <CardHeader>
-                    <CardTitle>Choose Payment Method</CardTitle>
+                <CardHeader>
+                    <CardTitle>1. Make Payment</CardTitle>
+                    <CardDescription>Scan the QR code or use the UPI ID to pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span>.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                     <div className="grid grid-cols-2 gap-4">
-                        <Button type="button" variant={paymentMethod === 'upi' ? 'default' : 'outline'} onClick={() => setPaymentMethod('upi')} disabled={!paymentDetails?.is_upi_enabled} className="h-16 flex-col gap-1">
-                            <IndianRupee />
-                            <span>UPI / Cards</span>
-                        </Button>
-                        <Button type="button" variant={paymentMethod === 'crypto' ? 'default' : 'outline'} onClick={() => setPaymentMethod('crypto')} disabled={!paymentDetails?.is_crypto_enabled} className="h-16 flex-col gap-1">
-                             <div className="relative w-full flex justify-center items-center">
-                                <Wallet />
-                                <Badge variant="destructive" className="absolute -top-3 -right-2 text-xs">5% OFF</Badge>
-                             </div>
-                            <span>Crypto (USDT)</span>
-                        </Button>
+                <CardContent className="space-y-4">
+                     {paymentDetails?.qr_code_url && (
+                         <div className="flex justify-center">
+                             <Image src={paymentDetails.qr_code_url} alt="Payment QR Code" width={200} height={200} className="rounded-md border p-2 bg-white" />
+                         </div>
+                     )}
+                    <div className="space-y-2">
+                         <Label>Our UPI ID</Label>
+                        <Input readOnly value={paymentDetails?.upi_id || 'Loading...'}/>
                     </div>
-                     {paymentDetails && !paymentDetails.is_upi_enabled && (
-                        <Alert variant="default" className="mt-4 text-center border-yellow-400 dark:border-yellow-500 bg-yellow-50 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-200">
-                            <AlertTitle className="font-bold text-yellow-950 dark:text-yellow-100">UPI Payments Unavailable</AlertTitle>
-                            <AlertDescription>
-                                <p className="mb-2">
-                                    To pay via UPI, please{' '}
-                                    <Button asChild variant="link" className="p-0 h-auto text-current font-bold underline">
-                                        <a href="https://wa.me/918432306244" target="_blank" rel="noopener noreferrer">
-                                            contact us on WhatsApp
-                                        </a>
-                                    </Button>
-                                    .
-                                </p>
-                                <p>
-                                यूपीआई भुगतान वर्तमान में अनुपलब्ध हैं। यूपीआई के माध्यम से भुगतान करने के लिए, कृपया हमें व्हाट्सएप पर संपर्क करें।
-                                </p>
-                            </AlertDescription>
-                        </Alert>
-                    )}
                 </CardContent>
             </Card>
 
@@ -269,55 +222,26 @@ function SignupForm() {
                             <p>- ₹{referralDiscountAmount.toFixed(2)}</p>
                         </div>
                     )}
-                    {cryptoDiscountAmount > 0 && (
-                         <div className="flex justify-between items-center text-sm text-green-600">
-                            <p className="text-muted-foreground">Crypto Discount (5%):</p>
-                            <p>- ₹{cryptoDiscountAmount.toFixed(2)}</p>
-                        </div>
-                    )}
                     <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
                         <p>Final Price to Pay:</p>
                         <p>₹{finalPrice.toFixed(2)}</p>
                     </div>
-                     {paymentMethod === 'crypto' && (
-                        <div className="text-center font-bold text-primary text-xl p-2 bg-primary/10 rounded-md">
-                           ~ {usdtAmount.toFixed(2)} USDT
-                        </div>
-                    )}
                 </CardContent>
             </Card>
 
-            {paymentMethod === 'crypto' && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Crypto Payment Instructions</CardTitle>
-                        <CardDescription>Send exactly <span className="font-bold">{usdtAmount.toFixed(2)} USDT</span> to the address below. Only use the TRC20 network.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                         {paymentDetails?.crypto_qr_code_url && (
-                             <div className="flex justify-center">
-                                 <Image src={paymentDetails.crypto_qr_code_url} alt="Crypto QR Code" width={200} height={200} className="rounded-md border p-2 bg-white" />
-                             </div>
-                         )}
-                        <div className="space-y-2">
-                             <Label>USDT Wallet Address (TRC20)</Label>
-                            <Input readOnly value={paymentDetails?.crypto_wallet_address || 'Loading...'}/>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="crypto_transaction_hash">Transaction Hash / ID</Label>
-                            <Input id="crypto_transaction_hash" name="crypto_transaction_hash" placeholder="Enter the transaction hash here after payment" required/>
-                             <p className="text-xs text-muted-foreground">This is required to verify your manual payment.</p>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
-                    <CardTitle>Registration Details</CardTitle>
+                    <CardTitle>2. Submit Your Details</CardTitle>
+                    <CardDescription>Enter your registration and payment details below.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+
+                    <div className="space-y-2">
+                        <Label htmlFor="transaction_id">UPI Transaction ID *</Label>
+                        <Input id="transaction_id" name="transaction_id" placeholder="Enter the 12-digit transaction ID" required/>
+                        <p className="text-xs text-muted-foreground">This is required to verify your payment.</p>
+                    </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="full_name">Full Name</Label>
@@ -365,7 +289,7 @@ function SignupForm() {
 
 
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (paymentMethod === 'upi' ? 'Proceed to Payment' : 'Submit & Verify Payment')}
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Create Account'}
                     </Button>
                     <div className="text-center text-sm text-muted-foreground pt-2">
                         Already have an account?{' '}
