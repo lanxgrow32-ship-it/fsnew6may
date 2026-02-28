@@ -162,7 +162,6 @@ export async function updateProfile(formData: FormData) {
                         password: autoFilledPassword, 
                         initialBalance: initialBalance,
                         isHidden: beforeUpdateData.is_hidden || false,
-                        source_id: "fundedstock"
                     }),
                 });
                 if (!response.ok) {
