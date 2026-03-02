@@ -233,10 +233,10 @@ const StatCard = ({
 }) => (
   <GlassCard className={cn("p-5 flex flex-col relative overflow-hidden", isPrimary && "bg-purple-600/10 border-purple-500/20")}>
     <div className="absolute inset-0 bg-cover bg-center opacity-[0.02]" style={{backgroundImage: "url(/grid.svg)"}}></div>
-    <div className="absolute bottom-0 right-0 w-20 h-20">
-        <Image src={decorativeImage} alt="" width={80} height={80} className="opacity-20" />
+    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-16 h-16">
+        <Image src={decorativeImage} alt="" width={64} height={64} />
     </div>
-    <div className="relative">
+    <div className="relative z-10">
       <div className="flex items-center gap-2">
          {icon}
         <p className="text-sm text-gray-300 font-medium">{title}</p>
