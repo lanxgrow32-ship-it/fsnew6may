@@ -26,7 +26,7 @@ import Image from 'next/image';
 const UserAvatar = ({ className }: { className?: string }) => (
   <div className={cn('relative h-16 w-16', className)}>
     <div className="absolute -inset-1 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full blur-md opacity-75"></div>
-    <div className="relative h-16 w-16 flex items-center justify-center bg-slate-900 rounded-full border-2 border-slate-700 overflow-hidden">
+    <div className="relative h-16 w-16 flex items-center justify-center bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden">
       <Image src="/bitmoji.png" alt="User Avatar" width={64} height={64} className="object-cover" />
     </div>
   </div>
@@ -303,7 +303,7 @@ export default function UITestPage() {
               progress={60.0}
               icon={<DollarSign className="w-4 h-4 text-gray-400" />}
               progressColor="bg-purple-500/20 text-purple-300"
-              decorativeImage="/1card.png"
+              decorativeImage="/a.png"
               isPrimary={true}
             />
              <StatCard
@@ -313,7 +313,7 @@ export default function UITestPage() {
               progress={20.3}
               icon={<LineChart className="w-4 h-4 text-gray-400" />}
               progressColor="bg-green-500/20 text-green-300"
-              decorativeImage="/2card.png"
+              decorativeImage="/b.png"
             />
             <StatCard
               title="Loss"
@@ -322,7 +322,7 @@ export default function UITestPage() {
               progress={13.2}
               icon={<LineChart className="w-4 h-4 text-gray-400 -scale-y-100" />}
               progressColor="bg-red-500/20 text-red-300"
-              decorativeImage="/3card.png"
+              decorativeImage="/c.png"
             />
             <StatCard
               title="Trade"
@@ -331,7 +331,7 @@ export default function UITestPage() {
               progress={27.6}
               icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
               progressColor="bg-blue-500/20 text-blue-300"
-              decorativeImage="/4card.png"
+              decorativeImage="/d.png"
             />
         </div>
       </main>
