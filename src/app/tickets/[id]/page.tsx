@@ -292,7 +292,7 @@ export default function TicketDetailsPage({ params }: { params: Promise<{ id: st
             <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
             <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
         </div>
-        <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+        <main className="relative z-10 p-4 sm:p-6 lg:p-8">
             <DashboardHeader profile={profile} activePage="Support" />
             <div className="flex items-center justify-between mb-8">
                  <div className="flex items-center gap-4">

@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { signOut } from '@/app/actions';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, Loader2 } from 'lucide-react';
+import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, Loader2, BookUser, Gift, BrainCircuit, TrendingDown, Percent } from 'lucide-react';
 import { ReceiptButton } from './receipt-button';
 
 // Helper Components for the new UI
@@ -145,7 +145,7 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
 function formatBalance(planName: string): string {
     if (!planName) return '₹0';
     const name = planName.toLowerCase();
-    const match = name.match(/([d,.]+)\s*(k|l|lakh|cr|crore)/);
+    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
     if (match) {
         let amount = parseFloat(match[1].replace(/,/g, ''));
         const unit = match[2];
@@ -153,7 +153,7 @@ function formatBalance(planName: string): string {
         if (unit === 'l' || unit === 'lakh') return `₹${amount}L`;
         if (unit === 'cr' || unit === 'crore') return `₹${amount}Cr`;
     }
-    const plainNumberMatch = name.match(/^[d,.]+/);
+    const plainNumberMatch = name.match(/^[\d,.]+/);
     if (plainNumberMatch) {
         const num = parseFloat(plainNumberMatch[0].replace(/,/g, ''));
         if (num >= 10000000) return `₹${num/10000000}Cr`;
@@ -392,7 +392,7 @@ export default async function WelcomePage() {
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
           
-          <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+          <main className="relative z-10 p-4 sm:p-6 lg:p-8">
             <DashboardHeader profile={profile} activePage="Account Overview" />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -407,42 +407,42 @@ export default async function WelcomePage() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard
-                      title="Balance"
-                      value="₹1,00,000"
-                      details="Current Balance"
-                      progress={100.0}
-                      icon={<DollarSign className="w-4 h-4 text-gray-400" />}
-                      progressColor="bg-purple-500/20 text-purple-300"
-                      decorativeImage="/a.png"
-                      isPrimary={true}
+                     <StatCard
+                        title="Balance"
+                        value="₹1,00,000"
+                        details="Current Balance"
+                        progress={100.0}
+                        icon={<DollarSign className="w-4 h-4 text-gray-400" />}
+                        progressColor="bg-purple-500/20 text-purple-300"
+                        decorativeImage="/a.png"
+                        isPrimary={true}
                     />
                      <StatCard
-                      title="Profit / Loss"
-                      value="+₹2,034"
-                      details="Total P/L"
-                      progress={2.03}
-                      icon={<LineChart className="w-4 h-4 text-gray-400"/>}
-                      progressColor="bg-green-500/20 text-green-300"
-                      decorativeImage="/b.png"
+                        title="Profit / Loss"
+                        value="+₹2,034"
+                        details="Total P/L"
+                        progress={2.03}
+                        icon={<LineChart className="w-4 h-4 text-gray-400"/>}
+                        progressColor="bg-green-500/20 text-green-300"
+                        decorativeImage="/b.png"
                     />
                     <StatCard
-                      title="Win Rate"
-                      value="72%"
-                      details="Of all trades"
-                      progress={72.0}
-                      icon={<Briefcase className="w-4 h-4 text-gray-400"/>}
-                      progressColor="bg-sky-500/20 text-sky-300"
-                      decorativeImage="/c.png"
+                        title="Win Rate"
+                        value="72%"
+                        details="Of all trades"
+                        progress={72.0}
+                        icon={<Briefcase className="w-4 h-4 text-gray-400"/>}
+                        progressColor="bg-sky-500/20 text-sky-300"
+                        decorativeImage="/c.png"
                     />
                     <StatCard
-                      title="Trading Days"
-                      value="18"
-                      details="Active Days"
-                      progress={60.0}
-                      icon={<Calendar className="w-4 h-4 text-gray-400"/>}
-                      progressColor="bg-amber-500/20 text-amber-300"
-                      decorativeImage="/d.png"
+                        title="Trading Days"
+                        value="18"
+                        details="Active Days"
+                        progress={60.0}
+                        icon={<Calendar className="w-4 h-4 text-gray-400"/>}
+                        progressColor="bg-amber-500/20 text-amber-300"
+                        decorativeImage="/d.png"
                     />
                 </div>
               </>

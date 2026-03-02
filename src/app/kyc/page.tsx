@@ -551,8 +551,8 @@ export default function KycPage() {
                 <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
-            <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-                <DashboardHeader profile={profile} activePage="" />
+            <main className="relative z-10 p-4 sm:p-6 lg:p-8">
+                <DashboardHeader profile={profile} activePage="KYC" />
                 <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
                     {isPageLoading || !profile ? (
                         <div className="flex items-center justify-center h-96">

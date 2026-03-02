@@ -267,8 +267,8 @@ export default function ProfilePage() {
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
           
-            <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-                <DashboardHeader profile={profile} activePage="" />
+            <main className="relative z-10 p-4 sm:p-6 lg:p-8">
+                <DashboardHeader profile={profile} activePage="My Profile" />
                 <div className="max-w-2xl mx-auto space-y-6">
                     {loading || !profile ? <ProfileSkeleton /> : (
                         <>

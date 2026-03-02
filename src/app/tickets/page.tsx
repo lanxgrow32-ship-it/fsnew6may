@@ -328,7 +328,7 @@ export default function UserTicketsPage() {
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
           
-            <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+            <main className="relative z-10 p-4 sm:p-6 lg:p-8">
                 <DashboardHeader profile={profile} activePage="Support" />
                  <div className="flex items-center justify-between mb-8">
                     <h1 className="text-3xl font-bold text-white">Support Tickets</h1>
