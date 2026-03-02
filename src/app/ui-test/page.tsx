@@ -26,8 +26,8 @@ import Image from 'next/image';
 const UserAvatar = ({ className }: { className?: string }) => (
   <div className={cn('relative h-16 w-16', className)}>
     <div className="absolute -inset-1 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full blur-md opacity-75"></div>
-    <div className="relative h-16 w-16 flex items-center justify-center bg-slate-900 rounded-full border-2 border-slate-700">
-      <User className="h-8 w-8 text-slate-400" />
+    <div className="relative h-16 w-16 flex items-center justify-center bg-slate-900 rounded-full border-2 border-slate-700 overflow-hidden">
+      <Image src="/bitmoji.png" alt="User Avatar" width={64} height={64} className="object-cover" />
     </div>
   </div>
 );
