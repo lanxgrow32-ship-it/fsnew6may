@@ -231,10 +231,10 @@ const StatCard = ({
   decorativeImage: string;
   isPrimary?: boolean;
 }) => (
-  <GlassCard className={cn("p-5 flex flex-col relative", isPrimary && "bg-purple-600/10 border-purple-500/20")}>
-    <div className="absolute -inset-px bg-grid-pattern opacity-5"></div>
+  <GlassCard className={cn("p-5 flex flex-col relative overflow-hidden", isPrimary && "bg-purple-600/10 border-purple-500/20")}>
+    <div className="absolute inset-0 bg-cover bg-center opacity-[0.02]" style={{backgroundImage: "url(/grid.svg)"}}></div>
     <div className="absolute bottom-0 right-0 w-20 h-20">
-        <Image src={decorativeImage} alt="" width={80} height={80} className="opacity-10" />
+        <Image src={decorativeImage} alt="" width={80} height={80} className="opacity-20" />
     </div>
     <div className="relative">
       <div className="flex items-center gap-2">
@@ -284,14 +284,6 @@ export default function UITestPage() {
         <div className="absolute bottom-[-20%] right-[-20%] w-[50vw] h-[50vw] bg-pink-600 rounded-full filter blur-3xl opacity-20" />
       </div>
       
-      <style jsx global>{`
-        .bg-grid-pattern {
-          background-image: linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-          background-size: 20px 20px;
-        }
-      `}</style>
-
       <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
         <DashboardHeader />
 
@@ -344,3 +336,5 @@ export default function UITestPage() {
     </div>
   );
 }
+
+    
