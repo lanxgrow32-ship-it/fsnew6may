@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { Button } from '@/components/ui/button';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -132,13 +132,13 @@ export function ReceiptButton({ profile }: { profile: any }) {
     }
 
     return (
-        <Button onClick={generateReceipt} disabled={isLoading} variant="outline">
+        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); generateReceipt(); }} disabled={isLoading}>
             {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
                 <Download className="mr-2 h-4 w-4" />
             )}
-            Download Receipt
-        </Button>
+            <span>Download Receipt</span>
+        </DropdownMenuItem>
     );
 }

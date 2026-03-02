@@ -9,12 +9,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { signOut } from '@/app/actions';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare } from 'lucide-react';
-import { CompetitionView } from './competition-view';
+import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye } from 'lucide-react';
 import { ReceiptButton } from './receipt-button';
 
+// Helper Components for the new UI
+
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
-    <div className={cn('bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg', className)}>
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
         {children}
     </div>
 );
@@ -27,7 +28,6 @@ const UserAvatar = ({ className }: { className?: string }) => (
     </div>
   </div>
 );
-
 
 const Logo = () => (
     <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
@@ -78,9 +78,7 @@ function UserNav({ profile }: { profile: any}) {
                             <span>Support</span>
                         </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <ReceiptButton profile={profile} />
-                    </DropdownMenuItem>
+                    <ReceiptButton profile={profile} />
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                  <form action={signOut}>
@@ -108,7 +106,7 @@ const DashboardHeader = ({profile}: {profile:any}) => (
                 Trading Guide
             </Link>
             <Link href="/referrals" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                Transactions
+                Referrals
             </Link>
             <Link href="/competition" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
                 Competition
@@ -140,17 +138,20 @@ function formatBalance(planName: string): string {
     if (match) {
         let amount = parseFloat(match[1].replace(/,/g, ''));
         const unit = match[2];
-        if (unit === 'k') return (amount * 1000).toLocaleString('en-IN');
-        if (unit === 'l' || unit === 'lakh') return (amount * 100000).toLocaleString('en-IN');
-        if (unit === 'cr' || unit === 'crore') return (amount * 10000000).toLocaleString('en-IN');
+        if (unit === 'k') return `₹${amount}K`;
+        if (unit === 'l' || unit === 'lakh') return `₹${amount}L`;
+        if (unit === 'cr' || unit === 'crore') return `₹${amount}Cr`;
     }
     const plainNumberMatch = name.match(/^[\d,.]+/);
     if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/,/g, '')).toLocaleString('en-IN');
+        const num = parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+        if (num >= 10000000) return `₹${num/10000000}Cr`;
+        if (num >= 100000) return `₹${num/100000}L`;
+        if (num >= 1000) return `₹${num/1000}K`;
+        return `₹${num}`;
     }
-    return '0';
+    return '₹0';
 }
-
 
 function getAccountType(planName: string): string {
     if (!planName) return 'N/A';
@@ -179,7 +180,7 @@ const UserDetails = ({ profile }: { profile: any }) => {
                         </div>
                     </div>
                     <div className="shrink-0 border border-white/10 bg-black/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-mono text-gray-300 flex items-center gap-2">
-                        <KeyRound className="w-4 h-4 text-gray-500" />
+                        <Grid3x3 className="w-4 h-4 text-gray-500" />
                         {profile.id.substring(0, 8)}
                     </div>
                 </div>
@@ -187,11 +188,11 @@ const UserDetails = ({ profile }: { profile: any }) => {
                 <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-xs text-gray-400 tracking-wider">Initial Balance</p>
-                        <p className="font-semibold text-white mt-1">₹{initialBalance}</p>
+                        <p className="font-semibold text-white mt-1">{initialBalance}</p>
                     </div>
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-xs text-gray-400 tracking-wider">Plan Type</p>
-                        <p className="font-semibold text-white mt-1">{profile.plan_purchased}</p>
+                        <p className="font-semibold text-white mt-1 truncate">{profile.plan_purchased}</p>
                     </div>
                      <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-xs text-gray-400 tracking-wider">Account Type</p>
@@ -203,19 +204,14 @@ const UserDetails = ({ profile }: { profile: any }) => {
                     </div>
                 </div>
 
-                <div className="mt-8">
-                    <h3 className="font-semibold flex items-center gap-2 mb-3 text-white tracking-wide">
-                        Trading Cycle Details
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3 text-center">
-                        <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                            <p className="text-xs text-gray-400 tracking-wider">Start Date</p>
-                            <p className="font-semibold text-white">{new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                            <p className="text-xs text-gray-400 tracking-wider">Account Status</p>
-                            <p className="font-semibold text-green-400 mt-1">Active</p>
-                        </div>
+                <div className="mt-8 grid grid-cols-2 gap-3 text-center">
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">Start Date</p>
+                        <p className="font-semibold text-white">{new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                    </div>
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">Account Status</p>
+                        <p className="font-semibold text-green-400 mt-1">Active</p>
                     </div>
                 </div>
             </div>
@@ -280,9 +276,9 @@ const AccountDetails = ({ profile }: { profile: any }) => (
     </GlassCard>
 );
 
-const StatCard = ({ title, value, icon, details, progress, progressColor, decorativeImage, isPrimary = false }: { title: string; value: string; icon: React.ReactNode; details: string; progress: number; progressColor: string; decorativeImage: string; isPrimary?: boolean; }) => (
+const StatCard = ({ title, value, icon, details, progress, progressColor, decorativeImage, isPrimary = false, isLoss = false }: { title: string; value: string; icon: React.ReactNode; details: string; progress: number; progressColor: string; decorativeImage: string; isPrimary?: boolean; isLoss?: boolean }) => (
   <GlassCard className={cn("p-5 flex flex-col relative overflow-hidden", isPrimary && "bg-purple-600/10 border-purple-500/20")}>
-    <div className="absolute top-1/2 right-4 -translate-y-1/2 w-20 h-20">
+    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-20 h-20">
         <Image src={decorativeImage} alt="" width={80} height={80} className="opacity-100" />
     </div>
     <div className="relative">
@@ -291,7 +287,7 @@ const StatCard = ({ title, value, icon, details, progress, progressColor, decora
         <p className="text-sm text-gray-300 font-medium">{title}</p>
       </div>
       <div className="mt-2">
-        <p className="text-3xl font-bold text-white">{value}</p>
+        <p className={cn("text-3xl font-bold text-white", isLoss && "text-red-400")}>{value}</p>
         <p className="text-xs text-gray-400">{details}</p>
       </div>
       <div className="mt-4">
@@ -332,58 +328,28 @@ export default async function WelcomePage() {
     
      if (profile.is_breached) {
         return (
-            <main className="flex min-h-screen items-center justify-center p-4 bg-slate-950 text-white">
-                <GlassCard className="w-full max-w-lg text-center p-8 border-destructive/50">
-                    <div className="mx-auto bg-destructive/10 rounded-full p-3 w-fit mb-4">
-                        <ShieldAlert className="h-10 w-10 text-destructive" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-destructive">Account Breached</h2>
-                    <p className="text-gray-400 mt-2 mb-6">
-                        Your account has been flagged for a breach of our trading rules. Access has been suspended.
-                    </p>
-                    <div className="flex flex-col items-center gap-4 pt-4">
-                        <Button asChild className="w-full max-w-xs">
-                            <Link href="/pricing">Purchase New Account</Link>
-                        </Button>
-                    </div>
-                </GlassCard>
-            </main>
+             <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
+                <main className="flex min-h-screen items-center justify-center p-4">
+                    <GlassCard className="w-full max-w-lg text-center p-8 border-destructive/50">
+                        <div className="mx-auto bg-destructive/10 rounded-full p-3 w-fit mb-4">
+                            <ShieldAlert className="h-10 w-10 text-destructive" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-destructive">Account Breached</h2>
+                        <p className="text-gray-400 mt-2 mb-6">
+                            Your account has been flagged for a breach of our trading rules. Access has been suspended.
+                        </p>
+                        <div className="flex flex-col items-center gap-4 pt-4">
+                            <Button asChild className="w-full max-w-xs">
+                                <Link href="/pricing">Purchase New Account</Link>
+                            </Button>
+                        </div>
+                    </GlassCard>
+                </main>
+             </div>
         )
     }
 
-    // Handle competition users
-    if (profile.account_type === 'competition') {
-        const { data: entries } = await supabase
-            .from('competition_entries')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .order('created_at', { ascending: false });
-
-        const { data: paymentSession } = await supabase
-            .from('payment_sessions')
-            .select('status')
-            .eq('email', session.user.email)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-         return (
-            <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
-                <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-                <div className="absolute inset-x-0 top-0 h-[50vh] bg-gradient-to-b from-purple-900/40 via-purple-900/10 to-transparent -z-10"></div>
-                <div className="absolute inset-0 z-0">
-                    <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
-                    <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
-                </div>
-                 <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-                    <DashboardHeader profile={profile} />
-                    <CompetitionView initialEntries={entries || []} paymentSession={paymentSession} />
-                 </main>
-            </div>
-         );
-    }
-
-
+    // This is the new, unified layout for the welcome page.
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
           <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
@@ -418,11 +384,11 @@ export default async function WelcomePage() {
                       isPrimary={true}
                     />
                      <StatCard
-                      title="Profit/Loss"
+                      title="Profit / Loss"
                       value="+₹2,034"
                       details="Total P/L"
                       progress={2.03}
-                      icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
+                      icon={<LineChart className="w-4 h-4 text-gray-400"/>}
                       progressColor="bg-green-500/20 text-green-300"
                       decorativeImage="/b.png"
                     />
@@ -431,7 +397,7 @@ export default async function WelcomePage() {
                       value="72%"
                       details="Of all trades"
                       progress={72.0}
-                      icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
+                      icon={<Briefcase className="w-4 h-4 text-gray-400"/>}
                       progressColor="bg-sky-500/20 text-sky-300"
                       decorativeImage="/c.png"
                     />
@@ -440,7 +406,7 @@ export default async function WelcomePage() {
                       value="18"
                       details="Active Days"
                       progress={60.0}
-                      icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
+                      icon={<Calendar className="w-4 h-4 text-gray-400"/>}
                       progressColor="bg-amber-500/20 text-amber-300"
                       decorativeImage="/d.png"
                     />
@@ -452,3 +418,4 @@ export default async function WelcomePage() {
         </div>
     );
 }
+
