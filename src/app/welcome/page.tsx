@@ -94,23 +94,34 @@ function UserNav({ profile }: { profile: any}) {
     )
 }
 
-const DashboardHeader = ({profile}: {profile:any}) => (
+const navItems = [
+    { href: "/welcome", label: "Account Overview" },
+    { href: "/guide", label: "Trading Guide" },
+    { href: "/referrals", label: "Referrals" },
+    { href: "/tickets", label: "Support" },
+    { href: "/mentor", label: "AI Mentor" },
+    { href: "/pricing", label: "Purchase New Plan" },
+];
+
+const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
   <header className="flex items-center justify-between mb-8 z-20 relative">
     <div className="flex items-center gap-8">
         <Logo />
         <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
-            <Link href="/welcome" className="px-4 py-1.5 text-sm font-medium bg-white/10 rounded-full text-white shadow-md">
-                Account Overview
-            </Link>
-            <Link href="/guide" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                Trading Guide
-            </Link>
-            <Link href="/referrals" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                Referrals
-            </Link>
-            <Link href="/competition" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                Competition
-            </Link>
+            {navItems.map((item) => (
+                <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                        "px-4 py-1.5 text-sm transition-colors",
+                        activePage === item.label
+                        ? "font-medium bg-white/10 rounded-full text-white shadow-md"
+                        : "text-gray-400 hover:text-white"
+                    )}
+                >
+                    {item.label}
+                </Link>
+            ))}
       </nav>
     </div>
     <div className="flex items-center gap-2">
@@ -134,7 +145,7 @@ const DashboardHeader = ({profile}: {profile:any}) => (
 function formatBalance(planName: string): string {
     if (!planName) return '₹0';
     const name = planName.toLowerCase();
-    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
+    const match = name.match(/([d,.]+)\s*(k|l|lakh|cr|crore)/);
     if (match) {
         let amount = parseFloat(match[1].replace(/,/g, ''));
         const unit = match[2];
@@ -142,7 +153,7 @@ function formatBalance(planName: string): string {
         if (unit === 'l' || unit === 'lakh') return `₹${amount}L`;
         if (unit === 'cr' || unit === 'crore') return `₹${amount}Cr`;
     }
-    const plainNumberMatch = name.match(/^[\d,.]+/);
+    const plainNumberMatch = name.match(/^[d,.]+/);
     if (plainNumberMatch) {
         const num = parseFloat(plainNumberMatch[0].replace(/,/g, ''));
         if (num >= 10000000) return `₹${num/10000000}Cr`;
@@ -185,7 +196,7 @@ const UserDetails = ({ profile }: { profile: any }) => {
                     </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-xs text-gray-400 tracking-wider">Initial Balance</p>
                         <p className="font-semibold text-white mt-1">{initialBalance}</p>
@@ -198,13 +209,9 @@ const UserDetails = ({ profile }: { profile: any }) => {
                         <p className="text-xs text-gray-400 tracking-wider">Account Type</p>
                         <p className="font-semibold text-white mt-1">{accountType}</p>
                     </div>
-                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <p className="text-xs text-gray-400 tracking-wider">Account Status</p>
-                        <p className="font-semibold text-green-400 mt-1">Active</p>
-                    </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-2 gap-3 text-center">
+                 <div className="mt-3 grid grid-cols-2 gap-3 text-center">
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-xs text-gray-400 tracking-wider">Start Date</p>
                         <p className="font-semibold text-white">{new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
@@ -252,7 +259,7 @@ const AccountDetails = ({ profile }: { profile: any }) => (
         <div className="relative z-10">
             <h3 className="font-semibold mb-4 text-white tracking-wide">Account details</h3>
             <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5">
                         <div>
                             <p className="text-xs text-gray-400 tracking-wider">Trading ID</p>
@@ -386,7 +393,7 @@ export default async function WelcomePage() {
             </div>
           
           <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-            <DashboardHeader profile={profile} />
+            <DashboardHeader profile={profile} activePage="Account Overview" />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <UserDetails profile={profile} />
@@ -445,4 +452,3 @@ export default async function WelcomePage() {
         </div>
     );
 }
-

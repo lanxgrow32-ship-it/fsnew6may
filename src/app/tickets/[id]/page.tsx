@@ -111,23 +111,34 @@ function UserNav({ profile }: { profile: any}) {
     )
 }
 
-const DashboardHeader = ({profile}: {profile:any}) => (
+const navItems = [
+    { href: "/welcome", label: "Account Overview" },
+    { href: "/guide", label: "Trading Guide" },
+    { href: "/referrals", label: "Referrals" },
+    { href: "/tickets", label: "Support" },
+    { href: "/mentor", label: "AI Mentor" },
+    { href: "/pricing", label: "Purchase New Plan" },
+];
+
+const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
   <header className="flex items-center justify-between mb-8 z-20 relative">
     <div className="flex items-center gap-8">
         <Logo />
         <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
-            <Link href="/welcome" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                Account Overview
-            </Link>
-            <Link href="/guide" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                Trading Guide
-            </Link>
-            <Link href="/referrals" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                Referrals
-            </Link>
-            <Link href="/competition" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                Competition
-            </Link>
+            {navItems.map((item) => (
+                <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                        "px-4 py-1.5 text-sm transition-colors",
+                        activePage === item.label
+                        ? "font-medium bg-white/10 rounded-full text-white shadow-md"
+                        : "text-gray-400 hover:text-white"
+                    )}
+                >
+                    {item.label}
+                </Link>
+            ))}
       </nav>
     </div>
     <div className="flex items-center gap-2">
@@ -282,7 +293,7 @@ export default function TicketDetailsPage({ params }: { params: Promise<{ id: st
             <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
         </div>
         <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-            <DashboardHeader profile={profile} />
+            <DashboardHeader profile={profile} activePage="Support" />
             <div className="flex items-center justify-between mb-8">
                  <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" asChild className="bg-black/20 border-white/10 text-white hover:bg-white/20">
@@ -357,5 +368,3 @@ export default function TicketDetailsPage({ params }: { params: Promise<{ id: st
     </div>
   );
 }
-
-    
