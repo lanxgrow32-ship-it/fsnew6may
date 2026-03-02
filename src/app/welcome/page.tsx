@@ -1,162 +1,52 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
-import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
-import { Home, FileCheck, User, DollarSign, LogOut, Bell, Loader2, XCircle, CheckCircle, ExternalLink, Server as ServerIcon, Check, BookUser, Gift, MessageSquare, ShieldAlert, BrainCircuit, Swords } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CredentialsView } from './credentials-view';
 import Image from 'next/image';
-import { ReceiptButton } from './receipt-button';
+import { cn } from '@/lib/utils';
+import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare } from 'lucide-react';
 import { CompetitionView } from './competition-view';
+import { ReceiptButton } from './receipt-button';
+
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
+    <div className={cn('bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg', className)}>
+        {children}
+    </div>
+);
+
+const UserAvatar = ({ className }: { className?: string }) => (
+  <div className={cn('relative h-16 w-16', className)}>
+    <div className="absolute -inset-1 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full blur-md opacity-75"></div>
+    <div className="relative h-16 w-16 flex items-center justify-center bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden">
+      <Image src="/bitmoji.png" alt="User Avatar" width={64} height={64} className="object-cover" />
+    </div>
+  </div>
+);
 
 
-function OnboardingGuide({ profile }: { profile: any }) {
-  const getStepStatus = (step: number) => {
-    // Step 1: Payment is always approved to see this page
-    if (step === 1) return 'completed';
-    
-    // Step 2: KYC
-    if (step === 2) {
-        if (profile.kyc_status === 'pending' || profile.kyc_status === 'rejected') return 'active';
-        if (profile.kyc_status === 'submitted' || profile.kyc_status === 'verified') return 'completed';
-    }
-
-    // Step 3: Credentials
-    if (step === 3) {
-        if (profile.kyc_status !== 'verified') return 'pending';
-        if (profile.kyc_status === 'verified' && !profile.credentials_provided) return 'active';
-        if (profile.credentials_provided) return 'completed';
-    }
-
-    return 'pending';
-  }
-
-  const steps = [
-    { name: 'Payment Approved', status: getStepStatus(1) },
-    { name: 'Complete KYC', status: getStepStatus(2) },
-    { name: 'Receive Credentials', status: getStepStatus(3) },
-  ];
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your Onboarding Steps</CardTitle>
-        <CardDescription>Follow these steps to get your trading account up and running.</CardDescription>
-      </CardHeader>
-      <CardContent>
-          <ol className="relative space-y-4">
-            {steps.map((step, index) => (
-              <li key={step.name} className={`pl-8 relative ${index !== steps.length - 1 ? 'pb-4' : ''}`}>
-                 {index !== steps.length - 1 && (
-                     <div className={`absolute left-[11px] top-5 h-full w-0.5 ${step.status === 'completed' ? 'bg-primary' : 'bg-border'}`}></div>
-                 )}
-                <div className={`absolute left-0 flex h-6 w-6 items-center justify-center rounded-full ${step.status === 'completed' ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/20 text-muted-foreground'}`}>
-                  {step.status === 'completed' ? <Check className="h-4 w-4" /> : <span className="text-sm font-bold">{index + 1}</span>}
-                </div>
-                <h4 className={`font-medium ${step.status === 'active' ? 'text-primary' : ''}`}>{step.name}</h4>
-                <p className="text-sm text-muted-foreground">
-                    {step.status === 'completed' && 'Completed'}
-                    {step.status === 'active' && 'Current Step'}
-                    {step.status === 'pending' && 'Pending'}
-                </p>
-              </li>
-            ))}
-          </ol>
-      </CardContent>
-    </Card>
-  );
-}
-
-
-function KycPrompt() {
-  return (
-      <Alert className="bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-700/50 dark:text-blue-300">
-        <FileCheck className="h-5 w-5 !text-blue-600 dark:!text-blue-400" />
-        <AlertTitle className="font-semibold">Complete Your Verification</AlertTitle>
-        <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          To start trading, you need to complete your KYC verification. This is the next step.
-          <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
-            <Link href="/kyc">Start KYC</Link>
-          </Button>
-        </AlertDescription>
-      </Alert>
-  )
-}
-
-function KycUnderReview() {
-  return (
-    <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-700/50 dark:text-yellow-300">
-      <Loader2 className="mx-auto h-5 w-5 text-yellow-500 animate-spin" />
-      <AlertTitle>KYC Submitted & Under Review</AlertTitle>
-      <AlertDescription>Your documents have been submitted and are currently being reviewed by our team. We'll notify you once the process is complete. This usually takes 1-2 business days.</AlertDescription>
-    </Alert>
-  )
-}
-
-function KycRejected() {
-  return (
-     <Alert variant="destructive">
-        <XCircle className="h-5 w-5" />
-        <AlertTitle className="font-semibold">KYC Verification Rejected</AlertTitle>
-        <AlertDescription className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          Unfortunately, your KYC verification was not successful. Please check your status and resubmit.
-          <Button asChild size="sm" variant="destructive" className="shrink-0">
-            <Link href="/kyc">Resubmit KYC</Link>
-          </Button>
-        </AlertDescription>
-      </Alert>
-  )
-}
-
-function AccountStatusBanner({ profile }: { profile: any }) {
-    if (profile.credentials_provided || (profile.account_type === 'competition' && profile.has_credentials)) {
-        return (
-          <div className="p-6 rounded-lg bg-primary text-primary-foreground mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="bg-white/20 p-3 rounded-full">
-                        <CheckCircle className="h-8 w-8" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold">Welcome back, {profile.full_name || 'User'}!</h2>
-                        <p className="opacity-90">
-                           {profile.account_type === 'competition' ? 'Your competition account is ready.' : 'Your account is fully active. Here are your trading credentials.'}
-                        </p>
-                    </div>
-                </div>
-                 {profile.account_type === 'standard' && <ReceiptButton profile={profile} />}
-            </div>
-          </div>
-        );
-    }
-   
-    return (
-        <div className="p-6 rounded-lg bg-card border mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold">Welcome, {profile.full_name || 'User'}!</h2>
-                    <p className="text-muted-foreground">Your account has been created. Please complete the final steps to start trading.</p>
-                </div>
-                {profile.account_type === 'standard' && <ReceiptButton profile={profile} />}
-            </div>
-        </div>
-    );
-}
+const Logo = () => (
+    <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M22 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 22V12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    </div>
+);
 
 function UserNav({ profile }: { profile: any}) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src={`https://avatar.vercel.sh/${profile.email}.png`} alt={profile.full_name} />
+                    <Avatar className="h-10 w-10 border border-white/10">
+                        <AvatarImage src={`https://avatar.vercel.sh/${profile.email}.png`} alt={profile.full_name || 'User'} />
                         <AvatarFallback>{profile.full_name?.[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
                 </Button>
@@ -177,10 +67,19 @@ function UserNav({ profile }: { profile: any}) {
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link href="/guide">
-                            <BookUser className="mr-2 h-4 w-4" />
-                            <span>Trading Guide</span>
+                        <Link href="/kyc">
+                            <FileCheck className="mr-2 h-4 w-4" />
+                            <span>KYC</span>
                         </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/tickets">
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            <span>Support</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <ReceiptButton profile={profile} />
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
@@ -197,284 +96,359 @@ function UserNav({ profile }: { profile: any}) {
     )
 }
 
-const StandardDashboard = ({ profile }: { profile: any }) => (
-    <SidebarProvider>
-        <Sidebar>
-            <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
-                <Link href="/welcome" className="flex items-center gap-2 font-bold text-lg">
-                    <FundedStockLogo className="w-8 h-8 text-primary" />
-                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
-                </Link>
-            </SidebarHeader>
-            <SidebarContent>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/welcome" isActive tooltip="Dashboard">
-                            <Home />
-                            Dashboard
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/pricing" tooltip="Purchase New Account">
-                            <DollarSign />
-                            Purchase New Account
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/kyc" tooltip="KYC">
-                            <FileCheck />
-                            KYC
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/referrals" tooltip="Referrals">
-                            <Gift />
-                            Referrals
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/tickets" tooltip="Support">
-                            <MessageSquare />
-                            Support
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/mentor" tooltip="AI Mentor">
-                            <BrainCircuit />
-                            AI Mentor
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/guide" tooltip="Trading Guide">
-                            <BookUser />
-                            Trading Guide
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarContent>
-            <SidebarFooter className="border-t p-2">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <form action={signOut} className="w-full">
-                            <SidebarMenuButton tooltip="Logout" asChild>
-                                <button type="submit" className="w-full">
-                                    <LogOut />
-                                    Logout
-                                </button>
-                            </SidebarMenuButton>
-                        </form>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-            <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <SidebarTrigger className="md:hidden" />
-                    <h1 className="text-xl font-semibold hidden md:block">Dashboard</h1>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                        <Bell className="h-5 w-5" />
-                        <span className="sr-only">Notifications</span>
-                    </Button>
-                    <UserNav profile={profile} />
-                </div>
-            </header>
-            <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
-                <div className="max-w-6xl mx-auto space-y-8">
-                    <AccountStatusBanner profile={{...profile, has_credentials: profile.credentials_provided}} />
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 space-y-8">
-                            {(() => {
-                                switch (profile.kyc_status) {
-                                    case 'verified':
-                                        return <CredentialsView profile={profile} />;
-                                    case 'submitted':
-                                        return <KycUnderReview />;
-                                    case 'rejected':
-                                        return <KycRejected />;
-                                    case 'pending':
-                                    default:
-                                        return <KycPrompt />;
-                                }
-                            })()}
+const DashboardHeader = ({profile}: {profile:any}) => (
+  <header className="flex items-center justify-between mb-8 z-20 relative">
+    <div className="flex items-center gap-8">
+        <Logo />
+        <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
+            <Link href="/welcome" className="px-4 py-1.5 text-sm font-medium bg-white/10 rounded-full text-white shadow-md">
+                Account Overview
+            </Link>
+            <Link href="/guide" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                Trading Guide
+            </Link>
+            <Link href="/referrals" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                Transactions
+            </Link>
+            <Link href="/competition" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                Competition
+            </Link>
+      </nav>
+    </div>
+    <div className="flex items-center gap-2">
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+        <Search className="h-5 w-5 text-gray-300" />
+      </button>
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+        <Settings className="h-5 w-5 text-gray-300" />
+      </button>
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+        <Bell className="h-5 w-5 text-gray-300" />
+      </button>
+      <UserNav profile={profile} />
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
+        <Menu className="h-5 w-5 text-gray-300" />
+      </button>
+    </div>
+  </header>
+);
+
+function formatBalance(planName: string): string {
+    if (!planName) return '₹0';
+    const name = planName.toLowerCase();
+    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
+    if (match) {
+        let amount = parseFloat(match[1].replace(/,/g, ''));
+        const unit = match[2];
+        if (unit === 'k') return (amount * 1000).toLocaleString('en-IN');
+        if (unit === 'l' || unit === 'lakh') return (amount * 100000).toLocaleString('en-IN');
+        if (unit === 'cr' || unit === 'crore') return (amount * 10000000).toLocaleString('en-IN');
+    }
+    const plainNumberMatch = name.match(/^[\d,.]+/);
+    if (plainNumberMatch) {
+        return parseFloat(plainNumberMatch[0].replace(/,/g, '')).toLocaleString('en-IN');
+    }
+    return '0';
+}
+
+
+function getAccountType(planName: string): string {
+    if (!planName) return 'N/A';
+    const lowerPlanName = planName.toLowerCase();
+    if (lowerPlanName.includes('instant')) return 'Instant';
+    if (lowerPlanName.includes('1-step')) return '1-Step';
+    if (lowerPlanName.includes('2-step')) return '2-Step';
+    return 'Standard';
+}
+
+const UserDetails = ({ profile }: { profile: any }) => {
+    const initialBalance = formatBalance(profile.plan_purchased);
+    const accountType = getAccountType(profile.plan_purchased);
+    
+    return (
+        <GlassCard className="p-6 md:p-8 relative h-full flex flex-col">
+            <div className="relative z-10 flex-grow">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <UserAvatar />
+                        <div>
+                            <h2 className="text-xl font-bold tracking-wide text-white">{profile.full_name}</h2>
+                            <p className="text-sm text-gray-400">
+                                Currently, you have an <span className="font-semibold text-white">{accountType}</span> account
+                            </p>
                         </div>
-                        <div className="lg:col-span-1">
-                            <OnboardingGuide profile={profile} />
+                    </div>
+                    <div className="shrink-0 border border-white/10 bg-black/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-mono text-gray-300 flex items-center gap-2">
+                        <KeyRound className="w-4 h-4 text-gray-500" />
+                        {profile.id.substring(0, 8)}
+                    </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">Initial Balance</p>
+                        <p className="font-semibold text-white mt-1">₹{initialBalance}</p>
+                    </div>
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">Plan Type</p>
+                        <p className="font-semibold text-white mt-1">{profile.plan_purchased}</p>
+                    </div>
+                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">Account Type</p>
+                        <p className="font-semibold text-white mt-1">{accountType}</p>
+                    </div>
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">Account Status</p>
+                        <p className="font-semibold text-green-400 mt-1">Active</p>
+                    </div>
+                </div>
+
+                <div className="mt-8">
+                    <h3 className="font-semibold flex items-center gap-2 mb-3 text-white tracking-wide">
+                        Trading Cycle Details
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 text-center">
+                        <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                            <p className="text-xs text-gray-400 tracking-wider">Start Date</p>
+                            <p className="font-semibold text-white">{new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                        </div>
+                        <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                            <p className="text-xs text-gray-400 tracking-wider">Account Status</p>
+                            <p className="font-semibold text-green-400 mt-1">Active</p>
                         </div>
                     </div>
                 </div>
-            </main>
-        </SidebarInset>
-    </SidebarProvider>
+            </div>
+        </GlassCard>
+    );
+};
+
+const SupportCard = () => (
+    <GlassCard className="p-6 text-center h-full flex flex-col justify-between">
+        <div className="relative z-10">
+            <h3 className="font-semibold text-white tracking-wide text-lg">Funded Stock support</h3>
+            <div className="my-6 flex justify-center">
+                <div className="h-24 w-24 rounded-full bg-purple-500/10 flex items-center justify-center border-2 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
+                    <Users className="h-10 w-10 text-purple-300" />
+                </div>
+            </div>
+             <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5 mb-4">
+                <div>
+                    <p className="text-xs text-gray-400 tracking-wider">Support Phone</p>
+                    <p className="font-semibold font-mono text-white">+91 12345 67890</p>
+                </div>
+                <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" />
+            </div>
+        </div>
+        <div className="mt-6 relative z-10">
+            <a href="mailto:support@fundedstock.live" className="w-full block">
+              <button className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-400/50">
+                  Contact
+              </button>
+            </a>
+            <p className="mt-4 text-sm text-gray-400">support@fundedstock.live</p>
+        </div>
+    </GlassCard>
 );
 
-const CompetitionDashboard = ({ profile, entries, session }: { profile: any, entries: any[], session: any }) => (
-    <SidebarProvider>
-        <Sidebar>
-            <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
-                <Link href="/welcome" className="flex items-center gap-2 font-bold text-lg">
-                    <FundedStockLogo className="w-8 h-8 text-primary" />
-                    <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
-                </Link>
-            </SidebarHeader>
-            <SidebarContent>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/welcome" isActive tooltip="Competition Dashboard">
-                            <Swords />
-                            Dashboard
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/tickets" tooltip="Support">
-                            <MessageSquare />
-                            Support
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/guide" tooltip="Trading Guide">
-                            <BookUser />
-                            Trading Guide
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarContent>
-            <SidebarFooter className="border-t p-2">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <form action={signOut} className="w-full">
-                            <SidebarMenuButton tooltip="Logout" asChild>
-                                <button type="submit" className="w-full">
-                                    <LogOut />
-                                    Logout
-                                </button>
-                            </SidebarMenuButton>
-                        </form>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-            <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <SidebarTrigger className="md:hidden" />
-                    <h1 className="text-xl font-semibold hidden md:block">Competition Dashboard</h1>
+const AccountDetails = ({ profile }: { profile: any }) => (
+    <GlassCard className="p-6 md:p-8 col-span-full relative">
+        <div className="relative z-10">
+            <h3 className="font-semibold mb-4 text-white tracking-wide">Account details</h3>
+            <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5">
+                        <div>
+                            <p className="text-xs text-gray-400 tracking-wider">Trading ID</p>
+                            <p className="font-semibold font-mono text-white">{profile.trading_username}</p>
+                        </div>
+                        <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" />
+                    </div>
+                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">Trading Password</p>
+                        <p className="font-semibold font-mono text-white text-sm">{profile.trading_password}</p>
+                    </div>
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">Platform</p>
+                         <a href="https://stockmint.io" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:underline flex items-center gap-1">
+                            Stockmint.io <ExternalLink className="w-3 h-3" />
+                        </a>
+                    </div>
                 </div>
-                <UserNav profile={profile} />
-            </header>
-            <main className="p-4 md:p-6 bg-muted/40 min-h-[calc(100vh-57px)]">
-                <div className="max-w-6xl mx-auto space-y-8">
-                     <AccountStatusBanner profile={{...profile, has_credentials: entries.length > 0 && entries[0].stockmint_username}} />
-                     <CompetitionView initialEntries={entries} paymentSession={session} />
-                </div>
-            </main>
-        </SidebarInset>
-    </SidebarProvider>
+            </div>
+        </div>
+    </GlassCard>
 );
 
+const StatCard = ({ title, value, icon, details, progress, progressColor, decorativeImage, isPrimary = false }: { title: string; value: string; icon: React.ReactNode; details: string; progress: number; progressColor: string; decorativeImage: string; isPrimary?: boolean; }) => (
+  <GlassCard className={cn("p-5 flex flex-col relative overflow-hidden", isPrimary && "bg-purple-600/10 border-purple-500/20")}>
+    <div className="absolute top-1/2 right-4 -translate-y-1/2 w-20 h-20">
+        <Image src={decorativeImage} alt="" width={80} height={80} className="opacity-100" />
+    </div>
+    <div className="relative">
+      <div className="flex items-center gap-2">
+         {icon}
+        <p className="text-sm text-gray-300 font-medium">{title}</p>
+      </div>
+      <div className="mt-2">
+        <p className="text-3xl font-bold text-white">{value}</p>
+        <p className="text-xs text-gray-400">{details}</p>
+      </div>
+      <div className="mt-4">
+        <div className={cn("text-xs font-semibold px-2 py-0.5 rounded-full inline-block", progressColor)}>
+          {progress.toFixed(1)}%
+        </div>
+      </div>
+    </div>
+  </GlassCard>
+);
+
+function KycPrompt() {
+  return (
+    <GlassCard className="mt-6 p-6 md:p-8 col-span-full text-center">
+      <FileCheck className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+      <h3 className="text-2xl font-bold text-white mb-2">Your Account is Almost Ready</h3>
+      <p className="text-gray-400 max-w-md mx-auto mb-6">Please complete your KYC (Know Your Customer) verification to unlock your trading credentials and get started.</p>
+      <Button asChild className="bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-400/50">
+        <Link href="/kyc">Start KYC Verification</Link>
+      </Button>
+    </GlassCard>
+  )
+}
 
 export default async function WelcomePage() {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    redirect('/login');
-  }
+    if (!session) {
+        redirect('/login');
+    }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
 
-  if (!profile) {
-    return <div className="flex h-screen items-center justify-center">Could not load your profile. Please contact support.</div>;
-  }
-  
-  if (profile.account_type === 'standard' && !profile.is_approved) {
-    return (
-        <main className="flex min-h-screen items-center justify-center p-4 bg-muted/40">
-            <Card className="w-full max-w-lg text-center">
-                <CardHeader>
-                    <CardTitle>Account Pending Approval</CardTitle>
-                    <CardDescription>Your account registration has been received. You will be able to log in once an administrator has verified your payment and approved your account.</CardDescription>
-                </CardHeader>
-                 <CardContent>
-                    <p className="text-muted-foreground">Please check back later.</p>
-                 </CardContent>
-                 <CardFooter className="flex justify-center">
-                    <form action={signOut}>
-                        <Button variant="outline">Log Out</Button>
-                    </form>
-                 </CardFooter>
-            </Card>
-        </main>
-    )
-  }
-
-  if (profile.is_breached) {
-    return (
-        <main className="flex min-h-screen items-center justify-center p-4 bg-muted/40">
-            <Card className="w-full max-w-lg text-center border-destructive">
-                <CardHeader>
-                    <div className="mx-auto bg-destructive/10 rounded-full p-3 w-fit">
+    if (!profile) {
+        return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Could not load your profile. Please contact support.</div>;
+    }
+    
+     if (profile.is_breached) {
+        return (
+            <main className="flex min-h-screen items-center justify-center p-4 bg-slate-950 text-white">
+                <GlassCard className="w-full max-w-lg text-center p-8 border-destructive/50">
+                    <div className="mx-auto bg-destructive/10 rounded-full p-3 w-fit mb-4">
                         <ShieldAlert className="h-10 w-10 text-destructive" />
                     </div>
-                    <CardTitle className="text-destructive">Account Breached</CardTitle>
-                    <CardDescription>
-                        Your account has been flagged for a breach of our trading rules. Access to your dashboard and trading credentials has been suspended.
-                    </CardDescription>
-                </CardHeader>
-                 <CardContent className="space-y-4">
-                    {profile.breach_image_url && (
-                         <div className="mt-2 flex flex-col items-center">
-                            <p className="text-sm font-semibold text-destructive mb-2">Breach Evidence:</p>
-                            <Image src={profile.breach_image_url} alt="Proof of account breach" width={400} height={300} className="rounded-md border" />
-                        </div>
-                    )}
-                    {profile.breach_reason && (
-                      <Alert variant="destructive" className="text-left">
-                        <AlertTitle className="font-semibold">Reason:</AlertTitle>
-                        <AlertDescription>{profile.breach_reason}</AlertDescription>
-                      </Alert>
-                    )}
-                    <p className="text-muted-foreground pt-4">To continue trading, you may purchase a new account or contact support for assistance.</p>
+                    <h2 className="text-2xl font-bold text-destructive">Account Breached</h2>
+                    <p className="text-gray-400 mt-2 mb-6">
+                        Your account has been flagged for a breach of our trading rules. Access has been suspended.
+                    </p>
                     <div className="flex flex-col items-center gap-4 pt-4">
                         <Button asChild className="w-full max-w-xs">
                             <Link href="/pricing">Purchase New Account</Link>
                         </Button>
-                        <Button asChild variant="secondary" className="w-full max-w-xs">
-                            <Link href="/tickets">Contact Support</Link>
-                        </Button>
-                         <form action={signOut} className="w-full max-w-xs">
-                            <Button variant="outline" className="w-full">Log Out</Button>
-                        </form>
                     </div>
-                 </CardContent>
-            </Card>
-        </main>
-    )
-  }
+                </GlassCard>
+            </main>
+        )
+    }
 
-  if (profile.account_type === 'competition') {
-      const { data: entries } = await supabase
-        .from('competition_entries')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-      
-      const { data: paymentSession } = await supabase
-        .from('payment_sessions')
-        .select('status')
-        .eq('email', profile.email)
-        .order('created_at', {ascending: false})
-        .limit(1)
-        .single();
-        
-      return <CompetitionDashboard profile={profile} entries={entries || []} session={paymentSession} />;
-  }
+    // Handle competition users
+    if (profile.account_type === 'competition') {
+        const { data: entries } = await supabase
+            .from('competition_entries')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false });
 
-  return <StandardDashboard profile={profile} />;
+        const { data: paymentSession } = await supabase
+            .from('payment_sessions')
+            .select('status')
+            .eq('email', session.user.email)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+         return (
+            <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
+                <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+                <div className="absolute inset-x-0 top-0 h-[50vh] bg-gradient-to-b from-purple-900/40 via-purple-900/10 to-transparent -z-10"></div>
+                <div className="absolute inset-0 z-0">
+                    <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
+                    <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
+                </div>
+                 <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+                    <DashboardHeader profile={profile} />
+                    <CompetitionView initialEntries={entries || []} paymentSession={paymentSession} />
+                 </main>
+            </div>
+         );
+    }
+
+
+    return (
+        <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
+          <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
+                <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
+            </div>
+          
+          <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+            <DashboardHeader profile={profile} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <UserDetails profile={profile} />
+                <SupportCard />
+            </div>
+
+            {profile.kyc_status !== 'verified' ? <KycPrompt/> : (
+              <>
+                <div className="mt-6">
+                    <AccountDetails profile={profile}/>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <StatCard
+                      title="Balance"
+                      value="₹1,00,000"
+                      details="Current Balance"
+                      progress={100.0}
+                      icon={<DollarSign className="w-4 h-4 text-gray-400" />}
+                      progressColor="bg-purple-500/20 text-purple-300"
+                      decorativeImage="/a.png"
+                      isPrimary={true}
+                    />
+                     <StatCard
+                      title="Profit/Loss"
+                      value="+₹2,034"
+                      details="Total P/L"
+                      progress={2.03}
+                      icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
+                      progressColor="bg-green-500/20 text-green-300"
+                      decorativeImage="/b.png"
+                    />
+                    <StatCard
+                      title="Win Rate"
+                      value="72%"
+                      details="Of all trades"
+                      progress={72.0}
+                      icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
+                      progressColor="bg-sky-500/20 text-sky-300"
+                      decorativeImage="/c.png"
+                    />
+                    <StatCard
+                      title="Trading Days"
+                      value="18"
+                      details="Active Days"
+                      progress={60.0}
+                      icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
+                      progressColor="bg-amber-500/20 text-amber-300"
+                      decorativeImage="/d.png"
+                    />
+                </div>
+              </>
+            )}
+
+          </main>
+        </div>
+    );
 }
