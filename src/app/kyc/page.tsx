@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useTransition, useEffect, Suspense, useRef } from 'react';
+import { useState, useTransition, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,9 @@ import { Progress } from '@/components/ui/progress';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { signOut } from '@/app/actions';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 type Profile = {
     pan_number: string | null;
@@ -33,8 +36,112 @@ type Profile = {
     risk_rules_understood: boolean;
     terms_accepted: boolean;
     full_name: string | null;
+    email: string | null;
     address: string | null;
 };
+
+// New Premium Layout Components
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
+        {children}
+    </div>
+);
+
+const Logo = () => (
+    <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M22 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 22V12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    </div>
+);
+
+function UserNav({ profile }: { profile: any}) {
+    const router = useRouter();
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10 border border-white/10">
+                        <AvatarImage src={`https://avatar.vercel.sh/${profile?.email}.png`} alt={profile?.full_name || 'User'} />
+                        <AvatarFallback>{profile?.full_name?.[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{profile?.full_name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{profile?.email}</p>
+                    </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => router.push('/profile')}>
+                        <User className="mr-2 h-4 w-4" />
+                        <span>My Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/kyc')}>
+                        <FileCheck className="mr-2 h-4 w-4" />
+                        <span>KYC</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/tickets')}>
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        <span>Support</span>
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                 <form action={signOut}>
+                    <DropdownMenuItem asChild>
+                         <button type="submit" className="w-full">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </button>
+                    </DropdownMenuItem>
+                </form>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
+const DashboardHeader = ({profile}: {profile:any}) => (
+  <header className="flex items-center justify-between mb-8 z-20 relative">
+    <div className="flex items-center gap-8">
+        <Logo />
+        <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
+            <Link href="/welcome" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                Account Overview
+            </Link>
+            <Link href="/guide" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                Trading Guide
+            </Link>
+            <Link href="/referrals" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                Referrals
+            </Link>
+            <Link href="/competition" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                Competition
+            </Link>
+      </nav>
+    </div>
+    <div className="flex items-center gap-2">
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+        <Search className="h-5 w-5 text-gray-300" />
+      </button>
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+        <Settings className="h-5 w-5 text-gray-300" />
+      </button>
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+        <Bell className="h-5 w-5 text-gray-300" />
+      </button>
+      <UserNav profile={profile} />
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
+        <Menu className="h-5 w-5 text-gray-300" />
+      </button>
+    </div>
+  </header>
+);
 
 const tradingStyleOptions = [
     { id: 'swing', label: 'Swing' },
@@ -70,13 +177,13 @@ function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified, title,
 
     return (
         <div className="space-y-4">
-             <Card className={cn(!isPanVerified && "bg-muted/50 opacity-60 pointer-events-none")}>
+             <GlassCard className={cn(!isPanVerified && "bg-slate-800/50 opacity-60 pointer-events-none")}>
                 <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
-                        <Camera className="w-5 h-5 text-primary" />{title}
-                        </CardTitle>
-                        <CardDescription>{description}</CardDescription>
-                        {!isPanVerified && <CardDescription>Please complete PAN verification above to enable this step.</CardDescription>}
+                    <CardTitle className="text-base flex items-center gap-2 text-white">
+                        <Camera className="w-5 h-5 text-purple-400" />{title}
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">{description}</CardDescription>
+                    {!isPanVerified && <CardDescription className="text-amber-400">Please complete PAN verification above to enable this step.</CardDescription>}
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Alert variant="destructive">
@@ -85,15 +192,15 @@ function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified, title,
                             Even after your KYC is verified, if the image is wrongly provided, you will **not** receive your funded account. Ensure the photo is clear and legible.
                         </AlertDescription>
                     </Alert>
-                    <div className="relative w-full max-w-md mx-auto bg-muted rounded-md overflow-hidden border-2 border-dashed border-muted-foreground/50 p-4 text-center h-48 flex flex-col justify-center items-center">
+                    <div className="relative w-full max-w-md mx-auto bg-black/20 rounded-md overflow-hidden border-2 border-dashed border-white/20 p-4 text-center h-48 flex flex-col justify-center items-center">
                         {!preview ? (
                             <>
-                                <Upload className="h-10 w-10 text-muted-foreground mb-2"/>
-                                <Label htmlFor="aadhaar-upload" className="font-semibold text-primary cursor-pointer">
+                                <Upload className="h-10 w-10 text-gray-400 mb-2"/>
+                                <Label htmlFor="aadhaar-upload" className="font-semibold text-purple-400 cursor-pointer">
                                     Click to upload
-                                    <span className="text-muted-foreground font-normal"> or drag and drop</span>
+                                    <span className="text-gray-400 font-normal"> or drag and drop</span>
                                 </Label>
-                                <p className="text-xs text-muted-foreground mt-1">PNG, JPG, JPEG up to 10MB</p>
+                                <p className="text-xs text-gray-500 mt-1">PNG, JPG, JPEG up to 10MB</p>
                                 <Input id="aadhaar-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/png, image/jpeg, image/jpg" disabled={!isPanVerified} />
                             </>
                         ) : (
@@ -104,49 +211,28 @@ function AadhaarUploader({ onFileSelect, existingImageUrl, isPanVerified, title,
                     </div>
                     {preview && (
                         <div className="flex justify-center">
-                            <Button type="button" variant="outline" onClick={resetUpload}>
+                            <Button type="button" variant="outline" onClick={resetUpload} className="bg-black/20 border-white/10 hover:bg-white/10">
                                 <RefreshCw className="mr-2 h-4 w-4" /> Change Photo
                             </Button>
                         </div>
                     )}
                  </CardContent>
-            </Card>
+            </GlassCard>
         </div>
     );
 }
 
-function KycFlow() {
+function KycFlow({initialProfile}: {initialProfile: Profile}) {
   const router = useRouter();
   const { toast } = useToast();
-  const supabase = createClient();
-
+  
   const [currentStep, setCurrentStep] = useState(1);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile>(initialProfile);
   const [error, setError] = useState<string | null>(null);
-  const [isPageLoading, setIsPageLoading] = useState(true);
   const [isActionPending, startTransition] = useTransition();
 
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
-
-  // Effect to fetch initial profile data
-  useEffect(() => {
-    const fetchProfile = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            router.push('/login');
-            return;
-        }
-        const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        if (error) {
-            toast({ title: 'Error', description: 'Could not fetch your profile data.', variant: 'destructive'});
-        } else {
-            setProfile(data as Profile);
-        }
-        setIsPageLoading(false);
-    };
-    fetchProfile();
-  }, [supabase, router, toast]);
 
   const handleStepSave = async (formData: FormData) => {
       startTransition(async () => {
@@ -177,55 +263,47 @@ function KycFlow() {
       switch(currentStep) {
           case 1: return <Step1_DocumentVerification 
                             onSave={handleStepSave}
-                            profile={profile!} 
+                            profile={profile} 
                             error={error} 
                             startTransition={startTransition}
                             onVerificationSuccess={(updatedProfile) => {
                                 setProfile(updatedProfile);
                             }}
                           />;
-          case 2: return <Step2_SelfieWithAadhaar onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
-          case 3: return <Step3_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
-          case 4: return <Step4_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile!} error={error} />;
+          case 2: return <Step2_SelfieWithAadhaar onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
+          case 3: return <Step3_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
+          case 4: return <Step4_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
           default: return <p>Invalid Step</p>;
       }
   }
-
-  if (isPageLoading || !profile) {
-      return (
-        <div className="flex items-center justify-center h-96">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      );
-  }
-
+  
   return (
     <div className="w-full max-w-3xl space-y-8">
         <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+            <Button variant="outline" size="icon" className="h-8 w-8 bg-black/20 border-white/10 hover:bg-white/10" asChild>
                 <Link href="/welcome">
                     <ArrowLeft className="h-4 w-4" />
                 </Link>
             </Button>
             <div>
-                <h1 className="text-2xl font-bold">KYC Verification</h1>
-                <p className="text-muted-foreground">Please fill out the form below to complete your verification.</p>
+                <h1 className="text-2xl font-bold text-white">KYC Verification</h1>
+                <p className="text-gray-400">Please fill out the form below to complete your verification.</p>
             </div>
         </div>
 
-        <Card>
-            <CardHeader>
+        <GlassCard>
+            <CardHeader className="border-b-0">
                 <Progress value={progress} className="w-full" />
             </CardHeader>
-            <CardContent className="relative">
+            <CardContent className="relative p-6">
                 {isActionPending && (
-                    <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center z-10 rounded-md">
+                    <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center z-10 rounded-md">
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 )}
                 {renderStep()}
             </CardContent>
-        </Card>
+        </GlassCard>
     </div>
   );
 }
@@ -267,18 +345,18 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
 
     return (
         <div className="space-y-8">
-            <h3 className="font-semibold text-lg">Step 1 of 4: Document Verification</h3>
+            <h3 className="font-semibold text-lg text-white">Step 1 of 4: Document Verification</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             
-            <Card>
+            <GlassCard>
                 <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <ShieldCheck className="w-5 h-5 text-primary" />PAN Verification
+                    <CardTitle className="text-base flex items-center gap-2 text-white">
+                        <ShieldCheck className="w-5 h-5 text-purple-400" />PAN Verification
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      {isPanVerified ? (
-                         <div className="flex items-center gap-2 text-green-600 font-medium text-sm p-3 bg-green-50 rounded-md">
+                         <div className="flex items-center gap-2 text-green-400 font-medium text-sm p-3 bg-green-500/10 rounded-md border border-green-500/20">
                             <CheckCircle className="h-5 w-5" />
                             <div>
                                 <p>PAN Verified: {verifiedName || profile.full_name}</p>
@@ -295,15 +373,15 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                                     value={panInput}
                                     onChange={(e) => setPanInput(e.target.value.toUpperCase())}
                                     maxLength={10}
-                                    className="uppercase"
+                                    className="uppercase bg-black/20 border-white/10"
                                 />
-                                <Button type="button" onClick={handlePanVerification}>Verify PAN</Button>
+                                <Button type="button" onClick={handlePanVerification} className="bg-purple-600 text-white hover:bg-purple-700">Verify PAN</Button>
                             </div>
-                            {verificationError && <p className="text-sm text-destructive mt-2">{verificationError}</p>}
+                            {verificationError && <p className="text-sm text-red-400 mt-2">{verificationError}</p>}
                         </div>
                      )}
                 </CardContent>
-            </Card>
+            </GlassCard>
 
              <form onSubmit={handleSubmit}>
                 <AadhaarUploader 
@@ -313,8 +391,8 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
                     title="Aadhaar Card Photo Upload"
                     description="Upload a clear photo of your Aadhaar card."
                 />
-                <CardFooter className="flex justify-end gap-4 pt-4">
-                    <Button type="submit" disabled={!aadhaarBase64 || !profile.is_pan_verified}>Save & Continue</Button>
+                <CardFooter className="flex justify-end gap-4 pt-6 px-0 pb-0">
+                    <Button type="submit" disabled={!aadhaarBase64 || !profile.is_pan_verified} className="bg-purple-600 text-white hover:bg-purple-700">Save & Continue</Button>
                 </CardFooter>
             </form>
         </div>
@@ -335,7 +413,7 @@ function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (
     
     return (
         <div className="space-y-8">
-            <h3 className="font-semibold text-lg">Step 2 of 4: Selfie Verification</h3>
+            <h3 className="font-semibold text-lg text-white">Step 2 of 4: Selfie Verification</h3>
              {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
              <form onSubmit={handleSubmit}>
@@ -346,9 +424,9 @@ function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (
                     title="Selfie with Aadhaar Card"
                     description="Upload a clear selfie of yourself holding your Aadhaar card next to your face."
                 />
-                <CardFooter className="flex justify-between gap-4 pt-4">
-                    <Button type="button" variant="outline" onClick={onBack}>Back</Button>
-                    <Button type="submit" disabled={!selfieWithAadhaarBase64}>Save & Continue</Button>
+                <CardFooter className="flex justify-between gap-4 pt-6 px-0 pb-0">
+                    <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10">Back</Button>
+                    <Button type="submit" disabled={!selfieWithAadhaarBase64} className="bg-purple-600 text-white hover:bg-purple-700">Save & Continue</Button>
                 </CardFooter>
             </form>
         </div>
@@ -359,21 +437,21 @@ function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (
 function Step3_TradingBackground({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
     return (
         <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg">Step 3 of 4: Trading Background</h3>
+            <h3 className="font-semibold text-lg text-white">Step 3 of 4: Trading Background</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="space-y-4">
-                <Label>Have you traded in a Prop Firm before? *</Label>
+                <Label className="text-gray-300">Have you traded in a Prop Firm before? *</Label>
                 <RadioGroup name="traded_before" required defaultValue={profile.traded_before ? 'yes' : 'no'} className="flex gap-4">
                     <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="traded_yes" /><Label htmlFor="traded_yes">Yes</Label></div>
                     <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="traded_no" /><Label htmlFor="traded_no">No</Label></div>
                 </RadioGroup>
             </div>
             <div className="space-y-2">
-                <Label htmlFor="trading_experience">Trading Experience (in brief) *</Label>
-                <Textarea id="trading_experience" name="trading_experience" defaultValue={profile.trading_experience || ''} required />
+                <Label htmlFor="trading_experience" className="text-gray-300">Trading Experience (in brief) *</Label>
+                <Textarea id="trading_experience" name="trading_experience" defaultValue={profile.trading_experience || ''} required className="bg-black/20 border-white/10" />
             </div>
             <div className="space-y-4">
-                <Label>Preferred Trading Style *</Label>
+                <Label className="text-gray-300">Preferred Trading Style *</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {tradingStyleOptions.map(style => (
                         <div key={style.id} className="flex items-center space-x-2">
@@ -384,12 +462,12 @@ function Step3_TradingBackground({ onSave, onBack, error, profile }: { onSave: (
                 </div>
             </div>
             <div className="space-y-2">
-                <Label htmlFor="comments">Any Comments / Special Notes</Label>
-                <Textarea id="comments" name="comments" defaultValue={profile.comments || ''} />
+                <Label htmlFor="comments" className="text-gray-300">Any Comments / Special Notes</Label>
+                <Textarea id="comments" name="comments" defaultValue={profile.comments || ''} className="bg-black/20 border-white/10" />
             </div>
             <div className="flex justify-between gap-4 pt-4">
-                <Button type="button" variant="outline" onClick={onBack}>Back</Button>
-                <Button type="submit">Save & Continue</Button>
+                <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10">Back</Button>
+                <Button type="submit" className="bg-purple-600 text-white hover:bg-purple-700">Save & Continue</Button>
             </div>
         </form>
     );
@@ -398,18 +476,18 @@ function Step3_TradingBackground({ onSave, onBack, error, profile }: { onSave: (
 function Step4_Agreements({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
     return (
         <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg">Step 4 of 4: Agreements</h3>
+            <h3 className="font-semibold text-lg text-white">Step 4 of 4: Agreements</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-            <div className="space-y-6 rounded-md border p-6">
+            <div className="space-y-6 rounded-md border border-white/10 p-6 bg-black/20">
                 <div className="space-y-4">
-                   <Label>Are You Comfortable With Daily and Overall Drawdown Rules? *</Label>
+                   <Label className="text-gray-300">Are You Comfortable With Daily and Overall Drawdown Rules? *</Label>
                    <RadioGroup name="drawdown_rules_accepted" required defaultValue={profile.drawdown_rules_accepted ? 'yes' : 'no'} className="flex gap-4">
                        <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="drawdown_yes" /><Label htmlFor="drawdown_yes">Yes</Label></div>
                        <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="drawdown_no" /><Label htmlFor="drawdown_no">No</Label></div>
                    </RadioGroup>
                </div>
                 <div className="space-y-4">
-                   <Label>Do You Understand Risk Management Rules? *</Label>
+                   <Label className="text-gray-300">Do You Understand Risk Management Rules? *</Label>
                    <RadioGroup name="risk_rules_understood" required defaultValue={profile.risk_rules_understood ? 'yes' : 'no'} className="flex gap-4">
                        <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="risk_yes" /><Label htmlFor="risk_yes">Yes</Label></div>
                        <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="risk_no" /><Label htmlFor="risk_no">No</Label></div>
@@ -423,8 +501,8 @@ function Step4_Agreements({ onSave, onBack, error, profile }: { onSave: (formDat
                </div>
             </div>
              <div className="flex justify-between gap-4 pt-4">
-                <Button type="button" variant="outline" onClick={onBack}>Back</Button>
-                <Button type="submit" size="lg">Submit and Verify</Button>
+                <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10">Back</Button>
+                <Button type="submit" size="lg" className="bg-purple-600 text-white hover:bg-purple-700">Submit and Verify</Button>
             </div>
         </form>
     );
@@ -432,11 +510,50 @@ function Step4_Agreements({ onSave, onBack, error, profile }: { onSave: (formDat
 
 
 export default function KycPage() {
+    const supabase = createClient();
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [isPageLoading, setIsPageLoading] = useState(true);
+    const router = useRouter();
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                router.push('/login');
+                return;
+            }
+            const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            if (error) {
+                // handle error
+            } else {
+                setProfile(data as Profile);
+            }
+            setIsPageLoading(false);
+        };
+        fetchProfile();
+    }, [supabase, router]);
+
     return (
-      <main className="flex min-h-screen items-start justify-center p-4 md:p-8 bg-muted/40">
-        <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <KycFlow />
-        </Suspense>
-      </main>
+        <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
+            <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
+                <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
+            </div>
+            <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                <DashboardHeader profile={profile} />
+                <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                    {isPageLoading || !profile ? (
+                        <div className="flex items-center justify-center h-96">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : (
+                        <KycFlow initialProfile={profile} />
+                    )}
+                </Suspense>
+            </main>
+        </div>
     );
 }
+
+    
