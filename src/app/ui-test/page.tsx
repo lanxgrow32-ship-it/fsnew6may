@@ -303,7 +303,7 @@ export default function UITestPage() {
               progress={60.0}
               icon={<DollarSign className="w-4 h-4 text-gray-400" />}
               progressColor="bg-purple-500/20 text-purple-300"
-              decorativeImage="https://i.imgur.com/2h31aQv.png"
+              decorativeImage="/1card.png"
               isPrimary={true}
             />
              <StatCard
@@ -313,7 +313,7 @@ export default function UITestPage() {
               progress={20.3}
               icon={<LineChart className="w-4 h-4 text-gray-400" />}
               progressColor="bg-green-500/20 text-green-300"
-              decorativeImage="https://i.imgur.com/IChPzJ4.png"
+              decorativeImage="/2card.png"
             />
             <StatCard
               title="Loss"
@@ -322,7 +322,7 @@ export default function UITestPage() {
               progress={13.2}
               icon={<LineChart className="w-4 h-4 text-gray-400 -scale-y-100" />}
               progressColor="bg-red-500/20 text-red-300"
-              decorativeImage="https://i.imgur.com/m1mgZiw.png"
+              decorativeImage="/3card.png"
             />
             <StatCard
               title="Trade"
@@ -331,10 +331,11 @@ export default function UITestPage() {
               progress={27.6}
               icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
               progressColor="bg-blue-500/20 text-blue-300"
-              decorativeImage="https://i.imgur.com/j4WmrLw.png"
+              decorativeImage="/4card.png"
             />
         </div>
       </main>
     </div>
   );
 }
+
