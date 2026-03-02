@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { signOut } from '@/app/actions';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye } from 'lucide-react';
+import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, Loader2 } from 'lucide-react';
 import { ReceiptButton } from './receipt-button';
 
 // Helper Components for the new UI
@@ -299,8 +299,7 @@ const StatCard = ({ title, value, icon, details, progress, progressColor, decora
   </GlassCard>
 );
 
-function KycPrompt() {
-  return (
+const KycPrompt = () => (
     <GlassCard className="mt-6 p-6 md:p-8 col-span-full text-center">
       <FileCheck className="h-12 w-12 text-purple-400 mx-auto mb-4" />
       <h3 className="text-2xl font-bold text-white mb-2">Your Account is Almost Ready</h3>
@@ -309,8 +308,51 @@ function KycPrompt() {
         <Link href="/kyc">Start KYC Verification</Link>
       </Button>
     </GlassCard>
-  )
-}
+)
+
+const AccountBreached = () => (
+    <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
+        <main className="flex min-h-screen items-center justify-center p-4">
+            <GlassCard className="w-full max-w-lg text-center p-8 border-destructive/50">
+                <div className="mx-auto bg-destructive/10 rounded-full p-3 w-fit mb-4">
+                    <ShieldAlert className="h-10 w-10 text-destructive" />
+                </div>
+                <h2 className="text-2xl font-bold text-destructive">Account Breached</h2>
+                <p className="text-gray-400 mt-2 mb-6">
+                    Your account has been flagged for a breach of our trading rules. Access has been suspended.
+                </p>
+                <div className="flex flex-col items-center gap-4 pt-4">
+                    <Button asChild className="w-full max-w-xs">
+                        <Link href="/pricing">Purchase New Account</Link>
+                    </Button>
+                </div>
+            </GlassCard>
+        </main>
+    </div>
+);
+
+const PaymentPending = () => (
+    <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
+        <main className="flex min-h-screen items-center justify-center p-4">
+            <GlassCard className="w-full max-w-lg text-center p-8 border-amber-500/50">
+                <div className="mx-auto bg-amber-500/10 rounded-full p-3 w-fit mb-4">
+                    <Loader2 className="h-10 w-10 text-amber-400 animate-spin" />
+                </div>
+                <h2 className="text-2xl font-bold text-amber-400">Payment Verification Pending</h2>
+                <p className="text-gray-400 mt-2 mb-6">
+                    Your payment is being verified by our team. This page will update automatically once your account is approved. This usually takes a few minutes.
+                </p>
+                <div className="flex flex-col items-center gap-4 pt-4">
+                     <form action={signOut}>
+                        <Button variant="outline" className="bg-black/20 border-white/10 text-white hover:bg-white/20">
+                            Logout
+                        </Button>
+                    </form>
+                </div>
+            </GlassCard>
+        </main>
+    </div>
+);
 
 export default async function WelcomePage() {
     const supabase = createClient();
@@ -326,27 +368,12 @@ export default async function WelcomePage() {
         return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Could not load your profile. Please contact support.</div>;
     }
     
-     if (profile.is_breached) {
-        return (
-             <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
-                <main className="flex min-h-screen items-center justify-center p-4">
-                    <GlassCard className="w-full max-w-lg text-center p-8 border-destructive/50">
-                        <div className="mx-auto bg-destructive/10 rounded-full p-3 w-fit mb-4">
-                            <ShieldAlert className="h-10 w-10 text-destructive" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-destructive">Account Breached</h2>
-                        <p className="text-gray-400 mt-2 mb-6">
-                            Your account has been flagged for a breach of our trading rules. Access has been suspended.
-                        </p>
-                        <div className="flex flex-col items-center gap-4 pt-4">
-                            <Button asChild className="w-full max-w-xs">
-                                <Link href="/pricing">Purchase New Account</Link>
-                            </Button>
-                        </div>
-                    </GlassCard>
-                </main>
-             </div>
-        )
+    if (!profile.is_approved) {
+        return <PaymentPending />;
+    }
+    
+    if (profile.is_breached) {
+        return <AccountBreached />;
     }
 
     // This is the new, unified layout for the welcome page.
