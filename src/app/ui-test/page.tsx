@@ -42,7 +42,7 @@ const GlassCard = ({
 }) => (
   <div
     className={cn(
-      'bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg',
+      'bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg',
       className
     )}
   >
@@ -109,8 +109,8 @@ const DashboardHeader = () => (
 );
 
 const UserDetails = () => (
-  <GlassCard className="p-6 md:p-8 col-span-1 md:col-span-2 relative">
-    <div className="relative z-10">
+  <GlassCard className="p-6 md:p-8 relative h-full flex flex-col">
+    <div className="relative z-10 flex-grow">
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex items-center gap-4">
                 <UserAvatar />
@@ -168,29 +168,29 @@ const UserDetails = () => (
 const AccountDetails = () => {
   const [isPassVisible, setIsPassVisible] = useState(false);
   return (
-    <GlassCard className="p-6 md:p-8 col-span-1 md:col-span-2 relative">
+    <GlassCard className="p-6 md:p-8 col-span-full relative">
         <div className="relative z-10">
             <h3 className="font-semibold mb-4 text-white tracking-wide">Account details</h3>
             <div className="space-y-3">
-                <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5">
-                    <div>
-                        <p className="text-xs text-gray-400 tracking-wider">Log in</p>
-                        <p className="font-semibold font-mono text-white">78748803</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5">
+                        <div>
+                            <p className="text-xs text-gray-400 tracking-wider">Log in</p>
+                            <p className="font-semibold font-mono text-white">78748803</p>
+                        </div>
+                        <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" />
                     </div>
-                     <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" />
-                </div>
-                <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                    <p className="text-xs text-gray-400 tracking-wider">MT5 Server</p>
-                    <p className="font-semibold text-white">FundedNext-Server4</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-xs text-gray-400 tracking-wider">MT5 Server</p>
+                        <p className="font-semibold text-white">FundedNext-Server4</p>
+                    </div>
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-xs text-gray-400 tracking-wider">Investor Pass</p>
                         <button className="text-sm font-semibold text-purple-400 hover:underline">
                             Set Password
                         </button>
                     </div>
-                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-xs text-gray-400 tracking-wider">Master Pass</p>
                         <div className="flex items-center justify-between">
                             <p className="font-semibold font-mono text-white text-sm">
@@ -254,44 +254,48 @@ const StatCard = ({
   </GlassCard>
 );
 
-const RightSidebar = () => (
-  <div className="col-span-1 md:col-span-4 lg:col-span-1 space-y-6">
-    <GlassCard className="p-6 text-center">
-      <h3 className="font-semibold text-white tracking-wide">Xpertfunding Email Support</h3>
-      <div className="my-6 flex justify-center">
-        <div className="h-24 w-24 rounded-full bg-purple-500/10 flex items-center justify-center border-2 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
-          <Users className="h-10 w-10 text-purple-300" />
+const SupportCard = () => (
+    <GlassCard className="p-6 text-center h-full flex flex-col justify-between">
+        <div>
+            <h3 className="font-semibold text-white tracking-wide text-lg">Xpertfunding Email Support</h3>
+            <div className="my-6 flex justify-center">
+                <div className="h-24 w-24 rounded-full bg-purple-500/10 flex items-center justify-center border-2 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
+                <Users className="h-10 w-10 text-purple-300" />
+                </div>
+            </div>
         </div>
-      </div>
-      <button className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-400/50">
-        Contact
-      </button>
-      <p className="mt-4 text-sm text-gray-400 hover:text-white cursor-pointer">support@xpertfunding.com</p>
+        <div className="mt-6">
+            <button className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-400/50">
+                Contact
+            </button>
+            <p className="mt-4 text-sm text-gray-400 hover:text-white cursor-pointer">support@xpertfunding.com</p>
+        </div>
     </GlassCard>
-    <GlassCard className="p-6 text-center">
-      <p className="text-sm text-gray-400">Today's permitted loss will reset in</p>
-      <p className="text-4xl font-mono font-bold my-4 text-white">07:14:45</p>
-      <p className="text-xs text-gray-500">Countdown Timezone: GMT+3</p>
-    </GlassCard>
-  </div>
 );
+
 
 export default function UITestPage() {
   return (
-    <div className="dark min-h-screen bg-black text-gray-200 font-sans relative overflow-hidden">
+    <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
+      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-20%] left-[-20%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20" />
-        <div className="absolute bottom-[-20%] right-[-20%] w-[50vw] h-[50vw] bg-pink-600 rounded-full filter blur-3xl opacity-20" />
+        <div className="absolute top-[-25%] left-[-25%] w-[60vw] h-[60vw] bg-purple-600 rounded-full filter blur-3xl opacity-30 animate-pulse" />
+        <div className="absolute bottom-[-25%] right-[-25%] w-[60vw] h-[60vw] bg-pink-600 rounded-full filter blur-3xl opacity-20 animate-pulse animation-delay-2000" />
       </div>
       
-      <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
+      <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
         <DashboardHeader />
 
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-3 gap-6">
-          <div className="col-span-1 md:col-span-4 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <UserDetails />
+            <SupportCard />
+        </div>
+        
+        <div className="mt-6">
             <AccountDetails />
+        </div>
 
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               title="Balance"
               value="$6,000"
@@ -329,12 +333,8 @@ export default function UITestPage() {
               progressColor="bg-blue-500/20 text-blue-300"
               decorativeImage="https://i.imgur.com/j4WmrLw.png"
             />
-          </div>
-          <RightSidebar />
         </div>
       </main>
     </div>
   );
 }
-
-    
