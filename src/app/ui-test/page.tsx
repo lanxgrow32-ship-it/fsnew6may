@@ -17,31 +17,18 @@ import {
   Grid3x3,
   Briefcase,
   Copy,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
 
 const UserAvatar = ({ className }: { className?: string }) => (
-  <div className={cn('relative rounded-full', className)}>
-    <svg className="w-12 h-12" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="40" cy="40" r="40" fill="url(#avatar-gradient)" />
-    </svg>
-    <div className="absolute inset-0 flex items-center justify-center">
-        <svg className="w-14 h-14" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M38.3333 40.5V38C38.3333 34.7865 35.5468 32.1667 32.1667 32.1667H21.8333C18.4532 32.1667 15.6667 34.7865 15.6667 38V40.5" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path fillRule="evenodd" clipRule="evenodd" d="M27 27.5C30.4518 27.5 33.25 24.8512 33.25 21.5C33.25 18.1488 30.4518 15.5 27 15.5C23.5482 15.5 20.75 18.1488 20.75 21.5C20.75 24.8512 23.5482 27.5 27 27.5Z" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M20.75 21.5C20.75 19.429 20.75 17.3579 21.8333 15.5H32.1667C33.25 17.3579 33.25 19.429 33.25 21.5" fill="#111827"/>
-        </svg>
+  <div className={cn('relative h-16 w-16', className)}>
+    <div className="absolute -inset-1 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full blur-md opacity-75"></div>
+    <div className="relative h-16 w-16 flex items-center justify-center bg-slate-900 rounded-full border-2 border-slate-700">
+      <User className="h-8 w-8 text-slate-400" />
     </div>
-    <svg className="absolute -top-1 -left-1 w-[58px] h-[58px]" viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="avatar-gradient" x1="40" y1="0" x2="40" y2="80" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#A78BFA" />
-            <stop offset="1" stopColor="#6366F1" />
-        </linearGradient>
-      </defs>
-    </svg>
   </div>
 );
 
@@ -55,8 +42,7 @@ const GlassCard = ({
 }) => (
   <div
     className={cn(
-      'bg-black/20 backdrop-blur-lg border border-white/5 rounded-2xl shadow-2xl shadow-black/30 relative overflow-hidden',
-      'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.02)_0%,transparent_50%)]',
+      'bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg',
       className
     )}
   >
@@ -65,8 +51,13 @@ const GlassCard = ({
 );
 
 const Logo = () => (
-    <div className="bg-slate-900/70 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
-        N
+    <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M22 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 22V12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
     </div>
 );
 
@@ -75,8 +66,8 @@ const DashboardHeader = () => (
   <header className="flex items-center justify-between mb-8 z-20 relative">
     <div className="flex items-center gap-8">
         <Logo />
-        <nav className="hidden md:flex items-center gap-1 bg-slate-900/50 border border-white/10 p-1 rounded-full shadow-lg">
-            <a href="#" className="px-4 py-1.5 text-sm font-medium bg-slate-700/80 rounded-full text-white shadow-md">
+        <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
+            <a href="#" className="px-4 py-1.5 text-sm font-medium bg-white/10 rounded-full text-white shadow-md">
             Account Overview
             </a>
             <a href="#" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
@@ -91,16 +82,16 @@ const DashboardHeader = () => (
       </nav>
     </div>
     <div className="flex items-center gap-2">
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-slate-800/60 transition-colors">
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
         <Search className="h-5 w-5 text-gray-300" />
       </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-slate-800/60 transition-colors">
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
         <Settings className="h-5 w-5 text-gray-300" />
       </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-slate-800/60 transition-colors">
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
         <Bell className="h-5 w-5 text-gray-300" />
       </button>
-      <div className="flex items-center gap-2 bg-slate-900/50 border border-white/10 p-1 rounded-full shadow-lg">
+      <div className="flex items-center gap-2 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
         <Avatar className="h-8 w-8">
           <AvatarFallback className="bg-indigo-600 text-white">N</AvatarFallback>
         </Avatar>
@@ -110,7 +101,7 @@ const DashboardHeader = () => (
         </div>
         <ChevronDown className="h-4 w-4 text-gray-400 hidden sm:block mr-1" />
       </div>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-slate-800/60 md:hidden transition-colors">
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
         <Menu className="h-5 w-5 text-gray-300" />
       </button>
     </div>
@@ -119,7 +110,6 @@ const DashboardHeader = () => (
 
 const UserDetails = () => (
   <GlassCard className="p-6 md:p-8 col-span-1 md:col-span-2 relative">
-    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,rgba(168,85,247,0.15),transparent_60%)]"></div>
     <div className="relative z-10">
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -131,7 +121,7 @@ const UserDetails = () => (
                 </p>
                 </div>
             </div>
-            <div className="shrink-0 border border-white/10 bg-slate-900/50 rounded-full px-4 py-1.5 text-sm font-mono text-gray-300 flex items-center gap-2">
+            <div className="shrink-0 border border-white/10 bg-black/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-mono text-gray-300 flex items-center gap-2">
                 <Grid3x3 className="w-4 h-4 text-gray-500" />
                 78748803
             </div>
@@ -179,7 +169,6 @@ const AccountDetails = () => {
   const [isPassVisible, setIsPassVisible] = useState(false);
   return (
     <GlassCard className="p-6 md:p-8 col-span-1 md:col-span-2 relative">
-        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(168,85,247,0.1),transparent_60%)]"></div>
         <div className="relative z-10">
             <h3 className="font-semibold mb-4 text-white tracking-wide">Account details</h3>
             <div className="space-y-3">
@@ -243,9 +232,9 @@ const StatCard = ({
   isPrimary?: boolean;
 }) => (
   <GlassCard className={cn("p-5 flex flex-col relative", isPrimary && "bg-purple-600/10 border-purple-500/20")}>
-    <div className="absolute inset-0 bg-cover bg-center opacity-[0.02]" style={{backgroundImage: "url(/grid.svg)"}}></div>
+    <div className="absolute -inset-px bg-grid-pattern opacity-5"></div>
     <div className="absolute bottom-0 right-0 w-20 h-20">
-        <Image src={decorativeImage} alt="" width={80} height={80} className="opacity-20" />
+        <Image src={decorativeImage} alt="" width={80} height={80} className="opacity-10" />
     </div>
     <div className="relative">
       <div className="flex items-center gap-2">
@@ -289,18 +278,19 @@ const RightSidebar = () => (
 
 export default function UITestPage() {
   return (
-    <div className="dark min-h-screen bg-[#06060A] text-gray-200 font-sans relative overflow-hidden">
+    <div className="dark min-h-screen bg-black text-gray-200 font-sans relative overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <div className="absolute -top-1/4 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(ellipse_40%_50%_at_50%_0%,rgba(168,85,247,0.3),transparent)]"></div>
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        ></div>
+        <div className="absolute top-[-20%] left-[-20%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20" />
+        <div className="absolute bottom-[-20%] right-[-20%] w-[50vw] h-[50vw] bg-pink-600 rounded-full filter blur-3xl opacity-20" />
       </div>
+      
+      <style jsx global>{`
+        .bg-grid-pattern {
+          background-image: linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+          background-size: 20px 20px;
+        }
+      `}</style>
 
       <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
         <DashboardHeader />
@@ -326,7 +316,7 @@ export default function UITestPage() {
               details="Profit/Loss"
               progress={20.3}
               icon={<LineChart className="w-4 h-4 text-gray-400" />}
-              progressColor="bg-purple-500/20 text-purple-300"
+              progressColor="bg-green-500/20 text-green-300"
               decorativeImage="https://i.imgur.com/IChPzJ4.png"
             />
             <StatCard
@@ -344,7 +334,7 @@ export default function UITestPage() {
               details="Trading Days"
               progress={27.6}
               icon={<Image src="https://i.imgur.com/GKSBvL1.png" alt="" width={16} height={16} className="opacity-70"/>}
-              progressColor="bg-purple-500/20 text-purple-300"
+              progressColor="bg-blue-500/20 text-blue-300"
               decorativeImage="https://i.imgur.com/j4WmrLw.png"
             />
           </div>
