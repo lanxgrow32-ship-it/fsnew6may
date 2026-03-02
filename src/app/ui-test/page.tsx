@@ -279,8 +279,8 @@ export default function UITestPage() {
     <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-25%] left-[-25%] w-[60vw] h-[60vw] bg-purple-600 rounded-full filter blur-3xl opacity-30 animate-pulse" />
-        <div className="absolute bottom-[-25%] right-[-25%] w-[60vw] h-[60vw] bg-pink-600 rounded-full filter blur-3xl opacity-20 animate-pulse animation-delay-2000" />
+        <div className="absolute top-[-25%] left-[-25%] w-[60vw] h-[60vw] bg-purple-600 rounded-full filter blur-3xl opacity-30" />
+        <div className="absolute bottom-[-25%] right-[-25%] w-[60vw] h-[60vw] bg-pink-600 rounded-full filter blur-3xl opacity-20" />
       </div>
       
       <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
