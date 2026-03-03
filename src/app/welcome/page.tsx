@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { signOut } from '@/app/actions';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, Loader2, BookUser, Gift, BrainCircuit, TrendingDown, Percent } from 'lucide-react';
+import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, Loader2, BookUser, Gift, BrainCircuit, TrendingDown, Percent, CheckCircle } from 'lucide-react';
 import { ReceiptButton } from './receipt-button';
 
 // Helper Components for the new UI
@@ -78,7 +78,6 @@ function UserNav({ profile }: { profile: any}) {
                             <span>Support</span>
                         </Link>
                     </DropdownMenuItem>
-                    <ReceiptButton profile={profile} />
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                  <form action={signOut}>
@@ -102,6 +101,13 @@ const navItems = [
     { href: "/mentor", label: "AI Mentor" },
     { href: "/pricing", label: "Purchase New Plan" },
 ];
+
+const NotificationItem = ({ children, isDone }: { children: React.ReactNode, isDone: boolean }) => (
+    <DropdownMenuItem className={cn("gap-2", !isDone && "text-muted-foreground")}>
+        {isDone ? <CheckCircle className="text-green-500" /> : <div className="w-4 h-4" />}
+        <span>{children}</span>
+    </DropdownMenuItem>
+);
 
 const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
   <header className="flex items-center justify-between mb-8 z-20 relative">
@@ -131,9 +137,30 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
       <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
         <Settings className="h-5 w-5 text-gray-300" />
       </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Bell className="h-5 w-5 text-gray-300" />
-      </button>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="relative h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                <Bell className="h-5 w-5 text-gray-300" />
+                {!profile.is_approved || profile.kyc_status !== 'verified' ? <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-purple-500"></span> : null}
+              </button>
+            </DropdownMenuTrigger>
+             <DropdownMenuContent className="w-64" align="end">
+                <DropdownMenuLabel>Account Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <NotificationItem isDone={profile.is_approved}>Payment Approved</NotificationItem>
+                <NotificationItem isDone={profile.kyc_status === 'verified'}>KYC Verified</NotificationItem>
+                <NotificationItem isDone={profile.credentials_provided}>Credentials Issued</NotificationItem>
+                 {profile.is_breached && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive">
+                            <ShieldAlert />
+                            <span>Account Breached</span>
+                        </DropdownMenuItem>
+                    </>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
       <UserNav profile={profile} />
       <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
         <Menu className="h-5 w-5 text-gray-300" />
@@ -221,6 +248,9 @@ const UserDetails = ({ profile }: { profile: any }) => {
                         <p className="font-semibold text-green-400 mt-1">Active</p>
                     </div>
                 </div>
+            </div>
+            <div className="relative z-10 mt-6">
+                <ReceiptButton profile={profile} asStrip={true} />
             </div>
         </GlassCard>
     );
@@ -392,7 +422,7 @@ export default async function WelcomePage() {
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
           
-          <main className="relative z-10 p-4 sm:p-6 lg:p-8">
+          <main className="relative z-10 max-w-full mx-auto p-4 sm:p-6 lg:p-8">
             <DashboardHeader profile={profile} activePage="Account Overview" />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -452,3 +482,5 @@ export default async function WelcomePage() {
         </div>
     );
 }
+
+    

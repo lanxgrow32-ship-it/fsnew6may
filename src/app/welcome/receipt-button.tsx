@@ -7,13 +7,15 @@ import 'jspdf-autotable';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 // Define the type for the autotable method
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
-export function ReceiptButton({ profile }: { profile: any }) {
+export function ReceiptButton({ profile, asStrip = false }: { profile: any, asStrip?: boolean }) {
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
@@ -130,6 +132,15 @@ export function ReceiptButton({ profile }: { profile: any }) {
     if (!profile.is_approved) {
         return null;
     }
+    
+    if (asStrip) {
+        return (
+             <Button onClick={generateReceipt} disabled={isLoading} variant="outline" className="w-full bg-black/20 border-white/10 hover:bg-white/10 text-white">
+                 {isLoading ? ( <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ) : ( <Download className="mr-2 h-4 w-4" /> )}
+                Download Receipt
+             </Button>
+        )
+    }
 
     return (
         <DropdownMenuItem onSelect={(e) => { e.preventDefault(); generateReceipt(); }} disabled={isLoading}>
@@ -142,3 +153,5 @@ export function ReceiptButton({ profile }: { profile: any }) {
         </DropdownMenuItem>
     );
 }
+
+    
