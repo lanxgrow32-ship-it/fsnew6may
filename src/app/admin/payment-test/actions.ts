@@ -34,7 +34,7 @@ export async function initiateLgPayPayment(prevState: PaymentState, formData: Fo
 
     const params: Record<string, string> = {
         app_id: lgPayAppId,
-        trade_type: "INRUPI", // Using the correct trade_type from documentation
+        trade_type: "test", // CRITICAL: Reverted to "test" as per provider's instructions for testing collections.
         order_sn: order_sn,
         money: String(moneyInCents),
         notify_url: notifyUrl,
