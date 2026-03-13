@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 
 /**
  * Generates an MD5 signature for LG-Pay API requests based on their official documentation.
+ * This implementation strictly follows the provided PHP example.
  * @param params - An object of parameters to be signed.
  * @param key - The merchant's secret key.
  * @returns The uppercase MD5 signature string.
@@ -22,6 +23,7 @@ export function generateLgPaySignature(params: Record<string, any>, key: string)
     const sortedKeys = Object.keys(filteredParams).sort();
 
     // 3. Create the string to sign by joining the key-value pairs.
+    // This mimics the behavior of http_build_query followed by urldecode.
     const stringA = sortedKeys.map(k => `${k}=${filteredParams[k]}`).join('&');
 
     // 4. Append the secret key to the end of the string.
