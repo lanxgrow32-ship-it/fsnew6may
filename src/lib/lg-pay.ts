@@ -15,6 +15,7 @@ export function generateLgPaySignature(params: Record<string, any>, key: string)
 
     // 1. Filter out empty, null, undefined parameters as per the documentation's "non-empty" rule.
     for (const k in params) {
+        // This check is important. An empty string is not a "non-empty parameter".
         if (params[k] !== '' && params[k] !== null && params[k] !== undefined) {
             data[k] = params[k];
         }
