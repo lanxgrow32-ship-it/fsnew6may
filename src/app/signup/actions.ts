@@ -65,7 +65,7 @@ export async function signupAndCreateOrder(formData: FormData) {
     const profileData: any = {
         plan_purchased: planPurchased,
         is_approved: false, // Payment is not yet confirmed
-        transaction_id: order_sn, // Store our internal order number in the correct column
+        transaction_id: order_sn,
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
@@ -95,7 +95,8 @@ export async function signupAndCreateOrder(formData: FormData) {
 
     const moneyInCents = Math.round(finalAmountPaid * 100);
     const headersList = headers();
-    const ip = headersList.get('x-forwarded-for') ?? '127.0.0.1';
+    const ipHeader = headersList.get('x-forwarded-for') ?? '127.0.0.1';
+    const ip = ipHeader.split(',')[0].trim();
 
 
     const params = {
