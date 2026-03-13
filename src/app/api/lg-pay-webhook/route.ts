@@ -33,11 +33,11 @@ export async function POST(req: NextRequest) {
         }
 
         if (data.status === '1') {
-            // Find the profile using the order number stored in the transaction_id field
+            // Find the profile using the new order_sn column
             const { data: profile, error: fetchError } = await supabaseAdmin
                 .from('profiles')
                 .select('id, is_approved, referred_by, final_amount_paid')
-                .eq('transaction_id', data.order_sn)
+                .eq('order_sn', data.order_sn)
                 .single();
 
             if (fetchError || !profile) {
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
                 return new NextResponse('ok', { status: 200 });
             }
 
-            // Mark the payment as approved. Do not overwrite the transaction_id.
+            // Mark the payment as approved.
             const { error: updateError } = await supabaseAdmin
                 .from('profiles')
                 .update({ is_approved: true })

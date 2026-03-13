@@ -65,7 +65,8 @@ export async function signupAndCreateOrder(formData: FormData) {
     const profileData: any = {
         plan_purchased: planPurchased,
         is_approved: false, // Payment is not yet confirmed
-        transaction_id: order_sn,
+        order_sn: order_sn, // Using the new dedicated column
+        transaction_id: order_sn, // Also updating transaction_id for compatibility with receipts
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
@@ -99,7 +100,7 @@ export async function signupAndCreateOrder(formData: FormData) {
     const ip = ipHeader.split(',')[0].trim();
 
 
-    const params = {
+    const params: Record<string, string> = {
         app_id: lgPayAppId,
         trade_type: "test", // Use "test" for testing as per docs
         order_sn: order_sn,
@@ -121,9 +122,11 @@ export async function signupAndCreateOrder(formData: FormData) {
         if (result.status === 1 && result.data?.pay_url) {
             return { redirectUrl: result.data.pay_url };
         } else {
+            console.error("LG-Pay API Error:", result);
             return { error: `Could not initiate payment: ${result.msg || 'Unknown gateway error.'}` };
         }
     } catch (e: any) {
+        console.error("LG-Pay fetch Error:", e);
         return { error: 'Failed to contact payment gateway. Please try again later.' };
     }
   }

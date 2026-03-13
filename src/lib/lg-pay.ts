@@ -3,14 +3,14 @@ import { createHash } from 'crypto';
 
 /**
  * Generates an MD5 signature for LG-Pay API requests.
- * @param params - An object of non-empty parameters to be signed.
+ * @param params - An object of parameters to be signed.
  * @param key - The merchant's secret key.
  * @returns The uppercase MD5 signature string.
  */
 export function generateLgPaySignature(params: Record<string, string | number>, key: string): string {
     const paramsToSign: Record<string, string> = {};
 
-    // 1. Filter out empty/null parameters
+    // 1. Filter out empty/null parameters, as per documentation. This was a critical bug.
     for (const k in params) {
         const value = params[k];
         if (value !== '' && value !== null && value !== undefined) {
@@ -22,7 +22,6 @@ export function generateLgPaySignature(params: Record<string, string | number>, 
     const sortedKeys = Object.keys(paramsToSign).sort();
 
     // 3. Manually build the string from the sorted keys to guarantee order.
-    // This prevents issues where URLSearchParams might not respect key order.
     const stringA = sortedKeys
         .map(k => `${k}=${paramsToSign[k]}`)
         .join('&');
