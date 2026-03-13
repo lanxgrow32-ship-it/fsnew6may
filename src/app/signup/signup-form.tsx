@@ -245,7 +245,7 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
                         <AlertTitle className="text-amber-300 font-bold">Important Payment Instructions</AlertTitle>
                         <AlertDescription className="text-amber-300/80 space-y-2 mt-2">
                             <p>• Please complete the payment on the gateway page within the given time limit.</p>
-                            <p>• Since this is a third-party gateway, we cannot guarantee account creation if payment is made after the session expires.</p>
+                            <p>• After payment, you have to submit the UTR in the time limit also. After that, your payment will be successful.</p>
                         </AlertDescription>
                     </Alert>
 

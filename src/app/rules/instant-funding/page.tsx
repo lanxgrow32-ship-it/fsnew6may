@@ -86,6 +86,16 @@ export default function InstantFundingRulesPage() {
                                 <p className="text-sm font-semibold pt-2">All decisions made by the firm are final.</p>
                             </CardContent>
                         </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-xl">Payment & UTR Submission</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <p>• Please complete the payment on the gateway page within the given time limit.</p>
+                                <p>• After payment, you have to submit the UTR in the time limit also. After that, your payment will be successful.</p>
+                            </CardContent>
+                        </Card>
                         
                         <Card>
                             <CardHeader>
