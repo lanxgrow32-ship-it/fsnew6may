@@ -65,8 +65,8 @@ export async function signupAndCreateOrder(formData: FormData) {
     const profileData: any = {
         plan_purchased: planPurchased,
         is_approved: false, // Payment is not yet confirmed
-        order_sn: order_sn, // Using the new dedicated column
-        transaction_id: order_sn, // Also updating transaction_id for compatibility with receipts
+        order_sn: order_sn,
+        transaction_id: order_sn, // Keep this for receipt compatibility
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
@@ -95,8 +95,7 @@ export async function signupAndCreateOrder(formData: FormData) {
     }
 
     const moneyInCents = Math.round(finalAmountPaid * 100);
-    const headersList = headers();
-    const ipHeader = headersList.get('x-forwarded-for') ?? '127.0.0.1';
+    const ipHeader = headers().get('x-forwarded-for') ?? '127.0.0.1';
     const ip = ipHeader.split(',')[0].trim();
 
 
@@ -107,6 +106,7 @@ export async function signupAndCreateOrder(formData: FormData) {
         money: String(moneyInCents),
         notify_url: notifyUrl,
         ip: ip,
+        remark: `Plan: ${planPurchased}`
     };
 
     const sign = generateLgPaySignature(params, lgPayKey);
