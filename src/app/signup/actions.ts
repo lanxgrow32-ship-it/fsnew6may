@@ -66,7 +66,6 @@ export async function signupAndCreateOrder(formData: FormData) {
         plan_purchased: planPurchased,
         is_approved: false, // Payment is not yet confirmed
         order_sn: order_sn,
-        transaction_id: order_sn, // Keep this for receipt compatibility
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
@@ -101,7 +100,7 @@ export async function signupAndCreateOrder(formData: FormData) {
 
     const params: Record<string, string> = {
         app_id: lgPayAppId,
-        trade_type: "test", // Use "test" for testing as per docs
+        trade_type: "test", // CRITICAL FIX: This parameter must be included for signature calculation.
         order_sn: order_sn,
         money: String(moneyInCents),
         notify_url: notifyUrl,
