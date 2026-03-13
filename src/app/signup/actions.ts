@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -84,14 +83,9 @@ export async function signupAndCreateOrder(formData: FormData) {
     }
     
     // 6. Initiate payment with LG-Pay
-    const lgPayAppId = process.env.LG_PAY_APP_ID;
-    const lgPayKey = process.env.LG_PAY_KEY;
+    const lgPayAppId = 'YD4957';
+    const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
     const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
-
-    if (!lgPayAppId || !lgPayKey) {
-        console.error("LG Pay credentials are not configured.");
-        return { error: 'Payment gateway is not configured. Please contact support.' };
-    }
 
     const moneyInCents = Math.round(finalAmountPaid * 100);
     const ipHeader = headers().get('x-forwarded-for') ?? '127.0.0.1';
@@ -100,7 +94,7 @@ export async function signupAndCreateOrder(formData: FormData) {
 
     const params: Record<string, string> = {
         app_id: lgPayAppId,
-        trade_type: "test", // CRITICAL FIX: This parameter must be included for signature calculation.
+        trade_type: "INRUPI",
         order_sn: order_sn,
         money: String(moneyInCents),
         notify_url: notifyUrl,

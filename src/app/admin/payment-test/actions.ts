@@ -17,14 +17,9 @@ export async function initiateLgPayPayment(prevState: PaymentState, formData: Fo
         return { error: 'Please enter a valid amount.' };
     }
 
-    const lgPayAppId = process.env.LG_PAY_APP_ID;
-    const lgPayKey = process.env.LG_PAY_KEY;
+    const lgPayAppId = 'YD4957';
+    const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
     const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
-
-    if (!lgPayAppId || !lgPayKey) {
-        console.error("LG Pay credentials are not configured.");
-        return { error: 'Payment gateway is not configured on the server.' };
-    }
 
     const moneyInCents = Math.round(parsedAmount * 100);
     const order_sn = `FSTEST_${Date.now()}_${randomBytes(4).toString('hex')}`;
@@ -33,7 +28,7 @@ export async function initiateLgPayPayment(prevState: PaymentState, formData: Fo
 
     const params: Record<string, string> = {
         app_id: lgPayAppId,
-        trade_type: "INRUPI", // Updated as per direct provider instruction
+        trade_type: "INRUPI",
         order_sn: order_sn,
         money: String(moneyInCents),
         notify_url: notifyUrl,
