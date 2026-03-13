@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -99,12 +100,6 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
         setError('The entered referral code is not valid. Please remove it or enter a valid one.');
         return;
     }
-    
-    const transactionId = (e.currentTarget.elements.namedItem('transaction_id') as HTMLInputElement).value;
-    if (!transactionId) {
-        setError('Please enter the transaction ID after making the payment.');
-        return;
-    }
 
     setIsLoading(true);
     setError(null);
@@ -122,8 +117,12 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
     if (result?.error) {
       setError(result.error);
       setIsLoading(false);
+    } else if (result?.redirectUrl) {
+      window.location.href = result.redirectUrl;
+    } else {
+      setError("Could not retrieve payment URL. Please try again.");
+      setIsLoading(false);
     }
-    // The action now handles the redirect, so we don't need client-side redirection.
   };
 
   return (
@@ -137,29 +136,6 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>1. Make Payment</CardTitle>
-                    <CardDescription>Scan the QR code or use the UPI ID to pay <span className="font-bold">₹{finalPrice.toFixed(2)}</span>.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     {paymentDetails?.qr_code_url ? (
-                         <div className="flex justify-center">
-                             <Image src={paymentDetails.qr_code_url} alt="Payment QR Code" width={200} height={200} className="rounded-md border p-2 bg-white" />
-                         </div>
-                     ) : (
-                        <div className="flex justify-center items-center h-[200px] w-[200px] mx-auto bg-muted rounded-md border-dashed border-2">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground"/>
-                        </div>
-                     )}
-                    <div className="space-y-2">
-                         <Label>Our UPI ID</Label>
-                        <Input readOnly value={paymentDetails?.upi_id || ''}/>
-                    </div>
-                </CardContent>
-            </Card>
-
             {!isTrialPlan && (
                 <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>
@@ -183,7 +159,6 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
                     </CardContent>
                 </Card>
             )}
-
 
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
@@ -215,17 +190,11 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
 
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
-                    <CardTitle>2. Submit Your Details</CardTitle>
-                    <CardDescription>Enter your registration and payment details below.</CardDescription>
+                    <CardTitle>Your Details</CardTitle>
+                    <CardDescription>Enter your registration details to create your account.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-
-                    <div className="space-y-2">
-                        <Label htmlFor="transaction_id">UPI Transaction ID *</Label>
-                        <Input id="transaction_id" name="transaction_id" placeholder="Enter the 12-digit transaction ID" required/>
-                        <p className="text-xs text-muted-foreground">This is required to verify your payment.</p>
-                    </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="full_name">Full Name</Label>
@@ -271,9 +240,8 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
                         </Label>
                     </div>
 
-
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Create Account'}
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}
                     </Button>
                     <div className="text-center text-sm text-muted-foreground pt-2">
                         Already have an account?{' '}

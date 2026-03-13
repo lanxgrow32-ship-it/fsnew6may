@@ -15,23 +15,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords, Link2 } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { cn } from '@/lib/utils';
 
 type PaymentDetails = {
     id: number;
     upi_id: string;
     qr_code_url: string;
     referral_commission_percentage: number;
-    usdt_to_inr_rate: number;
-    crypto_wallet_address: string;
-    crypto_qr_code_url: string;
     is_upi_enabled: boolean;
-    is_crypto_enabled: boolean;
 };
 
 function SubmitButton() {
@@ -48,10 +42,8 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
     
     const [upiQrPreview, setUpiQrPreview] = useState<string | null>(currentSettings?.qr_code_url || null);
-    const [cryptoQrPreview, setCryptoQrPreview] = useState<string | null>(currentSettings?.crypto_qr_code_url || null);
     
     const formRef = useRef<HTMLFormElement>(null);
-
 
     useEffect(() => {
         if (state.error) {
@@ -68,23 +60,15 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
             setUpiQrPreview(URL.createObjectURL(file));
         }
     }
-    
-    const handleCryptoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setCryptoQrPreview(URL.createObjectURL(file));
-        }
-    }
 
     return (
         <form ref={formRef} action={formAction} className="space-y-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>Manual Payment Details</CardTitle>
-                        <CardDescription>Update the manual payment options shown to users during signup.</CardDescription>
+                        <CardDescription>Update the manual UPI payment option shown to users during signup.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8">
-                        {/* UPI Section */}
                         <div className="space-y-6 p-4 border rounded-lg">
                              <h3 className="font-semibold text-lg flex items-center gap-2"><IndianRupee className="w-5 h-5"/> UPI Settings</h3>
                              <div className="space-y-2">
@@ -105,31 +89,6 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                                 </div>
                             )}
                         </div>
-
-                        {/* Crypto Section */}
-                        <div className="space-y-6 p-4 border rounded-lg">
-                            <h3 className="font-semibold text-lg flex items-center gap-2"><Wallet className="w-5 h-5"/> Crypto (USDT) Settings</h3>
-                            <div className="space-y-2">
-                                <Label htmlFor="usdt_to_inr_rate">USDT to INR Rate</Label>
-                                <Input id="usdt_to_inr_rate" name="usdt_to_inr_rate" type="number" step="0.01" defaultValue={currentSettings?.usdt_to_inr_rate || 90} placeholder="e.g., 90" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="crypto_wallet_address">USDT Wallet Address (TRC20)</Label>
-                                <Input id="crypto_wallet_address" name="crypto_wallet_address" defaultValue={currentSettings?.crypto_wallet_address || ''} placeholder="T..." />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="crypto_qr_code">Crypto Wallet QR Code</Label>
-                                <Input id="crypto_qr_code" name="crypto_qr_code" type="file" accept="image/*" onChange={handleCryptoFileChange} />
-                            </div>
-                            {cryptoQrPreview && (
-                                <div>
-                                    <Label>Current Crypto QR Code Preview</Label>
-                                    <div className="mt-2 rounded-md border p-4 w-fit bg-white">
-                                        <Image src={cryptoQrPreview} alt="Crypto QR Code Preview" width={150} height={150} className="object-contain" />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
                     </CardContent>
                 </Card>
 
@@ -142,23 +101,12 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                         <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
                                 <Label htmlFor="is_upi_enabled" className="text-base">Standard Gateway (INR)</Label>
-                                <p className="text-sm text-muted-foreground">Enable or disable all INR payment methods.</p>
+                                <p className="text-sm text-muted-foreground">Enable or disable all INR payment methods (including new gateway).</p>
                             </div>
                             <Switch
                                 id="is_upi_enabled"
                                 name="is_upi_enabled"
                                 defaultChecked={currentSettings?.is_upi_enabled ?? true}
-                            />
-                        </div>
-                         <div className="flex items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                                <Label htmlFor="is_crypto_enabled" className="text-base">Crypto (USDT)</Label>
-                                <p className="text-sm text-muted-foreground">Enable or disable manual crypto payments.</p>
-                            </div>
-                            <Switch
-                                id="is_crypto_enabled"
-                                name="is_crypto_enabled"
-                                defaultChecked={currentSettings?.is_crypto_enabled ?? true}
                             />
                         </div>
                     </CardContent>
@@ -208,12 +156,12 @@ export default function PaymentSettingsPage() {
             setIsLoading(true);
             const { data, error } = await supabase
                 .from('payment_details')
-                .select('*')
+                .select('id, upi_id, qr_code_url, referral_commission_percentage, is_upi_enabled')
                 .eq('id', 1)
                 .single();
             
             if (data) {
-                setSettings(data);
+                setSettings(data as PaymentDetails);
             }
             setIsLoading(false);
         };

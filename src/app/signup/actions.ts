@@ -5,6 +5,10 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { generateLgPaySignature } from '@/lib/lg-pay';
+import { randomBytes } from 'crypto';
+import { headers } from 'next/headers';
+
 
 export async function signupAndCreateOrder(formData: FormData) {
   const email = formData.get('email') as string;
@@ -13,76 +17,43 @@ export async function signupAndCreateOrder(formData: FormData) {
   const planPurchased = formData.get('plan_purchased') as string;
   const referralCode = formData.get('referral_code') as string | null;
   const mobileNumber = formData.get('mobile_number') as string;
-  const transactionId = formData.get('transaction_id') as string;
-
+  
   const planPrice = parseFloat(formData.get('plan_price') as string);
   const couponCode = formData.get('coupon_code') as string;
   const discountAmount = parseFloat(formData.get('discount_amount') as string);
   const finalAmountPaid = parseFloat(formData.get('final_amount_paid') as string);
   
-  if (!mobileNumber) {
-    return { error: 'Mobile number is required.' };
+  if (!email || !password || !fullName || !planPurchased || !mobileNumber) {
+    return { error: 'All required fields must be filled.' };
   }
-  if (!transactionId) {
-    return { error: 'Transaction ID is required for manual verification.' };
-  }
-
 
   const supabase = createClient();
   
   // 1. Check if user already exists
-  const { data: existingUser, error: lookupError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .single();
-
+  const { data: existingUser } = await supabase.from('profiles').select('id').eq('email', email).single();
   if (existingUser) {
     return { error: 'A user with this email address already exists.' };
   }
 
-  // Find the referrer user ID if a referral code was provided
+  // 2. Find referrer if code is provided
   let referrerId: string | null = null;
   if (referralCode) {
-    const { data: referrerProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('referral_code', referralCode.trim().toUpperCase())
-      .single();
-    
+    const { data: referrerProfile } = await supabase.from('profiles').select('id').eq('referral_code', referralCode.trim().toUpperCase()).single();
     if (referrerProfile) {
       referrerId = referrerProfile.id;
     } else {
-        return { error: 'The entered referral code is not valid. Please remove it or enter a valid one.' };
+        return { error: 'The entered referral code is not valid.' };
     }
   }
 
-  // 2. Get payment settings to decide if user should be hidden
-  const { data: paymentSettings, error: settingsError } = await supabaseAdmin
-        .from('payment_details')
-        .select('active_payment_url')
-        .eq('id', 1)
-        .single();
-        
-  if (settingsError || !paymentSettings) {
-      console.error('CRITICAL: Could not fetch payment gateway settings during signup.');
-      // Fallback to not hidden if settings fail
-  }
-
-  const isHiddenUser = paymentSettings?.active_payment_url === 'secondary';
-
-
-  // 3. Create the user in Supabase Auth
+  // 3. Create a unique order number for the transaction
+  const order_sn = `FS_${Date.now()}_${randomBytes(4).toString('hex')}`;
+  
+  // 4. Create the user in Supabase Auth
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: {
-        full_name: fullName,
-        role: 'user',
-        mobile_number: mobileNumber,
-      },
-    },
+    options: { data: { full_name: fullName, role: 'user' } },
   });
 
   if (signUpError) {
@@ -90,48 +61,72 @@ export async function signupAndCreateOrder(formData: FormData) {
   }
 
   if (user) {
-    const profileData: any = { 
+    // 5. Update the automatically created profile with purchase details
+    const profileData: any = {
         plan_purchased: planPurchased,
-        is_approved: false, // All signups start as not approved
-        transaction_id: transactionId, // Save the manually entered transaction ID
+        is_approved: false, // Payment is not yet confirmed
+        order_sn: order_sn, // Store our internal order number
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
         final_amount_paid: finalAmountPaid,
         mobile_number: mobileNumber,
-        is_hidden: isHiddenUser,
     };
-    
     if (referrerId) {
         profileData.referred_by = referrerId;
     }
     
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update(profileData)
-      .eq('id', user.id);
+    const { error: profileError } = await supabase.from('profiles').update(profileData).eq('id', user.id);
 
     if (profileError) {
-      console.error('Failed to update profile:', profileError.message);
-      // Attempt to clean up the created auth user if profile update fails
       await supabase.auth.admin.deleteUser(user.id);
       return { error: `Could not save registration details: ${profileError.message}` };
     }
     
-    revalidatePath('/admin/dashboard');
+    // 6. Initiate payment with LG-Pay
+    const lgPayAppId = process.env.LG_PAY_APP_ID;
+    const lgPayKey = process.env.LG_PAY_KEY;
+    const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
 
-    // After successfully creating the user and saving their details,
-    // sign them in and redirect to the welcome page.
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInError) {
-      // If sign-in fails, redirect to login as a fallback. The user is created.
-      redirect('/login');
+    if (!lgPayAppId || !lgPayKey) {
+        console.error("LG Pay credentials are not configured.");
+        return { error: 'Payment gateway is not configured. Please contact support.' };
     }
-  } else {
-    return { error: 'An unknown error occurred during signup.' };
-  }
 
-  redirect('/welcome');
+    const moneyInCents = Math.round(finalAmountPaid * 100);
+    const headersList = headers();
+    const ip = headersList.get('x-forwarded-for') ?? '127.0.0.1';
+
+
+    const params = {
+        app_id: lgPayAppId,
+        trade_type: "test", // Use "test" for testing as per docs
+        order_sn: order_sn,
+        money: String(moneyInCents),
+        notify_url: notifyUrl,
+        ip: ip,
+    };
+
+    const sign = generateLgPaySignature(params, lgPayKey);
+
+    try {
+        const response = await fetch('https://www.lg-pay.com/api/order/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ ...params, sign }),
+        });
+        const result = await response.json();
+
+        if (result.status === 1 && result.data?.pay_url) {
+            return { redirectUrl: result.data.pay_url };
+        } else {
+            return { error: `Could not initiate payment: ${result.msg || 'Unknown gateway error.'}` };
+        }
+    } catch (e: any) {
+        return { error: 'Failed to contact payment gateway. Please try again later.' };
+    }
+  }
+  return { error: 'An unknown error occurred during signup.' };
 }
 
 
