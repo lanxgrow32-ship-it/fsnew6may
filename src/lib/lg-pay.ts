@@ -8,28 +8,29 @@ import { createHash } from 'crypto';
  * @returns The uppercase MD5 signature string.
  */
 export function generateLgPaySignature(params: Record<string, string | number>, key: string): string {
-    // 1. Create a new object for parameters to be signed
     const paramsToSign: Record<string, string> = {};
 
-    // 2. Sort keys alphabetically
-    const sortedKeys = Object.keys(params).sort();
-
-    // 3. Populate the new object, ensuring values are strings and non-empty
-    for (const k of sortedKeys) {
+    // 1. Filter out empty/null parameters
+    for (const k in params) {
         const value = params[k];
         if (value !== '' && value !== null && value !== undefined) {
             paramsToSign[k] = String(value);
         }
     }
-    
-    // 4. Use URLSearchParams to correctly format the string `key1=value1&key2=value2...`
-    // This handles URL encoding of special characters automatically.
-    const stringA = new URLSearchParams(paramsToSign).toString();
-    
-    // 5. Append the secret key
+
+    // 2. Sort the keys of the filtered parameters alphabetically
+    const sortedKeys = Object.keys(paramsToSign).sort();
+
+    // 3. Manually build the string from the sorted keys to guarantee order.
+    // This prevents issues where URLSearchParams might not respect key order.
+    const stringA = sortedKeys
+        .map(k => `${k}=${paramsToSign[k]}`)
+        .join('&');
+
+    // 4. Append the secret key
     const stringSignTemp = `${stringA}&key=${key}`;
 
-    // 6. Generate MD5 hash and convert to uppercase
+    // 5. Generate MD5 hash and convert to uppercase
     const sign = createHash('md5').update(stringSignTemp).digest('hex').toUpperCase();
 
     return sign;
