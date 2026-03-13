@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
-import { useActionState } from 'react-dom';
+import { useEffect, useActionState } from 'react';
 import { initiateLgPayPayment } from './actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
