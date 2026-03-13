@@ -65,7 +65,7 @@ export async function signupAndCreateOrder(formData: FormData) {
     const profileData: any = {
         plan_purchased: planPurchased,
         is_approved: false, // Payment is not yet confirmed
-        order_sn: order_sn, // Store our internal order number
+        transaction_id: order_sn, // Store our internal order number in the correct column
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
