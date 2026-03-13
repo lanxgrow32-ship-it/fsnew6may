@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Ticket, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Ticket, CheckCircle, XCircle, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signupAndCreateOrder, validateCoupon, validateReferralCode } from './actions';
 import { useDebounce } from 'use-debounce';
@@ -239,6 +239,15 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
                             When you register and create an account you acknowledge that you have read and accepted our <Link href="https://www.fundedstock.io/terms-and-conditions" target="_blank" className="underline hover:text-primary">terms and conditions</Link> and <Link href="https://www.fundedstock.io/privacy-policy" target="_blank" className="underline hover:text-primary">privacy policy</Link>.
                         </Label>
                     </div>
+
+                    <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/50 text-amber-200">
+                        <ShieldAlert className="h-4 w-4 !text-amber-400" />
+                        <AlertTitle className="text-amber-300 font-bold">Important Payment Instructions</AlertTitle>
+                        <AlertDescription className="text-amber-300/80 space-y-2 mt-2">
+                            <p>• Please complete the payment on the gateway page within the given time limit.</p>
+                            <p>• Since this is a third-party gateway, we cannot guarantee account creation if payment is made after the session expires.</p>
+                        </AlertDescription>
+                    </Alert>
 
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}
