@@ -143,89 +143,91 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-            {!isTrialPlan && (
+             <div className="space-y-6">
+                 {!isTrialPlan && (
+                    <Card className="bg-card/80 backdrop-blur-sm border-border">
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex gap-2">
+                            <Input 
+                                id="coupon"
+                                name="coupon"
+                                placeholder="Enter coupon code" 
+                                value={couponCode}
+                                onChange={(e) => setCouponCode(e.target.value)}
+                                disabled={discountPercent > 0}
+                            />
+                            <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0}>
+                                {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                            </Button>
+                            </div>
+                            {couponError && <p className="text-sm text-destructive mt-2">{couponError}</p>}
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex gap-2">
-                        <Input 
-                            id="coupon"
-                            name="coupon"
-                            placeholder="Enter coupon code" 
-                            value={couponCode}
-                            onChange={(e) => setCouponCode(e.target.value)}
-                            disabled={discountPercent > 0}
-                        />
-                        <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0}>
-                            {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-                        </Button>
-                        </div>
-                        {couponError && <p className="text-sm text-destructive mt-2">{couponError}</p>}
-                    </CardContent>
-                </Card>
-            )}
-
-            <Card className="bg-card/80 backdrop-blur-sm border-border">
-                <CardHeader>
-                    <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center text-sm">
-                        <p className="text-muted-foreground">Plan Price:</p>
-                        <p>₹{originalPrice.toFixed(2)}</p>
-                    </div>
-                    {couponDiscountAmount > 0 && (
-                        <div className="flex justify-between items-center text-sm text-green-600">
-                            <p className="text-muted-foreground">Coupon "{couponCode}":</p>
-                            <p>- ₹{couponDiscountAmount.toFixed(2)}</p>
-                        </div>
-                    )}
-                    {referralDiscountAmount > 0 && (
-                         <div className="flex justify-between items-center text-sm text-green-600">
-                            <p className="text-muted-foreground">Referral Discount (5%):</p>
-                            <p>- ₹{referralDiscountAmount.toFixed(2)}</p>
-                        </div>
-                    )}
-                    <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
-                        <p>Final Price to Pay:</p>
-                        <p>₹{finalPrice.toFixed(2)}</p>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {activeGateway === 'manual' && (
-                <Card className="bg-card/90">
-                        <CardHeader>
-                        <CardTitle>Step 1: Complete Payment</CardTitle>
-                        <CardDescription>Scan the QR or use the UPI ID to pay. Then enter the transaction ID below.</CardDescription>
+                        <CardTitle>Order Summary</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {paymentSettings.qr_code_url && (
-                            <div className="mx-auto w-fit p-2 bg-white rounded-md">
-                                <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={180} height={180} />
+                        <div className="flex justify-between items-center text-sm">
+                            <p className="text-muted-foreground">Plan Price:</p>
+                            <p>₹{originalPrice.toFixed(2)}</p>
+                        </div>
+                        {couponDiscountAmount > 0 && (
+                            <div className="flex justify-between items-center text-sm text-green-600">
+                                <p className="text-muted-foreground">Coupon "{couponCode}":</p>
+                                <p>- ₹{couponDiscountAmount.toFixed(2)}</p>
                             </div>
                         )}
-                        {paymentSettings.upi_id && (
-                            <div>
-                                <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-mono text-lg">{paymentSettings.upi_id}</p>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(paymentSettings.upi_id)}>
-                                        <Copy className="h-4 w-4"/>
-                                    </Button>
-                                </div>
+                        {referralDiscountAmount > 0 && (
+                            <div className="flex justify-between items-center text-sm text-green-600">
+                                <p className="text-muted-foreground">Referral Discount (5%):</p>
+                                <p>- ₹{referralDiscountAmount.toFixed(2)}</p>
                             </div>
                         )}
-                        <div className="space-y-2 pt-4">
-                            <Label htmlFor="utr">Enter UTR / Transaction ID</Label>
-                            <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required />
+                        <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
+                            <p>Final Price to Pay:</p>
+                            <p>₹{finalPrice.toFixed(2)}</p>
                         </div>
                     </CardContent>
                 </Card>
-            )}
 
+                {activeGateway === 'manual' && (
+                    <Card className="bg-card/90">
+                            <CardHeader>
+                            <CardTitle>Step 1: Complete Payment</CardTitle>
+                            <CardDescription>Scan the QR or use the UPI ID to pay. Then enter the transaction ID below.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {paymentSettings.qr_code_url && (
+                                <div className="mx-auto w-fit p-2 bg-white rounded-md">
+                                    <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={180} height={180} />
+                                </div>
+                            )}
+                            {paymentSettings.upi_id && (
+                                <div>
+                                    <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <p className="font-mono text-lg truncate">{paymentSettings.upi_id}</p>
+                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => copyToClipboard(paymentSettings.upi_id)}>
+                                            <Copy className="h-4 w-4"/>
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="space-y-2 pt-4">
+                                <Label htmlFor="utr">Enter UTR / Transaction ID</Label>
+                                <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required />
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+            
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
                     <CardTitle>{activeGateway === 'manual' ? "Step 2: Your Details" : "Your Details"}</CardTitle>
