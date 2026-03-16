@@ -143,37 +143,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-            {activeGateway === 'manual' && (
-                <Card className="bg-card/90">
-                        <CardHeader>
-                        <CardTitle>Step 1: Complete Payment</CardTitle>
-                        <CardDescription>Scan the QR or use the UPI ID to pay. Then enter the transaction ID below.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {paymentSettings.qr_code_url && (
-                            <div className="mx-auto w-fit p-2 bg-white rounded-md">
-                                <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={180} height={180} />
-                            </div>
-                        )}
-                        {paymentSettings.upi_id && (
-                            <div>
-                                <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-mono text-lg">{paymentSettings.upi_id}</p>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(paymentSettings.upi_id)}>
-                                        <Copy className="h-4 w-4"/>
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                            <div className="space-y-2 pt-4">
-                            <Label htmlFor="utr">Step 2: Enter UTR / Transaction ID</Label>
-                            <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required />
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-            
             {!isTrialPlan && (
                 <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>
@@ -226,9 +195,40 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                 </CardContent>
             </Card>
 
+            {activeGateway === 'manual' && (
+                <Card className="bg-card/90">
+                        <CardHeader>
+                        <CardTitle>Step 1: Complete Payment</CardTitle>
+                        <CardDescription>Scan the QR or use the UPI ID to pay. Then enter the transaction ID below.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {paymentSettings.qr_code_url && (
+                            <div className="mx-auto w-fit p-2 bg-white rounded-md">
+                                <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={180} height={180} />
+                            </div>
+                        )}
+                        {paymentSettings.upi_id && (
+                            <div>
+                                <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-mono text-lg">{paymentSettings.upi_id}</p>
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(paymentSettings.upi_id)}>
+                                        <Copy className="h-4 w-4"/>
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                        <div className="space-y-2 pt-4">
+                            <Label htmlFor="utr">Enter UTR / Transaction ID</Label>
+                            <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required />
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
-                    <CardTitle>{activeGateway === 'manual' ? "Step 3: Your Details" : "Your Details"}</CardTitle>
+                    <CardTitle>{activeGateway === 'manual' ? "Step 2: Your Details" : "Your Details"}</CardTitle>
                     <CardDescription>Enter your registration details to create your account.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
