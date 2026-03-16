@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -40,12 +41,18 @@ export async function createCompetitionUserAndSession(formData: FormData) {
   }
 
   if (user) {
+    // Generate referral code
+    const referralCodeValue = (
+        (fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4)) + '-' + (user.id.substring(0, 4))
+    ).toUpperCase();
+
     // 2. The DB trigger creates the profile, now we update it for competition specifics
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ 
         account_type: 'competition',
         mobile_number: mobileNumber,
+        referral_code: referralCodeValue,
        })
       .eq('id', user.id);
 

@@ -74,6 +74,11 @@ export async function signupAndCreateOrder(formData: FormData) {
   }
 
   if (user) {
+    // Generate referral code
+    const referralCodeValue = (
+        (fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4)) + '-' + (user.id.substring(0, 4))
+    ).toUpperCase();
+
     // 5. Update the automatically created profile with purchase details
     const profileData: any = {
         plan_purchased: planPurchased,
@@ -84,6 +89,7 @@ export async function signupAndCreateOrder(formData: FormData) {
         discount_amount: discountAmount,
         final_amount_paid: finalAmountPaid,
         mobile_number: mobileNumber,
+        referral_code: referralCodeValue,
     };
     if (referrerId) {
         profileData.referred_by = referrerId;
