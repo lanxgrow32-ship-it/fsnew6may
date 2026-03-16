@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Ticket, CheckCircle, XCircle, ShieldAlert } from 'lucide-react';
+import { Loader2, Ticket, CheckCircle, XCircle, ShieldAlert, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signupAndCreateOrder, validateCoupon, validateReferralCode } from './actions';
 import { useDebounce } from 'use-debounce';
@@ -235,6 +235,32 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                         {referralState === 'invalid' && <p className="text-sm text-destructive mt-1">This referral code is not valid.</p>}
                     </div>
 
+                     {activeGateway === 'manual' && (
+                        <Card className="bg-card/90">
+                             <CardHeader>
+                                <CardTitle>Manual Payment</CardTitle>
+                                <CardDescription>Complete the payment using the details below, then enter the transaction ID to finish your registration.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {paymentSettings.qr_code_url && (
+                                    <div className="mx-auto w-fit p-2 bg-white rounded-md">
+                                        <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={180} height={180} />
+                                    </div>
+                                )}
+                                {paymentSettings.upi_id && (
+                                    <div>
+                                        <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
+                                        <p className="font-mono text-lg">{paymentSettings.upi_id}</p>
+                                    </div>
+                                )}
+                                 <div className="space-y-2 pt-4">
+                                    <Label htmlFor="utr">UTR / Transaction ID</Label>
+                                    <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <div className="flex items-start space-x-2">
                         <Checkbox id="terms" onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} />
                         <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground">
@@ -247,14 +273,15 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                             <ShieldAlert className="h-4 w-4 !text-amber-400" />
                             <AlertTitle className="text-amber-300 font-bold">Important Payment Instructions</AlertTitle>
                             <AlertDescription className="text-amber-300/80 space-y-2 mt-2">
-                                <p>• Please complete the payment on the gateway page within the given time limit.</p>
-                                <p>• After payment, you have to submit the UTR in the time limit also. After that, your payment will be successful.</p>
+                               <p>• Please complete the payment on the gateway page within the given time limit.</p>
+                               <p>• After payment, you have to submit the UTR in the time limit also. After that, your payment will be successful.</p>
                             </AlertDescription>
                         </Alert>
                     )}
 
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {activeGateway === 'manual' ? <><Send className="mr-2 h-4 w-4"/> Submit & Create Account</> : 'Proceed to Payment'}
                     </Button>
                     <div className="text-center text-sm text-muted-foreground pt-2">
                         Already have an account?{' '}

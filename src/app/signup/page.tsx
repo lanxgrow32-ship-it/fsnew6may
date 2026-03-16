@@ -9,7 +9,7 @@ export default async function SignupPage() {
   const supabase = createClient();
   const { data: paymentSettings } = await supabase
     .from('payment_details')
-    .select('active_payment_gateway')
+    .select('active_payment_gateway, upi_id, qr_code_url')
     .eq('id', 1)
     .single();
 

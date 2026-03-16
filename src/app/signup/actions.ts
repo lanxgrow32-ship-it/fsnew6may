@@ -11,6 +11,13 @@ import { headers } from 'next/headers';
 
 
 export async function signupAndCreateOrder(formData: FormData) {
+  const supabase = createClient();
+
+  // Securely fetch the active gateway on the server to decide the flow
+  const { data: settings } = await supabase.from('payment_details').select('active_payment_gateway').eq('id', 1).single();
+  const activeGateway = settings?.active_payment_gateway || 'lgpay';
+
+  // --- Get form data ---
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const fullName = formData.get('full_name') as string;
@@ -22,13 +29,19 @@ export async function signupAndCreateOrder(formData: FormData) {
   const couponCode = formData.get('coupon_code') as string;
   const discountAmount = parseFloat(formData.get('discount_amount') as string);
   const finalAmountPaid = parseFloat(formData.get('final_amount_paid') as string);
-  
+
   if (!email || !password || !fullName || !planPurchased || !mobileNumber) {
     return { error: 'All required fields must be filled.' };
   }
-
-  const supabase = createClient();
   
+  // For manual flow, also require the UTR
+  if (activeGateway === 'manual') {
+      const utr = formData.get('utr') as string;
+      if (!utr) {
+          return { error: 'UTR / Transaction ID is required for manual verification.' };
+      }
+  }
+
   // 1. Check if user already exists
   const { data: existingUser } = await supabase.from('profiles').select('id').eq('email', email).single();
   if (existingUser) {
@@ -46,7 +59,7 @@ export async function signupAndCreateOrder(formData: FormData) {
     }
   }
 
-  // 3. Create a unique order number for the transaction
+  // 3. Create a unique order number for the transaction (only used by automated gateway)
   const order_sn = `FS_${Date.now()}_${randomBytes(4).toString('hex')}`;
   
   // 4. Create the user in Supabase Auth
@@ -75,6 +88,10 @@ export async function signupAndCreateOrder(formData: FormData) {
     if (referrerId) {
         profileData.referred_by = referrerId;
     }
+    // If it was a manual payment, also save the UTR now
+    if (activeGateway === 'manual') {
+        profileData.transaction_id = formData.get('utr') as string;
+    }
     
     const { error: profileError } = await supabase.from('profiles').update(profileData).eq('id', user.id);
 
@@ -83,14 +100,10 @@ export async function signupAndCreateOrder(formData: FormData) {
       return { error: `Could not save registration details: ${profileError.message}` };
     }
 
-    // 6. Check which payment gateway is active
-    const { data: settings } = await supabase.from('payment_details').select('active_payment_gateway').eq('id', 1).single();
-    const activeGateway = settings?.active_payment_gateway || 'lgpay';
-
-    // 7. Branch logic based on active gateway
+    // 6. Branch logic based on active gateway
     if (activeGateway === 'manual') {
         // For manual flow, we just redirect the user to the welcome page
-        // where they will see instructions to pay.
+        // where they will see their pending status.
         redirect('/welcome');
 
     } else {
