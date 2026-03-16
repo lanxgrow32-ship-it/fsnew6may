@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ArrowLeft, Ban, Check, Globe, Target, Clock, Shield, AlertTriangle, FileText, HelpCircle, IndianRupee } from 'lucide-react';
@@ -150,7 +150,7 @@ export default function TwoStepRulesPage() {
                                 <DetailedRule title="Leverage" tag="Exchange limit only" description="Same as Phase 1 — leverage is strictly limited to what NSE/BSE permits under SEBI regulations. No enhancements or exceptions are made in Phase 2." tagVariant="destructive" />
                                 <DetailedRule title="Maximum Capital Per Trade" tag="80% of account" description="The 80% single-trade capital limit applies in Phase 2 as well. Diversifying across multiple positions is strongly encouraged. Concentrated bets on a single instrument carry a higher risk of triggering both the daily loss and capital rules simultaneously." tagVariant="destructive" />
                                 <DetailedRule title="Allowed Instruments" tag="Stocks, Options, Futures" description="All instruments permitted in Phase 1 remain available — equity stocks, index & stock options (both buying and writing), and futures. No lot size restrictions apply." />
-                                <DetailedRule title="Overnight & Weekend Holding" tag="Not Allowed" description="All positions must be closed before 3:30 PM IST on every trading day. The auto-close system is active in Phase 2. Any position remaining open at market close will be forcibly squared off and flagged as a violation." tagVariant="destructive" />
+                                <DetailedRule title="Overnight & Weekend Holding" tag="Not Allowed" description="All positions must be closed by 3:30 PM IST on every trading day. The auto-close system is active in Phase 2. Any position remaining open at market close will be forcibly squared off and flagged as a violation." tagVariant="destructive" />
                                 <DetailedRule title="News Trading Restriction" tag="±5 min window banned" description="The news trading ban remains active. The automated alert system will notify you 30 minutes before every restricted event window via SMS and email. Trades placed during restricted windows will be considered invalid." tagVariant="destructive" />
                             </CardContent>
                              <CardFooter><p className="text-sm font-semibold text-center w-full">Phase 2 Passed — Funded Account Activated</p></CardFooter>
