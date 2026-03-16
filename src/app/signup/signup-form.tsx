@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Ticket, CheckCircle, XCircle, ShieldAlert, Send } from 'lucide-react';
+import { Loader2, Ticket, CheckCircle, XCircle, ShieldAlert, Send, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signupAndCreateOrder, validateCoupon, validateReferralCode } from './actions';
 import { useDebounce } from 'use-debounce';
@@ -95,6 +95,11 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     }
     setCouponLoading(false);
   };
+  
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "UPI ID copied to clipboard" });
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -138,6 +143,37 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+            {activeGateway === 'manual' && (
+                <Card className="bg-card/90">
+                        <CardHeader>
+                        <CardTitle>Step 1: Complete Payment</CardTitle>
+                        <CardDescription>Scan the QR or use the UPI ID to pay. Then enter the transaction ID below.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {paymentSettings.qr_code_url && (
+                            <div className="mx-auto w-fit p-2 bg-white rounded-md">
+                                <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={180} height={180} />
+                            </div>
+                        )}
+                        {paymentSettings.upi_id && (
+                            <div>
+                                <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-mono text-lg">{paymentSettings.upi_id}</p>
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(paymentSettings.upi_id)}>
+                                        <Copy className="h-4 w-4"/>
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                            <div className="space-y-2 pt-4">
+                            <Label htmlFor="utr">Step 2: Enter UTR / Transaction ID</Label>
+                            <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required />
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+            
             {!isTrialPlan && (
                 <Card className="bg-card/80 backdrop-blur-sm border-border">
                     <CardHeader>
@@ -192,7 +228,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
 
             <Card className="bg-card/80 backdrop-blur-sm border-border">
                 <CardHeader>
-                    <CardTitle>Your Details</CardTitle>
+                    <CardTitle>{activeGateway === 'manual' ? "Step 3: Your Details" : "Your Details"}</CardTitle>
                     <CardDescription>Enter your registration details to create your account.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -234,32 +270,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                         </div>
                         {referralState === 'invalid' && <p className="text-sm text-destructive mt-1">This referral code is not valid.</p>}
                     </div>
-
-                     {activeGateway === 'manual' && (
-                        <Card className="bg-card/90">
-                             <CardHeader>
-                                <CardTitle>Manual Payment</CardTitle>
-                                <CardDescription>Complete the payment using the details below, then enter the transaction ID to finish your registration.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {paymentSettings.qr_code_url && (
-                                    <div className="mx-auto w-fit p-2 bg-white rounded-md">
-                                        <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={180} height={180} />
-                                    </div>
-                                )}
-                                {paymentSettings.upi_id && (
-                                    <div>
-                                        <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
-                                        <p className="font-mono text-lg">{paymentSettings.upi_id}</p>
-                                    </div>
-                                )}
-                                 <div className="space-y-2 pt-4">
-                                    <Label htmlFor="utr">UTR / Transaction ID</Label>
-                                    <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
 
                     <div className="flex items-start space-x-2">
                         <Checkbox id="terms" onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} />
