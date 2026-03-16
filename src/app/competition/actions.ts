@@ -42,9 +42,12 @@ export async function createCompetitionUserAndSession(formData: FormData) {
 
   if (user) {
     // Generate referral code
-    const referralCodeValue = (
-        (fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4)) + '-' + (user.id.substring(0, 4))
-    ).toUpperCase();
+    let namePart = fullName.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4);
+    if (namePart.length < 1) {
+        namePart = 'USER';
+    }
+    const idPart = user.id.substring(0, 4).toUpperCase();
+    const referralCodeValue = `${namePart}-${idPart}`;
 
     // 2. The DB trigger creates the profile, now we update it for competition specifics
     const { error: profileError } = await supabase

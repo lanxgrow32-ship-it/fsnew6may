@@ -75,9 +75,12 @@ export async function signupAndCreateOrder(formData: FormData) {
 
   if (user) {
     // Generate referral code
-    const referralCodeValue = (
-        (fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4)) + '-' + (user.id.substring(0, 4))
-    ).toUpperCase();
+    let namePart = fullName.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4);
+    if (namePart.length < 1) {
+        namePart = 'USER';
+    }
+    const idPart = user.id.substring(0, 4).toUpperCase();
+    const referralCodeValue = `${namePart}-${idPart}`;
 
     // 5. Update the automatically created profile with purchase details
     const profileData: any = {
