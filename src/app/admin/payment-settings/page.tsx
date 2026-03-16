@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -43,7 +42,8 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
     
     const [upiQrPreview, setUpiQrPreview] = useState<string | null>(currentSettings?.qr_code_url || null);
-    
+    const [activeGateway, setActiveGateway] = useState<'lgpay' | 'manual'>(currentSettings?.active_payment_gateway || 'lgpay');
+
     const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
@@ -70,17 +70,22 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                     <CardDescription>Select which payment method new users will see during signup.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <RadioGroup name="active_gateway" defaultValue={currentSettings?.active_payment_gateway || 'lgpay'} className="grid grid-cols-2 gap-4">
+                     <RadioGroup 
+                        name="active_gateway"
+                        value={activeGateway}
+                        onValueChange={(value: 'lgpay' | 'manual') => setActiveGateway(value)}
+                        className="grid grid-cols-2 gap-4"
+                     >
                         <div>
                              <RadioGroupItem value="lgpay" id="gateway-lgpay" className="sr-only" />
-                             <Label htmlFor="gateway-lgpay" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", currentSettings?.active_payment_gateway === 'lgpay' && "border-primary")}>
+                             <Label htmlFor="gateway-lgpay" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", activeGateway === 'lgpay' && "border-primary")}>
                                 <Wifi className="mb-3 h-6 w-6" />
                                 LG-Pay (Automated)
                             </Label>
                         </div>
                          <div>
                             <RadioGroupItem value="manual" id="gateway-manual" className="sr-only" />
-                             <Label htmlFor="gateway-manual" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", currentSettings?.active_payment_gateway === 'manual' && "border-primary")}>
+                             <Label htmlFor="gateway-manual" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", activeGateway === 'manual' && "border-primary")}>
                                 <HardDrive className="mb-3 h-6 w-6" />
                                 Manual UPI
                             </Label>
