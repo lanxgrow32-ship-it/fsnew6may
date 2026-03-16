@@ -147,3 +147,32 @@ export async function generateCompetitionCredentials() {
         return { error: `An unexpected server error occurred. Please contact support. (${e.message})` };
     }
 }
+
+
+export async function submitUtr(prevState: any, formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'You must be logged in to submit a transaction ID.' };
+  }
+
+  const utr = formData.get('utr') as string;
+
+  if (!utr || utr.length < 12) {
+      return { error: 'Please enter a valid UTR / Transaction ID.' };
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ transaction_id: utr })
+    .eq('id', user.id);
+  
+  if (error) {
+    console.error("Error submitting UTR:", error);
+    return { error: `Failed to save transaction ID: ${error.message}` };
+  }
+
+  revalidatePath('/welcome');
+  return { success: true };
+}

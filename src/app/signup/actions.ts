@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -64,7 +65,7 @@ export async function signupAndCreateOrder(formData: FormData) {
     const profileData: any = {
         plan_purchased: planPurchased,
         is_approved: false, // Payment is not yet confirmed
-        order_sn: order_sn,
+        order_sn: order_sn, // Will be used by automated gateway
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
@@ -81,46 +82,58 @@ export async function signupAndCreateOrder(formData: FormData) {
       await supabase.auth.admin.deleteUser(user.id);
       return { error: `Could not save registration details: ${profileError.message}` };
     }
-    
-    // 6. Initiate payment with LG-Pay
-    const lgPayAppId = 'YD4957';
-    const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
-    const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
 
-    const moneyInCents = Math.round(finalAmountPaid * 100);
-    const ipHeader = headers().get('x-forwarded-for') ?? '127.0.0.1';
-    const ip = ipHeader.split(',')[0].trim();
+    // 6. Check which payment gateway is active
+    const { data: settings } = await supabase.from('payment_details').select('active_payment_gateway').eq('id', 1).single();
+    const activeGateway = settings?.active_payment_gateway || 'lgpay';
+
+    // 7. Branch logic based on active gateway
+    if (activeGateway === 'manual') {
+        // For manual flow, we just redirect the user to the welcome page
+        // where they will see instructions to pay.
+        redirect('/welcome');
+
+    } else {
+        // AUTOMATED (LG-Pay) Flow
+        const lgPayAppId = 'YD4957';
+        const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
+        const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
+
+        const moneyInCents = Math.round(finalAmountPaid * 100);
+        const ipHeader = headers().get('x-forwarded-for') ?? '127.0.0.1';
+        const ip = ipHeader.split(',')[0].trim();
 
 
-    const params: Record<string, string> = {
-        app_id: lgPayAppId,
-        trade_type: "INRUPI",
-        order_sn: order_sn,
-        money: String(moneyInCents),
-        notify_url: notifyUrl,
-        ip: ip,
-        remark: `Plan: ${planPurchased}`
-    };
+        const params: Record<string, string> = {
+            app_id: lgPayAppId,
+            trade_type: "INRUPI",
+            order_sn: order_sn,
+            money: String(moneyInCents),
+            notify_url: notifyUrl,
+            ip: ip,
+            remark: `Plan: ${planPurchased}`
+        };
 
-    const sign = generateLgPaySignature(params, lgPayKey);
+        const sign = generateLgPaySignature(params, lgPayKey);
 
-    try {
-        const response = await fetch('https://www.lg-pay.com/api/order/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ ...params, sign }),
-        });
-        const result = await response.json();
+        try {
+            const response = await fetch('https://www.lg-pay.com/api/order/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ ...params, sign }),
+            });
+            const result = await response.json();
 
-        if (result.status === 1 && result.data?.pay_url) {
-            return { redirectUrl: result.data.pay_url };
-        } else {
-            console.error("LG-Pay API Error:", result);
-            return { error: `Could not initiate payment: ${result.msg || 'Unknown gateway error.'}` };
+            if (result.status === 1 && result.data?.pay_url) {
+                return { redirectUrl: result.data.pay_url };
+            } else {
+                console.error("LG-Pay API Error:", result);
+                return { error: `Could not initiate payment: ${result.msg || 'Unknown gateway error.'}` };
+            }
+        } catch (e: any) {
+            console.error("LG-Pay fetch Error:", e);
+            return { error: 'Failed to contact payment gateway. Please try again later.' };
         }
-    } catch (e: any) {
-        console.error("LG-Pay fetch Error:", e);
-        return { error: 'Failed to contact payment gateway. Please try again later.' };
     }
   }
   return { error: 'An unknown error occurred during signup.' };

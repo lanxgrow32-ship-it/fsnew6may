@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, Loader2, BookUser, Gift, BrainCircuit, TrendingDown, Percent, CheckCircle } from 'lucide-react';
 import { ReceiptButton } from './receipt-button';
+import { PendingView } from './pending-view';
 
 // Helper Components for the new UI
 
@@ -368,28 +369,6 @@ const AccountBreached = () => (
     </div>
 );
 
-const PaymentPending = () => (
-    <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
-        <main className="flex min-h-screen items-center justify-center p-4">
-            <GlassCard className="w-full max-w-lg text-center p-8 border-amber-500/50">
-                <div className="mx-auto bg-amber-500/10 rounded-full p-3 w-fit mb-4">
-                    <Loader2 className="h-10 w-10 text-amber-400 animate-spin" />
-                </div>
-                <h2 className="text-2xl font-bold text-amber-400">Payment Verification Pending</h2>
-                <p className="text-gray-400 mt-2 mb-6">
-                    Your payment is being verified by our team. This page will update automatically once your account is approved. This usually takes a few minutes.
-                </p>
-                <div className="flex flex-col items-center gap-4 pt-4">
-                     <form action={signOut}>
-                        <Button variant="outline" className="bg-black/20 border-white/10 text-white hover:bg-white/20">
-                            Logout
-                        </Button>
-                    </form>
-                </div>
-            </GlassCard>
-        </main>
-    </div>
-);
 
 export default async function WelcomePage() {
     const supabase = createClient();
@@ -406,7 +385,7 @@ export default async function WelcomePage() {
     }
     
     if (!profile.is_approved) {
-        return <PaymentPending />;
+        return <PendingView profile={profile} />;
     }
     
     if (profile.is_breached) {
@@ -482,5 +461,3 @@ export default async function WelcomePage() {
         </div>
     );
 }
-
-    

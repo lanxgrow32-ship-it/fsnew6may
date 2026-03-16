@@ -15,7 +15,7 @@ import { useDebounce } from 'use-debounce';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
 
-export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
+export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -42,6 +42,8 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
   const isTrialPlan = plan === '25K Try First Plan';
+
+  const activeGateway = paymentSettings?.active_payment_gateway || 'lgpay';
 
   useEffect(() => {
     const couponDiscount = (originalPrice * discountPercent) / 100;
@@ -120,8 +122,8 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
     } else if (result?.redirectUrl) {
       window.location.href = result.redirectUrl;
     } else {
-      setError("Could not retrieve payment URL. Please try again.");
-      setIsLoading(false);
+      // This handles the manual flow redirect, which is done on the server.
+      // A successful manual flow doesn't return a URL, so we just wait for the page to change.
     }
   };
 
@@ -240,14 +242,16 @@ export function SignupForm({ paymentDetails }: { paymentDetails: any }) {
                         </Label>
                     </div>
 
-                    <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/50 text-amber-200">
-                        <ShieldAlert className="h-4 w-4 !text-amber-400" />
-                        <AlertTitle className="text-amber-300 font-bold">Important Payment Instructions</AlertTitle>
-                        <AlertDescription className="text-amber-300/80 space-y-2 mt-2">
-                            <p>• Please complete the payment on the gateway page within the given time limit.</p>
-                            <p>• After payment, you have to submit the UTR in the time limit also. After that, your payment will be successful.</p>
-                        </AlertDescription>
-                    </Alert>
+                    {activeGateway === 'lgpay' && (
+                        <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/50 text-amber-200">
+                            <ShieldAlert className="h-4 w-4 !text-amber-400" />
+                            <AlertTitle className="text-amber-300 font-bold">Important Payment Instructions</AlertTitle>
+                            <AlertDescription className="text-amber-300/80 space-y-2 mt-2">
+                                <p>• Please complete the payment on the gateway page within the given time limit.</p>
+                                <p>• After payment, you have to submit the UTR in the time limit also. After that, your payment will be successful.</p>
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Proceed to Payment'}

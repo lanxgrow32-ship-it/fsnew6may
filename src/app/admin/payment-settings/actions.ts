@@ -23,7 +23,14 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const upiId = formData.get('upi_id') as string;
   const upiQrCodeFile = formData.get('qr_code') as File;
   const commissionPercentage = formData.get('referral_commission_percentage') as string;
-  const is_upi_enabled = formData.get('is_upi_enabled') === 'on';
+  const activeGateway = formData.get('active_gateway') as 'lgpay' | 'manual';
+
+  if (activeGateway !== 'lgpay' && activeGateway !== 'manual') {
+      return { error: 'Invalid gateway selected.' };
+  }
+   if (activeGateway === 'manual' && !upiId) {
+      return { error: 'UPI ID is required to enable the manual gateway.' };
+  }
 
   const commission = parseFloat(commissionPercentage);
   if (isNaN(commission) || commission < 0 || commission > 100) {
@@ -33,11 +40,7 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const updateData: { [key: string]: any } = { 
     upi_id: upiId,
     referral_commission_percentage: commission,
-    is_upi_enabled,
-    // Nullify crypto fields
-    usdt_to_inr_rate: null,
-    crypto_wallet_address: null,
-    is_crypto_enabled: false,
+    active_payment_gateway: activeGateway,
   };
 
   try {
@@ -60,5 +63,6 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
 
   revalidatePath('/admin/payment-settings');
   revalidatePath('/signup');
+  revalidatePath('/welcome');
   return { success: 'Payment settings updated successfully.', error: null };
 }

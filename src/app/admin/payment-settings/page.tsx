@@ -5,6 +5,7 @@ import { useFormStatus } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { updatePaymentSettings } from './actions';
+import { cn } from '@/lib/utils';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -15,17 +16,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords, HardDrive, Wifi } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type PaymentDetails = {
     id: number;
     upi_id: string;
     qr_code_url: string;
     referral_commission_percentage: number;
-    is_upi_enabled: boolean;
+    active_payment_gateway: 'lgpay' | 'manual';
 };
 
 function SubmitButton() {
@@ -63,84 +64,86 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
 
     return (
         <form ref={formRef} action={formAction} className="space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Manual Payment Details</CardTitle>
-                        <CardDescription>Update the manual UPI payment option shown to users during signup.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-8">
-                        <div className="space-y-6 p-4 border rounded-lg">
-                             <h3 className="font-semibold text-lg flex items-center gap-2"><IndianRupee className="w-5 h-5"/> UPI Settings</h3>
-                             <div className="space-y-2">
-                                <Label htmlFor="upi_id">UPI ID</Label>
-                                <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi-id@okhdfcbank" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="qr_code">UPI QR Code Image</Label>
-                                <Input id="qr_code" name="qr_code" type="file" accept="image/*" onChange={handleUpiFileChange} />
-                                <p className="text-xs text-muted-foreground">Upload a new image to replace the current one.</p>
-                            </div>
-                            {upiQrPreview && (
-                                <div>
-                                    <Label>Current UPI QR Code Preview</Label>
-                                    <div className="mt-2 rounded-md border p-4 w-fit bg-white">
-                                        <Image src={upiQrPreview} alt="UPI QR Code Preview" width={150} height={150} className="object-contain" />
-                                    </div>
-                                </div>
-                            )}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Active Payment Gateway</CardTitle>
+                    <CardDescription>Select which payment method new users will see during signup.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <RadioGroup name="active_gateway" defaultValue={currentSettings?.active_payment_gateway || 'lgpay'} className="grid grid-cols-2 gap-4">
+                        <div>
+                             <RadioGroupItem value="lgpay" id="gateway-lgpay" className="sr-only" />
+                             <Label htmlFor="gateway-lgpay" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", currentSettings?.active_payment_gateway === 'lgpay' && "border-primary")}>
+                                <Wifi className="mb-3 h-6 w-6" />
+                                LG-Pay (Automated)
+                            </Label>
                         </div>
-                    </CardContent>
-                </Card>
+                         <div>
+                            <RadioGroupItem value="manual" id="gateway-manual" className="sr-only" />
+                             <Label htmlFor="gateway-manual" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", currentSettings?.active_payment_gateway === 'manual' && "border-primary")}>
+                                <HardDrive className="mb-3 h-6 w-6" />
+                                Manual UPI
+                            </Label>
+                        </div>
+                    </RadioGroup>
+                </CardContent>
+            </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Payment Method Availability</CardTitle>
-                        <CardDescription>Toggle which payment methods are available to users during signup.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                                <Label htmlFor="is_upi_enabled" className="text-base">Standard Gateway (INR)</Label>
-                                <p className="text-sm text-muted-foreground">Enable or disable all INR payment methods (including new gateway).</p>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Manual Payment Details</CardTitle>
+                    <CardDescription>Update the manual UPI payment option shown to users during signup.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                     <div className="space-y-2">
+                        <Label htmlFor="upi_id">UPI ID</Label>
+                        <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi-id@okhdfcbank" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="qr_code">UPI QR Code Image</Label>
+                        <Input id="qr_code" name="qr_code" type="file" accept="image/*" onChange={handleUpiFileChange} />
+                        <p className="text-xs text-muted-foreground">Upload a new image to replace the current one.</p>
+                    </div>
+                    {upiQrPreview && (
+                        <div>
+                            <Label>Current UPI QR Code Preview</Label>
+                            <div className="mt-2 rounded-md border p-4 w-fit bg-white">
+                                <Image src={upiQrPreview} alt="UPI QR Code Preview" width={150} height={150} className="object-contain" />
                             </div>
-                            <Switch
-                                id="is_upi_enabled"
-                                name="is_upi_enabled"
-                                defaultChecked={currentSettings?.is_upi_enabled ?? true}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Referral Program Settings</CardTitle>
+                    <CardDescription>Set the commission percentage for successful referrals.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <div className="space-y-2">
+                        <Label htmlFor="referral_commission_percentage">Referral Commission (%)</Label>
+                        <div className="relative">
+                            <Input 
+                                id="referral_commission_percentage" 
+                                name="referral_commission_percentage" 
+                                type="number"
+                                defaultValue={currentSettings?.referral_commission_percentage ?? 10}
+                                placeholder="e.g. 10" 
+                                required 
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                className="pl-8"
                             />
+                            <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         </div>
-                    </CardContent>
-                </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Referral Program Settings</CardTitle>
-                        <CardDescription>Set the commission percentage for successful referrals.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="space-y-2">
-                            <Label htmlFor="referral_commission_percentage">Referral Commission (%)</Label>
-                            <div className="relative">
-                                <Input 
-                                    id="referral_commission_percentage" 
-                                    name="referral_commission_percentage" 
-                                    type="number"
-                                    defaultValue={currentSettings?.referral_commission_percentage ?? 10}
-                                    placeholder="e.g. 10" 
-                                    required 
-                                    min="0"
-                                    max="100"
-                                    step="0.1"
-                                    className="pl-8"
-                                />
-                                <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                 <div className="flex justify-end">
-                    <SubmitButton />
-                </div>
+                    </div>
+                </CardContent>
+            </Card>
+             <div className="flex justify-end">
+                <SubmitButton />
+            </div>
         </form>
     );
 }
@@ -156,7 +159,7 @@ export default function PaymentSettingsPage() {
             setIsLoading(true);
             const { data, error } = await supabase
                 .from('payment_details')
-                .select('id, upi_id, qr_code_url, referral_commission_percentage, is_upi_enabled')
+                .select('id, upi_id, qr_code_url, referral_commission_percentage, active_payment_gateway')
                 .eq('id', 1)
                 .single();
             
