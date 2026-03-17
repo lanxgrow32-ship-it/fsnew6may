@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { ArrowRight, Check, Target, Wallet, BarChart, Trophy, Ban, GitCompare, ShieldQuestion, BadgePercent, Clock } from 'lucide-react';
+import { ArrowRight, Check, Target, Wallet, BarChart, Trophy, Ban, X, ShieldQuestion, BadgePercent, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -32,13 +32,6 @@ const HowItWorksStep = ({ step, icon, title, description, subtext }: { step: str
             <p className="text-xs font-semibold text-primary mt-2">{subtext}</p>
         </CardContent>
     </Card>
-);
-
-const ComparisonRow = ({ oldItem, newItem }: { oldItem: string, newItem: string }) => (
-    <div className="grid grid-cols-2 gap-4 items-center">
-        <p className="text-muted-foreground line-through decoration-destructive/50">✗ {oldItem}</p>
-        <p className="font-semibold text-green-400">✓ {newItem}</p>
-    </div>
 );
 
 const PlanCard = ({ size, fee, activationFee, isPopular }: { size: string, fee: string, activationFee: string, isPopular?: boolean }) => (
@@ -83,6 +76,49 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
 );
 
 export default function PassThenPayPage() {
+    const comparisonData = [
+      {
+        feature: 'What you pay to start',
+        old: '₹5,999 – ₹49,999 upfront',
+        new: 'Just ₹199 – ₹499',
+      },
+      {
+        feature: 'If you fail on Day 1',
+        old: 'Full fee gone. No refund.',
+        new: 'Only ₹199–₹499 lost',
+      },
+      {
+        feature: 'Number of evaluation phases',
+        old: '2 phases — Phase 1 + Phase 2',
+        new: 'Just 1 phase. Done.',
+      },
+      {
+        feature: 'Profit target',
+        old: '8%–10% across 2 phases',
+        new: 'Only 6%. Just once.',
+      },
+      {
+        feature: 'Time limit',
+        old: '30–90 days deadline',
+        new: 'No time limit',
+      },
+      {
+        feature: 'When you pay full fee',
+        old: 'Before you trade anything',
+        new: 'Only after you pass',
+      },
+      {
+        feature: 'Retry cost if you fail',
+        old: 'Pay full fee again',
+        new: 'Just ₹199 to try again',
+      },
+      {
+        feature: 'Reward share',
+        old: '70%–80%',
+        new: '80% always',
+      },
+    ];
+
     return (
         <div className="dark">
             <main className="bg-background text-foreground min-h-screen relative overflow-hidden">
@@ -143,25 +179,36 @@ export default function PassThenPayPage() {
                     </section>
 
                     <section className="py-24 sm:py-32">
-                        <div className="text-center mb-16">
+                        <div className="text-center mb-16 max-w-3xl mx-auto">
+                            <Badge variant="outline" className="mb-4 border-primary/50 text-primary">WHY PASSTHENPAY</Badge>
                             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Old way vs PassThenPay</h2>
                             <p className="mt-4 text-lg text-muted-foreground">See exactly what changes — and why it matters for you.</p>
                         </div>
-                        <Card className="max-w-3xl mx-auto">
-                            <CardHeader className="grid grid-cols-2 gap-4">
-                                <CardTitle className="flex items-center gap-2 text-destructive">❌ Old Model</CardTitle>
-                                <CardTitle className="flex items-center gap-2 text-green-400">✅ PassThenPay</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <ComparisonRow oldItem="What you pay to start: ₹5,999 – ₹49,999 upfront" newItem="Just ₹199 – ₹499" />
-                                <ComparisonRow oldItem="If you fail on Day 1: Full fee gone. No refund." newItem="Only ₹199–₹499 lost" />
-                                <ComparisonRow oldItem="Number of evaluation phases: 2 phases — Phase 1 + Phase 2" newItem="Just 1 phase. Done." />
-                                <ComparisonRow oldItem="Profit target: 8%–10% across 2 phases" newItem="Only 6%. Just once." />
-                                <ComparisonRow oldItem="Time limit: 30–90 days deadline" newItem="No time limit" />
-                                <ComparisonRow oldItem="When you pay full fee: Before you trade anything" newItem="Only after you pass" />
-                                <ComparisonRow oldItem="Retry cost if you fail: Pay full fee again" newItem="Just ₹199 to try again" />
-                                <ComparisonRow oldItem="Reward share: 70%–80%" newItem="80% always" />
-                            </CardContent>
+                        <Card className="max-w-4xl mx-auto bg-card/50 overflow-hidden">
+                            <div className="grid grid-cols-3 items-center gap-4 p-4 bg-muted/30">
+                                <div></div>
+                                <div className="font-bold text-destructive flex items-center gap-2">
+                                    <X className="w-5 h-5" /> OLD MODEL
+                                </div>
+                                <div className="font-bold text-green-400 flex items-center gap-2">
+                                    <Check className="w-5 h-5" /> PASSTHENPAY
+                                </div>
+                            </div>
+                            <div className="divide-y divide-border/50">
+                                {comparisonData.map((item, index) => (
+                                    <div key={index} className="grid grid-cols-3 items-center gap-4 p-4">
+                                        <p className="font-medium text-foreground">{item.feature}</p>
+                                        <div className="flex items-center gap-2 text-destructive">
+                                            <X className="w-4 h-4 shrink-0" />
+                                            <span>{item.old}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 font-semibold text-green-400">
+                                            <Check className="w-4 h-4 shrink-0" />
+                                            <span>{item.new}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </Card>
                     </section>
 
