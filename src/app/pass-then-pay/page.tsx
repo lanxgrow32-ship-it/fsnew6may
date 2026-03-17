@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { ArrowRight, Check, Target, Wallet, BarChart, Trophy, Ban, GitCompare, ShieldQuestion, BadgePercent, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const Feature = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
     <div className="text-center">
@@ -221,7 +222,7 @@ export default function PassThenPayPage() {
                             <FaqItem question="Pass hone ke baad activation fee kab deni hai?" answer="Jab tum pass ho jaate ho — profit target 6%, minimum 5 trading days, aur sabhi rules follow kiye — system automatically notification bhejta hai. Tumhare paas 72 ghante hain activation fee pay karne ke liye. Payment ke baad funded account turant activate ho jaata hai."/>
                             <FaqItem question="Performance Rewards kaise aur kab milenge?" answer="Har 14 din mein payout request kar sakte ho — condition yeh hai ki us cycle mein minimum 5 din trade kiya ho aur minimum ₹2,000 ka reward accumulated ho. Payment directly UPI ya bank account mein 3–5 business days mein aa jaata hai. 3rd successful payout pe registration fee wapas mil jaati hai."/>
                             <FaqItem question="PassThenPay aur 2-Step evaluation mein kya fark hai?" answer="PassThenPay mein sirf 1 phase hai — 6% target, khatam. 2-Step mein 2 phases hain — Phase 1 mein 8% phir Phase 2 mein 5%. PassThenPay zyada simple aur beginner-friendly hai."/>
-                            <FaqItem question="Kya yeh real market mein trading hai?" answer="Nahi. FundedStock par sari trading 100% simulated environment mein hoti hai. FundedStock SEBI-registered broker ya investment adviser nahi hai. Performance Rewards professional fees hain — investment returns ya guaranteed income nahi. Aapka personal paisa kabhi market mein nahi jaata."/>
+                            <FaqItem question="Kya yeh real market mein trading hai?" answer="Nahi. FundedStock par sari trading 100% simulated environment mein hoti hai. FundedStock SEBI-registered broker ya investment adviser nahi hai. Performance Rewards are professional fees hain — investment returns ya guaranteed income nahi. Aapka personal paisa kabhi market mein nahi jaata."/>
                         </Accordion>
                     </section>
                     
