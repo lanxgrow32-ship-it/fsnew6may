@@ -13,89 +13,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createAdmin, deleteUser } from './actions';
+import { createAdmin } from '../dashboard/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserTable } from './user-table';
+import { UserTable } from '../dashboard/user-table';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-function CreateAdminForm({ className }: { className?: string }) {
-    const ref = useRef<HTMLFormElement>(null);
-    const { toast } = useToast();
-    const [state, formAction] = useActionState(createAdmin, { error: null, success: false });
-    const [isOpen, setIsOpen] = useState(false);
-
-    useEffect(() => {
-        if (state.error) {
-            toast({
-                title: "Error Creating Admin",
-                description: state.error,
-                variant: "destructive",
-            });
-        }
-        if (state.success) {
-            toast({
-                title: "Success",
-                description: "Admin user created successfully.",
-            });
-            ref.current?.reset();
-            setIsOpen(false); // Close dialog on success
-        }
-    }, [state, toast]);
-
-    function SubmitButton() {
-        const { pending } = useFormStatus();
-        return (
-            <Button type="submit" disabled={pending}>
-                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Create Admin User'}
-            </Button>
-        );
-    }
-
-    return (
-       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button className={className}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Create New Admin
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-                 <form ref={ref} action={formAction} className="space-y-6">
-                    <DialogHeader>
-                        <DialogTitle>Create New Admin User</DialogTitle>
-                        <DialogDescription>
-                            Enter the details for the new admin. They will be able to log in with this email and password.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="full_name">Full Name</Label>
-                            <Input id="full_name" name="full_name" placeholder="Jane Doe" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" placeholder="admin@example.com" required />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="password">Temporary Password</Label>
-                            <Input id="password" name="password" type="password" required />
-                             <p className="text-xs text-muted-foreground">Must be at least 6 characters long.</p>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <SubmitButton />
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
 
 function AdminNav() {
     return (
@@ -155,8 +80,7 @@ function UserTableSkeleton() {
     )
 }
 
-// Changed to a client component to use hooks
-export default function AdminDashboardClient({ initialProfiles, masterView }: { initialProfiles: any[], masterView: boolean }) {
+export default function PayLaterDashboardClient({ initialProfiles, masterView }: { initialProfiles: any[], masterView: boolean }) {
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
   const { toast } = useToast();
@@ -166,7 +90,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
   }, [initialProfiles]);
 
   const fetchProfiles = async () => {
-    let query = supabase.from('profiles').select('*').eq('account_type', 'standard');
+    let query = supabase.from('profiles').select('*').eq('account_model', 'passthrupay');
     if (masterView) {
       query = query.eq('is_hidden', true);
     } else {
@@ -183,8 +107,8 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
 
   useEffect(() => {
     const channel = supabase
-      .channel('realtime profiles')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
+      .channel('realtime profiles pay-later')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: 'account_model=eq.passthrupay' }, 
         (payload) => {
             fetchProfiles();
         }
@@ -211,7 +135,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
   
   const handleUserUpdate = () => {
       toast({ title: 'User data updated successfully' });
-      fetchProfiles(); // Re-fetch all profiles to ensure UI consistency
+      fetchProfiles();
   }
 
   const visibleProfiles = profiles;
@@ -234,7 +158,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/dashboard" isActive tooltip="Dashboard">
+              <SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard">
                 <Home />
                 Dashboard
               </SidebarMenuButton>
@@ -246,7 +170,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users">
+              <SidebarMenuButton href="/admin/pay-later" isActive tooltip="Pay Later Users">
                 <Users />
                 Pay Later Users
               </SidebarMenuButton>
@@ -308,11 +232,10 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
         <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
-                <h1 className="text-xl font-semibold">User Management</h1>
+                <h1 className="text-xl font-semibold">Pay Later User Management</h1>
            </div>
            <div className="flex items-center gap-4">
             <ThemeToggle />
-            <CreateAdminForm className="hidden md:flex"/>
             <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
               <AdminNav />
             </ClientOnly>
@@ -332,7 +255,6 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
                     </Card>
                 ))}
             </div>
-            <CreateAdminForm className="w-full md:hidden mb-6" />
             <ClientOnly fallback={<UserTableSkeleton />}>
                 <UserTable 
                     profiles={visibleProfiles || []} 

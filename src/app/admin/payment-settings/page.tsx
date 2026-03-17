@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -15,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords, HardDrive, Wifi } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -213,6 +214,12 @@ export default function PaymentSettingsPage() {
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
+                          <SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users">
+                            <Users />
+                            Pay Later Users
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/coupons" tooltip="Coupons">
                                 <Ticket />
                                 Coupons
@@ -235,6 +242,12 @@ export default function PaymentSettingsPage() {
                                 <LineChart />
                                 Reports
                             </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports">
+                            <LineChart />
+                            Pay Later Reports
+                          </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/payment-settings" isActive tooltip="Payment Settings">

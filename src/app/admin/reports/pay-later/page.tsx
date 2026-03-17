@@ -24,7 +24,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 
-import { getSalesData, SalesData } from './actions';
+import { getPayLaterSalesData, SalesData } from './actions';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -114,6 +114,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
         'Instant': { label: 'Instant', color: 'hsl(var(--chart-1))' },
         '1-Step': { label: '1-Step', color: 'hsl(var(--chart-2))' },
         '2-Step': { label: '2-Step', color: 'hsl(var(--chart-3))' },
+        'PassThenPay': { label: 'PassThenPay', color: 'hsl(var(--chart-4))' },
     }
     
     const pieChartData = data.planCategoryBreakdown.filter(d => d.value > 0).map(d => ({
@@ -123,7 +124,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
 
     const fetchAndSetData = async (from?: Date, to?: Date) => {
         startTransition(async () => {
-            const result = await getSalesData(from, to, masterView);
+            const result = await getPayLaterSalesData(from, to, masterView);
             if (result) setData(result);
         });
     };
@@ -147,7 +148,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
         // --- Header ---
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('Sales Executive Summary', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        doc.text('Pay Later Sales Executive Summary', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
         yPos += 10;
         const dateString = date?.from ? `${format(date.from, 'LLL dd, y')} - ${date.to ? format(date.to, 'LLL dd, y') : 'Present'}` : 'All Time';
         doc.setFontSize(12);
@@ -220,7 +221,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
             });
         }
         
-        doc.save('Executive_Sales_Report.pdf');
+        doc.save('PayLater_Sales_Report.pdf');
         setIsGeneratingReport(false);
     };
 
@@ -409,7 +410,7 @@ function ReportsPageContent() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        getSalesData(undefined, undefined, masterView)
+        getPayLaterSalesData(undefined, undefined, masterView)
             .then(data => {
                 if (data) setInitialData(data);
                 else setError('Could not fetch sales data.');
@@ -453,13 +454,10 @@ function ReportsPageContent() {
                             <SidebarMenuButton href="/admin/tickets" tooltip="Support"><MessageSquare />Support</SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/reports" isActive tooltip="Reports"><LineChartIcon />Reports</SidebarMenuButton>
+                            <SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChartIcon />Reports</SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                          <SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports">
-                            <LineChartIcon />
-                            Pay Later Reports
-                          </SidebarMenuButton>
+                            <SidebarMenuButton href="/admin/reports/pay-later" isActive tooltip="Pay Later Reports"><LineChartIcon />Pay Later Reports</SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton>
@@ -485,7 +483,7 @@ function ReportsPageContent() {
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
                     <div className="flex items-center gap-4">
                         <SidebarTrigger className="md:hidden" />
-                        <h1 className="text-xl font-semibold">Sales Reports</h1>
+                        <h1 className="text-xl font-semibold">Pay Later Sales Reports</h1>
                     </div>
                     <ThemeToggle />
                 </header>
@@ -500,7 +498,7 @@ function ReportsPageContent() {
     );
 }
 
-export default function ReportsPage() {
+export default function PayLaterReportsPage() {
     return (
         <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
             <ReportsPageContent />

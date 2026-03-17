@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, Loader2, Check, X, Copy, MessageSquare, LineChart, Swords } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, Loader2, Check, X, Copy, MessageSquare, LineChart, Swords, Users } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -272,6 +272,12 @@ export default function PayoutsPage() {
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
+                          <SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users">
+                            <Users />
+                            Pay Later Users
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/coupons" tooltip="Coupons">
                                 <Ticket />
                                 Coupons
@@ -294,6 +300,12 @@ export default function PayoutsPage() {
                                 <LineChart />
                                 Reports
                             </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports">
+                            <LineChart />
+                            Pay Later Reports
+                          </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings">
