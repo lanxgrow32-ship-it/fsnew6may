@@ -164,8 +164,8 @@ export default function PassThenPayPage() {
                     </div>
                 </header>
 
-                <div className="relative isolate px-6 pt-12 lg:px-8">
-                    <section className="container mx-auto max-w-4xl pb-24 sm:pb-32 text-center">
+                <div className="relative isolate px-6 lg:px-8">
+                    <section className="container mx-auto max-w-4xl pt-12 pb-24 sm:pb-32 text-center">
                         <Badge variant="outline" className="mb-4 border-primary/50 text-primary">🎯 India's simplest trading evaluation is here</Badge>
                         <h1 className="text-4xl font-bold tracking-tighter sm:text-6xl !leading-[1.15]">1 test. 6% target. <br /> Pay only after you pass.</h1>
                         <p className="mt-6 text-lg leading-8 text-muted-foreground">No more paying thousands before you even trade. Start for just ₹199. Complete 1 simple evaluation. Pay the full fee only after you pass.</p>
@@ -210,10 +210,10 @@ export default function PassThenPayPage() {
                             <div className="hidden md:grid grid-cols-[1.5fr,1fr,1fr] items-center gap-4 p-4 bg-muted/30">
                                 <div></div>
                                 <div className="font-bold text-destructive flex items-center gap-2">
-                                    <X className="w-5 h-5" /> OLD MODEL
+                                    <X className="w-5 h-5" /> Old
                                 </div>
                                 <div className="font-bold text-green-400 flex items-center gap-2">
-                                    <Check className="w-5 h-5" /> PASSTHENPAY
+                                    <Check className="w-5 h-5" /> New
                                 </div>
                             </div>
                             <div className="divide-y divide-border/50">
@@ -305,15 +305,6 @@ export default function PassThenPayPage() {
                             <FaqItem question="PassThenPay aur 2-Step evaluation mein kya fark hai?" answer="PassThenPay mein sirf 1 phase hai — 6% target, khatam. 2-Step mein 2 phases hain — Phase 1 mein 8% phir Phase 2 mein 5%. PassThenPay zyada simple aur beginner-friendly hai."/>
                             <FaqItem question="Kya yeh real market mein trading hai?" answer="Nahi. FundedStock par sari trading 100% simulated environment mein hoti hai. FundedStock SEBI-registered broker ya investment adviser nahi hai. Performance Rewards are professional fees hain — investment returns ya guaranteed income nahi. Aapka personal paisa kabhi market mein nahi jaata."/>
                         </Accordion>
-                    </section>
-                    
-                    <section className="text-center py-24 sm:py-32">
-                         <h2 className="text-3xl font-bold tracking-tight">1 test. 6% target. Pay after you pass.</h2>
-                        <p className="mt-4 text-lg text-muted-foreground">India's simplest evaluation. Start for ₹199. Nothing to lose.</p>
-                        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Button asChild size="lg"><a href="#plans">Start PassThenPay — From ₹199 <ArrowRight className="ml-2"/></a></Button>
-                            <Button asChild variant="link"><a href="#plans">See all plans ↗</a></Button>
-                        </div>
                     </section>
                 </div>
             </main>
