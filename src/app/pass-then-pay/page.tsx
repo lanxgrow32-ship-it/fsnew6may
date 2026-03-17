@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { ArrowRight, Check, Target, Wallet, BarChart, Trophy, Ban, X, ShieldQuestion, BadgePercent, Clock } from 'lucide-react';
+import { ArrowRight, Check, Target, Wallet, BarChart, Trophy, Ban, X, ShieldQuestion, BadgePercent, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -118,6 +118,28 @@ export default function PassThenPayPage() {
         new: '80% always',
       },
     ];
+    
+    const RuleCard = ({ title, icon, children, titleColor }: { title: string, icon: React.ReactNode, children: React.ReactNode, titleColor?: string }) => (
+        <Card className="bg-card/50">
+            <CardHeader>
+                <CardTitle className={cn("flex items-center gap-2", titleColor)}>
+                    {icon}
+                    {title}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {children}
+            </CardContent>
+        </Card>
+    );
+
+    const RuleItem = ({ label, value }: { label: string, value: string }) => (
+        <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">{label}</span>
+            <span className="font-bold text-foreground">{value}</span>
+        </div>
+    );
+
 
     return (
         <div className="dark">
@@ -142,8 +164,8 @@ export default function PassThenPayPage() {
                     </div>
                 </header>
 
-                <div className="relative isolate px-6 pt-14 lg:px-8">
-                    <section className="container mx-auto max-w-4xl pt-12 pb-24 sm:pt-16 sm:pb-32 text-center">
+                <div className="relative isolate px-6 pt-12 lg:px-8">
+                    <section className="container mx-auto max-w-4xl pb-24 sm:pb-32 text-center">
                         <Badge variant="outline" className="mb-4 border-primary/50 text-primary">🎯 India's simplest trading evaluation is here</Badge>
                         <h1 className="text-4xl font-bold tracking-tighter sm:text-6xl !leading-[1.15]">1 test. 6% target. <br /> Pay only after you pass.</h1>
                         <p className="mt-6 text-lg leading-8 text-muted-foreground">No more paying thousands before you even trade. Start for just ₹199. Complete 1 simple evaluation. Pay the full fee only after you pass.</p>
@@ -185,7 +207,6 @@ export default function PassThenPayPage() {
                             <p className="mt-4 text-lg text-muted-foreground">See exactly what changes — and why it matters for you.</p>
                         </div>
                         <Card className="max-w-4xl mx-auto bg-card/50 overflow-hidden">
-                             {/* Desktop Header */}
                             <div className="hidden md:grid grid-cols-[1.5fr,1fr,1fr] items-center gap-4 p-4 bg-muted/30">
                                 <div></div>
                                 <div className="font-bold text-destructive flex items-center gap-2">
@@ -197,7 +218,7 @@ export default function PassThenPayPage() {
                             </div>
                             <div className="divide-y divide-border/50">
                                 {comparisonData.map((item, index) => (
-                                     <div key={index} className="p-4">
+                                    <div key={index} className="p-4">
                                         <p className="font-medium text-foreground mb-3 md:hidden">{item.feature}</p>
                                         <div className="grid grid-cols-1 md:grid-cols-[1.5fr,1fr,1fr] md:items-center gap-y-2 md:gap-4">
                                             <p className="font-medium text-foreground hidden md:block">{item.feature}</p>
@@ -236,37 +257,40 @@ export default function PassThenPayPage() {
                         <p className="text-center text-xs text-muted-foreground mt-8">*Registration fee is non-refundable. Activation fee charged only after successful evaluation. All trading is 100% simulated. Performance Rewards are professional fees, not investment returns.</p>
                     </section>
                     
-                     <section id="rules" className="py-24 sm:py-32 max-w-3xl mx-auto">
+                    <section id="rules" className="py-24 sm:py-32 max-w-5xl mx-auto">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Evaluation Rules</h2>
                             <p className="mt-4 text-lg text-muted-foreground">Simple rules. No confusion. Everything you need to know before you start.</p>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <Card className="bg-card/50">
-                                <CardHeader><CardTitle className="text-green-400">📈 What you need to achieve</CardTitle></CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div className="flex justify-between"><span>Profit target</span><span className="font-bold">6% only</span></div>
-                                    <div className="flex justify-between"><span>Min. trading days</span><span className="font-bold">5 days</span></div>
-                                    <div className="flex justify-between"><span>Time limit</span><span className="font-bold">None</span></div>
-                                    <div className="flex justify-between"><span>Number of phases</span><span className="font-bold">Just 1</span></div>
-                                    <div className="flex justify-between"><span>Reward share</span><span className="font-bold">80% yours</span></div>
-                                    <div className="flex justify-between"><span>Reward cycle</span><span className="font-bold">Every 14 days</span></div>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-card/50">
-                                <CardHeader><CardTitle className="text-destructive">⚠️ Risk limits to stay within</CardTitle></CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div className="flex justify-between"><span>Max daily loss</span><span className="font-bold">4% per day</span></div>
-                                    <div className="flex justify-between"><span>Max overall drawdown</span><span className="font-bold">8% from start</span></div>
-                                    <div className="flex justify-between"><span>Capital per trade</span><span className="font-bold">Max 80%</span></div>
-                                    <div className="flex justify-between"><span>Overnight positions</span><span className="font-bold text-destructive">Not allowed</span></div>
-                                    <div className="flex justify-between"><span>News trading ±5 min</span><span className="font-bold text-destructive">Banned</span></div>
-                                    <div className="flex justify-between"><span>Copy / algo trading</span><span className="font-bold text-destructive">Strictly banned</span></div>
-                                </CardContent>
-                            </Card>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                           <RuleCard title="What you need to achieve" icon={<BarChart className="w-5 h-5"/>} titleColor="text-green-400">
+                               <RuleItem label="Profit target" value="6% only" />
+                               <RuleItem label="Min. trading days" value="5 days" />
+                               <RuleItem label="Time limit" value="None" />
+                               <RuleItem label="Number of phases" value="Just 1" />
+                               <RuleItem label="Reward share" value="80% yours" />
+                               <RuleItem label="Reward cycle" value="Every 14 days" />
+                           </RuleCard>
+                           <RuleCard title="Risk limits to stay within" icon={<AlertTriangle className="w-5 h-5"/>} titleColor="text-destructive">
+                                <RuleItem label="Max daily loss" value="4% per day" />
+                                <RuleItem label="Max overall drawdown" value="8% from start" />
+                                <RuleItem label="Capital per trade" value="Max 80%" />
+                                <RuleItem label="Overnight positions" value="Not allowed" />
+                                <RuleItem label="News trading ±5 min" value="Banned" />
+                                <RuleItem label="Copy / algo trading" value="Strictly banned" />
+                           </RuleCard>
+                           <RuleCard title="What you can trade" icon={<CheckCircle className="w-5 h-5"/>} titleColor="text-primary">
+                                <RuleItem label="Equity stocks" value="Allowed" />
+                                <RuleItem label="Index options" value="Allowed" />
+                                <RuleItem label="Stock options" value="Allowed" />
+                                <RuleItem label="Futures" value="Allowed" />
+                                <RuleItem label="Option selling" value="Allowed" />
+                                <RuleItem label="Lot size restrictions" value="None" />
+                           </RuleCard>
                         </div>
-                         <p className="text-xs text-muted-foreground mt-4">📢 News Alert System: You will receive an SMS + email notification 30 minutes before every major market event. Trades placed ±5 minutes around these events will be automatically voided.</p>
+                         <p className="text-xs text-muted-foreground mt-8 text-center">📢 News Alert System: You will receive an SMS + email notification 30 minutes before every major market event. Trades placed ±5 minutes around these events will be automatically voided.</p>
                     </section>
+
 
                     <section id="faq" className="py-24 sm:py-32 max-w-3xl mx-auto">
                         <div className="text-center mb-16">
