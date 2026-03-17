@@ -111,7 +111,7 @@ export default function PassThenPayPage() {
                         <Badge variant="outline" className="mb-4 border-primary/50 text-primary">🎯 India's simplest trading evaluation is here</Badge>
                         <h1 className="text-4xl font-bold tracking-tighter sm:text-6xl !leading-[1.15]">1 test. 6% target. <br /> Pay only after you pass.</h1>
                         <p className="mt-6 text-lg leading-8 text-muted-foreground">No more paying thousands before you even trade. Start for just ₹199. Complete 1 simple evaluation. Pay the full fee only after you pass.</p>
-                        <div className="mt-10 flex items-center justify-center gap-x-6">
+                        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Button asChild size="lg"><a href="#plans">Start PassThenPay — From ₹199 <ArrowRight className="ml-2"/></a></Button>
                             <Button asChild variant="link"><a href="#how-it-works">See how it works ↓</a></Button>
                         </div>
@@ -229,7 +229,7 @@ export default function PassThenPayPage() {
                     <section className="text-center py-24 sm:py-32">
                          <h2 className="text-3xl font-bold tracking-tight">1 test. 6% target. Pay after you pass.</h2>
                         <p className="mt-4 text-lg text-muted-foreground">India's simplest evaluation. Start for ₹199. Nothing to lose.</p>
-                        <div className="mt-10 flex items-center justify-center gap-x-6">
+                        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Button asChild size="lg"><a href="#plans">Start PassThenPay — From ₹199 <ArrowRight className="ml-2"/></a></Button>
                             <Button asChild variant="link"><a href="#plans">See all plans ↗</a></Button>
                         </div>
@@ -239,5 +239,3 @@ export default function PassThenPayPage() {
         </div>
     );
 }
-
-    
