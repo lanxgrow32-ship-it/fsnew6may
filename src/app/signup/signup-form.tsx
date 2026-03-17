@@ -42,6 +42,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
   const isTrialPlan = plan === '25K Try First Plan';
+  const showCoupon = !isTrialPlan && !(plan?.toLowerCase().includes('passthenpay'));
 
   const activeGateway = paymentSettings?.active_payment_gateway || 'lgpay';
 
@@ -144,7 +145,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
              <div className="space-y-6">
-                 {!isTrialPlan && (
+                 {showCoupon && (
                     <Card className="bg-card/80 backdrop-blur-sm border-border">
                         <CardHeader>
                             <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>

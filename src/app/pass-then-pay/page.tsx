@@ -298,12 +298,30 @@ export default function PassThenPayPage() {
                             <p className="mt-4 text-lg text-muted-foreground">Quick answers. No jargon.</p>
                         </div>
                         <Accordion type="single" collapsible className="w-full">
-                            <FaqItem question="Agar main fail ho gaya toh kitna paisa jaayega?" answer="Sirf ₹199–₹499 — jo registration fee thi woh. Activation fee (₹7,999–₹44,999) sirf tab charge hoti hai jab tum pass karo. Fail hone pe koi badi loss nahi. Dobara try karna chahte ho? Phir se ₹199 do aur shuru karo."/>
-                            <FaqItem question="Kitne dino mein 6% target hit karna hai?" answer="Koi time limit nahi hai. 2 hafte mein karo ya 3 mahine mein — aapki marzi. Bas ek cheez dhyan rakhna — 30 consecutive days tak koi trade nahi kiya toh account dormant ho jaata hai. Isliye regular trading karte raho."/>
-                            <FaqItem question="Pass hone ke baad activation fee kab deni hai?" answer="Jab tum pass ho jaate ho — profit target 6%, minimum 5 trading days, aur sabhi rules follow kiye — system automatically notification bhejta hai. Tumhare paas 72 ghante hain activation fee pay karne ke liye. Payment ke baad funded account turant activate ho jaata hai."/>
-                            <FaqItem question="Performance Rewards kaise aur kab milenge?" answer="Har 14 din mein payout request kar sakte ho — condition yeh hai ki us cycle mein minimum 5 din trade kiya ho aur minimum ₹2,000 ka reward accumulated ho. Payment directly UPI ya bank account mein 3–5 business days mein aa jaata hai. 3rd successful payout pe registration fee wapas mil jaati hai."/>
-                            <FaqItem question="PassThenPay aur 2-Step evaluation mein kya fark hai?" answer="PassThenPay mein sirf 1 phase hai — 6% target, khatam. 2-Step mein 2 phases hain — Phase 1 mein 8% phir Phase 2 mein 5%. PassThenPay zyada simple aur beginner-friendly hai."/>
-                            <FaqItem question="Kya yeh real market mein trading hai?" answer="Nahi. FundedStock par sari trading 100% simulated environment mein hoti hai. FundedStock SEBI-registered broker ya investment adviser nahi hai. Performance Rewards are professional fees hain — investment returns ya guaranteed income nahi. Aapka personal paisa kabhi market mein nahi jaata."/>
+                            <FaqItem 
+                                question="If I fail, how much money will I lose?" 
+                                answer="Only ₹199–₹499 — which was the registration fee. The activation fee (₹7,999–₹44,999) is only charged when you pass. There's no big loss on failing. Want to try again? Just pay the registration fee again and start over."
+                            />
+                            <FaqItem 
+                                question="In how many days do I have to hit the 6% target?" 
+                                answer="There is no time limit. Do it in 2 weeks or 3 months — it's up to you. Just remember one thing — if you don't make any trade for 30 consecutive days, the account becomes dormant. So, keep trading regularly."
+                            />
+                            <FaqItem 
+                                question="When do I have to pay the activation fee after passing?" 
+                                answer="When you pass — by meeting the 6% profit target, minimum 5 trading days, and following all rules — the system automatically sends a notification. You have 72 hours to pay the activation fee. After payment, the funded account is activated instantly."
+                            />
+                            <FaqItem 
+                                question="How and when will I get Performance Rewards?" 
+                                answer="You can request a payout every 14 days — provided you have traded for a minimum of 5 days in that cycle and have accumulated a minimum reward of ₹2,000. Payment comes directly to your UPI or bank account within 3–5 business days. Your registration fee is refunded on your 3rd successful payout."
+                            />
+                            <FaqItem 
+                                question="What is the difference between PassThenPay and the 2-Step evaluation?" 
+                                answer="PassThenPay has only 1 phase — a 6% target, that's it. The 2-Step evaluation has 2 phases — 8% in Phase 1 and then 5% in Phase 2. PassThenPay is simpler and more beginner-friendly."
+                            />
+                            <FaqItem 
+                                question="Is this trading in the real market?" 
+                                answer="No. All trading on FundedStock is done in a 100% simulated environment. FundedStock is not a SEBI-registered broker or investment adviser. Performance Rewards are professional fees — not investment returns or guaranteed income. Your personal money never goes into the market."
+                            />
                         </Accordion>
                     </section>
                 </div>
