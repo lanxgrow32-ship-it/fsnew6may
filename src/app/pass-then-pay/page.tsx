@@ -178,14 +178,14 @@ export default function PassThenPayPage() {
                         </div>
                     </section>
 
-                    <section className="py-24 sm:py-32">
+                     <section className="py-24 sm:py-32">
                         <div className="text-center mb-16 max-w-3xl mx-auto">
                             <Badge variant="outline" className="mb-4 border-primary/50 text-primary">WHY PASSTHENPAY</Badge>
                             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Old way vs PassThenPay</h2>
                             <p className="mt-4 text-lg text-muted-foreground">See exactly what changes — and why it matters for you.</p>
                         </div>
                         <Card className="max-w-4xl mx-auto bg-card/50 overflow-hidden">
-                            <div className="grid grid-cols-3 items-center gap-4 p-4 bg-muted/30">
+                            <div className="hidden md:grid grid-cols-[1.5fr,1fr,1fr] items-center gap-4 p-4 bg-muted/30">
                                 <div></div>
                                 <div className="font-bold text-destructive flex items-center gap-2">
                                     <X className="w-5 h-5" /> OLD MODEL
@@ -196,15 +196,24 @@ export default function PassThenPayPage() {
                             </div>
                             <div className="divide-y divide-border/50">
                                 {comparisonData.map((item, index) => (
-                                    <div key={index} className="grid grid-cols-3 items-center gap-4 p-4">
-                                        <p className="font-medium text-foreground">{item.feature}</p>
-                                        <div className="flex items-center gap-2 text-destructive">
-                                            <X className="w-4 h-4 shrink-0" />
-                                            <span>{item.old}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 font-semibold text-green-400">
-                                            <Check className="w-4 h-4 shrink-0" />
-                                            <span>{item.new}</span>
+                                     <div key={index} className="p-4">
+                                        <p className="font-medium text-foreground mb-3 md:hidden">{item.feature}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-[1.5fr,1fr,1fr] md:items-center gap-4">
+                                            <p className="font-medium text-foreground hidden md:block">{item.feature}</p>
+                                            <div>
+                                                <p className="md:hidden font-bold text-destructive flex items-center gap-2 text-sm mb-1"><X className="w-4 h-4"/> OLD MODEL</p>
+                                                <div className="flex items-center gap-2 text-destructive">
+                                                    <X className="w-4 h-4 shrink-0 hidden md:block" />
+                                                    <span>{item.old}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="md:hidden font-bold text-green-400 flex items-center gap-2 text-sm mb-1"><Check className="w-4 h-4"/> PASSTHENPAY</p>
+                                                <div className="flex items-center gap-2 font-semibold text-green-400">
+                                                    <Check className="w-4 h-4 shrink-0 hidden md:block" />
+                                                    <span>{item.new}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
