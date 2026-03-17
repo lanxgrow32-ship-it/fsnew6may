@@ -94,6 +94,11 @@ export async function signupAndCreateOrder(formData: FormData) {
         mobile_number: mobileNumber,
         referral_code: referralCodeValue,
     };
+    
+    if (planPurchased.toLowerCase().includes('passthenpay')) {
+        profileData.account_model = 'passthrupay';
+    }
+
     if (referrerId) {
         profileData.referred_by = referrerId;
     }
