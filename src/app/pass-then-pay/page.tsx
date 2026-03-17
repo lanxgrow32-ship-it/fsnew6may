@@ -143,7 +143,7 @@ export default function PassThenPayPage() {
                 </header>
 
                 <div className="relative isolate px-6 pt-14 lg:px-8">
-                    <section className="container mx-auto max-w-4xl py-24 sm:py-32 text-center">
+                    <section className="container mx-auto max-w-4xl pt-12 pb-24 sm:pt-16 sm:pb-32 text-center">
                         <Badge variant="outline" className="mb-4 border-primary/50 text-primary">🎯 India's simplest trading evaluation is here</Badge>
                         <h1 className="text-4xl font-bold tracking-tighter sm:text-6xl !leading-[1.15]">1 test. 6% target. <br /> Pay only after you pass.</h1>
                         <p className="mt-6 text-lg leading-8 text-muted-foreground">No more paying thousands before you even trade. Start for just ₹199. Complete 1 simple evaluation. Pay the full fee only after you pass.</p>
