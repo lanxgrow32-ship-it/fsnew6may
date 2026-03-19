@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
 import { signOut } from '@/app/actions';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
@@ -34,7 +35,13 @@ export function PendingView({ profile }: { profile: any }) {
                     <p className="text-gray-400 mt-2 mb-6">
                         Your payment is being verified by our team. This page will update automatically once your account is approved. This usually takes a few minutes.
                     </p>
-                    <div className="flex flex-col items-center gap-4 pt-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                         <Button asChild className="bg-purple-600 text-white hover:bg-purple-700 shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-400/50">
+                            <Link href="https://wa.me/917020749658" target="_blank" rel="noopener noreferrer">
+                                <MessageSquare className="mr-2 h-4 w-4" />
+                                Contact Support
+                            </Link>
+                        </Button>
                         <form action={signOut}>
                             <Button variant="outline" className="bg-black/20 border-white/10 text-white hover:bg-white/20">
                                 Logout
