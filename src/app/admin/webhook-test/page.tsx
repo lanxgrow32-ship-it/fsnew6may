@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -22,11 +22,11 @@ export default function WebhookTestPage() {
     const { toast } = useToast();
     const [state, formAction] = useActionState(sendTestWebhook, { error: null, success: false });
     
-    React.useEffect(() => {
+    useEffect(() => {
         if (state.success) {
             toast({
                 title: "Test Signal Sent!",
-                description: "Check your Make.com scenario to see the new data structure.",
+                description: "Check your Make.com scenario. The data variables should now be available.",
             });
         }
         if (state.error) {
@@ -44,13 +44,17 @@ export default function WebhookTestPage() {
                 <CardHeader>
                     <CardTitle>Webhook Tester</CardTitle>
                     <CardDescription>
-                        First, click "Re-determine data structure" in your Make.com webhook module. Then, click the button below to send a test signal.
+                        This page sends a test signal to your webhook WITHOUT needing an API key.
+                        <br/><br/>
+                        <b>Step 1:</b> In your Make.com scenario, click "Re-determine data structure".
+                        <br/>
+                        <b>Step 2:</b> Come back here and click the button below.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form action={formAction} className="space-y-4">
                         {state.error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{state.error}</AlertDescription></Alert>}
-                         {state.success && <Alert variant="default" className="border-green-500 text-green-700"><AlertTitle>Success!</AlertTitle><AlertDescription>The test signal was sent successfully.</AlertDescription></Alert>}
+                         {state.success && <Alert variant="default" className="border-green-500 text-green-700"><AlertTitle>Success!</AlertTitle><AlertDescription>The test signal was sent successfully. You can now map the variables in Make.com.</AlertDescription></Alert>}
                         <SubmitButton />
                     </form>
                 </CardContent>
