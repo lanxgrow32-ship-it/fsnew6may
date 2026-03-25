@@ -3,6 +3,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { format } from 'date-fns';
 
 async function uploadBreachProof(file: File, userId: string) {
   const fileExt = file.name.split('.').pop();
@@ -69,6 +70,26 @@ function getBalanceFromPlanName(planName: string): number {
     return 0;
 }
 
+// Helper function to get account size text from plan name
+function getAccountSizeText(planName: string): string {
+    if (!planName) return 'N/A';
+    const lowerPlanName = planName.toLowerCase();
+
+    if (lowerPlanName.includes('1l') || lowerPlanName.includes('1,00,000')) return '1,00,000';
+    if (lowerPlanName.includes('2l') || lowerPlanName.includes('2,00,000')) return '2,00,000';
+    if (lowerPlanName.includes('5l') || lowerPlanName.includes('5,00,000')) return '5,00,000';
+    if (lowerPlanName.includes('10l') || lowerPlanName.includes('10,00,000')) return '10,00,000';
+    if (lowerPlanName.includes('25l') || lowerPlanName.includes('25,00,000')) return '25,00,000';
+    if (lowerPlanName.includes('50l') || lowerPlanName.includes('50,00_000')) return '50,00_000';
+    
+    const plainNumberMatch = lowerPlanName.match(/^[\d,._]+/);
+    if (plainNumberMatch) {
+        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, '')).toLocaleString('en-IN', {useGrouping: false});
+    }
+
+    return 'N/A';
+}
+
 
 export async function updateProfile(formData: FormData) {
   const id = formData.get('id') as string;
@@ -87,7 +108,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name, kyc_status, is_hidden')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name, kyc_status, is_hidden, created_at, order_sn, transaction_id')
     .eq('id', id)
     .single();
 
@@ -137,8 +158,40 @@ export async function updateProfile(formData: FormData) {
 
   // --- Start Webhook & Automation Logic ---
 
+  // Trigger "Payment Confirmed" Webhook
+  if (is_approved && !wasApproved && beforeUpdateData) {
+      const webhookUrl = process.env.MAKE_WEBHOOK_URL;
+      if (webhookUrl) {
+          try {
+              const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
+
+              const payload = {
+                  user_name: beforeUpdateData.full_name,
+                  email: beforeUpdateData.email,
+                  order_sn: beforeUpdateData.order_sn || beforeUpdateData.transaction_id || 'N/A',
+                  plan_purchased: beforeUpdateData.plan_purchased,
+                  account_size: account_size_text,
+                  final_amount_paid: beforeUpdateData.final_amount_paid,
+                  payment_method: 'Online / Manual',
+                  datetime: format(new Date(beforeUpdateData.created_at), 'dd-MM-yyyy HH:mm:ss'),
+              };
+              
+              // We don't await this, let it run in the background.
+              fetch(webhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload),
+              }).catch(e => console.error("Webhook fetch failed:", e));
+
+          } catch (webhookError: any) {
+              console.error("Failed to construct or send Make.com webhook:", webhookError.message);
+          }
+      } else {
+          console.warn("MAKE_WEBHOOK_URL is not set. Skipping payment confirmation email.");
+      }
+  }
+
   // Manual admin override for KYC verification
-  // This logic is now a backup. The primary automation happens in kyc/actions.ts
   if (kyc_status === 'verified' && !wasKycVerified) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
     if (!stockmintApiKey) {
