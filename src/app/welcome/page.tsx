@@ -12,6 +12,39 @@ import { cn } from '@/lib/utils';
 import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, Loader2, BookUser, Gift, BrainCircuit, TrendingDown, Percent, CheckCircle } from 'lucide-react';
 import { ReceiptButton } from './receipt-button';
 import { PendingView } from './pending-view';
+import { CompetitionView } from './competition-view';
+
+// Helper function to parse plan name into account balance
+function getBalanceFromPlanName(planName: string): number {
+    if (!planName) return 0;
+
+    const name = planName.toLowerCase();
+    // Match numbers and units like K, L, Cr
+    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
+    
+    if (match) {
+        let amount = parseFloat(match[1].replace(/,/g, ''));
+        const unit = match[2];
+
+        if (unit === 'k') {
+            amount *= 1000;
+        } else if (unit === 'l' || unit === 'lakh') {
+            amount *= 100000;
+        } else if (unit === 'cr' || unit === 'crore') {
+            amount *= 10000000;
+        }
+        return amount;
+    }
+    
+    // Fallback for names like "25000" without a unit
+    const plainNumberMatch = name.match(/^[\d,.]+/);
+    if (plainNumberMatch) {
+        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+    }
+
+    return 0;
+}
+
 
 // Helper Components for the new UI
 
@@ -383,6 +416,22 @@ export default async function WelcomePage() {
     if (!profile) {
         return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Could not load your profile. Please contact support.</div>;
     }
+
+    if (profile.account_type === 'competition') {
+        const { data: initialEntries } = await supabase.from('competition_entries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+        const { data: paymentSession } = await supabase.from('payment_sessions').select('status').eq('email', session.user.email).order('created_at', { ascending: false }).limit(1).single();
+
+        return (
+            <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
+                <main className="relative z-10 p-4 sm:p-6 lg:p-8">
+                    <DashboardHeader profile={profile} activePage="Account Overview" />
+                    <div className="max-w-4xl mx-auto">
+                        <CompetitionView initialEntries={initialEntries || []} paymentSession={paymentSession} />
+                    </div>
+                </main>
+            </div>
+        );
+    }
     
     if (!profile.is_approved) {
         return <PendingView profile={profile} />;
@@ -391,6 +440,43 @@ export default async function WelcomePage() {
     if (profile.is_breached) {
         return <AccountBreached />;
     }
+
+    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+    let stats = {
+        balance: 0,
+        totalPnl: 0,
+        winRate: 0,
+        activeTradingDays: 0,
+    };
+
+    if (stockmintApiKey && profile.trading_username) {
+        try {
+            const statsResponse = await fetch(
+                `https://stockmint.io/api/users/stats?email=${profile.trading_username}`,
+                {
+                    headers: { 'x-api-key': stockmintApiKey, },
+                    cache: 'no-store', // Ensure fresh data on every load
+                }
+            );
+
+            if (statsResponse.ok) {
+                const statsData = await statsResponse.json();
+                if (statsData.success) {
+                    stats = statsData.data;
+                } else {
+                    console.error("StockMint API returned error:", statsData.message);
+                }
+            } else {
+                console.error("Failed to fetch stats from StockMint API", await statsResponse.text());
+            }
+        } catch (error) {
+            console.error("Error fetching stats:", error);
+        }
+    }
+    
+    const initialBalance = getBalanceFromPlanName(profile.plan_purchased);
+    const pnlProgress = initialBalance > 0 ? (stats.totalPnl / initialBalance) * 100 : 0;
+    const tradingDaysProgress = (stats.activeTradingDays / 30) * 100; // Assuming 30 day cycle
 
     // This is the new, unified layout for the welcome page.
     return (
@@ -418,9 +504,9 @@ export default async function WelcomePage() {
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                      <StatCard
                         title="Balance"
-                        value="₹1,00,000"
+                        value={`₹${stats.balance.toLocaleString('en-IN')}`}
                         details="Current Balance"
-                        progress={100.0}
+                        progress={initialBalance > 0 ? (stats.balance / initialBalance) * 100 : 100}
                         icon={<DollarSign className="w-4 h-4 text-gray-400" />}
                         progressColor="bg-purple-500/20 text-purple-300"
                         decorativeImage="/a.png"
@@ -428,27 +514,28 @@ export default async function WelcomePage() {
                     />
                      <StatCard
                         title="Profit / Loss"
-                        value="+₹2,034"
+                        value={stats.totalPnl >= 0 ? `+₹${stats.totalPnl.toLocaleString('en-IN')}` : `-₹${Math.abs(stats.totalPnl).toLocaleString('en-IN')}`}
                         details="Total P/L"
-                        progress={2.03}
+                        progress={pnlProgress}
                         icon={<LineChart className="w-4 h-4 text-gray-400"/>}
-                        progressColor="bg-green-500/20 text-green-300"
+                        progressColor={stats.totalPnl >= 0 ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}
                         decorativeImage="/b.png"
+                        isLoss={stats.totalPnl < 0}
                     />
                     <StatCard
                         title="Win Rate"
-                        value="72%"
+                        value={`${stats.winRate}%`}
                         details="Of all trades"
-                        progress={72.0}
+                        progress={stats.winRate}
                         icon={<Briefcase className="w-4 h-4 text-gray-400"/>}
                         progressColor="bg-sky-500/20 text-sky-300"
                         decorativeImage="/c.png"
                     />
                     <StatCard
                         title="Trading Days"
-                        value="18"
+                        value={`${stats.activeTradingDays}`}
                         details="Active Days"
-                        progress={60.0}
+                        progress={tradingDaysProgress}
                         icon={<Calendar className="w-4 h-4 text-gray-400"/>}
                         progressColor="bg-amber-500/20 text-amber-300"
                         decorativeImage="/d.png"
@@ -461,3 +548,4 @@ export default async function WelcomePage() {
         </div>
     );
 }
+
