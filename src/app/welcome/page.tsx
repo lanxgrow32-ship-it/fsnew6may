@@ -299,13 +299,15 @@ const SupportCard = () => (
                     <Users className="h-10 w-10 text-purple-300" />
                 </div>
             </div>
-             <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5 mb-4">
-                <div>
-                    <p className="text-xs text-gray-400 tracking-wider">Support Phone</p>
-                    <p className="font-semibold font-mono text-white">+91 12345 67890</p>
+            <a href="https://t.me/fundedstock_payout" target="_blank" rel="noopener noreferrer" className="w-full block">
+                <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5 mb-4 hover:bg-black/30 transition-colors">
+                    <div>
+                        <p className="text-xs text-gray-400 tracking-wider">Telegram Support</p>
+                        <p className="font-semibold text-white">@fundedstock_payout</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-400" />
                 </div>
-                <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" />
-            </div>
+            </a>
         </div>
         <div className="mt-6 relative z-10">
             <a href="mailto:support@fundedstock.live" className="w-full block">
@@ -548,4 +550,3 @@ export default async function WelcomePage() {
         </div>
     );
 }
-
