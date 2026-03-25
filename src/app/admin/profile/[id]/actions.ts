@@ -64,7 +64,7 @@ function getBalanceFromPlanName(planName: string): number {
     // Fallback for names like "25000" without a unit
     const plainNumberMatch = name.match(/^[\d,.]+/);
     if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
     }
 
     return 0;
@@ -157,11 +157,13 @@ export async function updateProfile(formData: FormData) {
   }
 
   // --- Start Webhook & Automation Logic ---
-
-  // Trigger "Payment Confirmed" Webhook
+  // Trigger "Payment Confirmed" & "KYC Reminder" Webhooks
   if (is_approved && !wasApproved && beforeUpdateData) {
-      const webhookUrl = process.env.MAKE_WEBHOOK_URL;
-      if (webhookUrl) {
+      const paymentWebhookUrl = process.env.MAKE_WEBHOOK_URL;
+      const kycWebhookUrl = process.env.MAKE_KYC_WEBHOOK_URL;
+
+      // --- 1. Payment Confirmation Webhook ---
+      if (paymentWebhookUrl) {
           try {
               const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
 
@@ -177,19 +179,43 @@ export async function updateProfile(formData: FormData) {
               };
               
               // We don't await this, let it run in the background.
-              fetch(webhookUrl, {
+              fetch(paymentWebhookUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(payload),
-              }).catch(e => console.error("Webhook fetch failed:", e));
+              }).catch(e => console.error("Payment webhook failed:", e));
 
           } catch (webhookError: any) {
-              console.error("Failed to construct or send Make.com webhook:", webhookError.message);
+              console.error("Failed to construct or send Make.com payment webhook:", webhookError.message);
           }
       } else {
           console.warn("MAKE_WEBHOOK_URL is not set. Skipping payment confirmation email.");
       }
+
+      // --- 2. KYC Reminder Webhook ---
+      if (kycWebhookUrl) {
+          try {
+              // Simpler payload for the KYC email, just name and email.
+              const kycPayload = {
+                  user_name: beforeUpdateData.full_name,
+                  email: beforeUpdateData.email
+              };
+              
+              // We don't await this, let it run in the background.
+              fetch(kycWebhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(kycPayload),
+              }).catch(e => console.error("KYC webhook failed:", e));
+
+          } catch (webhookError: any) {
+              console.error("Failed to construct or send Make.com KYC webhook:", webhookError.message);
+          }
+      } else {
+          console.warn("MAKE_KYC_WEBHOOK_URL is not set. Skipping KYC reminder email.");
+      }
   }
+
 
   // Manual admin override for KYC verification
   if (kyc_status === 'verified' && !wasKycVerified) {
