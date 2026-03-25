@@ -4,132 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Confirmed - FundedStock</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-            margin: 0;
-            padding: 0;
-            background-color: #f0f2f5;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-        }
-        .header {
-            background-color: #1a2233;
-            padding: 20px;
-            text-align: center;
-        }
-        .header h1 {
-            color: #ffffff;
-            margin: 0;
-            font-size: 24px;
-        }
-        .content {
-            padding: 30px;
-            text-align: left;
-            color: #333333;
-            line-height: 1.6;
-        }
-        .receipt-box {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            margin-top: 25px;
-            margin-bottom: 25px;
-            background-color: #f8f9fc;
-        }
-        .receipt-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #e5e7eb;
-            font-weight: bold;
-            color: #1a2233;
-        }
-        .receipt-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 20px;
-            font-size: 14px;
-        }
-        .receipt-item .label {
-            color: #6b7280;
-        }
-        .receipt-item .value {
-            font-weight: 500;
-            color: #1f2937;
-        }
-        .status.confirmed {
-            color: #059669;
-            font-weight: bold;
-        }
-        .button {
-            display: inline-block;
-            background-color: #1a2233;
-            color: #ffffff;
-            padding: 12px 25px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        .footer {
-            text-align: center;
-            font-size: 12px;
-            color: #9ca3af;
-            padding: 20px;
-        }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>FundedStock</h1>
-        </div>
-        <div class="content">
-            <p>Hi {{1.user_name}},</p>
-            <p>Your payment has been received successfully. Your FundedStock evaluation account is now being activated. Please keep this email as your official payment receipt.</p>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin: 0; padding: 0; background-color: #f0f2f5; width: 100% !important;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#f0f2f5">
+        <tr>
+            <td align="center">
+                <table class="container" width="600" border="0" align="center" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="background-color: #1a2233; padding: 20px;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">FundedStock</h1>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 30px; text-align: left; color: #333333; line-height: 1.6;">
+                            <p>Hi {{1.user_name}},</p>
+                            <p>Your payment has been received successfully. Your FundedStock evaluation account is now being activated. Please keep this email as your official payment receipt.</p>
 
-            <div class="receipt-box">
-                <div class="receipt-header">PAYMENT RECEIPT</div>
-                <div class="receipt-item">
-                    <span class="label">Order ID</span>
-                    <span class="value">{{1.order_sn}}</span>
-                </div>
-                <div class="receipt-item">
-                    <span class="label">Plan</span>
-                    <span class="value">{{1.plan_purchased}}</span>
-                </div>
-                 <div class="receipt-item">
-                    <span class="label">Account Size</span>
-                    <span class="value">₹{{1.account_size}}</span>
-                </div>
-                <div class="receipt-item">
-                    <span class="label">Amount Paid</span>
-                    <span class="value">₹{{1.final_amount_paid}}</span>
-                </div>
-                <div class="receipt-item">
-                    <span class="label">Payment Method</span>
-                    <span class="value">{{1.payment_method}}</span>
-                </div>
-                <div class="receipt-item">
-                    <span class="label">Date & Time</span>
-                    <span class="value">{{1.datetime}}</span>
-                </div>
-                <div class="receipt-item">
-                    <span class="label">Status</span>
-                    <span class="value status confirmed">✓ Confirmed</span>
-                </div>
-            </div>
+                            <!-- Receipt Box -->
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e7eb; border-radius: 8px; margin-top: 25px; margin-bottom: 25px; background-color: #f8f9fc;">
+                                <tr>
+                                    <td style="padding: 15px 20px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #1a2233;">PAYMENT RECEIPT</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 0 20px;">
+                                        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #6b7280;">Order ID</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.order_sn}}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #6b7280;">Plan</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.plan_purchased}}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #6b7280;">Account Size</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">₹{{1.account_size}}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #6b7280;">Amount Paid</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">₹{{1.final_amount_paid}}</td>
+                                            </tr>
+                                             <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #6b7280;">Payment Method</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.payment_method}}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #6b7280;">Date & Time</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.datetime}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 12px 0; font-size: 14px; color: #6b7280;">Status</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: bold; color: #059669; text-align: right;">✓ Confirmed</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
 
-            <p>You will receive a separate welcome email shortly with your account details and next steps.</p>
-            
-            <a href="https://app.fundedstock.io/welcome" class="button">Go to Dashboard</a>
-        </div>
-        <div class="footer">
-            <p>This is an automated payment confirmation. Please do not reply to this email.</p>
-            <p>For support: support@fundedstock.in</p>
-        </div>
-    </div>
+                            <p>You will receive a separate welcome email shortly with your account details and next steps.</p>
+                            
+                            <a href="https://app.fundedstock.io/welcome" style="display: inline-block; background-color: #1a2233; color: #ffffff; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 20px;">Go to Dashboard</a>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="text-align: center; font-size: 12px; color: #9ca3af; padding: 20px;">
+                            <p>This is an automated payment confirmation. Please do not reply to this email.</p>
+                            <p>For support: support@fundedstock.in</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
