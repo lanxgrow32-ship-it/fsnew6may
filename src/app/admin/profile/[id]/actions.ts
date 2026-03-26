@@ -104,6 +104,7 @@ export async function updateProfile(formData: FormData) {
   const breach_image = formData.get('breach_image') as File;
   const admin_aadhaar_photo = formData.get('admin_aadhaar_photo') as File;
   const admin_selfie_with_aadhaar = formData.get('admin_selfie_with_aadhaar') as File;
+  const account_classification = formData.get('account_classification') as string;
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
@@ -128,6 +129,7 @@ export async function updateProfile(formData: FormData) {
     credentials_provided,
     trading_username,
     trading_password,
+    account_classification,
   };
   
   try {
@@ -265,7 +267,7 @@ export async function updateProfile(formData: FormData) {
     const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
     if (kycApprovedWebhookUrl) {
         try {
-            const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
+            const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased || '');
             const kycApprovedPayload = {
                 user_name: beforeUpdateData.full_name,
                 email: beforeUpdateData.email,

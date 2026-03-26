@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use, useActionState, useRef } from 'react';
@@ -55,6 +54,7 @@ type Profile = {
   is_pan_verified: boolean;
   is_aadhaar_verified: boolean; // Now means Aadhaar photo submitted
   digilocker_verification_id: string | null;
+  account_classification: string | null;
 };
 
 // Helper function to parse plan name into account balance
@@ -82,7 +82,7 @@ function getBalanceFromPlanName(planName: string): number {
     // Fallback for names like "25000" without a unit
     const plainNumberMatch = name.match(/^[\d,.]+/);
     if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
     }
 
     return 0;
@@ -496,6 +496,21 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                                 <SelectItem value="submitted">Submitted for Review</SelectItem>
                                                 <SelectItem value="verified">Verified</SelectItem>
                                                 <SelectItem value="rejected">Rejected</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="account_classification" className="font-semibold">Account Classification</Label>
+                                        <Select name="account_classification" defaultValue={profile.account_classification || 'evaluation'}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Set Classification" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="evaluation">Evaluation</SelectItem>
+                                                <SelectItem value="live">Live Account</SelectItem>
+                                                <SelectItem value="phase_1_1_step">Phase 1 (1-Step)</SelectItem>
+                                                <SelectItem value="phase_1_2_step">Phase 1 (2-Step)</SelectItem>
+                                                <SelectItem value="phase_2_2_step">Phase 2 (2-Step)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>

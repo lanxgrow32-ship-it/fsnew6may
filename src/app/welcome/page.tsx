@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +38,7 @@ function getBalanceFromPlanName(planName: string): number {
     // Fallback for names like "25000" without a unit
     const plainNumberMatch = name.match(/^[\d,.]+/);
     if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
     }
 
     return 0;
@@ -225,18 +224,30 @@ function formatBalance(planName: string): string {
     return '₹0';
 }
 
-function getAccountType(planName: string): string {
-    if (!planName) return 'N/A';
-    const lowerPlanName = planName.toLowerCase();
-    if (lowerPlanName.includes('instant')) return 'Instant';
-    if (lowerPlanName.includes('1-step')) return '1-Step';
-    if (lowerPlanName.includes('2-step')) return '2-Step';
-    return 'Standard';
+const ClassificationBadge = ({ classification }: { classification: string | null }) => {
+    if (!classification) return null;
+
+    const getClassificationText = (cls: string) => {
+        switch(cls) {
+            case 'live': return 'Live Account';
+            case 'phase_1_1_step': return 'Phase 1 (1-Step)';
+            case 'phase_1_2_step': return 'Phase 1 (2-Step)';
+            case 'phase_2_2_step': return 'Phase 2 (2-Step)';
+            case 'evaluation':
+            default:
+                return 'Evaluation';
+        }
+    };
+    
+    return (
+        <div className="shrink-0 border border-purple-400/20 bg-purple-900/40 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-semibold text-purple-300 flex items-center gap-2">
+            {getClassificationText(classification)}
+        </div>
+    );
 }
 
 const UserDetails = ({ profile }: { profile: any }) => {
     const initialBalance = formatBalance(profile.plan_purchased);
-    const accountType = getAccountType(profile.plan_purchased);
     
     return (
         <GlassCard className="p-6 md:p-8 relative h-full flex flex-col">
@@ -246,14 +257,14 @@ const UserDetails = ({ profile }: { profile: any }) => {
                         <UserAvatar />
                         <div>
                             <h2 className="text-xl font-bold tracking-wide text-white">{profile.full_name}</h2>
-                            <p className="text-sm text-gray-400">
-                                Currently, you have an <span className="font-semibold text-white">{accountType}</span> account
-                            </p>
                         </div>
                     </div>
-                    <div className="shrink-0 border border-white/10 bg-black/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-mono text-gray-300 flex items-center gap-2">
-                        <Grid3x3 className="w-4 h-4 text-gray-500" />
-                        {profile.id.substring(0, 8)}
+                     <div className="flex items-center gap-2">
+                        <ClassificationBadge classification={profile.account_classification} />
+                        <div className="shrink-0 border border-white/10 bg-black/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-mono text-gray-300 flex items-center gap-2">
+                            <Grid3x3 className="w-4 h-4 text-gray-500" />
+                            {profile.id.substring(0, 8)}
+                        </div>
                     </div>
                 </div>
 
@@ -268,7 +279,7 @@ const UserDetails = ({ profile }: { profile: any }) => {
                     </div>
                      <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-xs text-gray-400 tracking-wider">Account Type</p>
-                        <p className="font-semibold text-white mt-1">{accountType}</p>
+                        <p className="font-semibold text-white mt-1">{getAccountType(profile.plan_purchased)}</p>
                     </div>
                 </div>
 
@@ -404,6 +415,14 @@ const AccountBreached = () => (
     </div>
 );
 
+function getAccountType(planName: string): string {
+    if (!planName) return 'N/A';
+    const lowerPlanName = planName.toLowerCase();
+    if (lowerPlanName.includes('instant')) return 'Instant';
+    if (lowerPlanName.includes('1-step')) return '1-Step';
+    if (lowerPlanName.includes('2-step')) return '2-Step';
+    return 'Standard';
+}
 
 export default async function WelcomePage() {
     const supabase = createClient();
