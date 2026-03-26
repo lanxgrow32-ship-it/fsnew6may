@@ -1,10 +1,11 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
+import { format } from 'date-fns';
+
 
 const ekycUsername = process.env.EKYCHUB_USERNAME;
 const ekycToken = process.env.EKYCHUB_TOKEN;
@@ -34,10 +35,30 @@ function getBalanceFromPlanName(planName: string): number {
     // Fallback for names like "25000" without a unit
     const plainNumberMatch = name.match(/^[\d,.]+/);
     if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
     }
 
     return 0;
+}
+
+// Helper function to get account size text from plan name
+function getAccountSizeText(planName: string): string {
+    if (!planName) return 'N/A';
+    const lowerPlanName = planName.toLowerCase();
+
+    if (lowerPlanName.includes('1l') || lowerPlanName.includes('1,00,000')) return '1,00,000';
+    if (lowerPlanName.includes('2l') || lowerPlanName.includes('2,00,000')) return '2,00,000';
+    if (lowerPlanName.includes('5l') || lowerPlanName.includes('5,00,000')) return '5,00,000';
+    if (lowerPlanName.includes('10l') || lowerPlanName.includes('10,00,000')) return '10,00,000';
+    if (lowerPlanName.includes('25l') || lowerPlanName.includes('25,00,000')) return '25,00,000';
+    if (lowerPlanName.includes('50l') || lowerPlanName.includes('50,00_000')) return '50,00,000';
+    
+    const plainNumberMatch = lowerPlanName.match(/^[\d,._]+/);
+    if (plainNumberMatch) {
+        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, '')).toLocaleString('en-IN', {useGrouping: false});
+    }
+
+    return 'N/A';
 }
 
 
@@ -174,11 +195,10 @@ export async function saveKycStep(step: number, formData: FormData) {
     
     // --- AUTOMATION ON FINAL STEP ---
     if (isFinalStep && updatedProfile) {
-        // Automatically create trading account
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
         const initialBalance = getBalanceFromPlanName(updatedProfile.plan_purchased || '');
         const tradingUsername = updatedProfile.email;
-        const tradingPassword = updatedProfile.email; // Using email as password as planned
+        const tradingPassword = updatedProfile.email; 
 
         // 1. StockMint Account Creation
         if (stockmintApiKey && initialBalance > 0) {
@@ -200,7 +220,6 @@ export async function saveKycStep(step: number, formData: FormData) {
                 if (!response.ok) {
                     const errorBody = await response.text();
                     console.error(`Failed to trigger StockMint webhook. Status: ${response.status}. Body: ${errorBody}`);
-                    // Even if this fails, don't block the user. Log it for admin.
                 }
             } catch (webhookError) {
                 console.error('Failed to trigger StockMint webhook:', webhookError);
@@ -215,6 +234,30 @@ export async function saveKycStep(step: number, formData: FormData) {
             trading_username: tradingUsername,
             trading_password: tradingPassword
         }).eq('id', user.id);
+
+        // 3. Trigger KYC Approved Webhook
+        const kycApprovedWebhookUrl = 'https://hook.eu1.make.com/oxm026n9is2kxy7f6v8qjo36ipa57ahg';
+        try {
+            const account_size_text = getAccountSizeText(updatedProfile.plan_purchased || '');
+            const kycApprovedPayload = {
+                user_name: updatedProfile.full_name,
+                email: updatedProfile.email,
+                trading_username: tradingUsername,
+                trading_password: tradingPassword,
+                plan_name: updatedProfile.plan_purchased,
+                account_size: account_size_text,
+                activation_date: format(new Date(), 'dd MMMM yyyy'),
+            };
+
+            fetch(kycApprovedWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(kycApprovedPayload),
+            }).catch(e => console.error("KYC Approved webhook failed (from kyc/actions):", e));
+
+        } catch (webhookError: any) {
+            console.error("Failed to construct or send KYC Approved webhook from kyc/actions:", webhookError.message);
+        }
     }
     
     revalidatePath('/kyc');
