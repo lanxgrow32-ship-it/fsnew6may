@@ -6,7 +6,11 @@ interface WebhookTestState {
 }
 
 export async function sendKycApprovedTestWebhook(prevState: WebhookTestState, formData: FormData): Promise<WebhookTestState> {
-  const webhookUrl = 'https://hook.eu1.make.com/oxm026n9is2kxy7f6v8qjo36ipa57ahg';
+  const webhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    return { error: 'The KYC Approved webhook URL is not configured on the server.' };
+  }
 
   const payload = {
     user_name: 'Test User',

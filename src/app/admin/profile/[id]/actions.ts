@@ -158,49 +158,53 @@ export async function updateProfile(formData: FormData) {
   // --- Start Webhook & Automation Logic ---
   // Trigger "Payment Confirmed" & "KYC Reminder" Webhooks
   if (is_approved && !wasApproved && beforeUpdateData) {
-      const paymentWebhookUrl = 'https://hook.eu1.make.com/lm20hgqefloy6n16a7dwrbpt1epfk49t';
-      const kycWebhookUrl = 'https://hook.eu1.make.com/581iv3qty0xgy61nmbvt8nuv8ulcvomi';
+      const paymentWebhookUrl = process.env.MAKE_WEBHOOK_URL;
+      const kycWebhookUrl = process.env.MAKE_KYC_WEBHOOK_URL;
 
       // --- 1. Payment Confirmation Webhook ---
-      try {
-          const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
+      if (paymentWebhookUrl) {
+          try {
+              const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
 
-          const payload = {
-              user_name: beforeUpdateData.full_name,
-              email: beforeUpdateData.email,
-              order_sn: beforeUpdateData.order_sn || beforeUpdateData.transaction_id || 'N/A',
-              plan_purchased: beforeUpdateData.plan_purchased,
-              account_size: account_size_text,
-              final_amount_paid: beforeUpdateData.final_amount_paid,
-              payment_method: 'Online / Manual',
-              datetime: format(new Date(beforeUpdateData.created_at), 'dd-MM-yyyy HH:mm:ss'),
-          };
-          
-          fetch(paymentWebhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-          }).catch(e => console.error("Payment webhook failed:", e));
+              const payload = {
+                  user_name: beforeUpdateData.full_name,
+                  email: beforeUpdateData.email,
+                  order_sn: beforeUpdateData.order_sn || beforeUpdateData.transaction_id || 'N/A',
+                  plan_purchased: beforeUpdateData.plan_purchased,
+                  account_size: account_size_text,
+                  final_amount_paid: beforeUpdateData.final_amount_paid,
+                  payment_method: 'Online / Manual',
+                  datetime: format(new Date(beforeUpdateData.created_at), 'dd-MM-yyyy HH:mm:ss'),
+              };
+              
+              fetch(paymentWebhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload),
+              }).catch(e => console.error("Payment webhook failed:", e));
 
-      } catch (webhookError: any) {
-          console.error("Failed to construct or send Make.com payment webhook:", webhookError.message);
+          } catch (webhookError: any) {
+              console.error("Failed to construct or send Make.com payment webhook:", webhookError.message);
+          }
       }
       
       // --- 2. KYC Reminder Webhook ---
-      try {
-          const kycPayload = {
-              user_name: beforeUpdateData.full_name,
-              email: beforeUpdateData.email
-          };
-          
-          fetch(kycWebhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(kycPayload),
-          }).catch(e => console.error("KYC webhook failed:", e));
+      if (kycWebhookUrl) {
+          try {
+              const kycPayload = {
+                  user_name: beforeUpdateData.full_name,
+                  email: beforeUpdateData.email
+              };
+              
+              fetch(kycWebhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(kycPayload),
+              }).catch(e => console.error("KYC webhook failed:", e));
 
-      } catch (webhookError: any) {
-          console.error("Failed to construct or send Make.com KYC webhook:", webhookError.message);
+          } catch (webhookError: any) {
+              console.error("Failed to construct or send Make.com KYC webhook:", webhookError.message);
+          }
       }
   }
 
@@ -258,27 +262,29 @@ export async function updateProfile(formData: FormData) {
     }
     
      // --- 3. KYC Approved Webhook ---
-    const kycApprovedWebhookUrl = 'https://hook.eu1.make.com/oxm026n9is2kxy7f6v8qjo36ipa57ahg';
-    try {
-        const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
-        const kycApprovedPayload = {
-            user_name: beforeUpdateData.full_name,
-            email: beforeUpdateData.email,
-            trading_username: finalTradingUsername,
-            trading_password: finalTradingPassword,
-            plan_name: beforeUpdateData.plan_purchased,
-            account_size: account_size_text,
-            activation_date: format(new Date(), 'dd MMMM yyyy'),
-        };
+    const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
+    if (kycApprovedWebhookUrl) {
+        try {
+            const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
+            const kycApprovedPayload = {
+                user_name: beforeUpdateData.full_name,
+                email: beforeUpdateData.email,
+                trading_username: finalTradingUsername,
+                trading_password: finalTradingPassword,
+                plan_name: beforeUpdateData.plan_purchased,
+                account_size: account_size_text,
+                activation_date: format(new Date(), 'dd MMMM yyyy'),
+            };
 
-        fetch(kycApprovedWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(kycApprovedPayload),
-        }).catch(e => console.error("KYC Approved webhook failed:", e));
+            fetch(kycApprovedWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(kycApprovedPayload),
+            }).catch(e => console.error("KYC Approved webhook failed:", e));
 
-    } catch(webhookError: any) {
-        console.error("Failed to construct or send KYC Approved webhook:", webhookError.message);
+        } catch(webhookError: any) {
+            console.error("Failed to construct or send KYC Approved webhook:", webhookError.message);
+        }
     }
   }
 

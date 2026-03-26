@@ -236,27 +236,29 @@ export async function saveKycStep(step: number, formData: FormData) {
         }).eq('id', user.id);
 
         // 3. Trigger KYC Approved Webhook
-        const kycApprovedWebhookUrl = 'https://hook.eu1.make.com/oxm026n9is2kxy7f6v8qjo36ipa57ahg';
-        try {
-            const account_size_text = getAccountSizeText(updatedProfile.plan_purchased || '');
-            const kycApprovedPayload = {
-                user_name: updatedProfile.full_name,
-                email: updatedProfile.email,
-                trading_username: tradingUsername,
-                trading_password: tradingPassword,
-                plan_name: updatedProfile.plan_purchased,
-                account_size: account_size_text,
-                activation_date: format(new Date(), 'dd MMMM yyyy'),
-            };
+        const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
+        if (kycApprovedWebhookUrl) {
+            try {
+                const account_size_text = getAccountSizeText(updatedProfile.plan_purchased || '');
+                const kycApprovedPayload = {
+                    user_name: updatedProfile.full_name,
+                    email: updatedProfile.email,
+                    trading_username: tradingUsername,
+                    trading_password: tradingPassword,
+                    plan_name: updatedProfile.plan_purchased,
+                    account_size: account_size_text,
+                    activation_date: format(new Date(), 'dd MMMM yyyy'),
+                };
 
-            fetch(kycApprovedWebhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(kycApprovedPayload),
-            }).catch(e => console.error("KYC Approved webhook failed (from kyc/actions):", e));
+                fetch(kycApprovedWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(kycApprovedPayload),
+                }).catch(e => console.error("KYC Approved webhook failed (from kyc/actions):", e));
 
-        } catch (webhookError: any) {
-            console.error("Failed to construct or send KYC Approved webhook from kyc/actions:", webhookError.message);
+            } catch (webhookError: any) {
+                console.error("Failed to construct or send KYC Approved webhook from kyc/actions:", webhookError.message);
+            }
         }
     }
     
