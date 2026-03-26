@@ -366,3 +366,51 @@ export async function resetPassword(prevState: any, formData: FormData) {
 
   return { success: true, error: null };
 }
+
+export async function sendBreachRecoveryEmail(prevState: any, formData: FormData) {
+  const userId = formData.get('userId') as string;
+
+  if (!userId) {
+    return { error: 'User ID is missing.' };
+  }
+
+  const { data: profile, error } = await supabaseAdmin
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', userId)
+    .single();
+  
+  if (error || !profile) {
+    return { error: 'Could not find the user profile.' };
+  }
+
+  const webhookUrl = process.env.MAKE_BREACH_RECOVERY_WEBHOOK_URL;
+  if (!webhookUrl) {
+    return { error: 'The breach recovery webhook is not configured on the server.' };
+  }
+
+  const payload = {
+    first_name: profile.full_name,
+    email: profile.email,
+    discount_code: 'RETRY15',
+    discount_percent: 15,
+    expiry_days: 3
+  };
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Webhook failed with status: ${response.status}`);
+    }
+
+    return { success: 'Breach recovery email has been sent successfully!' };
+  } catch (e: any) {
+    console.error("Breach recovery webhook error:", e);
+    return { error: `Failed to send email: ${e.message}` };
+  }
+}

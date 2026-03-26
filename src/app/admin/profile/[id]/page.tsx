@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, Download, PanelLeft, ShieldAlert, CheckCircle, XCircle, Info, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateProfile, resetPassword } from './actions';
+import { updateProfile, resetPassword, sendBreachRecoveryEmail } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
@@ -86,6 +86,51 @@ function getBalanceFromPlanName(planName: string): number {
     }
 
     return 0;
+}
+
+function BreachRecoveryForm({ userId }: { userId: string }) {
+    const { toast } = useToast();
+    const [state, formAction] = useActionState(sendBreachRecoveryEmail, { error: null, success: null });
+
+    useEffect(() => {
+        if (state.error) {
+            toast({
+                title: "Error Sending Email",
+                description: state.error,
+                variant: "destructive",
+            });
+        }
+        if (state.success) {
+            toast({
+                title: "Success",
+                description: state.success,
+            });
+        }
+    }, [state, toast]);
+
+    function SubmitButton() {
+        const { pending } = useFormStatus();
+        return (
+            <Button type="submit" disabled={pending}>
+                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : <><Send className="mr-2 h-4 w-4" /> Send Breach Recovery Email</>}
+            </Button>
+        );
+    }
+
+    return (
+        <Card>
+            <form action={formAction}>
+                <input type="hidden" name="userId" value={userId} />
+                <CardHeader>
+                    <CardTitle>Send Promotional Email</CardTitle>
+                    <CardDescription>Manually send a breach recovery email with a discount code to this user.</CardDescription>
+                </CardHeader>
+                <CardFooter>
+                    <SubmitButton />
+                </CardFooter>
+            </form>
+        </Card>
+    );
 }
 
 function ResetPasswordForm({ userId, role }: { userId: string, role: string }) {
@@ -555,6 +600,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                          <div className="lg:col-span-2" />
                          <div className="space-y-8">
+                            <BreachRecoveryForm userId={profile.id} />
                             <ResetPasswordForm userId={profile.id} role={profile.role}/>
                         </div>
                     </div>
