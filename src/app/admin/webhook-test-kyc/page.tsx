@@ -1,62 +1,89 @@
-'use client';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Activated - FundedStock</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin: 0; padding: 0; background-color: #f3f4f6; width: 100% !important;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#f3f4f6">
+        <tr>
+            <td align="center">
+                <table class="container" width="600" border="0" align="center" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="background-color: #166534; padding: 20px; border-radius: 8px 8px 0 0;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">FundedStock</h1>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 30px; text-align: left; color: #374151; line-height: 1.6;">
+                            <p style="font-size: 18px; margin-bottom: 20px;">Congratulations, {{1.user_name}}! 🎉</p>
+                            <p>Your KYC verification has been approved. Your FundedStock evaluation account is now fully active. Below are your account details — please save them securely.</p>
+                            
+                            <!-- Account Details Box -->
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: 1px solid #dcfce7; border-radius: 8px; margin-top: 25px; margin-bottom: 25px; background-color: #f0fdf4;">
+                                <tr>
+                                    <td style="padding: 15px 20px; border-bottom: 1px solid #dcfce7; font-weight: bold; color: #14532d;">YOUR ACCOUNT DETAILS</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 0 20px;">
+                                        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                            <tr style="border-bottom: 1px solid #dcfce7;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Trading Username</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.trading_username}}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #dcfce7;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Trading Password</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.trading_password}}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #dcfce7;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Plan</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.plan_name}}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #dcfce7;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Account Size</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">₹{{1.account_size}}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #dcfce7;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Daily Loss Limit</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">5%</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #dcfce7;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Overall Drawdown</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">10%</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #dcfce7;">
+                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Min Trading Days</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">5 days</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Activated On</td>
+                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.activation_date}}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
 
-import { useEffect, useActionState, useRef } from 'react';
-import { useFormStatus } from 'react-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { sendKycTestWebhook } from './actions';
+                            <p>Log in to your dashboard to view real-time performance, track your progress, and manage your account.</p>
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" disabled={pending} className="w-full">
-            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : <><Send className="mr-2 h-4 w-4" /> Send Test Signal</>}
-        </Button>
-    );
-}
+                            <div style="text-align: center;">
+                                <a href="https://app.fundedstock.io/welcome" style="display: inline-block; background-color: #15803d; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px; margin-bottom: 20px;">Go to Dashboard</a>
+                            </div>
 
-export default function KycWebhookTestPage() {
-    const ref = useRef<HTMLFormElement>(null);
-    const { toast } = useToast();
-    const [state, formAction] = useActionState(sendKycTestWebhook, { error: null, success: null });
-
-    useEffect(() => {
-        if (state.error) {
-            toast({ title: "Error", description: state.error, variant: "destructive" });
-        }
-        if (state.success) {
-            toast({ title: "Success", description: state.success });
-        }
-    }, [state, toast]);
-
-    return (
-        <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>KYC Webhook Tester</CardTitle>
-                    <CardDescription>
-                        Use this page to send a test signal to your "KYC Reminder" Make.com scenario to determine the data structure.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form ref={ref} action={formAction} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="user_name">User Name</Label>
-                            <Input id="user_name" name="user_name" defaultValue="Test User" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" defaultValue="test.user@example.com" required />
-                        </div>
-                        <SubmitButton />
-                    </form>
-                </CardContent>
-            </Card>
-        </main>
-    );
-}
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="text-align: center; font-size: 12px; color: #9ca3af; padding: 20px;">
+                            <p>Questions? Contact us at <a href="mailto:support@fundedstock.in" style="color: #3b82f6;">support@fundedstock.in</a></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

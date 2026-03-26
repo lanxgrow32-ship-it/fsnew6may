@@ -80,7 +80,7 @@ function getAccountSizeText(planName: string): string {
     if (lowerPlanName.includes('5l') || lowerPlanName.includes('5,00,000')) return '5,00,000';
     if (lowerPlanName.includes('10l') || lowerPlanName.includes('10,00,000')) return '10,00,000';
     if (lowerPlanName.includes('25l') || lowerPlanName.includes('25,00,000')) return '25,00,000';
-    if (lowerPlanName.includes('50l') || lowerPlanName.includes('50,00_000')) return '50,00_000';
+    if (lowerPlanName.includes('50l') || lowerPlanName.includes('50,00_000')) return '50,00,000';
     
     const plainNumberMatch = lowerPlanName.match(/^[\d,._]+/);
     if (plainNumberMatch) {
@@ -220,12 +220,18 @@ export async function updateProfile(formData: FormData) {
   // Manual admin override for KYC verification
   if (kyc_status === 'verified' && !wasKycVerified) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+    let finalTradingUsername = trading_username;
+    let finalTradingPassword = trading_password;
+
+    if (!finalTradingUsername) {
+        finalTradingUsername = beforeUpdateData.email;
+        finalTradingPassword = beforeUpdateData.email; // Use email as password if not provided
+    }
+    
     if (!stockmintApiKey) {
         console.error('AUTOMATION SKIPPED: StockMint API Key is not set.');
     } else {
         const initialBalance = getBalanceFromPlanName(beforeUpdateData.plan_purchased || '');
-        const autoFilledUsername = beforeUpdateData.email;
-        const autoFilledPassword = beforeUpdateData.email;
         
         if (initialBalance > 0) {
             try {
@@ -237,8 +243,8 @@ export async function updateProfile(formData: FormData) {
                     },
                     body: JSON.stringify({ 
                         fullName: beforeUpdateData.full_name,
-                        email: beforeUpdateData.email,
-                        password: autoFilledPassword, 
+                        email: finalTradingUsername, // Use the final username
+                        password: finalTradingPassword, // Use the final password
                         initialBalance: initialBalance,
                         isHidden: beforeUpdateData.is_hidden || false,
                     }),
@@ -251,15 +257,43 @@ export async function updateProfile(formData: FormData) {
                 console.error('Failed to call StockMint user creation API:', apiError);
             }
             
+            // Ensure credentials are saved in our DB
             await supabaseAdmin.from('profiles').update({
                 credentials_provided: true,
-                trading_username: autoFilledUsername,
-                trading_password: autoFilledPassword
+                trading_username: finalTradingUsername,
+                trading_password: finalTradingPassword
             }).eq('id', id);
 
         } else {
              console.error(`Could not determine initial balance from plan name: "${beforeUpdateData.plan_purchased}". Aborting StockMint account creation.`);
         }
+    }
+    
+     // --- 3. KYC Approved Webhook ---
+    const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
+    if (kycApprovedWebhookUrl) {
+        try {
+            const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
+            const kycApprovedPayload = {
+                user_name: beforeUpdateData.full_name,
+                trading_username: finalTradingUsername,
+                trading_password: finalTradingPassword,
+                plan_name: beforeUpdateData.plan_purchased,
+                account_size: account_size_text,
+                activation_date: format(new Date(), 'dd MMMM yyyy'),
+            };
+
+            fetch(kycApprovedWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(kycApprovedPayload),
+            }).catch(e => console.error("KYC Approved webhook failed:", e));
+
+        } catch(webhookError: any) {
+            console.error("Failed to construct or send KYC Approved webhook:", webhookError.message);
+        }
+    } else {
+        console.warn("MAKE_KYC_APPROVED_WEBHOOK_URL is not set. Skipping KYC approved email.");
     }
   }
 
