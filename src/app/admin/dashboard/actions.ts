@@ -254,16 +254,20 @@ export async function approveUserPayment(userId: string) {
         
         if (stockmintApiKey && initialBalance > 0) {
             try {
+                const stockmintPayload: any = { 
+                    fullName: profile.full_name,
+                    email: profile.email,
+                    password: profile.email,
+                    initialBalance: initialBalance,
+                };
+                if (isPassThenPayUser) {
+                    stockmintPayload.accountModel = 'passthenpay';
+                }
+
                 const response = await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-                    body: JSON.stringify({ 
-                        fullName: profile.full_name,
-                        email: profile.email,
-                        password: profile.email,
-                        initialBalance: initialBalance,
-                        isHidden: profile.is_hidden || false,
-                    }),
+                    body: JSON.stringify(stockmintPayload),
                 });
                 if (!response.ok) {
                     console.error(`StockMint creation failed: ${await response.text()}`);

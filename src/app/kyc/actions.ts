@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -203,19 +204,23 @@ export async function saveKycStep(step: number, formData: FormData) {
         // 1. StockMint Account Creation
         if (stockmintApiKey && initialBalance > 0) {
              try {
+                const stockmintPayload: any = { 
+                    fullName: updatedProfile.full_name,
+                    email: updatedProfile.email,
+                    password: tradingPassword,
+                    initialBalance: initialBalance,
+                };
+                 if (updatedProfile.account_model === 'passthrupay') {
+                    stockmintPayload.accountModel = 'passthenpay';
+                }
+
                 const response = await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'X-API-Key': stockmintApiKey,
                     },
-                    body: JSON.stringify({ 
-                        fullName: updatedProfile.full_name,
-                        email: updatedProfile.email,
-                        password: tradingPassword,
-                        initialBalance: initialBalance,
-                        isHidden: updatedProfile.is_hidden || false,
-                    }),
+                    body: JSON.stringify(stockmintPayload),
                 });
                 if (!response.ok) {
                     const errorBody = await response.text();

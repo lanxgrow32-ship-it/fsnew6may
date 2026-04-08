@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -230,19 +231,23 @@ export async function updateProfile(formData: FormData) {
         
         if (initialBalance > 0) {
             try {
+                 const stockmintPayload: any = { 
+                    fullName: beforeUpdateData.full_name,
+                    email: finalTradingUsername,
+                    password: finalTradingPassword,
+                    initialBalance: initialBalance,
+                };
+                if (isPassThenPayUser) {
+                    stockmintPayload.accountModel = 'passthenpay';
+                }
+
                 const response = await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'X-API-Key': stockmintApiKey,
                     },
-                    body: JSON.stringify({ 
-                        fullName: beforeUpdateData.full_name,
-                        email: finalTradingUsername,
-                        password: finalTradingPassword,
-                        initialBalance: initialBalance,
-                        isHidden: beforeUpdateData.is_hidden || false,
-                    }),
+                    body: JSON.stringify(stockmintPayload),
                 });
                 if (!response.ok) {
                     const errorBody = await response.text();
