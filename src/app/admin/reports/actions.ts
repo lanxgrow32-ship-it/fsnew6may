@@ -59,7 +59,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
             .select('id, full_name, email, final_amount_paid, plan_purchased, created_at, discount_amount')
             .eq('is_approved', true)
             .gt('final_amount_paid', 0)
-            .not('account_model', 'eq', 'passthrupay');
+            .or('account_model.is.null,account_model.neq.passthrupay');
 
         if (masterView) {
             query = query.eq('is_hidden', true);

@@ -166,7 +166,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
   }, [initialProfiles]);
 
   const fetchProfiles = async () => {
-    let query = supabase.from('profiles').select('*').eq('account_type', 'standard').not('account_model', 'eq', 'passthrupay');
+    let query = supabase.from('profiles').select('*').eq('account_type', 'standard').or('account_model.is.null,account_model.neq.passthrupay');
     if (masterView) {
       query = query.eq('is_hidden', true);
     } else {
