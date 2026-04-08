@@ -41,10 +41,16 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
-  const isTrialPlan = plan === '25K Try First Plan';
-  const showCoupon = !isTrialPlan && !(plan?.toLowerCase().includes('passthenpay'));
+  
+  const isPayLaterPlan = plan?.toLowerCase().includes('passthenpay');
+  const showCoupon = !isPayLaterPlan;
 
   const activeGateway = paymentSettings?.active_payment_gateway || 'lgpay';
+  
+  const manualPaymentDetails = isPayLaterPlan 
+    ? { upi_id: paymentSettings?.pay_later_upi_id, qr_code_url: paymentSettings?.pay_later_qr_code_url }
+    : { upi_id: paymentSettings?.upi_id, qr_code_url: paymentSettings?.qr_code_url };
+
 
   useEffect(() => {
     const couponDiscount = (originalPrice * discountPercent) / 100;
@@ -70,7 +76,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
           toast({ title: 'Referral code applied!', description: 'You received an additional 5% discount.'});
         } else {
           setReferralState('invalid');
-          setIsReferralDiscountApplied(false);
         }
       });
     } else {
@@ -204,17 +209,19 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                             <CardDescription>Scan the QR or use the UPI ID to pay. Then enter the transaction ID below.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {paymentSettings.qr_code_url && (
+                            {manualPaymentDetails.qr_code_url ? (
                                 <div className="mx-auto w-fit p-2 bg-white rounded-md">
-                                    <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={180} height={180} />
+                                    <Image src={manualPaymentDetails.qr_code_url} alt="UPI QR Code" width={180} height={180} />
                                 </div>
+                            ) : (
+                                <p className="text-sm text-center text-muted-foreground">QR Code not available.</p>
                             )}
-                            {paymentSettings.upi_id && (
+                            {manualPaymentDetails.upi_id && (
                                 <div>
                                     <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <p className="font-mono text-lg truncate">{paymentSettings.upi_id}</p>
-                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => copyToClipboard(paymentSettings.upi_id)}>
+                                        <p className="font-mono text-lg truncate">{manualPaymentDetails.upi_id}</p>
+                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => copyToClipboard(manualPaymentDetails.upi_id)}>
                                             <Copy className="h-4 w-4"/>
                                         </Button>
                                     </div>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useTransition } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
+import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser, Calendar as CalendarIcon, ChevronDown, Check } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { deleteUser, clearPaymentData, deleteMultipleUsers } from './actions';
+import { deleteUser, clearPaymentData, deleteMultipleUsers, approveUserPayment } from './actions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -23,6 +23,7 @@ import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
 
 
 type Profile = {
@@ -50,6 +51,30 @@ interface UserTableProps {
   onUserUpdate: () => void;
 }
 
+
+function ApproveButton({ userId, onApproved }: { userId: string, onApproved: () => void }) {
+    const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
+
+    const handleApprove = () => {
+        startTransition(async () => {
+            const result = await approveUserPayment(userId);
+            if (result?.error) {
+                toast({ title: "Approval Failed", description: result.error, variant: 'destructive' });
+            } else {
+                toast({ title: "User Approved" });
+                onApproved();
+            }
+        });
+    }
+
+    return (
+        <Button size="sm" variant="outline" onClick={handleApprove} disabled={isPending} className="border-green-600 text-green-700 hover:bg-green-100 hover:text-green-800">
+            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+            Approve
+        </Button>
+    )
+}
 
 function DeleteUserDialog({ profile, onUserDelete, onUserDeleteError, children }: { profile: Profile, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void, children: React.ReactNode }) {
   const [isPending, setIsPending] = useState(false);
@@ -127,23 +152,6 @@ function ClearPaymentDialog({ profile, onClearSuccess, onClearError, children }:
     );
 }
 
-function StatusBadge({ profile }: { profile: Profile }) {
-    if (profile.is_breached) {
-        return (
-            <Badge variant="destructive" className="flex items-center gap-1">
-                <ShieldAlert className="h-3 w-3" />
-                Breached
-            </Badge>
-        );
-    }
-    
-    return (
-        <Badge variant={profile.is_approved ? 'default' : 'destructive'} className={profile.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-            {profile.is_approved ? 'Approved' : 'Pending'}
-        </Badge>
-    );
-}
-
 const PaymentSummary = ({ profile }: { profile: Profile }) => {
     if (!profile.is_approved) return null;
     
@@ -168,7 +176,7 @@ const PaymentSummary = ({ profile }: { profile: Profile }) => {
     )
 }
 
-function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError, onClearSuccess, onClearError, isSelected, onRowSelect }: { profile: Profile, index: number, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void, onClearSuccess: () => void, onClearError: (msg: string) => void, isSelected: boolean, onRowSelect: (id: string, checked: boolean) => void }) {
+function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError, onClearSuccess, onClearError, onUserUpdate, isSelected, onRowSelect }: { profile: Profile, index: number, onUserDelete: (userId: string) => void, onUserDeleteError: (msg: string) => void, onClearSuccess: () => void, onClearError: (msg: string) => void, onUserUpdate: () => void, isSelected: boolean, onRowSelect: (id: string, checked: boolean) => void }) {
     return (
         <Card className="mb-4">
             <CardHeader>
@@ -190,7 +198,13 @@ function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError, onCle
                         <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} onClearSuccess={onClearSuccess} onClearError={onClearError} />
                     </div>
                     <div className="self-start ml-12">
-                        <StatusBadge profile={profile} />
+                         {profile.is_breached ? (
+                            <Badge variant="destructive"><ShieldAlert className="h-3 w-3 mr-1" />Breached</Badge>
+                        ) : profile.is_approved ? (
+                            <Badge className="bg-green-100 text-green-800">Approved</Badge>
+                        ) : (
+                           <ApproveButton userId={profile.id} onApproved={onUserUpdate} />
+                        )}
                     </div>
                  </div>
             </CardHeader>
@@ -527,6 +541,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                 onUserDeleteError={onUserDeleteError} 
                                 onClearSuccess={onUserUpdate} 
                                 onClearError={onUserDeleteError}
+                                onUserUpdate={onUserUpdate}
                                 isSelected={selectedUserIds.includes(profile.id)}
                                 onRowSelect={handleRowSelect}
                            />
@@ -590,7 +605,13 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                                 <TableCell className="font-medium">{profile.full_name}</TableCell>
                                                 <TableCell>{profile.email}</TableCell>
                                                 <TableCell>
-                                                    <StatusBadge profile={profile} />
+                                                    {profile.is_breached ? (
+                                                        <Badge variant="destructive"><ShieldAlert className="h-3 w-3 mr-1" />Breached</Badge>
+                                                    ) : profile.is_approved ? (
+                                                        <Badge className="bg-green-100 text-green-800">Approved</Badge>
+                                                    ) : (
+                                                       <ApproveButton userId={profile.id} onApproved={onUserUpdate} />
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>{profile.plan_purchased || 'N/A'}</TableCell>
                                                 <TableCell>
@@ -633,5 +654,3 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
         </Card>
     );
 }
-
-    

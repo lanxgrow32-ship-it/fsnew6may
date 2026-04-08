@@ -27,6 +27,8 @@ type PaymentDetails = {
     qr_code_url: string;
     referral_commission_percentage: number;
     active_payment_gateway: 'lgpay' | 'manual';
+    pay_later_upi_id: string | null;
+    pay_later_qr_code_url: string | null;
 };
 
 function SubmitButton() {
@@ -43,6 +45,7 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
     
     const [upiQrPreview, setUpiQrPreview] = useState<string | null>(currentSettings?.qr_code_url || null);
+    const [payLaterUpiQrPreview, setPayLaterUpiQrPreview] = useState<string | null>(currentSettings?.pay_later_qr_code_url || null);
     const [activeGateway, setActiveGateway] = useState<'lgpay' | 'manual'>(currentSettings?.active_payment_gateway || 'lgpay');
 
     const formRef = useRef<HTMLFormElement>(null);
@@ -60,6 +63,13 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
         const file = e.target.files?.[0];
         if (file) {
             setUpiQrPreview(URL.createObjectURL(file));
+        }
+    }
+    
+    const handlePayLaterUpiFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setPayLaterUpiQrPreview(URL.createObjectURL(file));
         }
     }
 
@@ -97,8 +107,8 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Manual Payment Details</CardTitle>
-                    <CardDescription>Update the manual UPI payment option shown to users during signup.</CardDescription>
+                    <CardTitle>Standard Manual Payment Details</CardTitle>
+                    <CardDescription>Update the manual UPI payment option for all regular plans.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                      <div className="space-y-2">
@@ -115,6 +125,32 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                             <Label>Current UPI QR Code Preview</Label>
                             <div className="mt-2 rounded-md border p-4 w-fit bg-white">
                                 <Image src={upiQrPreview} alt="UPI QR Code Preview" width={150} height={150} className="object-contain" />
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+            
+             <Card>
+                <CardHeader>
+                    <CardTitle>Pay Later Manual Payment Details</CardTitle>
+                    <CardDescription>Update the manual UPI payment option shown only to "PassThenPay" users.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                     <div className="space-y-2">
+                        <Label htmlFor="pay_later_upi_id">Pay Later UPI ID</Label>
+                        <Input id="pay_later_upi_id" name="pay_later_upi_id" defaultValue={currentSettings?.pay_later_upi_id || ''} placeholder="pay-later-upi@oksbi" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="pay_later_qr_code">Pay Later UPI QR Code Image</Label>
+                        <Input id="pay_later_qr_code" name="pay_later_qr_code" type="file" accept="image/*" onChange={handlePayLaterUpiFileChange} />
+                        <p className="text-xs text-muted-foreground">Upload a new image to replace the current one for Pay Later users.</p>
+                    </div>
+                    {payLaterUpiQrPreview && (
+                        <div>
+                            <Label>Pay Later QR Code Preview</Label>
+                            <div className="mt-2 rounded-md border p-4 w-fit bg-white">
+                                <Image src={payLaterUpiQrPreview} alt="Pay Later UPI QR Code Preview" width={150} height={150} className="object-contain" />
                             </div>
                         </div>
                     )}
@@ -165,7 +201,7 @@ export default function PaymentSettingsPage() {
             setIsLoading(true);
             const { data, error } = await supabase
                 .from('payment_details')
-                .select('id, upi_id, qr_code_url, referral_commission_percentage, active_payment_gateway')
+                .select('id, upi_id, qr_code_url, referral_commission_percentage, active_payment_gateway, pay_later_upi_id, pay_later_qr_code_url')
                 .eq('id', 1)
                 .single();
             

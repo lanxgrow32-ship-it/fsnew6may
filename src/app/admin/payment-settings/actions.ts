@@ -20,10 +20,15 @@ async function uploadImage(file: File, bucket: string, fileName: string) {
 }
 
 export async function updatePaymentSettings(prevState: any, formData: FormData) {
+  // Regular settings
   const upiId = formData.get('upi_id') as string;
   const upiQrCodeFile = formData.get('qr_code') as File;
   const commissionPercentage = formData.get('referral_commission_percentage') as string;
   const activeGateway = formData.get('active_gateway') as 'lgpay' | 'manual';
+
+  // Pay Later settings
+  const payLaterUpiId = formData.get('pay_later_upi_id') as string;
+  const payLaterQrCodeFile = formData.get('pay_later_qr_code') as File;
 
   if (activeGateway !== 'lgpay' && activeGateway !== 'manual') {
       return { error: 'Invalid gateway selected.' };
@@ -39,6 +44,7 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
 
   const updateData: { [key: string]: any } = { 
     upi_id: upiId,
+    pay_later_upi_id: payLaterUpiId,
     referral_commission_percentage: commission,
     active_payment_gateway: activeGateway,
   };
@@ -47,6 +53,10 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
     if (upiQrCodeFile && upiQrCodeFile.size > 0) {
       const fileName = `upi-qr-${Date.now()}`;
       updateData.qr_code_url = await uploadImage(upiQrCodeFile, 'payment-qrcodes', fileName);
+    }
+    if (payLaterQrCodeFile && payLaterQrCodeFile.size > 0) {
+      const fileName = `pay-later-upi-qr-${Date.now()}`;
+      updateData.pay_later_qr_code_url = await uploadImage(payLaterQrCodeFile, 'payment-qrcodes', fileName);
     }
   } catch (error: any) {
     return { error: error.message };
