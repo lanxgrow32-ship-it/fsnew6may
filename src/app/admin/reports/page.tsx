@@ -242,6 +242,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Analytics Hub</h2>
+                    <p className="text-sm text-muted-foreground">This report excludes all sales from "PassThenPay" users.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2">
                     <Popover>

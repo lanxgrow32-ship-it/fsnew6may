@@ -6,7 +6,10 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
   const supabase = createClient();
   const masterView = searchParams.master_view === 'true';
 
-  let query = supabase.from('profiles').select('*').eq('account_type', 'standard');
+  let query = supabase.from('profiles')
+    .select('*')
+    .eq('account_type', 'standard')
+    .not('account_model', 'eq', 'passthrupay');
 
   if (masterView) {
     query = query.eq('is_hidden', true);
@@ -24,3 +27,4 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
   
   return <AdminDashboardClient initialProfiles={profiles || []} masterView={masterView} />;
 }
+
