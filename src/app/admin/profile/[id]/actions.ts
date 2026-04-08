@@ -98,7 +98,7 @@ export async function updateProfile(formData: FormData) {
   const trading_username = formData.get('trading_username') as string;
   const trading_password = formData.get('trading_password') as string;
   const credentials_provided = formData.get('credentials_provided') === 'on';
-  const kyc_status = formData.get('kyc_status') as string;
+  const kyc_status_from_form = formData.get('kyc_status') as string;
   const is_breached = formData.get('is_breached') === 'on';
   const breach_reason = formData.get('breach_reason') as string;
   const breach_image = formData.get('breach_image') as File;
@@ -108,7 +108,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: beforeUpdateData, error: fetchError } = await supabaseAdmin
     .from('profiles')
-    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name, kyc_status, is_hidden, created_at, order_sn, transaction_id')
+    .select('is_approved, credentials_provided, referred_by, final_amount_paid, plan_purchased, email, full_name, kyc_status, is_hidden, created_at, order_sn, transaction_id, account_model')
     .eq('id', id)
     .single();
 
@@ -119,18 +119,29 @@ export async function updateProfile(formData: FormData) {
   
   const wasApproved = beforeUpdateData?.is_approved ?? false;
   const wasKycVerified = beforeUpdateData?.kyc_status === 'verified';
+  const isPassThenPayUser = beforeUpdateData?.account_model === 'passthrupay';
+  
+  const isNowBeingApproved = is_approved && !wasApproved;
+  const isNowKycVerified = kyc_status_from_form === 'verified' && !wasKycVerified;
+
+  // This is the primary condition to trigger account creation and the final welcome email.
+  const shouldCreateTradingAccount = isNowKycVerified || (isNowBeingApproved && isPassThenPayUser);
 
   const updateData: any = {
     is_approved,
-    kyc_status,
+    kyc_status: kyc_status_from_form, // Start with the form value
     is_breached,
     breach_reason,
-    // These are now set automatically, but an admin can override them.
     credentials_provided,
     trading_username,
     trading_password,
     account_classification,
   };
+  
+  // If this is a PassThenPay user whose account is being created, force KYC status to 'verified'.
+  if (shouldCreateTradingAccount && isPassThenPayUser) {
+      updateData.kyc_status = 'verified';
+  }
   
   try {
       if (breach_image && breach_image.size > 0) {
@@ -146,7 +157,7 @@ export async function updateProfile(formData: FormData) {
       return { error: uploadError.message };
   }
 
-
+  // --- Perform the main database update first ---
   const { error } = await supabaseAdmin
     .from('profiles')
     .update(updateData)
@@ -158,16 +169,14 @@ export async function updateProfile(formData: FormData) {
   }
 
   // --- Start Webhook & Automation Logic ---
-  // Trigger "Payment Confirmed" & "KYC Reminder" Webhooks
-  if (is_approved && !wasApproved && beforeUpdateData) {
-      const paymentWebhookUrl = process.env.MAKE_WEBHOOK_URL;
-      const kycWebhookUrl = process.env.MAKE_KYC_WEBHOOK_URL;
 
-      // --- 1. Payment Confirmation Webhook ---
+  // 1. Handle Payment Approval
+  if (isNowBeingApproved) {
+      // Send "Payment Confirmed" email to all users
+      const paymentWebhookUrl = process.env.MAKE_WEBHOOK_URL;
       if (paymentWebhookUrl) {
           try {
               const account_size_text = getAccountSizeText(beforeUpdateData.plan_purchased);
-
               const payload = {
                   user_name: beforeUpdateData.full_name,
                   email: beforeUpdateData.email,
@@ -178,50 +187,42 @@ export async function updateProfile(formData: FormData) {
                   payment_method: 'Online / Manual',
                   datetime: format(new Date(beforeUpdateData.created_at), 'dd-MM-yyyy HH:mm:ss'),
               };
-              
               fetch(paymentWebhookUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(payload),
               }).catch(e => console.error("Payment webhook failed:", e));
-
           } catch (webhookError: any) {
-              console.error("Failed to construct or send Make.com payment webhook:", webhookError.message);
+              console.error("Failed to construct/send payment webhook:", webhookError.message);
           }
       }
       
-      // --- 2. KYC Reminder Webhook ---
-      if (kycWebhookUrl) {
-          try {
-              const kycPayload = {
-                  user_name: beforeUpdateData.full_name,
-                  email: beforeUpdateData.email
-              };
-              
-              fetch(kycWebhookUrl, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(kycPayload),
-              }).catch(e => console.error("KYC webhook failed:", e));
-
-          } catch (webhookError: any) {
-              console.error("Failed to construct or send Make.com KYC webhook:", webhookError.message);
+      // For NORMAL users, send a KYC reminder. PassThenPay users skip this.
+      if (!isPassThenPayUser) {
+          const kycWebhookUrl = process.env.MAKE_KYC_WEBHOOK_URL;
+          if (kycWebhookUrl) {
+              try {
+                  const kycPayload = { user_name: beforeUpdateData.full_name, email: beforeUpdateData.email };
+                  fetch(kycWebhookUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(kycPayload),
+                  }).catch(e => console.error("KYC reminder webhook failed:", e));
+              } catch (webhookError: any) {
+                  console.error("Failed to construct/send KYC reminder webhook:", webhookError.message);
+              }
           }
       }
   }
 
 
-  // Manual admin override for KYC verification
-  if (kyc_status === 'verified' && !wasKycVerified) {
+  // 2. Handle Trading Account Creation and Final Welcome Email
+  if (shouldCreateTradingAccount) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-    let finalTradingUsername = trading_username;
-    let finalTradingPassword = trading_password;
+    // Use the form data if available, otherwise fall back to beforeUpdateData
+    let finalTradingUsername = trading_username || beforeUpdateData.email;
+    let finalTradingPassword = trading_password || beforeUpdateData.email;
 
-    if (!finalTradingUsername) {
-        finalTradingUsername = beforeUpdateData.email;
-        finalTradingPassword = beforeUpdateData.email; // Use email as password if not provided
-    }
-    
     if (!stockmintApiKey) {
         console.error('AUTOMATION SKIPPED: StockMint API Key is not set.');
     } else {
@@ -237,8 +238,8 @@ export async function updateProfile(formData: FormData) {
                     },
                     body: JSON.stringify({ 
                         fullName: beforeUpdateData.full_name,
-                        email: finalTradingUsername, // Use the final username
-                        password: finalTradingPassword, // Use the final password
+                        email: finalTradingUsername,
+                        password: finalTradingPassword,
                         initialBalance: initialBalance,
                         isHidden: beforeUpdateData.is_hidden || false,
                     }),
@@ -251,7 +252,7 @@ export async function updateProfile(formData: FormData) {
                 console.error('Failed to call StockMint user creation API:', apiError);
             }
             
-            // Ensure credentials are saved in our DB
+            // Ensure credentials are saved in our DB (this might be redundant if `updateData` already has them, but it's safe)
             await supabaseAdmin.from('profiles').update({
                 credentials_provided: true,
                 trading_username: finalTradingUsername,
@@ -263,7 +264,7 @@ export async function updateProfile(formData: FormData) {
         }
     }
     
-     // --- 3. KYC Approved Webhook ---
+     // Send "KYC Approved" Webhook with credentials
     const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
     if (kycApprovedWebhookUrl) {
         try {
@@ -291,8 +292,8 @@ export async function updateProfile(formData: FormData) {
   }
 
 
-  // Referral Commission Logic (triggered on first payment approval)
-  if (is_approved && !wasApproved && beforeUpdateData?.referred_by) {
+  // 3. Referral Commission Logic (triggered on first payment approval)
+  if (isNowBeingApproved && beforeUpdateData?.referred_by) {
     const referrerId = beforeUpdateData.referred_by;
     const amountPaid = beforeUpdateData.final_amount_paid;
 
@@ -334,7 +335,6 @@ export async function updateProfile(formData: FormData) {
   }
 
   // --- End Webhook & Automation Logic ---
-
 
   revalidatePath('/admin/dashboard');
   revalidatePath(`/admin/profile/${id}`);
