@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -35,48 +36,64 @@ const twoStepPlans = [
     { size: '50,00_000', title: '50L 2-Step', price: '35,999' },
 ];
 
-const PlanCard = ({ size, title, price, isPopular, isHighlighted }: { size: string; title: string; price: string, isPopular?: boolean, isHighlighted?: boolean }) => (
-  <div className={cn('relative', isHighlighted && 'glowing-border-wrapper rounded-lg')}>
-    <Card className={cn("flex flex-col h-full hover:shadow-lg transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border", isHighlighted && "border-primary")}>
-      <CardHeader className="pb-4">
-        {isPopular && <Badge variant="destructive">🔥 POPULAR</Badge>}
-        {isHighlighted && <Badge>🎉 TRY FIRST</Badge>}
-        <CardTitle className="text-3xl font-bold pt-2">₹{size}</CardTitle>
-        <p className="text-base text-muted-foreground">{title}</p>
-      </CardHeader>
-      <CardContent className="flex flex-col flex-grow justify-between space-y-6">
+const PlanCard = ({ size, title, price, isPopular, isHighlighted }: { size: string; title: string; price: string, isPopular?: boolean, isHighlighted?: boolean }) => {
+  const currentPrice = parseFloat(price.replace(/,/g, ''));
+  const originalPrice = currentPrice * 2;
+
+  return (
+    <div className={cn('relative', isHighlighted && 'glowing-border-wrapper rounded-lg')}>
+      <Card className={cn("flex flex-col h-full hover:shadow-lg transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border", isHighlighted && "border-primary")}>
+        <CardHeader className="pb-4">
+          {isPopular && <Badge variant="destructive">🔥 POPULAR</Badge>}
+          {isHighlighted && <Badge>🎉 TRY FIRST</Badge>}
+          <CardTitle className="text-3xl font-bold pt-2">₹{size}</CardTitle>
+          <p className="text-base text-muted-foreground">{title}</p>
+        </CardHeader>
+        <CardContent className="flex flex-col flex-grow justify-between space-y-6">
           <div className="space-y-3 text-sm">
-              {isHighlighted ? (
-                <>
-                  <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      <span>Limited slots available</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      <span>Real trading experience at the lowest entry</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>Full Fee Refund On 3rd Payout</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>80% Profit Share</span>
-                  </div>
-                </>
-              )}
+            {isHighlighted ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-yellow-500" />
+                  <span>Limited slots available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-yellow-500" />
+                  <span>Real trading experience at the lowest entry</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Full Fee Refund On 3rd Payout</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>80% Profit Share</span>
+                </div>
+              </>
+            )}
           </div>
-        <Button asChild className="w-full mt-auto" size="lg">
-          <Link href={`/signup?plan=${encodeURIComponent(title)}&price=${price}`}>Get Funded for ₹{price}</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  </div>
-);
+           <div className="text-center space-y-2 pt-4 border-t border-border/50">
+              <Badge variant="destructive" className="animate-pulse">LIMITED TIME - 50% OFF</Badge>
+              <div className="flex items-center justify-center gap-2">
+                  <span className="text-xl text-muted-foreground line-through">
+                      ₹{originalPrice.toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-3xl font-bold text-primary">
+                      ₹{currentPrice.toLocaleString('en-IN')}
+                  </span>
+              </div>
+            </div>
+          <Button asChild className="w-full mt-auto" size="lg">
+            <Link href={`/signup?plan=${encodeURIComponent(title)}&price=${price}`}>Get Funded for ₹{price}</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 
 export default function PricingPage() {
