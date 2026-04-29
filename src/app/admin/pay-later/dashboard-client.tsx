@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, MessageSquare, ShieldAlert, LineChart, Swords, Users } from 'lucide-react';
+import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, MessageSquare, ShieldAlert, LineChart, Swords, Users, Newspaper } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -179,6 +179,12 @@ export default function PayLaterDashboardClient({ initialProfiles, masterView }:
               <SidebarMenuButton href="/admin/coupons" tooltip="Coupons">
                 <Ticket />
                 Coupons
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/admin/blog" tooltip="Blog">
+                <Newspaper />
+                Blog
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>

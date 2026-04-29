@@ -4,7 +4,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, Si
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Swords, Users } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Swords, Users, Newspaper } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { CompetitionUserList } from './user-list';
 
@@ -54,6 +54,12 @@ export default async function AdminCompetitionPage() {
               <SidebarMenuButton href="/admin/coupons" tooltip="Coupons">
                 <Ticket />
                 Coupons
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/admin/blog" tooltip="Blog">
+                <Newspaper />
+                Blog
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
