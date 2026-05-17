@@ -9,11 +9,23 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Download, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Papa from 'papaparse';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
+// Define the type for the autotable method
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
 
 type Profile = {
     id: string;
     full_name: string;
     email: string;
+    mobile_number: string | null;
     created_at: string;
     is_hidden: boolean | null;
 };
@@ -28,7 +40,6 @@ export function CompetitionUserList({ initialProfiles }: { initialProfiles: Prof
             .channel('realtime competition profiles')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: 'account_type=eq.competition' },
                 (payload) => {
-                    // This is a simple implementation. A more robust one would merge changes.
                     const fetchProfiles = async () => {
                         const { data, error } = await supabase
                           .from('profiles')
@@ -52,6 +63,51 @@ export function CompetitionUserList({ initialProfiles }: { initialProfiles: Prof
         };
     }, [supabase, toast]);
 
+    const handleDownloadNumbersCSV = () => {
+        const dataToExport = profiles.map((profile, index) => ({
+            'S.No.': index + 1,
+            'Full Name': profile.full_name,
+            'Mobile Number': profile.mobile_number || 'N/A',
+        }));
+        const csv = Papa.unparse(dataToExport);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'competition_user_numbers.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    const handleDownloadNumbersPDF = () => {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        doc.setFontSize(18);
+        doc.text('Competition User Contact List', 14, 20);
+        doc.setFontSize(11);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+        
+        const tableColumn = ["S.No.", "Full Name", "Mobile Number"];
+        const tableRows = profiles.map((p, index) => [
+            index + 1,
+            p.full_name,
+            p.mobile_number || 'N/A'
+        ]);
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 35,
+            theme: 'striped',
+            headStyles: { fillColor: [45, 93, 47] }
+        });
+
+        doc.save('competition_user_numbers.pdf');
+    }
+
     const SkeletonTable = () => (
         <div className="space-y-4">
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
@@ -61,9 +117,27 @@ export function CompetitionUserList({ initialProfiles }: { initialProfiles: Prof
     return (
         <ClientOnly fallback={<SkeletonTable />}>
             <Card>
-                <CardHeader>
-                    <CardTitle>Competition Users</CardTitle>
-                    <CardDescription>List of all users who have participated in trading competitions.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Competition Users</CardTitle>
+                        <CardDescription>List of all users who have participated in trading competitions.</CardDescription>
+                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                <Download className="mr-2 h-4 w-4"/>
+                                Download Numbers
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleDownloadNumbersCSV}>
+                                <Download className="mr-2 h-4 w-4" /> CSV Format
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleDownloadNumbersPDF}>
+                                <FileText className="mr-2 h-4 w-4" /> PDF Format
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </CardHeader>
                 <CardContent>
                     <Table>

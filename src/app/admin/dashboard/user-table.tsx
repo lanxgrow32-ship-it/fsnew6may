@@ -303,7 +303,6 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
             const matchesApproved = filters.is_approved ? String(profile.is_approved) === filters.is_approved : true;
             const matchesKyc = filters.kyc_status ? profile.kyc_status === filters.kyc_status : true;
             const matchesCredentials = filters.credentials_provided ? String(profile.credentials_provided) === filters.credentials_provided : true;
-            const matchesCredentialsLower = filters.credentials_provided ? String(profile.credentials_provided) === filters.credentials_provided : true;
             const matchesBreached = filters.is_breached ? String(profile.is_breached) === filters.is_breached : true;
             
             const profileDate = new Date(profile.created_at);
@@ -438,7 +437,6 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
         if (result.error) {
             onUserDeleteError(result.error);
         } else {
-            // onUserUpdate will trigger a re-fetch which re-renders this component
             onUserUpdate(); 
             setSelectedUserIds([]);
         }
