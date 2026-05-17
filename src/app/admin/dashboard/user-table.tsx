@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser, Calendar as CalendarIcon, ChevronDown, Check } from 'lucide-react';
+import { Search, Trash2, Loader2, MoreHorizontal, X, ShieldAlert, Download, Eraser, Calendar as CalendarIcon, ChevronDown, Check, FileText } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteUser, clearPaymentData, deleteMultipleUsers, approveUserPayment } from './actions';
@@ -24,12 +24,20 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
+// Define the type for the autotable method
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
 
 
 type Profile = {
     id: string;
     full_name: string;
     email: string;
+    mobile_number: string | null;
     is_approved: boolean;
     plan_purchased: string | null;
     transaction_id: string | null;
@@ -193,6 +201,7 @@ function UserMobileCard({ profile, index, onUserDelete, onUserDeleteError, onCle
                                 <p className="text-sm text-muted-foreground">#{index + 1}</p>
                                 <CardTitle className="text-base">{profile.full_name}</CardTitle>
                                 <CardDescription>{profile.email}</CardDescription>
+                                {profile.mobile_number && <p className="text-xs text-muted-foreground">Ph: {profile.mobile_number}</p>}
                             </div>
                         </div>
                         <ActionsMenu profile={profile} onUserDelete={onUserDelete} onUserDeleteError={onUserDeleteError} onClearSuccess={onClearSuccess} onClearError={onClearError} />
@@ -294,6 +303,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
             const matchesApproved = filters.is_approved ? String(profile.is_approved) === filters.is_approved : true;
             const matchesKyc = filters.kyc_status ? profile.kyc_status === filters.kyc_status : true;
             const matchesCredentials = filters.credentials_provided ? String(profile.credentials_provided) === filters.credentials_provided : true;
+            const matchesCredentialsLower = filters.credentials_provided ? String(profile.credentials_provided) === filters.credentials_provided : true;
             const matchesBreached = filters.is_breached ? String(profile.is_breached) === filters.is_breached : true;
             
             const profileDate = new Date(profile.created_at);
@@ -332,6 +342,7 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
             'S.No.': index + 1,
             'Full Name': profile.full_name,
             'Email': profile.email,
+            'Phone': profile.mobile_number,
             'Payment Status': profile.is_approved ? 'Approved' : 'Pending',
             'Account Status': profile.is_breached ? 'Breached' : 'Active',
             'KYC Status': profile.kyc_status,
@@ -353,6 +364,51 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
             link.click();
             document.body.removeChild(link);
         }
+    }
+
+    const handleDownloadNumbersCSV = () => {
+        const dataToExport = filteredProfiles.map((profile, index) => ({
+            'S.No.': index + 1,
+            'Full Name': profile.full_name,
+            'Mobile Number': profile.mobile_number || 'N/A',
+        }));
+        const csv = Papa.unparse(dataToExport);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'user_numbers.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    const handleDownloadNumbersPDF = () => {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        doc.setFontSize(18);
+        doc.text('User Contact List', 14, 20);
+        doc.setFontSize(11);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+        
+        const tableColumn = ["S.No.", "Full Name", "Mobile Number"];
+        const tableRows = filteredProfiles.map((p, index) => [
+            index + 1,
+            p.full_name,
+            p.mobile_number || 'N/A'
+        ]);
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 35,
+            theme: 'striped',
+            headStyles: { fillColor: [45, 93, 47] } // Primary color theme
+        });
+
+        doc.save('user_numbers.pdf');
     }
 
     const handleSelectAllOnPage = (checked: boolean) => {
@@ -500,6 +556,23 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                             <Download className="mr-2 h-4 w-4"/>
                             Download CSV
                         </Button>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline">
+                                    <Download className="mr-2 h-4 w-4"/>
+                                    Download Numbers
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleDownloadNumbersCSV}>
+                                    <Download className="mr-2 h-4 w-4" /> CSV Format
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleDownloadNumbersPDF}>
+                                    <FileText className="mr-2 h-4 w-4" /> PDF Format
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
 
                     {selectedUserIds.length > 0 && (
@@ -602,7 +675,12 @@ export function UserTable({ profiles, onUserDelete, onUserDeleteError, onUserUpd
                                                     />
                                                 </TableCell>
                                                 <TableCell>{index + 1}</TableCell>
-                                                <TableCell className="font-medium">{profile.full_name}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <div>
+                                                        {profile.full_name}
+                                                        {profile.mobile_number && <p className="text-[10px] text-muted-foreground font-normal">{profile.mobile_number}</p>}
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell>{profile.email}</TableCell>
                                                 <TableCell>
                                                     {profile.is_breached ? (
