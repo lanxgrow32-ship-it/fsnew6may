@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -171,18 +170,26 @@ export async function updateProfile(formData: FormData) {
   
   // --- SYNC WITH USER_ACCOUNTS ---
   // Ensure the primary account record matches the profile approval status
-  await supabaseAdmin.from('user_accounts')
-    .update({ 
-        is_approved, 
-        trading_username, 
-        trading_password, 
-        credentials_provided,
-        account_classification,
-        status: is_breached ? 'breached' : (is_approved && (kyc_status_from_form === 'verified' || isPassThenPayUser) ? 'active' : 'pending')
-    })
+  const { data: firstAccount } = await supabaseAdmin
+    .from('user_accounts')
+    .select('id')
     .eq('user_id', id)
     .order('created_at', { ascending: true })
-    .limit(1);
+    .limit(1)
+    .single();
+
+  if (firstAccount) {
+    await supabaseAdmin.from('user_accounts')
+      .update({ 
+          is_approved, 
+          trading_username, 
+          trading_password, 
+          credentials_provided,
+          account_classification,
+          status: is_breached ? 'breached' : (is_approved && (kyc_status_from_form === 'verified' || isPassThenPayUser) ? 'active' : 'pending')
+      })
+      .eq('id', firstAccount.id);
+  }
 
   // --- Start Webhook & Automation Logic ---
 
@@ -272,20 +279,22 @@ export async function updateProfile(formData: FormData) {
                 console.error('Failed to call StockMint user creation API:', apiError);
             }
             
-            // Ensure credentials are saved in our DB (this might be redundant if `updateData` already has them, but it's safe)
+            // Ensure credentials are saved in our DB
             await supabaseAdmin.from('profiles').update({
                 credentials_provided: true,
                 trading_username: finalTradingUsername,
                 trading_password: finalTradingPassword
             }).eq('id', id);
 
-            // Also update the account in user_accounts table
-            await supabaseAdmin.from('user_accounts').update({
-                credentials_provided: true,
-                trading_username: finalTradingUsername,
-                trading_password: finalTradingPassword,
-                status: 'active'
-            }).eq('user_id', id).order('created_at', { ascending: true }).limit(1);
+            // Also update the correct account in user_accounts table
+            if (firstAccount) {
+                await supabaseAdmin.from('user_accounts').update({
+                    credentials_provided: true,
+                    trading_username: finalTradingUsername,
+                    trading_password: finalTradingPassword,
+                    status: 'active'
+                }).eq('id', firstAccount.id);
+            }
 
         } else {
              console.error(`Could not determine initial balance from plan name: "${beforeUpdateData.plan_purchased}". Aborting StockMint account creation.`);

@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -202,14 +201,23 @@ export async function approveUserPayment(userId: string) {
         return { error: `Failed to approve payment: ${approvalError.message}` };
     }
     
-    // --- NEW: Update the account record in user_accounts to unblock the Hub view ---
-    await supabaseAdmin.from('user_accounts')
-        .update({ 
-            is_approved: true,
-            status: isKycVerified || isPassThenPayUser ? 'active' : 'pending'
-        })
+    // --- Update the account record in user_accounts to unblock the Hub view ---
+    const { data: firstAccount } = await supabaseAdmin
+        .from('user_accounts')
+        .select('id')
         .eq('user_id', userId)
-        .eq('is_approved', false);
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+    if (firstAccount) {
+        await supabaseAdmin.from('user_accounts')
+            .update({ 
+                is_approved: true,
+                status: isKycVerified || isPassThenPayUser ? 'active' : 'pending'
+            })
+            .eq('id', firstAccount.id);
+    }
 
     // --- Trigger post-approval automations ---
 
@@ -295,13 +303,15 @@ export async function approveUserPayment(userId: string) {
                 trading_password: profile.email
             }).eq('id', userId);
 
-            // Also update the account in user_accounts table
-            await supabaseAdmin.from('user_accounts').update({
-                credentials_provided: true,
-                trading_username: profile.email,
-                trading_password: profile.email,
-                status: 'active'
-            }).eq('user_id', userId).order('created_at', { ascending: true }).limit(1);
+            // Also update the correct account in user_accounts table
+            if (firstAccount) {
+                await supabaseAdmin.from('user_accounts').update({
+                    credentials_provided: true,
+                    trading_username: profile.email,
+                    trading_password: profile.email,
+                    status: 'active'
+                }).eq('id', firstAccount.id);
+            }
         }
 
         const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;

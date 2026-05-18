@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -229,8 +228,6 @@ export async function saveKycStep(step: number, formData: FormData) {
             } catch (webhookError) {
                 console.error('Failed to trigger StockMint webhook:', webhookError);
             }
-        } else {
-             console.error('StockMint API key not set or initial balance is zero. Aborting account creation.');
         }
 
         // 2. Update profile with credentials in our database
@@ -240,7 +237,25 @@ export async function saveKycStep(step: number, formData: FormData) {
             trading_password: tradingPassword
         }).eq('id', user.id);
 
-        // 3. Trigger KYC Approved Webhook
+        // 3. Update the specific account in user_accounts table (The first one)
+        const { data: firstAccount } = await supabaseAdmin
+            .from('user_accounts')
+            .select('id')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .single();
+
+        if (firstAccount) {
+            await supabaseAdmin.from('user_accounts').update({
+                credentials_provided: true,
+                trading_username: tradingUsername,
+                trading_password: tradingPassword,
+                status: 'active'
+            }).eq('id', firstAccount.id);
+        }
+
+        // 4. Trigger KYC Approved Webhook
         const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
         if (kycApprovedWebhookUrl) {
             try {
