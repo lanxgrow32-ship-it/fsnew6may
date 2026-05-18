@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,58 +8,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { signOut } from '@/app/actions';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, Users, KeyRound, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, Loader2, BookUser, Gift, BrainCircuit, TrendingDown, Percent, CheckCircle } from 'lucide-react';
-import { ReceiptButton } from './receipt-button';
-import { PendingView } from './pending-view';
+import { Bell, FileCheck, LogOut, Menu, Search, Settings, User, MessageSquare, Briefcase, Grid3x3, CheckCircle, ExternalLink, PlusCircle, ArrowRight, ShieldAlert, Clock, IndianRupee } from 'lucide-react';
 import { CompetitionView } from './competition-view';
-
-// Helper function to parse plan name into account balance
-function getBalanceFromPlanName(planName: string): number {
-    if (!planName) return 0;
-
-    const name = planName.toLowerCase();
-    // Match numbers and units like K, L, Cr
-    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
-    
-    if (match) {
-        let amount = parseFloat(match[1].replace(/,/g, ''));
-        const unit = match[2];
-
-        if (unit === 'k') {
-            amount *= 1000;
-        } else if (unit === 'l' || unit === 'lakh') {
-            amount *= 100000;
-        } else if (unit === 'cr' || unit === 'crore') {
-            amount *= 10000000;
-        }
-        return amount;
-    }
-    
-    // Fallback for names like "25000" without a unit
-    const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
-    }
-
-    return 0;
-}
-
-
-// Helper Components for the new UI
+import { PurchaseSection } from './purchase-section';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
-    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
         {children}
     </div>
-);
-
-const UserAvatar = ({ className }: { className?: string }) => (
-  <div className={cn('relative h-16 w-16', className)}>
-    <div className="absolute -inset-1 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full blur-md opacity-75"></div>
-    <div className="relative h-16 w-16 flex items-center justify-center bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden">
-      <Image src="/bitmoji.png" alt="User Avatar" width={64} height={64} className="object-cover" />
-    </div>
-  </div>
 );
 
 const Logo = () => (
@@ -93,33 +49,13 @@ function UserNav({ profile }: { profile: any}) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                         <Link href="/profile">
-                            <User className="mr-2 h-4 w-4" />
-                            <span>My Profile</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/kyc">
-                            <FileCheck className="mr-2 h-4 w-4" />
-                            <span>KYC</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/tickets">
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            <span>Support</span>
-                        </Link>
-                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/profile"><User className="mr-2 h-4 w-4" /><span>My Profile</span></Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/kyc"><FileCheck className="mr-2 h-4 w-4" /><span>KYC</span></Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/tickets"><MessageSquare className="mr-2 h-4 w-4" /><span>Support</span></Link></DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                  <form action={signOut}>
-                    <DropdownMenuItem asChild>
-                         <button type="submit" className="w-full">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
-                        </button>
-                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild><button type="submit" className="w-full"><LogOut className="mr-2 h-4 w-4" /><span>Log out</span></button></DropdownMenuItem>
                 </form>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -127,445 +63,151 @@ function UserNav({ profile }: { profile: any}) {
 }
 
 const navItems = [
-    { href: "/welcome", label: "Account Overview" },
+    { href: "/welcome", label: "Account Hub" },
     { href: "/guide", label: "Trading Guide" },
     { href: "/referrals", label: "Referrals" },
     { href: "/tickets", label: "Support" },
     { href: "/mentor", label: "AI Mentor" },
-    { href: "/pricing", label: "Purchase New Plan" },
 ];
 
-const NotificationItem = ({ children, isDone }: { children: React.ReactNode, isDone: boolean }) => (
-    <DropdownMenuItem className={cn("gap-2", !isDone && "text-muted-foreground")}>
-        {isDone ? <CheckCircle className="text-green-500" /> : <div className="w-4 h-4" />}
-        <span>{children}</span>
-    </DropdownMenuItem>
-);
-
 const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
-  <header className="flex items-center justify-between mb-8 z-20 relative">
+  <header className="flex items-center justify-between mb-12 z-20 relative">
     <div className="flex items-center gap-8">
         <Logo />
         <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
             {navItems.map((item) => (
-                <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                        "px-4 py-1.5 text-sm transition-colors",
-                        activePage === item.label
-                        ? "font-medium bg-white/10 rounded-full text-white shadow-md"
-                        : "text-gray-400 hover:text-white"
-                    )}
-                >
+                <Link key={item.href} href={item.href} className={cn("px-4 py-1.5 text-sm transition-colors", activePage === item.label ? "font-medium bg-white/10 rounded-full text-white shadow-md" : "text-gray-400 hover:text-white")}>
                     {item.label}
                 </Link>
             ))}
       </nav>
     </div>
     <div className="flex items-center gap-2">
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Search className="h-5 w-5 text-gray-300" />
-      </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Settings className="h-5 w-5 text-gray-300" />
-      </button>
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="relative h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                <Bell className="h-5 w-5 text-gray-300" />
-                {!profile.is_approved || profile.kyc_status !== 'verified' ? <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-purple-500"></span> : null}
-              </button>
-            </DropdownMenuTrigger>
-             <DropdownMenuContent className="w-64" align="end">
-                <DropdownMenuLabel>Account Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <NotificationItem isDone={profile.is_approved}>Payment Approved</NotificationItem>
-                <NotificationItem isDone={profile.kyc_status === 'verified'}>KYC Verified</NotificationItem>
-                <NotificationItem isDone={profile.credentials_provided}>Credentials Issued</NotificationItem>
-                 {profile.is_breached && (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive">
-                            <ShieldAlert />
-                            <span>Account Breached</span>
-                        </DropdownMenuItem>
-                    </>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
       <UserNav profile={profile} />
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
-        <Menu className="h-5 w-5 text-gray-300" />
-      </button>
+      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors"><Menu className="h-5 w-5 text-gray-300" /></button>
     </div>
   </header>
 );
 
-function formatBalance(planName: string): string {
-    if (!planName) return '₹0';
-    const name = planName.toLowerCase();
-    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
-    if (match) {
-        let amount = parseFloat(match[1].replace(/,/g, ''));
-        const unit = match[2];
-        if (unit === 'k') return `₹${amount}K`;
-        if (unit === 'l' || unit === 'lakh') return `₹${amount}L`;
-        if (unit === 'cr' || unit === 'crore') return `₹${amount}Cr`;
-    }
-    const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) {
-        const num = parseFloat(plainNumberMatch[0].replace(/,/g, ''));
-        if (num >= 10000000) return `₹${num/10000000}Cr`;
-        if (num >= 100000) return `₹${num/100000}L`;
-        if (num >= 1000) return `₹${num/1000}K`;
-        return `₹${num}`;
-    }
-    return '₹0';
-}
+const AccountCard = ({ account }: { account: any }) => {
+    const isPending = account.status === 'pending' || !account.is_approved;
+    const isBreached = account.status === 'breached';
 
-const ClassificationBadge = ({ classification }: { classification: string | null }) => {
-    if (!classification) return null;
-
-    const getClassificationText = (cls: string) => {
-        switch(cls) {
-            case 'live': return 'Live Account';
-            case 'phase_1_1_step': return 'Phase 1 (1-Step)';
-            case 'phase_1_2_step': return 'Phase 1 (2-Step)';
-            case 'phase_2_2_step': return 'Phase 2 (2-Step)';
-            case 'evaluation':
-            default:
-                return 'Evaluation';
-        }
-    };
-    
     return (
-        <div className="shrink-0 border border-purple-400/20 bg-purple-900/40 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-semibold text-purple-300 flex items-center gap-2">
-            {getClassificationText(classification)}
-        </div>
-    );
-}
-
-const UserDetails = ({ profile }: { profile: any }) => {
-    const initialBalance = formatBalance(profile.plan_purchased);
-    
-    return (
-        <GlassCard className="p-6 md:p-8 relative h-full flex flex-col">
-            <div className="relative z-10 flex-grow">
-                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <UserAvatar />
-                        <div>
-                            <h2 className="text-xl font-bold tracking-wide text-white">{profile.full_name}</h2>
-                        </div>
+        <GlassCard className={cn("group transition-all duration-300 hover:scale-[1.02] border-white/10", isBreached && "border-destructive/30", isPending && "border-amber-400/30")}>
+            <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-xl text-white font-bold">{account.plan_name}</CardTitle>
+                        <CardDescription className="text-gray-400 flex items-center gap-2 mt-1">
+                            <Grid3x3 className="w-3 h-3"/> {account.id.substring(0, 8)}
+                        </CardDescription>
                     </div>
-                     <div className="flex items-center gap-2">
-                        <ClassificationBadge classification={profile.account_classification} />
-                        <div className="shrink-0 border border-white/10 bg-black/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-mono text-gray-300 flex items-center gap-2">
-                            <Grid3x3 className="w-4 h-4 text-gray-500" />
-                            {profile.id.substring(0, 8)}
-                        </div>
+                    {isBreached ? (
+                        <div className="bg-destructive/10 text-destructive p-2 rounded-full"><ShieldAlert className="w-5 h-5"/></div>
+                    ) : isPending ? (
+                        <div className="bg-amber-400/10 text-amber-400 p-2 rounded-full animate-pulse"><Clock className="w-5 h-5"/></div>
+                    ) : (
+                        <div className="bg-green-500/10 text-green-400 p-2 rounded-full"><CheckCircle className="w-5 h-5"/></div>
+                    )}
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Status</p>
+                        <p className={cn("text-sm font-semibold capitalize mt-0.5", isBreached ? "text-red-400" : isPending ? "text-amber-400" : "text-green-400")}>
+                            {isBreached ? "Account Breached" : isPending ? "Awaiting Approval" : "Live & Active"}
+                        </p>
+                    </div>
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Created On</p>
+                        <p className="text-sm font-semibold text-white mt-0.5">{new Date(account.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</p>
                     </div>
                 </div>
-
-                <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
-                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <p className="text-xs text-gray-400 tracking-wider">Initial Balance</p>
-                        <p className="font-semibold text-white mt-1">{initialBalance}</p>
-                    </div>
-                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <p className="text-xs text-gray-400 tracking-wider">Plan Type</p>
-                        <p className="font-semibold text-white mt-1 truncate">{profile.plan_purchased}</p>
-                    </div>
-                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <p className="text-xs text-gray-400 tracking-wider">Account Type</p>
-                        <p className="font-semibold text-white mt-1">{getAccountType(profile.plan_purchased)}</p>
-                    </div>
-                </div>
-
-                 <div className="mt-3 grid grid-cols-2 gap-3 text-center">
-                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <p className="text-xs text-gray-400 tracking-wider">Start Date</p>
-                        <p className="font-semibold text-white">{new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                    </div>
-                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <p className="text-xs text-gray-400 tracking-wider">Account Status</p>
-                        <p className="font-semibold text-green-400 mt-1">Active</p>
-                    </div>
-                </div>
-            </div>
-            <div className="relative z-10 mt-6">
-                <ReceiptButton profile={profile} asStrip={true} />
-            </div>
+            </CardContent>
+            <CardFooter className="pt-0">
+                {isPending ? (
+                    <Button disabled className="w-full bg-slate-800 text-gray-500 border border-white/5">Verification in Progress</Button>
+                ) : (
+                    <Button asChild className={cn("w-full bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20", isBreached && "bg-slate-800 hover:bg-slate-700")}>
+                        <Link href={`/welcome/dashboard/${account.id}`}>
+                            {isBreached ? "View History" : "Go to Trading Dashboard"} <ArrowRight className="ml-2 w-4 h-4"/>
+                        </Link>
+                    </Button>
+                )}
+            </CardFooter>
         </GlassCard>
     );
 };
 
-const SupportCard = () => (
-    <GlassCard className="p-6 text-center h-full flex flex-col justify-between">
-        <div className="relative z-10">
-            <h3 className="font-semibold text-white tracking-wide text-lg">Funded Stock support</h3>
-            <div className="my-6 flex justify-center">
-                <div className="h-24 w-24 rounded-full bg-purple-500/10 flex items-center justify-center border-2 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
-                    <Users className="h-10 w-10 text-purple-300" />
-                </div>
-            </div>
-            <a href="https://t.me/fundedstock_payout" target="_blank" rel="noopener noreferrer" className="w-full block">
-                <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5 mb-4 hover:bg-black/30 transition-colors">
-                    <div>
-                        <p className="text-xs text-gray-400 tracking-wider">Telegram Support</p>
-                        <p className="font-semibold text-white">@fundedstock_payout</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-gray-400" />
-                </div>
-            </a>
-        </div>
-        <div className="mt-6 relative z-10">
-            <a href="mailto:support@fundedstock.live" className="w-full block">
-              <button className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-400/50">
-                  Contact
-              </button>
-            </a>
-            <p className="mt-4 text-sm text-gray-400">support@fundedstock.live</p>
-        </div>
-    </GlassCard>
-);
-
-const AccountDetails = ({ profile }: { profile: any }) => (
-    <GlassCard className="p-6 md:p-8 col-span-full relative">
-        <div className="relative z-10">
-            <h3 className="font-semibold mb-4 text-white tracking-wide">Account details</h3>
-            <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5">
-                        <div>
-                            <p className="text-xs text-gray-400 tracking-wider">Trading ID</p>
-                            <p className="font-semibold font-mono text-white">{profile.trading_username}</p>
-                        </div>
-                        <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" />
-                    </div>
-                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <p className="text-xs text-gray-400 tracking-wider">Trading Password</p>
-                        <p className="font-semibold font-mono text-white text-sm">{profile.trading_password}</p>
-                    </div>
-                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <p className="text-xs text-gray-400 tracking-wider">Platform</p>
-                         <a href="https://stockmint.io" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:underline flex items-center gap-1">
-                            Stockmint.io <ExternalLink className="w-3 h-3" />
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </GlassCard>
-);
-
-const StatCard = ({ title, value, icon, details, progress, progressColor, decorativeImage, isPrimary = false, isLoss = false }: { title: string; value: string; icon: React.ReactNode; details: string; progress: number; progressColor: string; decorativeImage: string; isPrimary?: boolean; isLoss?: boolean }) => (
-  <GlassCard className={cn("p-5 flex flex-col relative overflow-hidden", isPrimary && "bg-purple-600/10 border-purple-500/20")}>
-    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-20 h-20">
-        <Image src={decorativeImage} alt="" width={80} height={80} className="opacity-100" />
-    </div>
-    <div className="relative">
-      <div className="flex items-center gap-2">
-         {icon}
-        <p className="text-sm text-gray-300 font-medium">{title}</p>
-      </div>
-      <div className="mt-2">
-        <p className={cn("text-3xl font-bold text-white", isLoss && "text-red-400")}>{value}</p>
-        <p className="text-xs text-gray-400">{details}</p>
-      </div>
-      <div className="mt-4">
-        <div className={cn("text-xs font-semibold px-2 py-0.5 rounded-full inline-block", progressColor)}>
-          {progress.toFixed(1)}%
-        </div>
-      </div>
-    </div>
-  </GlassCard>
-);
-
-const KycPrompt = () => (
-    <GlassCard className="mt-6 p-6 md:p-8 col-span-full text-center">
-      <FileCheck className="h-12 w-12 text-purple-400 mx-auto mb-4" />
-      <h3 className="text-2xl font-bold text-white mb-2">Your Account is Almost Ready</h3>
-      <p className="text-gray-400 max-w-md mx-auto mb-6">Please complete your KYC (Know Your Customer) verification to unlock your trading credentials and get started.</p>
-      <Button asChild className="bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-400/50">
-        <Link href="/kyc">Start KYC Verification</Link>
-      </Button>
-    </GlassCard>
-)
-
-const AccountBreached = () => (
-    <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
-        <main className="flex min-h-screen items-center justify-center p-4">
-            <GlassCard className="w-full max-w-lg text-center p-8 border-destructive/50">
-                <div className="mx-auto bg-destructive/10 rounded-full p-3 w-fit mb-4">
-                    <ShieldAlert className="h-10 w-10 text-destructive" />
-                </div>
-                <h2 className="text-2xl font-bold text-destructive">Account Breached</h2>
-                <p className="text-gray-400 mt-2 mb-6">
-                    Your account has been flagged for a breach of our trading rules. Access has been suspended.
-                </p>
-                <div className="flex flex-col items-center gap-4 pt-4">
-                    <Button asChild className="w-full max-w-xs">
-                        <Link href="/pricing">Purchase New Account</Link>
-                    </Button>
-                </div>
-            </GlassCard>
-        </main>
-    </div>
-);
-
-function getAccountType(planName: string): string {
-    if (!planName) return 'N/A';
-    const lowerPlanName = planName.toLowerCase();
-    if (lowerPlanName.includes('instant')) return 'Instant';
-    if (lowerPlanName.includes('1-step')) return '1-Step';
-    if (lowerPlanName.includes('2-step')) return '2-Step';
-    return 'Standard';
-}
-
 export default async function WelcomePage() {
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-        redirect('/login');
-    }
+    if (!session) redirect('/login');
 
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-
-    if (!profile) {
-        return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Could not load your profile. Please contact support.</div>;
-    }
+    if (!profile) return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Profile error.</div>;
 
     if (profile.account_type === 'competition') {
         const { data: initialEntries } = await supabase.from('competition_entries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
         const { data: paymentSession } = await supabase.from('payment_sessions').select('status').eq('email', session.user.email).order('created_at', { ascending: false }).limit(1).single();
-
         return (
             <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
-                <main className="relative z-10 p-4 sm:p-6 lg:p-8">
-                    <DashboardHeader profile={profile} activePage="Account Overview" />
-                    <div className="max-w-4xl mx-auto">
-                        <CompetitionView initialEntries={initialEntries || []} paymentSession={paymentSession} />
-                    </div>
-                </main>
+                <main className="relative z-10 p-4 sm:p-6 lg:p-8"><DashboardHeader profile={profile} activePage="Account Overview" /><div className="max-w-4xl mx-auto"><CompetitionView initialEntries={initialEntries || []} paymentSession={paymentSession} /></div></main>
             </div>
         );
     }
-    
-    if (!profile.is_approved) {
-        return <PendingView profile={profile} />;
-    }
-    
-    if (profile.is_breached) {
-        return <AccountBreached />;
-    }
 
-    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-    let stats = {
-        balance: 0,
-        totalPnl: 0,
-        winRate: 0,
-        activeTradingDays: 0,
-    };
+    // Fetch all accounts from the new table
+    const { data: accounts } = await supabase.from('user_accounts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
 
-    if (stockmintApiKey && profile.trading_username) {
-        try {
-            const statsResponse = await fetch(
-                `https://stockmint.io/api/users/stats?email=${profile.trading_username}`,
-                {
-                    headers: { 'x-api-key': stockmintApiKey, },
-                    cache: 'no-store', // Ensure fresh data on every load
-                }
-            );
-
-            if (statsResponse.ok) {
-                const statsData = await statsResponse.json();
-                if (statsData.success) {
-                    stats = statsData.data;
-                } else {
-                    console.error("StockMint API returned error:", statsData.message);
-                }
-            } else {
-                console.error("Failed to fetch stats from StockMint API", await statsResponse.text());
-            }
-        } catch (error) {
-            console.error("Error fetching stats:", error);
-        }
-    }
-    
-    const initialBalance = getBalanceFromPlanName(profile.plan_purchased);
-    const pnlProgress = initialBalance > 0 ? (stats.totalPnl / initialBalance) * 100 : 0;
-    const tradingDaysProgress = (stats.activeTradingDays / 30) * 100; // Assuming 30 day cycle
-
-    // This is the new, unified layout for the welcome page.
     return (
-        <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
-          <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+        <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
+            <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
-          
-          <main className="relative z-10 max-w-full mx-auto p-4 sm:p-6 lg:p-8">
-            <DashboardHeader profile={profile} activePage="Account Overview" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <UserDetails profile={profile} />
-                <SupportCard />
-            </div>
+            <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+                <DashboardHeader profile={profile} activePage="Account Hub" />
 
-            {profile.kyc_status !== 'verified' ? <KycPrompt/> : (
-              <>
-                <div className="mt-6">
-                    <AccountDetails profile={profile}/>
-                </div>
+                <section className="space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <h2 className="text-3xl font-extrabold text-white tracking-tight">Your Trading Accounts</h2>
+                            <p className="text-gray-400 mt-1 text-lg">Manage multiple accounts and track your performance.</p>
+                        </div>
+                         {profile.kyc_status !== 'verified' && (
+                            <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-full border border-amber-400/20 text-sm font-semibold hover:bg-amber-400/20 transition-all">
+                                <ShieldAlert className="w-4 h-4"/> Complete KYC to Activate Accounts
+                            </Link>
+                        )}
+                    </div>
 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                     <StatCard
-                        title="Balance"
-                        value={`₹${stats.balance.toLocaleString('en-IN')}`}
-                        details="Current Balance"
-                        progress={initialBalance > 0 ? (stats.balance / initialBalance) * 100 : 100}
-                        icon={<DollarSign className="w-4 h-4 text-gray-400" />}
-                        progressColor="bg-purple-500/20 text-purple-300"
-                        decorativeImage="/a.png"
-                        isPrimary={true}
-                    />
-                     <StatCard
-                        title="Profit / Loss"
-                        value={stats.totalPnl >= 0 ? `+₹${stats.totalPnl.toLocaleString('en-IN')}` : `-₹${Math.abs(stats.totalPnl).toLocaleString('en-IN')}`}
-                        details="Total P/L"
-                        progress={pnlProgress}
-                        icon={<LineChart className="w-4 h-4 text-gray-400"/>}
-                        progressColor={stats.totalPnl >= 0 ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}
-                        decorativeImage="/b.png"
-                        isLoss={stats.totalPnl < 0}
-                    />
-                    <StatCard
-                        title="Win Rate"
-                        value={`${stats.winRate}%`}
-                        details="Of all trades"
-                        progress={stats.winRate}
-                        icon={<Briefcase className="w-4 h-4 text-gray-400"/>}
-                        progressColor="bg-sky-500/20 text-sky-300"
-                        decorativeImage="/c.png"
-                    />
-                    <StatCard
-                        title="Trading Days"
-                        value={`${stats.activeTradingDays}`}
-                        details="Active Days"
-                        progress={tradingDaysProgress}
-                        icon={<Calendar className="w-4 h-4 text-gray-400"/>}
-                        progressColor="bg-amber-500/20 text-amber-300"
-                        decorativeImage="/d.png"
-                    />
-                </div>
-              </>
-            )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                        {accounts && accounts.length > 0 ? (
+                            accounts.map((acc: any) => <AccountCard key={acc.id} account={acc} />)
+                        ) : (
+                            <GlassCard className="col-span-full p-12 text-center border-dashed">
+                                <PlusCircle className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold text-white">No accounts found</h3>
+                                <p className="text-gray-400 max-w-sm mx-auto mt-2">Get started by choosing your first funding plan below.</p>
+                            </GlassCard>
+                        )}
+                    </div>
+                </section>
 
-          </main>
+                <section className="mt-24 space-y-12">
+                    <div className="text-center space-y-4">
+                        <h2 className="text-4xl font-extrabold text-white tracking-tight">Get a New Account</h2>
+                        <p className="text-gray-400 text-lg max-w-2xl mx-auto">Scale your capital or restart after a breach. Your KYC is preserved, meaning your next account activates even faster.</p>
+                    </div>
+                    
+                    <PurchaseSection profile={profile} />
+                </section>
+            </main>
         </div>
     );
 }

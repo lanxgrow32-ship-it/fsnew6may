@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useActionState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, MessageSquare, ShieldAlert, LineChart, Swords, Users, Newspaper } from 'lucide-react';
+import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, MessageSquare, ShieldAlert, LineChart, Swords, Users, Newspaper, UserCheck } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -43,7 +42,7 @@ function CreateAdminForm({ className }: { className?: string }) {
                 description: "Admin user created successfully.",
             });
             ref.current?.reset();
-            setIsOpen(false); // Close dialog on success
+            setIsOpen(false);
         }
     }, [state, toast]);
 
@@ -137,9 +136,6 @@ function UserTableSkeleton() {
                 <Skeleton className="h-7 w-32" />
                 <Skeleton className="h-4 w-64 mt-2" />
               </div>
-              <div className="relative w-full max-w-sm">
-                <Skeleton className="h-10 w-full" />
-               </div>
             </CardHeader>
             <CardContent>
                 <div className="overflow-x-auto">
@@ -155,7 +151,6 @@ function UserTableSkeleton() {
     )
 }
 
-// Changed to a client component to use hooks
 export default function AdminDashboardClient({ initialProfiles, masterView }: { initialProfiles: any[], masterView: boolean }) {
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
@@ -185,9 +180,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
     const channel = supabase
       .channel('realtime profiles')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
-        (payload) => {
-            fetchProfiles();
-        }
+        () => { fetchProfiles(); }
       )
       .subscribe();
 
@@ -202,20 +195,15 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
   };
 
   const handleUserDeleteError = (errorMessage: string) => {
-    toast({
-      title: 'Error Deleting User',
-      description: errorMessage,
-      variant: 'destructive',
-    });
+    toast({ title: 'Error Deleting User', description: errorMessage, variant: 'destructive' });
   };
   
   const handleUserUpdate = () => {
       toast({ title: 'User data updated successfully' });
-      fetchProfiles(); // Re-fetch all profiles to ensure UI consistency
+      fetchProfiles();
   }
 
   const visibleProfiles = profiles;
-
   const stats = [
     { title: "Total Users", value: visibleProfiles.length || 0, icon: User },
     { title: "Pending Approval", value: visibleProfiles.filter(p => !p.is_approved).length || 0, icon: User },
@@ -233,120 +221,38 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/dashboard" isActive tooltip="Dashboard">
-                <Home />
-                Dashboard
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton href="/admin/competition" tooltip="Competition">
-                    <Swords />
-                    Competition
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users">
-                <Users />
-                Pay Later Users
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/coupons" tooltip="Coupons">
-                <Ticket />
-                Coupons
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/blog" tooltip="Blog">
-                <Newspaper />
-                Blog
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton href="/admin/payouts" tooltip="Payouts">
-                    <Banknote />
-                    Payouts
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton href="/admin/tickets" tooltip="Support">
-                    <MessageSquare />
-                    Support
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/admin/reports" tooltip="Reports">
-                    <LineChart />
-                    Reports
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports">
-                <LineChart />
-                Pay Later Reports
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings">
-                <Wallet />
-                Payment Settings
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" isActive tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/tickets" tooltip="Support"><MessageSquare />Support</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="border-t p-2">
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <form action={signOut} className="w-full">
-                        <SidebarMenuButton tooltip="Logout" asChild>
-                            <button type="submit" className="w-full">
-                                <LogOut />
-                                Logout
-                            </button>
-                        </SidebarMenuButton>
-                    </form>
-                </SidebarMenuItem>
-            </SidebarMenu>
+            <SidebarMenu><SidebarMenuItem><form action={signOut} className="w-full"><SidebarMenuButton tooltip="Logout" asChild><button type="submit" className="w-full"><LogOut />Logout</button></SidebarMenuButton></form></SidebarMenuItem></SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-           <div className="flex items-center gap-4">
-                <SidebarTrigger className="md:hidden" />
-                <h1 className="text-xl font-semibold">User Management</h1>
-           </div>
-           <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <CreateAdminForm className="hidden md:flex"/>
-            <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
-              <AdminNav />
-            </ClientOnly>
-           </div>
+           <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">User Management</h1></div>
+           <div className="flex items-center gap-4"><ThemeToggle /><CreateAdminForm className="hidden md:flex"/><ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}><AdminNav /></ClientOnly></div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
                 {stats.map(stat => (
                     <Card key={stat.title} className="shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                            <stat.icon className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stat.value}</div>
-                        </CardContent>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{stat.title}</CardTitle><stat.icon className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                        <CardContent><div className="text-2xl font-bold">{stat.value}</div></CardContent>
                     </Card>
                 ))}
             </div>
             <CreateAdminForm className="w-full md:hidden mb-6" />
-            <ClientOnly fallback={<UserTableSkeleton />}>
-                <UserTable 
-                    profiles={visibleProfiles || []} 
-                    onUserDelete={onUserDelete}
-                    onUserDeleteError={handleUserDeleteError}
-                    onUserUpdate={handleUserUpdate}
-                />
-            </ClientOnly>
+            <ClientOnly fallback={<UserTableSkeleton />}><UserTable profiles={visibleProfiles || []} onUserDelete={onUserDelete} onUserDeleteError={handleUserDeleteError} onUserUpdate={handleUserUpdate} /></ClientOnly>
         </main>
       </SidebarInset>
     </SidebarProvider>
