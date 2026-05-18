@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, User } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { approveRegistration } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -44,53 +44,61 @@ export function RegistrationManager({ events }: { events: any[] }) {
         setPendingRegId(null);
     };
 
-    const grouped = events.map(event => ({
-        ...event,
-        regs: registrations.filter(r => r.event_id === event.id)
-    }));
+    const ongoingEvent = events.find(e => e.status === 'ongoing');
+    const defaultTab = ongoingEvent?.id || events[0]?.id;
+
+    if (events.length === 0) {
+        return <div className="text-center py-20 text-muted-foreground">Please create a tournament week in the "Tournament Events" tab first.</div>;
+    }
 
     return (
         <div className="space-y-4">
-            <Tabs defaultValue={events.find(e => e.status === 'ongoing')?.id || events[0]?.id}>
+            <Tabs defaultValue={defaultTab}>
                 <TabsList className="flex flex-wrap h-auto bg-transparent gap-2">
                     {events.map(e => (
-                        <TabsTrigger key={e.id} value={e.id} className="border data-[state=active]:bg-primary data-[state=active]:text-white">
-                            {e.week_label}
+                        <TabsTrigger key={e.id} value={e.id} className="border border-muted-foreground/20 data-[state=active]:bg-primary data-[state=active]:text-white capitalize">
+                            {e.week_label} {e.status === 'ongoing' && "(Live)"}
                         </TabsTrigger>
                     ))}
                 </TabsList>
                 
-                {grouped.map(week => (
-                    <TabsContent key={week.id} value={week.id}>
+                {events.map(event => (
+                    <TabsContent key={event.id} value={event.id}>
                         <Card>
                             <CardHeader>
-                                <CardTitle>{week.week_label} Registrations</CardTitle>
-                                <CardDescription>UTR Approval list for this week's tournament.</CardDescription>
+                                <CardTitle>{event.week_label} Registrations</CardTitle>
+                                <CardDescription>Approval list for {event.start_date} to {event.end_date}.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>User</TableHead>
-                                            <TableHead>UTR / TxID</TableHead>
+                                            <TableHead>UTR / Transaction</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {week.regs.length > 0 ? week.regs.map((reg: any) => (
+                                        {registrations.filter(r => r.event_id === event.id).length > 0 ? 
+                                            registrations.filter(r => r.event_id === event.id).map((reg: any) => (
                                             <TableRow key={reg.id}>
                                                 <TableCell>
-                                                    <div className="font-medium">{reg.profiles?.full_name}</div>
-                                                    <div className="text-xs text-muted-foreground">{reg.profiles?.email}</div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center"><User className="h-4 w-4"/></div>
+                                                        <div>
+                                                            <div className="font-medium">{reg.profiles?.full_name || 'New User'}</div>
+                                                            <div className="text-xs text-muted-foreground">{reg.profiles?.email}</div>
+                                                        </div>
+                                                    </div>
                                                 </TableCell>
-                                                <TableCell className="font-mono text-xs">{reg.transaction_id}</TableCell>
+                                                <TableCell className="font-mono text-xs text-primary font-bold">{reg.transaction_id}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={reg.is_approved ? 'default' : 'secondary'}>{reg.is_approved ? 'Approved' : 'Pending'}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     {!reg.is_approved && (
-                                                        <Button size="sm" onClick={() => handleApprove(reg.id)} disabled={pendingRegId === reg.id}>
+                                                        <Button size="sm" onClick={() => handleApprove(reg.id)} disabled={pendingRegId === reg.id} className="bg-green-600 hover:bg-green-700">
                                                             {pendingRegId === reg.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4 mr-1"/>}
                                                             Approve
                                                         </Button>
@@ -98,7 +106,7 @@ export function RegistrationManager({ events }: { events: any[] }) {
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
-                                            <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No registrations for this week yet.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">No registrations for this week yet.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>

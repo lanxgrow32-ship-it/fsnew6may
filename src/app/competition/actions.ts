@@ -19,7 +19,7 @@ export async function registerForTournament(formData: FormData) {
   const supabase = createClient();
   
   // 1. Check if user already exists
-  const { data: existingUser } = await supabase.from('profiles').select('id').eq('email', email).single();
+  const { data: existingUser } = await supabaseAdmin.from('profiles').select('id').eq('email', email).single();
   
   let userId: string;
 
@@ -42,10 +42,10 @@ export async function registerForTournament(formData: FormData) {
         email,
         password,
         options: {
-        data: {
-            full_name: fullName,
-            role: 'user',
-        },
+            data: {
+                full_name: fullName,
+                role: 'user',
+            },
         },
     });
 
@@ -54,9 +54,10 @@ export async function registerForTournament(formData: FormData) {
     userId = user.id;
 
     // Update profile for competition
-    await supabase.from('profiles').update({ 
+    await supabaseAdmin.from('profiles').update({ 
         account_type: 'competition',
-        mobile_number: mobileNumber 
+        mobile_number: mobileNumber,
+        full_name: fullName 
     }).eq('id', userId);
   }
   
