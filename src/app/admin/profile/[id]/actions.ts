@@ -168,6 +168,21 @@ export async function updateProfile(formData: FormData) {
     console.error('Error updating profile:', error);
     return { error: error.message };
   }
+  
+  // --- SYNC WITH USER_ACCOUNTS ---
+  // Ensure the primary account record matches the profile approval status
+  await supabaseAdmin.from('user_accounts')
+    .update({ 
+        is_approved, 
+        trading_username, 
+        trading_password, 
+        credentials_provided,
+        account_classification,
+        status: is_breached ? 'breached' : (is_approved && (kyc_status_from_form === 'verified' || isPassThenPayUser) ? 'active' : 'pending')
+    })
+    .eq('user_id', id)
+    .order('created_at', { ascending: true })
+    .limit(1);
 
   // --- Start Webhook & Automation Logic ---
 
@@ -263,6 +278,14 @@ export async function updateProfile(formData: FormData) {
                 trading_username: finalTradingUsername,
                 trading_password: finalTradingPassword
             }).eq('id', id);
+
+            // Also update the account in user_accounts table
+            await supabaseAdmin.from('user_accounts').update({
+                credentials_provided: true,
+                trading_username: finalTradingUsername,
+                trading_password: finalTradingPassword,
+                status: 'active'
+            }).eq('user_id', id).order('created_at', { ascending: true }).limit(1);
 
         } else {
              console.error(`Could not determine initial balance from plan name: "${beforeUpdateData.plan_purchased}". Aborting StockMint account creation.`);

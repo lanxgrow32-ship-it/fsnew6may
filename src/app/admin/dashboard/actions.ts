@@ -158,6 +158,9 @@ export async function clearPaymentData(userId: string) {
         console.error('Error clearing payment data:', error);
         return { error: `Failed to clear payment data: ${error.message}` };
     }
+    
+    // Also clear from user_accounts
+    await supabaseAdmin.from('user_accounts').delete().eq('user_id', userId);
 
     revalidatePath('/admin/dashboard');
     revalidatePath('/admin/reports'); // Revalidate reports page as well
@@ -186,6 +189,7 @@ export async function approveUserPayment(userId: string) {
     }
 
     const isPassThenPayUser = profile.account_model === 'passthrupay';
+    const isKycVerified = profile.kyc_status === 'verified';
     let kycShouldBeVerified = false;
 
     // --- Update is_approved status ---
@@ -197,6 +201,15 @@ export async function approveUserPayment(userId: string) {
     if (approvalError) {
         return { error: `Failed to approve payment: ${approvalError.message}` };
     }
+    
+    // --- NEW: Update the account record in user_accounts to unblock the Hub view ---
+    await supabaseAdmin.from('user_accounts')
+        .update({ 
+            is_approved: true,
+            status: isKycVerified || isPassThenPayUser ? 'active' : 'pending'
+        })
+        .eq('user_id', userId)
+        .eq('is_approved', false);
 
     // --- Trigger post-approval automations ---
 
@@ -281,6 +294,14 @@ export async function approveUserPayment(userId: string) {
                 trading_username: profile.email,
                 trading_password: profile.email
             }).eq('id', userId);
+
+            // Also update the account in user_accounts table
+            await supabaseAdmin.from('user_accounts').update({
+                credentials_provided: true,
+                trading_username: profile.email,
+                trading_password: profile.email,
+                status: 'active'
+            }).eq('user_id', userId).order('created_at', { ascending: true }).limit(1);
         }
 
         const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
