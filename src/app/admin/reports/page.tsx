@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense, useTransition } from 'react';
@@ -33,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download, Swords, Users, RefreshCw, TrendingUp, TrendingDown, ArrowRight, IndianRupee, Newspaper } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download, Swords, Users, RefreshCw, TrendingUp, TrendingDown, IndianRupee, Newspaper, UserCheck } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -46,7 +45,7 @@ interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
-const StatCard = ({ title, value, change, description, prefix = '₹', suffix = '' }: { title: string, value: number, change?: number | null, description?: string, prefix?: string, suffix?: string }) => (
+const StatCard = ({ title, value, description, prefix = '₹', suffix = '' }: { title: string, value: number, description?: string, prefix?: string, suffix?: string }) => (
     <Card>
         <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -55,15 +54,7 @@ const StatCard = ({ title, value, change, description, prefix = '₹', suffix = 
             <div className="text-3xl font-bold">
                 {prefix}{value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}{suffix}
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                 {typeof change === 'number' && (
-                    <span className={cn('flex items-center gap-1', change >= 0 ? 'text-green-600' : 'text-destructive')}>
-                        {change >= 0 ? <TrendingUp className="h-4 w-4"/> : <TrendingDown className="h-4 w-4"/>}
-                        {change.toFixed(2)}%
-                    </span>
-                )}
-                {description && <p>{description}</p>}
-            </div>
+            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
         </CardContent>
     </Card>
 );
@@ -226,8 +217,8 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
 
     const DashboardSkeleton = () => (
         <div className="space-y-6 animate-pulse">
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-28" />)}
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <Skeleton className="h-80 lg:col-span-3" />
@@ -242,7 +233,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Analytics Hub</h2>
-                    <p className="text-sm text-muted-foreground">This report excludes all sales from "PassThenPay" users.</p>
+                    <p className="text-sm text-muted-foreground">Detailed revenue and sales performance reports.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2">
                     <Popover>
@@ -269,13 +260,11 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
 
             {isFetching ? <DashboardSkeleton /> : (
                 <>
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <StatCard title="Gross Revenue" value={data.totalGrossRevenue} description="Before discounts" />
                         <StatCard title="Net Revenue" value={data.totalNetRevenue} description={`from ${data.totalSalesCount} sales`} />
                         <StatCard title="Total Discounts" value={data.totalDiscounts} description="Coupons & Referrals"/>
                         <StatCard title="Average Revenue / User" value={data.arpu} description="ARPU" />
-                        <StatCard title="WoW Revenue" value={data.thisWeekRevenue} change={data.wowRevenueGrowth} description="vs. last week"/>
-                        <StatCard title="MoM Revenue" value={data.thisMonthRevenue} change={data.momRevenueGrowth} description="vs. last month"/>
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -292,7 +281,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                                             <YAxis yAxisId="left" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
                                             <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tickMargin={8} />
                                             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                            <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                                            <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} border-primary dot={false} />
                                             <Line yAxisId="right" type="monotone" dataKey="sales" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} />
                                         </RechartsLineChart>
                                     </ChartContainer>
@@ -434,6 +423,9 @@ function ReportsPageContent() {
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton>
                         </SidebarMenuItem>
                          <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton>
