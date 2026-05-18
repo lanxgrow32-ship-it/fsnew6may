@@ -96,7 +96,10 @@ export default function PayLaterDashboardClient({ initialProfiles, masterView }:
     } else {
       query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
-    const { data: updatedProfiles, error } = await query.order('created_at', { ascending: false });
+    // Increased range to 10,000
+    const { data: updatedProfiles, error } = await query
+        .order('created_at', { ascending: false })
+        .range(0, 9999);
 
     if (error) {
         toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });
