@@ -1,123 +1,42 @@
 
 'use client';
 
-import { useState, useEffect, useActionState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Eye, EyeOff, Check, History, Copy, KeyRound, RefreshCw } from 'lucide-react';
+import { Loader2, ExternalLink, Eye, EyeOff, History, Copy, Clock, ShieldCheck, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { generateCompetitionCredentials } from './actions';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
-type CompetitionEntry = {
-    id: number;
-    week_identifier: string;
+type Registration = {
+    id: string;
+    is_approved: boolean;
     stockmint_username: string | null;
     stockmint_password: string | null;
-    account_balance: number;
+    current_balance: number;
     created_at: string;
+    competition_events: {
+        week_label: string;
+        start_date: string;
+        end_date: string;
+    };
 };
 
-type PaymentSession = {
-    status: 'initiated' | 'completed' | 'failed';
-};
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
+        {children}
+    </div>
+);
 
-function GetCredentialsFlow({ paymentSession }: { paymentSession: PaymentSession | null }) {
+export function CompetitionView({ registrations }: { registrations: Registration[] }) {
     const { toast } = useToast();
-    const [actionState, formAction, isPending] = useActionState(generateCompetitionCredentials, { error: null, success: false });
+    const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
-    useEffect(() => {
-        if (actionState.error) {
-            toast({ title: "Error", description: actionState.error, variant: "destructive" });
-        }
-        if (actionState.success) {
-            toast({ title: "Success!", description: "Your credentials have been generated and will now appear." });
-        }
-    }, [actionState, toast]);
-
-    if (!paymentSession || paymentSession.status === 'initiated') {
-        return (
-            <Card className="w-full shadow-sm text-center">
-                 <CardHeader>
-                    <CardTitle>Payment Pending</CardTitle>
-                    <CardDescription>Your account is created, but we are waiting for payment confirmation.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Loader2 className="h-8 w-8 text-muted-foreground animate-spin mx-auto" />
-                     <p className="text-muted-foreground text-sm">Please complete your payment. If you have already paid, this page will update automatically once the confirmation is received (this may take a few minutes).</p>
-                </CardContent>
-            </Card>
-        )
-    }
-
-    return (
-        <Card className="w-full shadow-sm">
-            <form action={formAction}>
-                <CardHeader>
-                    <CardTitle>Your Account is Ready!</CardTitle>
-                    <CardDescription>Your payment has been confirmed. Click the button below to generate your unique trading account credentials for this competition.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {actionState.error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{actionState.error}</AlertDescription></Alert>}
-                </CardContent>
-                <CardFooter>
-                    <Button type="submit" className="w-full" size="lg" disabled={isPending}>
-                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                        Get My Trading Credentials
-                    </Button>
-                </CardFooter>
-            </form>
-        </Card>
-    )
-}
-
-function RenewalFlow() {
-    const { toast } = useToast();
-    const [actionState, formAction, isPending] = useActionState(generateCompetitionCredentials, { error: null, success: false, message: '' });
-
-     useEffect(() => {
-        if (actionState.error) {
-            toast({ title: "Renewal Failed", description: actionState.error, variant: "destructive" });
-        }
-        if (actionState.success) {
-            toast({ title: "Success!", description: actionState.message || "Your new credentials for this period are now active." });
-        }
-    }, [actionState, toast]);
-
-    return (
-        <Card>
-            <form action={formAction}>
-                <CardHeader>
-                    <CardTitle>Subscription Renewal</CardTitle>
-                    <CardDescription>If your weekly or monthly subscription has renewed, click here to generate your trading account for the new period.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     {actionState.error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{actionState.error}</AlertDescription></Alert>}
-                </CardContent>
-                <CardFooter>
-                    <Button type="submit" className="w-full" disabled={isPending}>
-                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                        Generate New Credentials
-                    </Button>
-                </CardFooter>
-            </form>
-        </Card>
-    );
-}
-
-export function CompetitionView({ initialEntries, paymentSession }: { initialEntries: CompetitionEntry[], paymentSession: PaymentSession | null }) {
-    const { toast } = useToast();
-    const [entries, setEntries] = useState<CompetitionEntry[]>(initialEntries);
-    const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
-
-    useEffect(() => {
-        setEntries(initialEntries);
-    }, [initialEntries]);
-
-    const togglePasswordVisibility = (id: number) => {
+    const togglePasswordVisibility = (id: string) => {
         setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
     };
     
@@ -127,102 +46,140 @@ export function CompetitionView({ initialEntries, paymentSession }: { initialEnt
         toast({ title: "Copied to clipboard!" });
     }
     
-    const activeEntry = entries?.[0];
+    const activeReg = registrations?.[0];
 
-    // If there's no entry yet, show the flow to get credentials
-    if (!activeEntry || !activeEntry.stockmint_username) {
-        return <GetCredentialsFlow paymentSession={paymentSession} />;
+    if (!activeReg) {
+        return (
+            <GlassCard className="text-center p-12">
+                <Clock className="h-12 w-12 mx-auto text-gray-600 mb-4" />
+                <h3 className="text-xl font-bold text-white">No Active Registrations</h3>
+                <p className="text-gray-400 mt-2 mb-6">You haven't joined any tournament weeks yet.</p>
+                <Button asChild className="bg-purple-600 hover:bg-purple-700">
+                    <Link href="/competition">Browse Tournaments</Link>
+                </Button>
+            </GlassCard>
+        );
     }
 
     return (
         <div className="space-y-8">
-            <Card className="w-full shadow-sm">
-                <CardHeader>
-                    <CardTitle>Your Active Competition Account</CardTitle>
-                    <CardDescription>Use these credentials to log in to the trading platform for the current competition.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="rounded-lg border bg-muted/40 p-4">
-                            <p className="text-sm font-medium text-muted-foreground">Current Period</p>
-                            <p className="text-lg font-semibold">{activeEntry.week_identifier}</p>
-                        </div>
-                         <div className="rounded-lg border bg-muted/40 p-4">
-                            <p className="text-sm font-medium text-muted-foreground">Starting Balance</p>
-                            <p className="text-lg font-semibold">₹{activeEntry.account_balance.toLocaleString('en-IN')}</p>
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
-                                <Label>Trading Username</Label>
-                                <div className="flex items-center gap-2">
-                                    <p className="text-base font-semibold tracking-wider truncate">{activeEntry.stockmint_username}</p>
-                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(activeEntry.stockmint_username)}>
-                                        <Copy className="h-4 w-4" />
-                                    </Button>
-                                </div>
+            <h2 className="text-3xl font-extrabold text-white tracking-tight">Competition Hub</h2>
+
+            <div className="grid grid-cols-1 gap-8">
+                {/* Primary/Active Registration */}
+                <GlassCard className={cn("border-white/10", !activeReg.is_approved && "border-amber-400/30")}>
+                    <CardHeader className="bg-white/[0.02] border-b border-white/5">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle className="text-2xl font-bold text-white">{activeReg.competition_events.week_label}</CardTitle>
+                                <CardDescription className="text-gray-400">
+                                    {new Date(activeReg.competition_events.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} — 
+                                    {new Date(activeReg.competition_events.end_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </CardDescription>
                             </div>
-                            <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
-                                 <Label>Trading Password</Label>
-                                <div className="flex items-center justify-between">
-                                    <p className="text-base font-semibold tracking-wider">
-                                        {visiblePasswords[activeEntry.id] ? activeEntry.stockmint_password : '••••••••••'}
-                                    </p>
-                                    <div className="flex items-center">
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePasswordVisibility(activeEntry.id)}>
-                                            {visiblePasswords[activeEntry.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(activeEntry.stockmint_password)}>
-                                            <Copy className="h-4 w-4" />
-                                        </Button>
+                            {activeReg.is_approved ? (
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-3 py-1">Active</Badge>
+                            ) : (
+                                <Badge className="bg-amber-400/20 text-amber-400 border-amber-400/30 px-3 py-1 animate-pulse">Verification Pending</Badge>
+                            )}
+                        </div>
+                    </CardHeader>
+                    
+                    <CardContent className="p-8">
+                        {!activeReg.is_approved ? (
+                            <div className="text-center space-y-4 py-8">
+                                <div className="mx-auto bg-amber-400/10 rounded-full p-4 w-fit">
+                                    <Loader2 className="h-10 w-10 text-amber-400 animate-spin" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white">Verification in Progress</h3>
+                                <p className="text-gray-400 max-w-sm mx-auto">
+                                    We are currently verifying your payment UTR. Your credentials will appear here automatically once approved.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-8">
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div className="bg-black/20 p-5 rounded-2xl border border-white/5 space-y-1">
+                                        <Label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Trading Username</Label>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-lg font-mono font-bold text-white truncate">{activeReg.stockmint_username}</p>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white" onClick={() => copyToClipboard(activeReg.stockmint_username)}>
+                                                <Copy className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="bg-black/20 p-5 rounded-2xl border border-white/5 space-y-1">
+                                        <Label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Trading Password</Label>
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-lg font-mono font-bold text-white tracking-widest">
+                                                {visiblePasswords[activeReg.id] ? activeReg.stockmint_password : '••••••••••'}
+                                            </p>
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white" onClick={() => togglePasswordVisibility(activeReg.id)}>
+                                                    {visiblePasswords[activeReg.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white" onClick={() => copyToClipboard(activeReg.stockmint_password)}>
+                                                    <Copy className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <Button asChild size="lg" className="flex-1 bg-purple-600 hover:bg-purple-500 text-white shadow-xl shadow-purple-600/20 font-bold h-14 rounded-xl">
+                                        <Link href="https://www.stockmint.io/login" target="_blank">
+                                            Launch Trading Software <ExternalLink className="ml-2 h-5 w-5" />
+                                        </Link>
+                                    </Button>
+                                    <div className="bg-white/5 px-6 py-4 rounded-xl border border-white/5 flex flex-col justify-center">
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Live Balance</span>
+                                        <span className="text-xl font-black text-primary">₹{Number(activeReg.current_balance).toLocaleString('en-IN')}</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <Button asChild size="lg" className="w-full">
-                        <Link href="https://www.stockmint.io/login" target="_blank">
-                            Launch Trading Software
-                            <ExternalLink className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </CardContent>
-            </Card>
+                        )}
+                    </CardContent>
+                </GlassCard>
 
-            <RenewalFlow />
-
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><History /> Competition History</CardTitle>
-                    <CardDescription>Your credentials from previous competition entries.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Identifier</TableHead>
-                                <TableHead>Username</TableHead>
-                                <TableHead>Password</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {entries.slice(1).map((entry) => (
-                                <TableRow key={entry.id}>
-                                    <TableCell className="font-medium">{entry.week_identifier}</TableCell>
-                                    <TableCell>{entry.stockmint_username || 'N/A'}</TableCell>
-                                    <TableCell>{entry.stockmint_password ? '••••••••••' : 'N/A'}</TableCell>
-                                </TableRow>
-                            ))}
-                             {entries.length <= 1 && (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">No previous entries found.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                {/* Registration History */}
+                {registrations.length > 1 && (
+                    <GlassCard>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-white"><History className="w-5 h-5" /> Tournament History</CardTitle>
+                            <CardDescription className="text-gray-400">Past weekly entries and results.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="border-white/5">
+                                        <TableHead className="text-gray-500 uppercase text-[10px] font-bold tracking-wider">Tournament</TableHead>
+                                        <TableHead className="text-gray-500 uppercase text-[10px] font-bold tracking-wider">Status</TableHead>
+                                        <TableHead className="text-right text-gray-500 uppercase text-[10px] font-bold tracking-wider">Ending Balance</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {registrations.slice(1).map((reg) => (
+                                        <TableRow key={reg.id} className="border-white/5">
+                                            <TableCell className="font-semibold text-white">{reg.competition_events.week_label}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="text-[10px] border-white/10 text-gray-400">Completed</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono text-white">₹{Number(reg.current_balance).toLocaleString('en-IN')}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </GlassCard>
+                )}
+            </div>
+            
+            <div className="text-center pt-8">
+                <Button asChild variant="outline" className="bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10 rounded-full">
+                    <Link href="/competition">Join Another Week <PlusCircle className="ml-2 w-4 h-4"/></Link>
+                </Button>
+            </div>
         </div>
     );
 }
