@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowRight, Award, TrendingDown, CheckCircle2, Copy, ShieldCheck, Trophy, Target, Ban, Zap, Clock, IndianRupee, X, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { registerForTournament, getCompetitionEvents, getLeaderboard } from './actions';
+import { registerForTournament, getCompetitionEvents } from './actions';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -221,71 +222,6 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
     );
 }
 
-function LeaderboardView({ ongoingEventId }: { ongoingEventId: string | null }) {
-    const [data, setData] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (ongoingEventId) {
-            setLoading(true);
-            getLeaderboard(ongoingEventId).then(res => {
-                setData(res);
-                setLoading(false);
-            });
-        }
-    }, [ongoingEventId]);
-
-    if (!ongoingEventId) return null;
-
-    return (
-        <section id="leaderboard" className="py-20">
-            <div className="container mx-auto px-4 max-w-4xl space-y-12">
-                <div className="text-center space-y-4">
-                    <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-primary/20">
-                        <TrendingDown className="h-3 w-3 rotate-180" /> Live Rankings
-                    </div>
-                    <h2 className="text-4xl font-bold tracking-tighter text-white">Competition Leaderboard</h2>
-                    <p className="text-muted-foreground text-lg">Real-time performance ranking for the ongoing week.</p>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="border-white/5 bg-white/5 h-14">
-                                    <TableHead className="w-24 text-center text-gray-400 font-bold uppercase text-[10px] tracking-widest">Rank</TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Trader Name</TableHead>
-                                    <TableHead className="text-right text-gray-400 font-bold uppercase text-[10px] tracking-widest pr-8">Current Balance</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow><TableCell colSpan={3} className="text-center py-16"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
-                                ) : data.length > 0 ? data.map((row, i) => (
-                                    <TableRow key={i} className="border-white/5 hover:bg-white/5 transition-colors h-16">
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center">
-                                                {i === 0 ? <div className="h-8 w-8 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-bold text-sm">1</div> : 
-                                                 i === 1 ? <div className="h-8 w-8 rounded-full bg-gray-300/20 text-gray-300 flex items-center justify-center font-bold text-sm">2</div> : 
-                                                 i === 2 ? <div className="h-8 w-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold text-sm">3</div> : 
-                                                 <span className="text-gray-500 font-mono text-sm">#{i + 1}</span>}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-semibold text-white">{row.name}</TableCell>
-                                        <TableCell className="text-right font-mono text-primary font-bold text-lg pr-8">₹{Number(row.balance).toLocaleString('en-IN')}</TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow><TableCell colSpan={3} className="text-center py-16 text-muted-foreground">The battle is starting soon! Leaderboard will update live.</TableCell></TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </div>
-            </div>
-        </section>
-    );
-}
-
 function CompetitionLanding() {
     const [events, setEvents] = useState<any[]>([]);
     const [paymentSettings, setPaymentSettings] = useState<any>(null);
@@ -295,8 +231,6 @@ function CompetitionLanding() {
         getCompetitionEvents().then(setEvents);
         supabase.from('payment_details').select('*').eq('id', 1).single().then(({data}) => setPaymentSettings(data));
     }, []);
-
-    const ongoingEvent = events.find(e => e.status === 'ongoing');
 
     return (
         <main className="bg-background text-foreground min-h-screen relative overflow-hidden">
@@ -333,7 +267,7 @@ function CompetitionLanding() {
                         <p className="text-muted-foreground max-w-md mx-auto lg:mx-0 text-lg">Weekly tournaments with live capital rewards. Join the ongoing battle or secure your spot for upcoming weeks.</p>
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                              <Button size="lg" className="h-14 px-10 text-lg bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-xl shadow-primary/20 transition-all hover:scale-105" asChild><a href="#join-form">Join Tournament <ArrowRight className="ml-2 h-5 w-5" /></a></Button>
-                             <Button size="lg" variant="outline" className="h-14 px-10 text-lg rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white" asChild><a href="#leaderboard">View Leaderboard <Award className="ml-2 h-5 w-5" /></a></Button>
+                             <Button size="lg" variant="outline" className="h-14 px-10 text-lg rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white" asChild><Link href="/competition/leaderboard">View Live Rankings <Award className="ml-2 h-5 w-5" /></Link></Button>
                         </div>
                     </div>
                     <div className="relative h-full flex items-center justify-center min-h-[350px] lg:min-h-0">
@@ -342,8 +276,19 @@ function CompetitionLanding() {
                     </div>
                 </section>
                 
-                {/* Leaderboard Section */}
-                <LeaderboardView ongoingEventId={ongoingEvent?.id} />
+                {/* Rankings Preview CTA */}
+                <section className="py-20 bg-primary/5 border-y border-primary/10">
+                    <div className="container mx-auto px-4 text-center space-y-6">
+                        <h2 className="text-3xl md:text-4xl font-bold text-white">The Battle is Live.</h2>
+                        <p className="text-gray-400 max-w-2xl mx-auto">Check the real-time performance of current participants and see who's leading the charge for this week's funding rewards.</p>
+                        <Button asChild size="lg" className="h-14 px-12 rounded-full bg-white text-black hover:bg-gray-200 transition-all font-bold">
+                            <Link href="/competition/leaderboard">
+                                <TrendingDown className="mr-2 rotate-180 h-5 w-5" />
+                                Open Dedicated Leaderboard
+                            </Link>
+                        </Button>
+                    </div>
+                </section>
 
                 {/* Prizes Section */}
                 <section id="prizes" className="py-24 bg-white/[0.02] border-y border-white/5">
