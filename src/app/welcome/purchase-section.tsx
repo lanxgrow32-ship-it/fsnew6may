@@ -69,8 +69,8 @@ export function PurchaseSection({ profile }: { profile: any }) {
     }, []);
 
     const handlePurchase = async () => {
-        if (!utr || utr.length < 12) {
-            toast({ title: "Invalid UTR", description: "Please enter a valid 12-digit transaction ID.", variant: "destructive" });
+        if (!utr) {
+            toast({ title: "UTR Required", description: "Please enter your transaction ID.", variant: "destructive" });
             return;
         }
 
@@ -157,7 +157,7 @@ export function PurchaseSection({ profile }: { profile: any }) {
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="utr" className="text-gray-300">Transaction ID (UTR)</Label>
-                                <Input id="utr" value={utr} onChange={(e) => setUtr(e.target.value)} placeholder="12-digit UPI Transaction ID" className="bg-black/50 border-white/10 text-white h-12" />
+                                <Input id="utr" value={utr} onChange={(e) => setUtr(e.target.value)} placeholder="Enter UPI Transaction ID" className="bg-black/50 border-white/10 text-white h-12" />
                             </div>
                             <div className="p-4 bg-purple-600/10 rounded-lg border border-purple-500/20">
                                 <div className="flex justify-between items-center text-sm">

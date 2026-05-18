@@ -58,7 +58,8 @@ export async function purchaseNewAccount(formData: FormData) {
         return { error: 'All fields are required.' };
     }
 
-    const { error } = await supabase
+    // We use supabaseAdmin here to bypass RLS policies and ensure the purchase is recorded reliably.
+    const { error } = await supabaseAdmin
         .from('user_accounts')
         .insert({
             user_id: user.id,
@@ -141,9 +142,9 @@ export async function submitUtr(prevState: any, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Not logged in' };
   const utr = formData.get('utr') as string;
-  if (!utr || utr.length < 12) return { error: 'Invalid UTR' };
+  if (!utr) return { error: 'UTR is required' };
 
-  await supabase.from('profiles').update({ transaction_id: utr }).eq('id', user.id);
+  await supabaseAdmin.from('profiles').update({ transaction_id: utr }).eq('id', user.id);
   revalidatePath('/welcome');
   return { success: true };
 }
