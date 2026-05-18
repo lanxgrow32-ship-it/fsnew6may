@@ -1,94 +1,101 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { randomUUID } from 'crypto';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { revalidatePath } from 'next/cache';
 
-export async function createCompetitionUserAndSession(formData: FormData) {
+export async function registerForTournament(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const fullName = formData.get('full_name') as string;
-  const planType = formData.get('plan_type') as 'weekly' | 'monthly';
   const mobileNumber = formData.get('mobile_number') as string;
+  const eventId = formData.get('event_id') as string;
+  const utr = formData.get('utr') as string;
 
-  if (!fullName || !email || !password || !planType || !mobileNumber) {
-    return { error: 'All fields are required.' };
-  }
-  if (password.length < 6) {
-    return { error: 'Password must be at least 6 characters long.' };
+  if (!email || !password || !fullName || !mobileNumber || !eventId || !utr) {
+    return { error: 'All fields are required, including the Transaction ID (UTR).' };
   }
 
   const supabase = createClient();
   
-  // 1. Create the user in Supabase Auth first
-  const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        role: 'user', // Default role
-        // mobile_number is not part of auth user data
-      },
-    },
-  });
+  // 1. Check if user already exists
+  const { data: existingUser } = await supabase.from('profiles').select('id').eq('email', email).single();
+  
+  let userId: string;
 
-  if (signUpError) {
-    if (signUpError.message.includes('User already registered')) {
-        return { error: 'A user with this email address already exists. Please log in.' };
-    }
-    return { error: signUpError.message };
-  }
-
-  if (user) {
-    // Generate referral code
-    let namePart = fullName.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4);
-    if (namePart.length < 1) {
-        namePart = 'USER';
-    }
-    const idPart = user.id.substring(0, 4).toUpperCase();
-    const referralCodeValue = `${namePart}-${idPart}`;
-
-    // 2. The DB trigger creates the profile, now we update it for competition specifics
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ 
-        account_type: 'competition',
-        mobile_number: mobileNumber,
-        referral_code: referralCodeValue,
-       })
-      .eq('id', user.id);
-
-    if (profileError) {
-        // Attempt to clean up the created auth user if profile update fails
-        // This makes the process more transactional
-        await supabase.auth.admin.deleteUser(user.id);
-        console.error('Failed to update profile for competition user, rolling back:', profileError.message);
-        return { error: `Could not save registration details: ${profileError.message}` };
-    }
+  if (existingUser) {
+    // Check if they are already registered for THIS specific event
+    const { data: existingReg } = await supabaseAdmin
+        .from('competition_registrations')
+        .select('id')
+        .eq('user_id', existingUser.id)
+        .eq('event_id', eventId)
+        .single();
     
-    // 3. Create the temporary payment session record
-    const sessionId = randomUUID();
-    const { error: insertError } = await supabase
-      .from('payment_sessions')
-      .insert({
-        id: sessionId,
-        name: fullName,
-        email,
-        plain_password: password,
-        plan_type: planType,
-        mobile_number: mobileNumber,
-      });
-
-    if (insertError) {
-      console.error('Error creating payment session:', insertError);
-      return { error: `Could not initiate registration: ${insertError.message}` };
+    if (existingReg) {
+        return { error: 'You are already registered for this week. Please wait for approval.' };
     }
+    userId = existingUser.id;
+  } else {
+    // 2. Create the user in Supabase Auth if they don't exist
+    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+        data: {
+            full_name: fullName,
+            role: 'user',
+        },
+        },
+    });
 
-    // 4. Return the redirect URL for the frontend
-    const redirectUrl = `https://styfashion.in/exclusive-access-pqrstuv/?session_id=${sessionId}`;
-    return { redirectUrl };
+    if (signUpError) return { error: signUpError.message };
+    if (!user) return { error: 'Failed to create account.' };
+    userId = user.id;
+
+    // Update profile for competition
+    await supabase.from('profiles').update({ 
+        account_type: 'competition',
+        mobile_number: mobileNumber 
+    }).eq('id', userId);
+  }
+  
+  // 3. Create the registration entry
+  const { error: regError } = await supabaseAdmin
+    .from('competition_registrations')
+    .insert({
+        user_id: userId,
+        event_id: eventId,
+        transaction_id: utr,
+        is_approved: false,
+    });
+
+  if (regError) {
+      console.error('Registration Error:', regError);
+      return { error: 'Failed to submit registration. Please contact support.' };
   }
 
-  return { error: 'An unknown error occurred during signup.' };
+  revalidatePath('/competition');
+  return { success: true };
+}
+
+export async function getCompetitionEvents() {
+    const { data } = await supabaseAdmin
+        .from('competition_events')
+        .select('*')
+        .eq('is_active', true)
+        .order('start_date', { ascending: true });
+    return data || [];
+}
+
+export async function getLeaderboard(eventId: string) {
+    const { data } = await supabaseAdmin
+        .from('competition_registrations')
+        .select('current_balance, profiles(full_name)')
+        .eq('event_id', eventId)
+        .eq('is_approved', true)
+        .order('current_balance', { ascending: false })
+        .limit(50);
+    
+    return data || [];
 }
