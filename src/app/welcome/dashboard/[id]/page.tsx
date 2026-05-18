@@ -9,7 +9,6 @@ import { signOut } from '@/app/actions';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, CheckCircle } from 'lucide-react';
-import { ReceiptButton } from '../../receipt-button';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
@@ -171,19 +170,19 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                                <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Initial</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Initial</p>
                                 <p className="text-xl font-bold text-white mt-1">₹{initialBalance.toLocaleString('en-IN')}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                                <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Model</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Model</p>
                                 <p className="text-xl font-bold text-white mt-1 capitalize">{account.account_model === 'passthrupay' ? 'PassThenPay' : 'Standard'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                                <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Type</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Type</p>
                                 <p className="text-xl font-bold text-white mt-1 capitalize">{account.account_classification}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                                <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Status</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Status</p>
                                 <p className={cn("text-xl font-bold mt-1 capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>

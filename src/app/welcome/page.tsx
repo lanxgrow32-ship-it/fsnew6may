@@ -154,7 +154,7 @@ export default async function WelcomePage() {
         const { data: paymentSession } = await supabase.from('payment_sessions').select('status').eq('email', session.user.email).order('created_at', { ascending: false }).limit(1).single();
         return (
             <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
-                <main className="relative z-10 p-4 sm:p-6 lg:p-8"><DashboardHeader profile={profile} activePage="Account Overview" /><div className="max-w-4xl mx-auto"><CompetitionView initialEntries={initialEntries || []} paymentSession={paymentSession} /></div></main>
+                <main className="relative z-10 p-4 sm:p-6 lg:p-8"><DashboardHeader profile={profile} activePage="Account Hub" /><div className="max-w-4xl mx-auto"><CompetitionView initialEntries={initialEntries || []} paymentSession={paymentSession} /></div></main>
             </div>
         );
     }
