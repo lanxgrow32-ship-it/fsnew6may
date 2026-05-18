@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -103,9 +104,10 @@ export async function signupAndCreateOrder(formData: FormData) {
     }
 
     // 6. ALSO CREATE THE FIRST RECORD IN user_accounts (Multi-Account Hub)
+    // We use supabaseAdmin here to ensure the record is created reliably during the signup transition.
     const utrValue = activeGateway === 'manual' ? formData.get('utr') as string : null;
     
-    await supabase.from('user_accounts').insert({
+    await supabaseAdmin.from('user_accounts').insert({
         user_id: user.id,
         plan_name: planPurchased,
         status: 'pending',

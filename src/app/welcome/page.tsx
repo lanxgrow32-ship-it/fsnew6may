@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Bell, FileCheck, LogOut, Menu, Search, Settings, User, MessageSquare, Briefcase, Grid3x3, CheckCircle, ExternalLink, PlusCircle, ArrowRight, ShieldAlert, Clock, IndianRupee } from 'lucide-react';
 import { CompetitionView } from './competition-view';
 import { PurchaseSection } from './purchase-section';
+import { PendingView } from './pending-view';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
@@ -89,7 +91,7 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
   </header>
 );
 
-const AccountCard = ({ account }: { account: any }) => {
+const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: boolean }) => {
     const isPending = account.status === 'pending' || !account.is_approved;
     const isBreached = account.status === 'breached';
 
@@ -129,6 +131,12 @@ const AccountCard = ({ account }: { account: any }) => {
             <CardFooter className="pt-0">
                 {isPending ? (
                     <Button disabled className="w-full bg-slate-800 text-gray-500 border border-white/5">Verification in Progress</Button>
+                ) : !kycVerified && !isBreached ? (
+                    <Button asChild className="w-full bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20 font-bold">
+                        <Link href="/kyc">
+                            Complete KYC to Activate <ArrowRight className="ml-2 w-4 h-4"/>
+                        </Link>
+                    </Button>
                 ) : (
                     <Button asChild className={cn("w-full bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20", isBreached && "bg-slate-800 hover:bg-slate-700")}>
                         <Link href={`/welcome/dashboard/${account.id}`}>
@@ -159,8 +167,20 @@ export default async function WelcomePage() {
         );
     }
 
-    // Fetch all accounts from the new table
+    // Fetch all accounts from the user_accounts table
     const { data: accounts } = await supabase.from('user_accounts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+
+    // --- FLOW LOGIC ---
+    const hasApprovedAccount = accounts?.some(acc => acc.is_approved);
+    const hasPendingAccount = accounts?.some(acc => !acc.is_approved);
+
+    // If the user has NO approved accounts but has at least one pending one, show the verification pending screen.
+    // This maintains the original signup flow experience.
+    if (!hasApprovedAccount && hasPendingAccount) {
+        return <PendingView profile={profile} />;
+    }
+
+    const kycVerified = profile.kyc_status === 'verified';
 
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
@@ -179,7 +199,7 @@ export default async function WelcomePage() {
                             <h2 className="text-3xl font-extrabold text-white tracking-tight">Your Trading Accounts</h2>
                             <p className="text-gray-400 mt-1 text-lg">Manage multiple accounts and track your performance.</p>
                         </div>
-                         {profile.kyc_status !== 'verified' && (
+                         {!kycVerified && (
                             <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-full border border-amber-400/20 text-sm font-semibold hover:bg-amber-400/20 transition-all">
                                 <ShieldAlert className="w-4 h-4"/> Complete KYC to Activate Accounts
                             </Link>
@@ -188,7 +208,7 @@ export default async function WelcomePage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
                         {accounts && accounts.length > 0 ? (
-                            accounts.map((acc: any) => <AccountCard key={acc.id} account={acc} />)
+                            accounts.map((acc: any) => <AccountCard key={acc.id} account={acc} kycVerified={kycVerified} />)
                         ) : (
                             <GlassCard className="col-span-full p-12 text-center border-dashed">
                                 <PlusCircle className="h-12 w-12 text-gray-600 mx-auto mb-4" />
