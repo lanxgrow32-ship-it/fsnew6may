@@ -92,11 +92,16 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
 );
 
 const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: boolean }) => {
-    const isPending = account.status === 'pending' || !account.is_approved;
+    const paymentApproved = account.is_approved;
     const isBreached = account.status === 'breached';
+    
+    // isWaitingKyc is true if payment is approved but kyc isn't done in profile
+    const isWaitingKyc = paymentApproved && !kycVerified && !isBreached;
+    // isWaitingApproval is true if payment is NOT approved
+    const isWaitingApproval = !paymentApproved;
 
     return (
-        <GlassCard className={cn("group transition-all duration-300 hover:scale-[1.02] border-white/10", isBreached && "border-destructive/30", isPending && "border-amber-400/30")}>
+        <GlassCard className={cn("group transition-all duration-300 hover:scale-[1.02] border-white/10", isBreached && "border-destructive/30", (isWaitingApproval || isWaitingKyc) && "border-amber-400/30")}>
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div>
@@ -107,8 +112,10 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                     </div>
                     {isBreached ? (
                         <div className="bg-destructive/10 text-destructive p-2 rounded-full"><ShieldAlert className="w-5 h-5"/></div>
-                    ) : isPending ? (
+                    ) : isWaitingApproval ? (
                         <div className="bg-amber-400/10 text-amber-400 p-2 rounded-full animate-pulse"><Clock className="w-5 h-5"/></div>
+                    ) : isWaitingKyc ? (
+                         <div className="bg-amber-400/10 text-amber-400 p-2 rounded-full"><FileCheck className="w-5 h-5"/></div>
                     ) : (
                         <div className="bg-green-500/10 text-green-400 p-2 rounded-full"><CheckCircle className="w-5 h-5"/></div>
                     )}
@@ -118,8 +125,14 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Status</p>
-                        <p className={cn("text-sm font-semibold capitalize mt-0.5", isBreached ? "text-red-400" : isPending ? "text-amber-400" : "text-green-400")}>
-                            {isBreached ? "Account Breached" : isPending ? "Awaiting Approval" : "Live & Active"}
+                        <p className={cn("text-sm font-semibold capitalize mt-0.5", 
+                            isBreached ? "text-red-400" : 
+                            isWaitingApproval ? "text-amber-400" : 
+                            isWaitingKyc ? "text-amber-400" : "text-green-400"
+                        )}>
+                            {isBreached ? "Account Breached" : 
+                             isWaitingApproval ? "Awaiting Approval" : 
+                             isWaitingKyc ? "Complete KYC" : "Live & Active"}
                         </p>
                     </div>
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
@@ -129,9 +142,9 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                 </div>
             </CardContent>
             <CardFooter className="pt-0">
-                {isPending ? (
+                {isWaitingApproval ? (
                     <Button disabled className="w-full bg-slate-800 text-gray-500 border border-white/5">Verification in Progress</Button>
-                ) : !kycVerified && !isBreached ? (
+                ) : isWaitingKyc ? (
                     <Button asChild className="w-full bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20 font-bold">
                         <Link href="/kyc">
                             Complete KYC to Activate <ArrowRight className="ml-2 w-4 h-4"/>
