@@ -36,7 +36,7 @@ async function fetchRevenueForPeriod(queryBuilder: any, startDate: Date, endDate
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .select('final_amount_paid')
-        .range(0, 9999); // Increased range to handle high volume sales
+        .range(0, 49999); // Increased range to handle high volume sales
 
     if (revenueError) {
         console.error(`Error fetching revenue for period ${startDate}-${endDate}:`, revenueError);
@@ -70,12 +70,12 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         return query;
     };
 
-    // Main data query for the selected period - Increased range to 10,000
+    // Main data query for the selected period - Increased range to 50,000
     const { data: sales, error } = await baseQuery()
         .gte('created_at', periodStart.toISOString())
         .lte('created_at', periodEnd.toISOString())
         .order('created_at', { ascending: false })
-        .range(0, 9999);
+        .range(0, 49999);
 
     if (error) {
         console.error("Error fetching main sales data:", error);

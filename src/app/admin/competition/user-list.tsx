@@ -45,7 +45,8 @@ export function CompetitionUserList({ initialProfiles }: { initialProfiles: Prof
                           .from('profiles')
                           .select('*')
                           .eq('account_type', 'competition')
-                          .order('created_at', { ascending: false });
+                          .order('created_at', { ascending: false })
+                          .range(0, 49999); // Increased range
 
                         if (error) {
                             toast({ title: 'Error fetching updated profiles', variant: 'destructive' });
@@ -120,7 +121,7 @@ export function CompetitionUserList({ initialProfiles }: { initialProfiles: Prof
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Competition Users</CardTitle>
-                        <CardDescription>List of all users who have participated in trading competitions.</CardDescription>
+                        <CardDescription>List of all users who have participated in trading competitions. Showing {profiles.length} users.</CardDescription>
                     </div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

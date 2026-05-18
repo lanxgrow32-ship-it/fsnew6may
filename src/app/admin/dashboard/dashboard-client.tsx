@@ -168,10 +168,10 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
     } else {
       query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
-    // Increased range to 10,000 for realtime updates
+    // Increased range to 50,000 for realtime updates
     const { data: updatedProfiles, error } = await query
         .order('created_at', { ascending: false })
-        .range(0, 9999);
+        .range(0, 49999);
 
     if (error) {
         toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });

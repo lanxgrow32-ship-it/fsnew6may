@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
@@ -12,7 +13,8 @@ export default async function AdminCompetitionPage() {
   const { data: profiles, error } = await supabase.from('profiles')
     .select('*')
     .eq('account_type', 'competition')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(0, 49999); // Increased range to handle all users
 
 
   if (error) {

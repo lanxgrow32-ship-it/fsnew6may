@@ -14,10 +14,10 @@ export default async function PayLaterDashboardPage({ searchParams }: { searchPa
     query = query.or('is_hidden.is.false,is_hidden.is.null');
   }
 
-  // Increased range to 10,000
+  // Increased range to 50,000
   const { data: profiles, error } = await query
     .order('created_at', { ascending: false })
-    .range(0, 9999);
+    .range(0, 49999);
 
 
   if (error) {

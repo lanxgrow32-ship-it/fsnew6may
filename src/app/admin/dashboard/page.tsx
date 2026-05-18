@@ -17,15 +17,14 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
     query = query.or('is_hidden.is.false,is_hidden.is.null');
   }
 
-  // Increased range to 10,000 to overcome the default 1,000 limit
+  // Increased range to 50,000 to handle very large user bases
   const { data: profiles, error } = await query
     .order('created_at', { ascending: false })
-    .range(0, 9999);
+    .range(0, 49999);
 
 
   if (error) {
     console.error("Error fetching profiles:", error);
-    // You might want to render an error state here
   }
   
   return <AdminDashboardClient initialProfiles={profiles || []} masterView={masterView} />;
