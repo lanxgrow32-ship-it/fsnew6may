@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Eye, EyeOff, History, Copy, Clock, ShieldCheck, CheckCircle } from 'lucide-react';
+import { Loader2, ExternalLink, Eye, EyeOff, History, Copy, Clock, ShieldCheck, CheckCircle, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from '@/components/ui/label';
@@ -71,10 +70,16 @@ export function CompetitionView({ registrations }: { registrations: Registration
                     <CardHeader className="bg-white/[0.02] border-b border-white/5">
                         <div className="flex justify-between items-center">
                             <div>
-                                <CardTitle className="text-2xl font-bold text-white">{activeReg.competition_events.week_label}</CardTitle>
+                                <CardTitle className="text-2xl font-bold text-white">{activeReg.competition_events?.week_label || 'Weekly Tournament'}</CardTitle>
                                 <CardDescription className="text-gray-400">
-                                    {new Date(activeReg.competition_events.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} — 
-                                    {new Date(activeReg.competition_events.end_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    {activeReg.competition_events ? (
+                                        <>
+                                            {new Date(activeReg.competition_events.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} — 
+                                            {new Date(activeReg.competition_events.end_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </>
+                                    ) : (
+                                        'Tournament Dates'
+                                    )}
                                 </CardDescription>
                             </div>
                             {activeReg.is_approved ? (
@@ -161,7 +166,7 @@ export function CompetitionView({ registrations }: { registrations: Registration
                                 <TableBody>
                                     {registrations.slice(1).map((reg) => (
                                         <TableRow key={reg.id} className="border-white/5">
-                                            <TableCell className="font-semibold text-white">{reg.competition_events.week_label}</TableCell>
+                                            <TableCell className="font-semibold text-white">{reg.competition_events?.week_label || 'Completed Week'}</TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className="text-[10px] border-white/10 text-gray-400">Completed</Badge>
                                             </TableCell>
