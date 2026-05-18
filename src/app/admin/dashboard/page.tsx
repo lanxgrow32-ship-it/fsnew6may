@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import AdminDashboardClient from './dashboard-client';
 
@@ -17,7 +16,7 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
     query = query.or('is_hidden.is.false,is_hidden.is.null');
   }
 
-  // Fetching a sensible range for the initial table display
+  // Fetching a large range to ensure the table displays many users
   const { data: profiles, error, count } = await query
     .order('created_at', { ascending: false })
     .range(0, 49999);

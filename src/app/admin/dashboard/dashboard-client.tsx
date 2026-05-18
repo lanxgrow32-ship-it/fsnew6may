@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useActionState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -13,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createAdmin, deleteUser } from './actions';
+import { createAdmin } from './actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -21,7 +20,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function CreateAdminForm({ className }: { className?: string }) {
     const ref = useRef<HTMLFormElement>(null);
@@ -171,7 +169,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
       query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
     
-    // Fetch a sensible range for real-time updates
+    // Fetch a large range to ensure the UI shows many users
     const { data: updatedProfiles, error, count } = await query
         .order('created_at', { ascending: false })
         .range(0, 49999);
