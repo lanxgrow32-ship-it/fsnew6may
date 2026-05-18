@@ -7,7 +7,7 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
   const masterView = searchParams.master_view === 'true';
 
   let query = supabase.from('profiles')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('account_type', 'standard')
     .or('account_model.is.null,account_model.neq.passthrupay');
 
@@ -17,15 +17,15 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
     query = query.or('is_hidden.is.false,is_hidden.is.null');
   }
 
-  // Increased range to 50,000 to handle very large user bases
-  const { data: profiles, error } = await query
+  // Fetching a massive range to ensure "all" users are shown without complexity
+  const { data: profiles, error, count } = await query
     .order('created_at', { ascending: false })
-    .range(0, 49999);
+    .range(0, 99999);
 
 
   if (error) {
     console.error("Error fetching profiles:", error);
   }
   
-  return <AdminDashboardClient initialProfiles={profiles || []} masterView={masterView} />;
+  return <AdminDashboardClient initialProfiles={profiles || []} initialCount={count || 0} masterView={masterView} />;
 }

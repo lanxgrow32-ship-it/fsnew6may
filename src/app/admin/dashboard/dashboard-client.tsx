@@ -152,31 +152,35 @@ function UserTableSkeleton() {
     )
 }
 
-export default function AdminDashboardClient({ initialProfiles, masterView }: { initialProfiles: any[], masterView: boolean }) {
+export default function AdminDashboardClient({ initialProfiles, initialCount, masterView }: { initialProfiles: any[], initialCount: number, masterView: boolean }) {
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
+  const [totalDbCount, setTotalDbCount] = useState(initialCount);
   const { toast } = useToast();
   
   useEffect(() => {
     setProfiles(initialProfiles);
-  }, [initialProfiles]);
+    setTotalDbCount(initialCount);
+  }, [initialProfiles, initialCount]);
 
   const fetchProfiles = async () => {
-    let query = supabase.from('profiles').select('*').eq('account_type', 'standard').or('account_model.is.null,account_model.neq.passthrupay');
+    let query = supabase.from('profiles').select('*', { count: 'exact' }).eq('account_type', 'standard').or('account_model.is.null,account_model.neq.passthrupay');
     if (masterView) {
       query = query.eq('is_hidden', true);
     } else {
       query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
-    // Increased range to 50,000 for realtime updates
-    const { data: updatedProfiles, error } = await query
+    
+    // Fetch everything present
+    const { data: updatedProfiles, error, count } = await query
         .order('created_at', { ascending: false })
-        .range(0, 49999);
+        .range(0, 99999);
 
     if (error) {
         toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });
     } else if (updatedProfiles) {
         setProfiles(updatedProfiles);
+        setTotalDbCount(count || updatedProfiles.length);
     }
   }
 
@@ -195,6 +199,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
   
   const onUserDelete = (deletedUserId: string) => {
     setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== deletedUserId));
+    setTotalDbCount(prev => prev - 1);
     toast({ title: 'User deleted successfully' });
   };
 
@@ -209,7 +214,7 @@ export default function AdminDashboardClient({ initialProfiles, masterView }: { 
 
   const visibleProfiles = profiles;
   const stats = [
-    { title: "Total Users", value: visibleProfiles.length || 0, icon: User },
+    { title: "Total Users", value: totalDbCount || visibleProfiles.length || 0, icon: User },
     { title: "Pending Approval", value: visibleProfiles.filter(p => !p.is_approved).length || 0, icon: User },
     { title: "KYC Submitted", value: visibleProfiles.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
   ];

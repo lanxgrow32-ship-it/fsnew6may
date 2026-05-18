@@ -36,7 +36,7 @@ async function fetchRevenueForPeriod(queryBuilder: any, startDate: Date, endDate
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .select('final_amount_paid')
-        .range(0, 49999); // Increased range to handle high volume sales
+        .range(0, 99999);
 
     if (revenueError) {
         console.error(`Error fetching revenue for period ${startDate}-${endDate}:`, revenueError);
@@ -49,7 +49,6 @@ async function fetchRevenueForPeriod(queryBuilder: any, startDate: Date, endDate
 export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, masterView?: boolean): Promise<SalesData | null> {
     const supabase = createClient();
     
-    // Do not re-process the dates on the server. Trust the client's local timezone.
     const periodStart = startDate || new Date(0);
     const periodEnd = endDate || new Date();
     const now = new Date();
@@ -70,20 +69,18 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         return query;
     };
 
-    // Main data query for the selected period - Increased range to 50,000
     const { data: sales, error } = await baseQuery()
         .gte('created_at', periodStart.toISOString())
         .lte('created_at', periodEnd.toISOString())
         .order('created_at', { ascending: false })
-        .range(0, 49999);
+        .range(0, 99999);
 
     if (error) {
         console.error("Error fetching main sales data:", error);
         return null;
     }
 
-    // --- Growth Metrics Calculation (Parallel) ---
-    const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+    const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 });
     const startOfLastWeek = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
     const endOfLastWeek = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
     
@@ -97,7 +94,6 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
     const wowRevenueGrowth = lastWeekRevenue > 0 ? ((thisWeekRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 : (thisWeekRevenue > 0 ? 100 : null);
     const momRevenueGrowth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : (thisMonthRevenue > 0 ? 100 : null);
 
-    // --- Initialize all data structures ---
     let totalNetRevenue = 0;
     let totalDiscounts = 0;
     const salesByDay: { [key: string]: { revenue: number, sales: number } } = {};
@@ -106,7 +102,6 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
     const salesByDayOfWeek: { [day: number]: number } = {};
     const salesByHour: { [hour: number]: number } = {};
     
-    // --- Single Loop for Data Aggregation ---
     sales.forEach(sale => {
         if (!sale.final_amount_paid || !sale.plan_purchased) return;
 
@@ -119,10 +114,7 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         const istOffset = 5.5 * 60 * 60 * 1000;
         const istDate = new Date(new Date(sale.created_at).getTime() + istOffset);
 
-        const year = istDate.getUTCFullYear();
-        const month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(istDate.getUTCDate()).padStart(2, '0');
-        const saleDateString = `${year}-${month}-${day}`;
+        const saleDateString = format(istDate, 'yyyy-MM-dd');
 
         if (!salesByDay[saleDateString]) {
             salesByDay[saleDateString] = { revenue: 0, sales: 0 };
@@ -133,7 +125,7 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         const hourIndex = istDate.getUTCHours();
         salesByHour[hourIndex] = (salesByHour[hourIndex] || 0) + revenue;
         
-        const dayIndex = istDate.getUTCDay(); // 0 for Sunday
+        const dayIndex = istDate.getUTCDay();
         salesByDayOfWeek[dayIndex] = (salesByDayOfWeek[dayIndex] || 0) + revenue;
         
         const lowerPlanName = sale.plan_purchased.toLowerCase();
@@ -142,7 +134,6 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         else if (lowerPlanName.includes('2-step')) planCategoryBreakdown['2-Step'] += revenue;
         else if (lowerPlanName.includes('passthenpay')) planCategoryBreakdown['PassThenPay'] += revenue;
 
-        
         if (!planBreakdown[sale.plan_purchased]) {
             planBreakdown[sale.plan_purchased] = { revenue: 0, sales: 0 };
         }
@@ -150,16 +141,12 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         planBreakdown[sale.plan_purchased].sales += 1;
     });
 
-    const totalSalesCount = sales.length;
-    const arpu = totalSalesCount > 0 ? totalNetRevenue / totalSalesCount : 0;
-    const totalGrossRevenue = totalNetRevenue + totalDiscounts;
-
     const finalData: SalesData = {
         totalNetRevenue,
-        totalGrossRevenue,
+        totalGrossRevenue: totalNetRevenue + totalDiscounts,
         totalDiscounts,
-        totalSalesCount,
-        arpu,
+        totalSalesCount: sales.length,
+        arpu: sales.length > 0 ? totalNetRevenue / sales.length : 0,
         wowRevenueGrowth,
         momRevenueGrowth,
         thisWeekRevenue,
