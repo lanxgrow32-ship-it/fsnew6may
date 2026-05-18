@@ -36,13 +36,13 @@ async function fetchRevenueForPeriod(queryBuilder: any, startDate: Date, endDate
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .select('final_amount_paid')
-        .range(0, 99999); // Fetching all records for accurate revenue
+        .range(0, 10000); // Optimized range for period summaries
 
     if (revenueError) {
         console.error(`Error fetching revenue for period ${startDate}-${endDate}:`, revenueError);
         return 0;
     }
-    return revenueData.reduce((sum: number, sale: any) => sum + (sale.final_amount_paid || 0), 0);
+    return (revenueData || []).reduce((sum: number, sale: any) => sum + (sale.final_amount_paid || 0), 0);
 }
 
 
@@ -69,12 +69,12 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         return query;
     };
 
-    // Main data query for the selected period - Fetching all available records
+    // Main data query for the selected period
     const { data: sales, error } = await baseQuery()
         .gte('created_at', periodStart.toISOString())
         .lte('created_at', periodEnd.toISOString())
         .order('created_at', { ascending: false })
-        .range(0, 99999);
+        .range(0, 49999); // Load up to 50k sales for detail
 
     if (error) {
         console.error("Error fetching main sales data:", error);
@@ -104,7 +104,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const salesByDayOfWeek: { [day: number]: number } = {};
     const salesByHour: { [hour: number]: number } = {};
     
-    sales.forEach(sale => {
+    (sales || []).forEach(sale => {
         if (!sale.final_amount_paid || !sale.plan_purchased) return;
 
         const revenue = sale.final_amount_paid;
@@ -146,8 +146,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         totalNetRevenue,
         totalGrossRevenue: totalNetRevenue + totalDiscounts,
         totalDiscounts,
-        totalSalesCount: sales.length,
-        arpu: sales.length > 0 ? totalNetRevenue / sales.length : 0,
+        totalSalesCount: (sales || []).length,
+        arpu: (sales || []).length > 0 ? totalNetRevenue / (sales || []).length : 0,
         wowRevenueGrowth,
         momRevenueGrowth,
         thisWeekRevenue,
@@ -168,7 +168,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         allPlansBreakdown: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue),
-        recentSales: sales.slice(0, 25).map(s => ({ id: s.id, name: s.full_name, email: s.email, plan: s.plan_purchased || 'N/A', amount: s.final_amount_paid, date: s.created_at })),
+        recentSales: (sales || []).slice(0, 25).map(s => ({ id: s.id, name: s.full_name, email: s.email, plan: s.plan_purchased || 'N/A', amount: s.final_amount_paid, date: s.created_at })),
     };
 
     return finalData;

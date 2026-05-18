@@ -17,10 +17,10 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
     query = query.or('is_hidden.is.false,is_hidden.is.null');
   }
 
-  // Fetching a massive range to ensure "all" users are shown without complexity
+  // Fetching a sensible range for the initial table display
   const { data: profiles, error, count } = await query
     .order('created_at', { ascending: false })
-    .range(0, 99999);
+    .range(0, 49999);
 
 
   if (error) {

@@ -171,10 +171,10 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
       query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
     
-    // Fetch everything present
+    // Fetch a sensible range for real-time updates
     const { data: updatedProfiles, error, count } = await query
         .order('created_at', { ascending: false })
-        .range(0, 99999);
+        .range(0, 49999);
 
     if (error) {
         toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });
@@ -214,7 +214,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
 
   const visibleProfiles = profiles;
   const stats = [
-    { title: "Total Users", value: totalDbCount || visibleProfiles.length || 0, icon: User },
+    { title: "Total Users", value: totalDbCount || 0, icon: User },
     { title: "Pending Approval", value: visibleProfiles.filter(p => !p.is_approved).length || 0, icon: User },
     { title: "KYC Submitted", value: visibleProfiles.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
   ];
