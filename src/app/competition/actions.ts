@@ -89,14 +89,61 @@ export async function getCompetitionEvents() {
     return data || [];
 }
 
+/**
+ * Fetches the live leaderboard for a specific event.
+ * It queries the approved registrations and then parallel fetches live balances from StockMint.
+ */
 export async function getLeaderboard(eventId: string) {
-    const { data } = await supabaseAdmin
+    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+
+    // 1. Get approved registrations for this event
+    const { data: regs, error } = await supabaseAdmin
         .from('competition_registrations')
-        .select('current_balance, profiles(full_name)')
+        .select('stockmint_username, profiles(full_name)')
         .eq('event_id', eventId)
-        .eq('is_approved', true)
-        .order('current_balance', { ascending: false })
-        .limit(50);
+        .eq('is_approved', true);
     
-    return data || [];
+    if (error || !regs || regs.length === 0) return [];
+
+    // 2. If API Key is present, parallel fetch live balances from StockMint API
+    if (stockmintApiKey) {
+        try {
+            const leaderboardData = await Promise.all(regs.map(async (reg) => {
+                let balance = 100000; // Default starting balance
+                
+                if (reg.stockmint_username) {
+                    try {
+                        const res = await fetch(`https://stockmint.io/api/users/stats?email=${reg.stockmint_username}`, {
+                            headers: { 'x-api-key': stockmintApiKey },
+                            next: { revalidate: 60 } // Cache results for 1 minute
+                        });
+                        if (res.ok) {
+                            const statsRes = await res.json();
+                            if (statsRes.success && statsRes.data) {
+                                balance = statsRes.data.balance;
+                            }
+                        }
+                    } catch (apiErr) {
+                        console.error(`Leaderboard API Error for ${reg.stockmint_username}:`, apiErr);
+                    }
+                }
+
+                return {
+                    name: reg.profiles?.full_name || 'Champion Trader',
+                    balance: balance
+                };
+            }));
+
+            // 3. Sort by balance (highest first) and return top 50
+            return leaderboardData.sort((a, b) => b.balance - a.balance).slice(0, 50);
+        } catch (e) {
+            console.error('Major error in getLeaderboard parallel fetch:', e);
+        }
+    }
+
+    // Fallback: return static data if API fails
+    return regs.map(r => ({ 
+        name: r.profiles?.full_name || 'Champion Trader', 
+        balance: 100000 
+    })).slice(0, 50);
 }

@@ -271,8 +271,8 @@ function LeaderboardView({ ongoingEventId }: { ongoingEventId: string | null }) 
                                                  <span className="text-gray-500 font-mono text-sm">#{i + 1}</span>}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="font-semibold text-white">{row.profiles?.full_name}</TableCell>
-                                        <TableCell className="text-right font-mono text-primary font-bold text-lg pr-8">₹{Number(row.current_balance).toLocaleString('en-IN')}</TableCell>
+                                        <TableCell className="font-semibold text-white">{row.name}</TableCell>
+                                        <TableCell className="text-right font-mono text-primary font-bold text-lg pr-8">₹{Number(row.balance).toLocaleString('en-IN')}</TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow><TableCell colSpan={3} className="text-center py-16 text-muted-foreground">The battle is starting soon! Leaderboard will update live.</TableCell></TableRow>
