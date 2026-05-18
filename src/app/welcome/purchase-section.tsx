@@ -92,26 +92,36 @@ export function PurchaseSection({ profile }: { profile: any }) {
     };
 
     const copyToClipboard = (text: string) => {
+        if (!text) return;
         navigator.clipboard.writeText(text);
         toast({ title: "UPI ID copied" });
     };
 
-    const PlanBox = ({ title, size, price, category }: { title: string, size: string, price: number, category: string }) => (
-        <div className="bg-black/20 border border-white/5 rounded-xl p-6 flex flex-col justify-between transition-all hover:border-purple-500/50 hover:bg-black/30">
-            <div>
-                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">{category}</p>
-                <h4 className="text-xl font-bold text-white">₹{size}</h4>
-                <p className="text-gray-400 text-sm mt-1">Evaluation Account</p>
-            </div>
-            <div className="mt-6">
-                <div className="flex items-baseline gap-1">
-                    <span className="text-sm text-gray-400">₹</span>
-                    <span className="text-2xl font-bold text-white">{price.toLocaleString('en-IN')}</span>
+    const PlanBox = ({ title, size, price, category }: { title: string, size: string, price: number, category: string }) => {
+        const originalPrice = price * 2;
+        return (
+            <div className="bg-black/20 border border-white/5 rounded-xl p-6 flex flex-col justify-between transition-all hover:border-purple-500/50 hover:bg-black/30 group">
+                <div>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">{category}</p>
+                    <h4 className="text-xl font-bold text-white">₹{size}</h4>
+                    <p className="text-gray-400 text-sm mt-1">Evaluation Account</p>
                 </div>
-                <Button onClick={() => setSelectedPlan({ title, price })} className="w-full mt-4 bg-white/10 hover:bg-purple-600 text-white border border-white/10 hover:border-purple-400 transition-all rounded-lg">Select Plan</Button>
+                <div className="mt-6 space-y-4">
+                    <div className="text-center bg-destructive/10 rounded-md py-1 border border-destructive/20 mb-2">
+                        <span className="text-[10px] font-bold text-destructive uppercase">Limited Time 50% Off</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                         <span className="text-sm text-gray-500 line-through">₹{originalPrice.toLocaleString('en-IN')}</span>
+                         <div className="flex items-baseline gap-1">
+                            <span className="text-sm text-gray-400">₹</span>
+                            <span className="text-2xl font-bold text-white">{price.toLocaleString('en-IN')}</span>
+                        </div>
+                    </div>
+                    <Button onClick={() => setSelectedPlan({ title, price })} className="w-full bg-white/10 hover:bg-purple-600 text-white border border-white/10 hover:border-purple-400 transition-all rounded-lg">Select Plan</Button>
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     if (selectedPlan) {
         const isPTP = selectedPlan.title.toLowerCase().includes('passthenpay');

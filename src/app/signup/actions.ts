@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -82,11 +81,11 @@ export async function signupAndCreateOrder(formData: FormData) {
     const idPart = user.id.substring(0, 4).toUpperCase();
     const referralCodeValue = `${namePart}-${idPart}`;
 
-    // 5. Update the automatically created profile with purchase details
+    // 5. Update the automatically created profile
     const profileData: any = {
         plan_purchased: planPurchased,
-        is_approved: false, // Payment is not yet confirmed
-        order_sn: order_sn, // Will be used by automated gateway
+        is_approved: false,
+        order_sn: order_sn,
         plan_price: planPrice,
         coupon_code: couponCode,
         discount_amount: discountAmount,
@@ -102,9 +101,22 @@ export async function signupAndCreateOrder(formData: FormData) {
     if (referrerId) {
         profileData.referred_by = referrerId;
     }
-    // If it was a manual payment, also save the UTR now
+
+    // 6. ALSO CREATE THE FIRST RECORD IN user_accounts (Multi-Account Hub)
+    const utrValue = activeGateway === 'manual' ? formData.get('utr') as string : null;
+    
+    await supabase.from('user_accounts').insert({
+        user_id: user.id,
+        plan_name: planPurchased,
+        status: 'pending',
+        is_approved: false,
+        transaction_id: utrValue,
+        account_model: profileData.account_model || 'normal',
+        final_amount_paid: finalAmountPaid,
+    });
+
     if (activeGateway === 'manual') {
-        profileData.transaction_id = formData.get('utr') as string;
+        profileData.transaction_id = utrValue;
     }
     
     const { error: profileError } = await supabase.from('profiles').update(profileData).eq('id', user.id);
@@ -114,12 +126,9 @@ export async function signupAndCreateOrder(formData: FormData) {
       return { error: `Could not save registration details: ${profileError.message}` };
     }
 
-    // 6. Branch logic based on active gateway
+    // 7. Branch logic based on active gateway
     if (activeGateway === 'manual') {
-        // For manual flow, we just redirect the user to the welcome page
-        // where they will see their pending status.
         redirect('/welcome');
-
     } else {
         // AUTOMATED (LG-Pay) Flow
         const lgPayAppId = 'YD4957';
