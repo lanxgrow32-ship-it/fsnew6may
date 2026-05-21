@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -14,9 +13,19 @@ import { headers } from 'next/headers';
 export async function signupAndCreateOrder(formData: FormData) {
   const supabase = createClient();
 
-  // Securely fetch the active gateway on the server to decide the flow
-  const { data: settings } = await supabase.from('payment_details').select('*').eq('id', 1).single();
-  const activeGateway = settings?.active_payment_gateway || 'lgpay';
+  // Securely fetch the active gateway using the Admin client to bypass RLS
+  const { data: settings, error: settingsError } = await supabaseAdmin
+    .from('payment_details')
+    .select('*')
+    .eq('id', 1)
+    .single();
+    
+  if (settingsError || !settings) {
+      console.error("Failed to fetch payment settings:", settingsError);
+      return { error: 'Server configuration error. Please contact support.' };
+  }
+
+  const activeGateway = settings.active_payment_gateway || 'lgpay';
 
   // --- Get form data ---
   const email = formData.get('email') as string;
@@ -133,15 +142,17 @@ export async function signupAndCreateOrder(formData: FormData) {
         redirect('/welcome');
     } else if (activeGateway === 'watchpay') {
         // WATCHPAY Flow
-        const merchantId = settings.watchpay_merchant_id;
-        const apiKey = settings.watchpay_api_key;
+        const merchantId = settings.watchpay_merchant_id?.trim();
+        const apiKey = settings.watchpay_api_key?.trim();
         
         if (!merchantId || !apiKey) {
-            return { error: 'WatchPay is not correctly configured. Please contact support.' };
+            return { error: 'WatchPay is not correctly configured in the admin panel.' };
         }
 
         const amountFormatted = finalAmountPaid.toFixed(2);
-        const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/watchpay-webhook`;
+        // Ensure we have a valid absolute URL for the callback
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.fundedstock.io';
+        const callbackUrl = `${siteUrl}/api/watchpay-webhook`;
 
         const params = {
             merchant_id: merchantId,
@@ -163,20 +174,23 @@ export async function signupAndCreateOrder(formData: FormData) {
                     extra: user.id 
                 }),
             });
+
             const result = await response.json();
 
             if (result.success && result.payment_url) {
                 return { redirectUrl: result.payment_url };
             } else {
                 console.error("WatchPay API Error:", result);
-                return { error: `Could not initiate payment: ${result.message || 'Unknown gateway error.'}` };
+                // Try to extract a specific error message from the gateway
+                const errorMessage = result.message || result.msg || result.error || 'Unknown gateway error.';
+                return { error: `Payment Initiation Failed: ${errorMessage}` };
             }
         } catch (e: any) {
             console.error("WatchPay fetch Error:", e);
-            return { error: 'Failed to contact payment gateway. Please try again later.' };
+            return { error: 'Failed to contact WatchPay. Please check your internet or try again later.' };
         }
     } else {
-        // LG-Pay Flow
+        // LG-Pay Flow (Default)
         const lgPayAppId = 'YD4957';
         const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
         const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
