@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         // Find the profile associated with this order_sn
         const { data: profile, error: findError } = await supabaseAdmin
             .from('profiles')
-            .select('id, is_approved')
+            .select('id, is_approved, account_model, kyc_status')
             .eq('order_sn', data.merchantOrder)
             .single();
 
@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
         
         // Only update if not already approved to prevent loops
         if (!profile.is_approved) {
-             const { error: updateError } = await supabaseAdmin
+             // 1. Update Profile
+             const { error: profileUpdateError } = await supabaseAdmin
                 .from('profiles')
                 .update({ 
                     is_approved: true,
@@ -36,12 +37,28 @@ export async function POST(req: NextRequest) {
                  })
                 .eq('id', profile.id);
 
-            if (updateError) {
-                console.error(`Webhook DB Error: Failed to approve user ${profile.id} for WatchPay order ${data.merchantOrder}.`, updateError);
-                return NextResponse.json({ message: 'update failed' }, { status: 500 });
+            if (profileUpdateError) {
+                console.error(`Webhook DB Error: Failed to update profile for user ${profile.id}.`, profileUpdateError);
             }
 
-            console.log(`User ${profile.id} has been approved successfully via WatchPay.`);
+            // 2. Sync User Accounts (This unblocks the Hub view)
+            const isPTP = profile.account_model === 'passthrupay';
+            const isKycVerified = profile.kyc_status === 'verified';
+
+            const { error: accountUpdateError } = await supabaseAdmin
+                .from('user_accounts')
+                .update({ 
+                    is_approved: true,
+                    status: isPTP || isKycVerified ? 'active' : 'pending'
+                })
+                .eq('user_id', profile.id)
+                .eq('is_approved', false); // Only update the pending ones
+
+            if (accountUpdateError) {
+                console.error(`Webhook DB Error: Failed to sync user_accounts for user ${profile.id}.`, accountUpdateError);
+            }
+
+            console.log(`User ${profile.id} has been approved and accounts synced via WatchPay.`);
             
             revalidatePath('/welcome');
             revalidatePath('/admin/dashboard');

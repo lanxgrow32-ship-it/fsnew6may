@@ -36,19 +36,19 @@ export async function POST(req: NextRequest) {
             
             const { data: profile, error: findError } = await supabaseAdmin
                 .from('profiles')
-                .select('id, is_approved')
+                .select('id, is_approved, account_model, kyc_status')
                 .eq('order_sn', data.order_sn)
                 .single();
 
             if (findError || !profile) {
                 console.error(`Webhook DB Error: Could not find profile for order_sn ${data.order_sn}.`, findError);
-                // Still return 'ok' so LG-Pay doesn't retry. The issue is logged.
                 return new NextResponse('ok', { status: 200 });
             }
             
             // Only update if the account is not already approved to prevent duplicate processing.
             if (!profile.is_approved) {
-                 const { error: updateError } = await supabaseAdmin
+                 // 1. Update Profile
+                 const { error: profileUpdateError } = await supabaseAdmin
                     .from('profiles')
                     .update({ 
                         is_approved: true,
@@ -56,13 +56,28 @@ export async function POST(req: NextRequest) {
                      })
                     .eq('id', profile.id);
 
-                if (updateError) {
-                    console.error(`Webhook DB Error: Failed to approve user ${profile.id} for order ${data.order_sn}.`, updateError);
-                    // Still return 'ok'. The error is logged for manual review.
-                    return new NextResponse('ok', { status: 200 });
+                if (profileUpdateError) {
+                    console.error(`Webhook DB Error: Failed to update profile for user ${profile.id}.`, profileUpdateError);
                 }
 
-                console.log(`User ${profile.id} has been approved successfully for order ${data.order_sn}.`);
+                // 2. Sync User Accounts (This unblocks the Hub view)
+                const isPTP = profile.account_model === 'passthrupay';
+                const isKycVerified = profile.kyc_status === 'verified';
+                
+                const { error: accountUpdateError } = await supabaseAdmin
+                    .from('user_accounts')
+                    .update({ 
+                        is_approved: true,
+                        status: isPTP || isKycVerified ? 'active' : 'pending'
+                    })
+                    .eq('user_id', profile.id)
+                    .eq('is_approved', false); // Only update the pending ones
+
+                if (accountUpdateError) {
+                    console.error(`Webhook DB Error: Failed to sync user_accounts for user ${profile.id}.`, accountUpdateError);
+                }
+
+                console.log(`User ${profile.id} has been approved and accounts synced successfully.`);
                 
                 // Revalidate paths to update the user's view
                 revalidatePath('/welcome');
