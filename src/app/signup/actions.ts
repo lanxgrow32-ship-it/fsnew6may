@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { generateLgPaySignature } from '@/lib/lg-pay';
+import { generateWatchPaySignature } from '@/lib/watchpay';
 import { randomBytes } from 'crypto';
 import { headers } from 'next/headers';
 
@@ -14,7 +15,7 @@ export async function signupAndCreateOrder(formData: FormData) {
   const supabase = createClient();
 
   // Securely fetch the active gateway on the server to decide the flow
-  const { data: settings } = await supabase.from('payment_details').select('active_payment_gateway').eq('id', 1).single();
+  const { data: settings } = await supabase.from('payment_details').select('*').eq('id', 1).single();
   const activeGateway = settings?.active_payment_gateway || 'lgpay';
 
   // --- Get form data ---
@@ -59,7 +60,7 @@ export async function signupAndCreateOrder(formData: FormData) {
     }
   }
 
-  // 3. Create a unique order number for the transaction (only used by automated gateway)
+  // 3. Create a unique order number for the transaction
   const order_sn = `FS_${Date.now()}_${randomBytes(4).toString('hex')}`;
   
   // 4. Create the user in Supabase Auth
@@ -104,7 +105,6 @@ export async function signupAndCreateOrder(formData: FormData) {
     }
 
     // 6. ALSO CREATE THE FIRST RECORD IN user_accounts (Multi-Account Hub)
-    // We use supabaseAdmin here to ensure the record is created reliably during the signup transition.
     const utrValue = activeGateway === 'manual' ? formData.get('utr') as string : null;
     
     await supabaseAdmin.from('user_accounts').insert({
@@ -131,8 +131,52 @@ export async function signupAndCreateOrder(formData: FormData) {
     // 7. Branch logic based on active gateway
     if (activeGateway === 'manual') {
         redirect('/welcome');
+    } else if (activeGateway === 'watchpay') {
+        // WATCHPAY Flow
+        const merchantId = settings.watchpay_merchant_id;
+        const apiKey = settings.watchpay_api_key;
+        
+        if (!merchantId || !apiKey) {
+            return { error: 'WatchPay is not correctly configured. Please contact support.' };
+        }
+
+        const amountFormatted = finalAmountPaid.toFixed(2);
+        const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/watchpay-webhook`;
+
+        const params = {
+            merchant_id: merchantId,
+            amount: amountFormatted,
+            merchant_order_no: order_sn,
+            callback_url: callbackUrl,
+        };
+
+        const signature = generateWatchPaySignature(params, apiKey);
+
+        try {
+            const response = await fetch('https://api.watchpays.com/v1/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    ...params, 
+                    api_key: apiKey,
+                    signature,
+                    extra: user.id 
+                }),
+            });
+            const result = await response.json();
+
+            if (result.success && result.payment_url) {
+                return { redirectUrl: result.payment_url };
+            } else {
+                console.error("WatchPay API Error:", result);
+                return { error: `Could not initiate payment: ${result.message || 'Unknown gateway error.'}` };
+            }
+        } catch (e: any) {
+            console.error("WatchPay fetch Error:", e);
+            return { error: 'Failed to contact payment gateway. Please try again later.' };
+        }
     } else {
-        // AUTOMATED (LG-Pay) Flow
+        // LG-Pay Flow
         const lgPayAppId = 'YD4957';
         const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
         const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
@@ -140,7 +184,6 @@ export async function signupAndCreateOrder(formData: FormData) {
         const moneyInCents = Math.round(finalAmountPaid * 100);
         const ipHeader = headers().get('x-forwarded-for') ?? '127.0.0.1';
         const ip = ipHeader.split(',')[0].trim();
-
 
         const params: Record<string, string> = {
             app_id: lgPayAppId,
