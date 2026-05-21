@@ -150,12 +150,11 @@ export async function signupAndCreateOrder(formData: FormData) {
         }
 
         const amountFormatted = finalAmountPaid.toFixed(2);
-        // Ensure we have a valid absolute URL for the callback
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.fundedstock.io';
         const callbackUrl = `${siteUrl}/api/watchpay-webhook`;
 
         const params = {
-            merchant_id: merchantId,
+            merchant_id: String(merchantId), // Ensure string as per docs
             amount: amountFormatted,
             merchant_order_no: order_sn,
             callback_url: callbackUrl,
@@ -175,19 +174,28 @@ export async function signupAndCreateOrder(formData: FormData) {
                 }),
             });
 
-            const result = await response.json();
+            // Get the raw text first to handle cases where the gateway doesn't return JSON
+            const rawResponse = await response.text();
+            let result;
+            
+            try {
+                result = JSON.parse(rawResponse);
+            } catch (parseError) {
+                console.error("WatchPay non-JSON response:", rawResponse);
+                return { error: `Gateway Error: The server returned an invalid format. Please contact support.` };
+            }
 
-            if (result.success && result.payment_url) {
+            // Success check: Documentation says success: true, but we check for payment_url as the ultimate proof
+            if (result.payment_url) {
                 return { redirectUrl: result.payment_url };
             } else {
-                console.error("WatchPay API Error:", result);
-                // Try to extract a specific error message from the gateway
-                const errorMessage = result.message || result.msg || result.error || 'Unknown gateway error.';
+                console.error("WatchPay API Error Data:", result);
+                const errorMessage = result.message || result.msg || result.error || result.status || 'Initiation failed.';
                 return { error: `Payment Initiation Failed: ${errorMessage}` };
             }
         } catch (e: any) {
-            console.error("WatchPay fetch Error:", e);
-            return { error: 'Failed to contact WatchPay. Please check your internet or try again later.' };
+            console.error("WatchPay connection error:", e);
+            return { error: 'Failed to contact WatchPay. Please check your connection or try again later.' };
         }
     } else {
         // LG-Pay Flow (Default)
