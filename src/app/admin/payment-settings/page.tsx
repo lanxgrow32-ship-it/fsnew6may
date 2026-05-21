@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -16,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2 } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -26,7 +25,8 @@ type PaymentDetails = {
     upi_id: string;
     qr_code_url: string;
     referral_commission_percentage: number;
-    active_payment_gateway: 'lgpay' | 'manual' | 'watchpay';
+    active_payment_gateway: 'lgpay' | 'manual' | 'watchpay' | 'automated';
+    automated_gateway_mode: 'both' | 'lgpay' | 'watchpay';
     pay_later_upi_id: string | null;
     pay_later_qr_code_url: string | null;
     watchpay_merchant_id: string | null;
@@ -48,7 +48,8 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     
     const [upiQrPreview, setUpiQrPreview] = useState<string | null>(currentSettings?.qr_code_url || null);
     const [payLaterUpiQrPreview, setPayLaterUpiQrPreview] = useState<string | null>(currentSettings?.pay_later_qr_code_url || null);
-    const [activeGateway, setActiveGateway] = useState<'lgpay' | 'manual' | 'watchpay'>(currentSettings?.active_payment_gateway || 'lgpay');
+    const [activeGateway, setActiveGateway] = useState<'lgpay' | 'manual' | 'watchpay' | 'automated'>(currentSettings?.active_payment_gateway || 'manual');
+    const [automatedMode, setAutomatedMode] = useState<'both' | 'lgpay' | 'watchpay'>(currentSettings?.automated_gateway_mode || 'both');
 
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -79,48 +80,79 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
         <form ref={formRef} action={formAction} className="space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Active Payment Gateway</CardTitle>
-                    <CardDescription>Select which payment method new users will see during signup.</CardDescription>
+                    <CardTitle>Active Payment Strategy</CardTitle>
+                    <CardDescription>Choose between fully automated switching or manual verification.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-8">
                      <RadioGroup 
                         name="active_gateway"
                         value={activeGateway}
-                        onValueChange={(value: 'lgpay' | 'manual' | 'watchpay') => setActiveGateway(value)}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                        onValueChange={(value: any) => setActiveGateway(value)}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
                      >
                         <div>
-                             <RadioGroupItem value="lgpay" id="gateway-lgpay" className="sr-only" />
-                             <Label htmlFor="gateway-lgpay" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer h-24", activeGateway === 'lgpay' && "border-primary")}>
-                                <Wifi className="mb-2 h-5 w-5" />
-                                <span className="text-center font-bold">LG-Pay</span>
-                                <span className="text-[10px] text-muted-foreground">Automated</span>
-                            </Label>
-                        </div>
-                        <div>
-                             <RadioGroupItem value="watchpay" id="gateway-watchpay" className="sr-only" />
-                             <Label htmlFor="gateway-watchpay" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer h-24", activeGateway === 'watchpay' && "border-primary")}>
-                                <ShieldCheck className="mb-2 h-5 w-5" />
-                                <span className="text-center font-bold">WatchPay</span>
-                                <span className="text-[10px] text-muted-foreground">Automated</span>
+                             <RadioGroupItem value="automated" id="gateway-automated" className="sr-only" />
+                             <Label htmlFor="gateway-automated" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'automated' && "border-primary bg-primary/5")}>
+                                <Zap className={cn("mb-2 h-6 w-6", activeGateway === 'automated' ? "text-primary" : "text-muted-foreground")} />
+                                <span className="text-center font-bold text-lg">Smart Automated</span>
+                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">LGPay + WatchPay</span>
                             </Label>
                         </div>
                          <div>
                             <RadioGroupItem value="manual" id="gateway-manual" className="sr-only" />
-                             <Label htmlFor="gateway-manual" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer h-24", activeGateway === 'manual' && "border-primary")}>
-                                <HardDrive className="mb-2 h-5 w-5" />
-                                <span className="text-center font-bold">Manual UPI</span>
-                                <span className="text-[10px] text-muted-foreground">Verification Required</span>
+                             <Label htmlFor="gateway-manual" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'manual' && "border-primary bg-primary/5")}>
+                                <HardDrive className={cn("mb-2 h-6 w-6", activeGateway === 'manual' ? "text-primary" : "text-muted-foreground")} />
+                                <span className="text-center font-bold text-lg">Manual UPI</span>
+                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Verification Required</span>
                             </Label>
                         </div>
                     </RadioGroup>
+
+                    {activeGateway === 'automated' && (
+                        <div className="space-y-4 pt-4 border-t border-dashed animate-in fade-in slide-in-from-top-2">
+                            <Label className="text-sm font-bold flex items-center gap-2">
+                                <Settings2 className="w-4 h-4 text-primary" />
+                                Automated Routing Sub-Mode
+                            </Label>
+                            <RadioGroup 
+                                name="automated_mode"
+                                value={automatedMode}
+                                onValueChange={(value: any) => setAutomatedMode(value)}
+                                className="grid grid-cols-1 sm:grid-cols-3 gap-2"
+                            >
+                                <div>
+                                    <RadioGroupItem value="both" id="mode-both" className="sr-only" />
+                                    <Label htmlFor="mode-both" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'both' && "bg-primary text-primary-foreground border-primary")}>
+                                        <Repeat className="w-3 h-3" /> 50/50 Alternating
+                                    </Label>
+                                </div>
+                                <div>
+                                    <RadioGroupItem value="lgpay" id="mode-lg" className="sr-only" />
+                                    <Label htmlFor="mode-lg" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'lgpay' && "bg-primary text-primary-foreground border-primary")}>
+                                        <Wifi className="w-3 h-3" /> LGPay Only
+                                    </Label>
+                                </div>
+                                <div>
+                                    <RadioGroupItem value="watchpay" id="mode-wp" className="sr-only" />
+                                    <Label htmlFor="mode-wp" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'watchpay' && "bg-primary text-primary-foreground border-primary")}>
+                                        <ShieldCheck className="w-3 h-3" /> WatchPay Only
+                                    </Label>
+                                </div>
+                            </RadioGroup>
+                            <p className="text-[10px] text-muted-foreground italic">
+                                {automatedMode === 'both' ? "System will automatically switch between LGPay and WatchPay for every new signup." : 
+                                 automatedMode === 'lgpay' ? "All automated traffic will be forced to LGPay." : 
+                                 "All automated traffic will be forced to WatchPay."}
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
             <Card>
                 <CardHeader>
                     <CardTitle>WatchPay Credentials</CardTitle>
-                    <CardDescription>Manage your automated payment processing via WatchPay.</CardDescription>
+                    <CardDescription>Used when "Automated" or "WatchPay Only" mode is active.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">

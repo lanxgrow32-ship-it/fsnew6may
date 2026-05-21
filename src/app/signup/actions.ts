@@ -9,11 +9,10 @@ import { generateWatchPaySignature } from '@/lib/watchpay';
 import { randomBytes } from 'crypto';
 import { headers } from 'next/headers';
 
-
 export async function signupAndCreateOrder(formData: FormData) {
   const supabase = createClient();
 
-  // Securely fetch the active gateway using the Admin client to bypass RLS
+  // 1. Securely fetch settings via admin to bypass RLS
   const { data: settings, error: settingsError } = await supabaseAdmin
     .from('payment_details')
     .select('*')
@@ -21,13 +20,32 @@ export async function signupAndCreateOrder(formData: FormData) {
     .single();
     
   if (settingsError || !settings) {
-      console.error("Failed to fetch payment settings:", settingsError);
+      console.error("Settings Fetch Error:", settingsError);
       return { error: 'Server configuration error. Please contact support.' };
   }
 
-  const activeGateway = settings.active_payment_gateway || 'lgpay';
+  // 2. Resolve final gateway based on mode
+  let activeGateway = settings.active_payment_gateway || 'lgpay';
+  
+  if (activeGateway === 'automated') {
+      const mode = settings.automated_gateway_mode || 'both';
+      if (mode === 'lgpay') {
+          activeGateway = 'lgpay';
+      } else if (mode === 'watchpay') {
+          activeGateway = 'watchpay';
+      } else {
+          // BOTH (Round Robin / Alternating)
+          const lastUsed = settings.last_used_automated_gateway || 'watchpay';
+          activeGateway = lastUsed === 'lgpay' ? 'watchpay' : 'lgpay';
+          
+          // Update tracker for the next user
+          await supabaseAdmin.from('payment_details').update({ 
+              last_used_automated_gateway: activeGateway 
+          }).eq('id', 1);
+      }
+  }
 
-  // --- Get form data ---
+  // --- Process Data ---
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const fullName = formData.get('full_name') as string;
@@ -41,58 +59,41 @@ export async function signupAndCreateOrder(formData: FormData) {
   const finalAmountPaid = parseFloat(formData.get('final_amount_paid') as string);
 
   if (!email || !password || !fullName || !planPurchased || !mobileNumber) {
-    return { error: 'All required fields must be filled.' };
+    return { error: 'Required fields missing.' };
   }
   
-  // For manual flow, also require the UTR
-  if (activeGateway === 'manual') {
-      const utr = formData.get('utr') as string;
-      if (!utr) {
-          return { error: 'UTR / Transaction ID is required for manual verification.' };
-      }
+  if (activeGateway === 'manual' && !(formData.get('utr') as string)) {
+      return { error: 'UTR / Transaction ID is required for manual verification.' };
   }
 
-  // 1. Check if user already exists
+  // 3. User Existence Check
   const { data: existingUser } = await supabase.from('profiles').select('id').eq('email', email).single();
-  if (existingUser) {
-    return { error: 'A user with this email address already exists.' };
-  }
+  if (existingUser) return { error: 'User with this email already exists.' };
 
-  // 2. Find referrer if code is provided
+  // 4. Referrer Logic
   let referrerId: string | null = null;
   if (referralCode) {
-    const { data: referrerProfile } = await supabase.from('profiles').select('id').eq('referral_code', referralCode.trim().toUpperCase()).single();
-    if (referrerProfile) {
-      referrerId = referrerProfile.id;
-    } else {
-        return { error: 'The entered referral code is not valid.' };
-    }
+    const { data: ref } = await supabase.from('profiles').select('id').eq('referral_code', referralCode.trim().toUpperCase()).single();
+    if (ref) referrerId = ref.id;
+    else return { error: 'Invalid referral code.' };
   }
 
-  // 3. Create a unique order number for the transaction
   const order_sn = `FS_${Date.now()}_${randomBytes(4).toString('hex')}`;
   
-  // 4. Create the user in Supabase Auth
+  // 5. Auth Account Creation
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: fullName, role: 'user' } },
   });
 
-  if (signUpError) {
-    return { error: signUpError.message };
-  }
+  if (signUpError) return { error: signUpError.message };
 
   if (user) {
-    // Generate referral code
-    let namePart = fullName.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4);
-    if (namePart.length < 1) {
-        namePart = 'USER';
-    }
-    const idPart = user.id.substring(0, 4).toUpperCase();
-    const referralCodeValue = `${namePart}-${idPart}`;
+    // Generate code
+    let namePart = fullName.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4) || 'USER';
+    const referralCodeValue = `${namePart}-${user.id.substring(0, 4).toUpperCase()}`;
 
-    // 5. Update the automatically created profile
     const profileData: any = {
         plan_purchased: planPurchased,
         is_approved: false,
@@ -105,17 +106,11 @@ export async function signupAndCreateOrder(formData: FormData) {
         referral_code: referralCodeValue,
     };
     
-    if (planPurchased.toLowerCase().includes('passthenpay')) {
-        profileData.account_model = 'passthrupay';
-    }
+    if (planPurchased.toLowerCase().includes('passthenpay')) profileData.account_model = 'passthrupay';
+    if (referrerId) profileData.referred_by = referrerId;
 
-    if (referrerId) {
-        profileData.referred_by = referrerId;
-    }
-
-    // 6. ALSO CREATE THE FIRST RECORD IN user_accounts (Multi-Account Hub)
+    // Multi-Account Support
     const utrValue = activeGateway === 'manual' ? formData.get('utr') as string : null;
-    
     await supabaseAdmin.from('user_accounts').insert({
         user_id: user.id,
         plan_name: planPurchased,
@@ -126,155 +121,71 @@ export async function signupAndCreateOrder(formData: FormData) {
         final_amount_paid: finalAmountPaid,
     });
 
-    if (activeGateway === 'manual') {
-        profileData.transaction_id = utrValue;
-    }
+    if (activeGateway === 'manual') profileData.transaction_id = utrValue;
     
     const { error: profileError } = await supabase.from('profiles').update(profileData).eq('id', user.id);
-
     if (profileError) {
-      await supabase.auth.admin.deleteUser(user.id);
-      return { error: `Could not save registration details: ${profileError.message}` };
+        await supabase.auth.admin.deleteUser(user.id);
+        return { error: `Profile update failed: ${profileError.message}` };
     }
 
-    // 7. Branch logic based on active gateway
+    // 6. Branch into Gateway Flows
     if (activeGateway === 'manual') {
         redirect('/welcome');
     } else if (activeGateway === 'watchpay') {
-        // WATCHPAY Flow
         const merchantId = settings.watchpay_merchant_id?.trim();
         const apiKey = settings.watchpay_api_key?.trim();
-        
-        if (!merchantId || !apiKey) {
-            return { error: 'WatchPay is not correctly configured in the admin panel.' };
-        }
-
         const amountFormatted = finalAmountPaid.toFixed(2);
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.fundedstock.io';
-        const callbackUrl = `${siteUrl}/api/watchpay-webhook`;
+        const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://app.fundedstock.io'}/api/watchpay-webhook`;
 
-        const params = {
-            merchant_id: String(merchantId), // Ensure string as per docs
-            amount: amountFormatted,
-            merchant_order_no: order_sn,
-            callback_url: callbackUrl,
-        };
-
-        const signature = generateWatchPaySignature(params, apiKey);
+        const params = { merchant_id: String(merchantId), amount: amountFormatted, merchant_order_no: order_sn, callback_url: callbackUrl };
+        const signature = generateWatchPaySignature(params, apiKey!);
 
         try {
-            const response = await fetch('https://api.watchpays.com/v1/create', {
+            const res = await fetch('https://api.watchpays.com/v1/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    ...params, 
-                    api_key: apiKey,
-                    signature,
-                    extra: user.id 
-                }),
+                body: JSON.stringify({ ...params, api_key: apiKey, signature, extra: user.id }),
             });
-
-            // Get the raw text first to handle cases where the gateway doesn't return JSON
-            const rawResponse = await response.text();
-            let result;
-            
-            try {
-                result = JSON.parse(rawResponse);
-            } catch (parseError) {
-                console.error("WatchPay non-JSON response:", rawResponse);
-                return { error: `Gateway Error: The server returned an invalid format. Please contact support.` };
-            }
-
-            // Success check: Documentation says success: true, but we check for payment_url as the ultimate proof
-            if (result.payment_url) {
-                return { redirectUrl: result.payment_url };
-            } else {
-                console.error("WatchPay API Error Data:", result);
-                const errorMessage = result.message || result.msg || result.error || result.status || 'Initiation failed.';
-                return { error: `Payment Initiation Failed: ${errorMessage}` };
-            }
-        } catch (e: any) {
-            console.error("WatchPay connection error:", e);
-            return { error: 'Failed to contact WatchPay. Please check your connection or try again later.' };
-        }
+            const result = await res.json();
+            if (result.payment_url) return { redirectUrl: result.payment_url };
+            return { error: `WatchPay Error: ${result.message || 'Initiation failed.'}` };
+        } catch (e) { return { error: 'WatchPay connection failed.' }; }
     } else {
-        // LG-Pay Flow (Default)
-        const lgPayAppId = 'YD4957';
-        const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
-        const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
-
-        const moneyInCents = Math.round(finalAmountPaid * 100);
-        const ipHeader = headers().get('x-forwarded-for') ?? '127.0.0.1';
-        const ip = ipHeader.split(',')[0].trim();
-
-        const params: Record<string, string> = {
-            app_id: lgPayAppId,
-            trade_type: "INRUPI",
-            order_sn: order_sn,
-            money: String(moneyInCents),
-            notify_url: notifyUrl,
-            ip: ip,
-            remark: `Plan: ${planPurchased}`
-        };
-
-        const sign = generateLgPaySignature(params, lgPayKey);
+        // LG-Pay
+        const lgKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
+        const moneyCents = Math.round(finalAmountPaid * 100);
+        const ip = headers().get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+        const params = { app_id: 'YD4957', trade_type: "INRUPI", order_sn, money: String(moneyCents), notify_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`, ip, remark: planPurchased };
+        const sign = generateLgPaySignature(params, lgKey);
 
         try {
-            const response = await fetch('https://www.lg-pay.com/api/order/create', {
+            const res = await fetch('https://www.lg-pay.com/api/order/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ ...params, sign }),
             });
-            const result = await response.json();
-
-            if (result.status === 1 && result.data?.pay_url) {
-                return { redirectUrl: result.data.pay_url };
-            } else {
-                console.error("LG-Pay API Error:", result);
-                return { error: `Could not initiate payment: ${result.msg || 'Unknown gateway error.'}` };
-            }
-        } catch (e: any) {
-            console.error("LG-Pay fetch Error:", e);
-            return { error: 'Failed to contact payment gateway. Please try again later.' };
-        }
+            const result = await res.json();
+            if (result.status === 1 && result.data?.pay_url) return { redirectUrl: result.data.pay_url };
+            return { error: `LG-Pay Error: ${result.msg || 'Gateway rejected.'}` };
+        } catch (e) { return { error: 'LG-Pay connection failed.' }; }
     }
   }
-  return { error: 'An unknown error occurred during signup.' };
+  return { error: 'Unknown signup error.' };
 }
 
-
 export async function validateCoupon(code: string) {
-  if (!code) {
-    return { error: 'Coupon code cannot be empty.' };
-  }
+  if (!code) return { error: 'Coupon code required.' };
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from('coupons')
-    .select('discount_value')
-    .eq('code', code.toUpperCase())
-    .single();
-
-  if (error || !data) {
-    return { error: 'Invalid or expired coupon code.' };
-  }
-
+  const { data, error } = await supabase.from('coupons').select('discount_value').eq('code', code.toUpperCase()).single();
+  if (error || !data) return { error: 'Invalid or expired coupon.' };
   return { discount: data.discount_value };
 }
 
 export async function validateReferralCode(code: string) {
-  if (!code) {
-    return { error: 'Referral code cannot be empty.' };
-  }
+  if (!code) return { error: 'Referral code required.' };
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('referral_code', code.trim().toUpperCase())
-    .single();
-
-  if (error || !data) {
-    return { error: 'Invalid referral code.' };
-  }
-
+  const { data, error } = await supabase.from('profiles').select('id').eq('referral_code', code.trim().toUpperCase()).single();
+  if (error || !data) return { error: 'Invalid referral code.' };
   return { success: true };
 }

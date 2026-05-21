@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -24,7 +23,8 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const upiId = formData.get('upi_id') as string;
   const upiQrCodeFile = formData.get('qr_code') as File;
   const commissionPercentage = formData.get('referral_commission_percentage') as string;
-  const activeGateway = formData.get('active_gateway') as 'lgpay' | 'manual' | 'watchpay';
+  const activeGateway = formData.get('active_gateway') as 'lgpay' | 'manual' | 'watchpay' | 'automated';
+  const automatedMode = formData.get('automated_mode') as 'both' | 'lgpay' | 'watchpay';
 
   // Pay Later settings
   const payLaterUpiId = formData.get('pay_later_upi_id') as string;
@@ -34,14 +34,14 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const watchPayMerchantId = formData.get('watchpay_merchant_id') as string;
   const watchPayApiKey = formData.get('watchpay_api_key') as string;
 
-  if (activeGateway !== 'lgpay' && activeGateway !== 'manual' && activeGateway !== 'watchpay') {
+  if (!['lgpay', 'manual', 'watchpay', 'automated'].includes(activeGateway)) {
       return { error: 'Invalid gateway selected.' };
   }
    if (activeGateway === 'manual' && !upiId) {
       return { error: 'UPI ID is required to enable the manual gateway.' };
   }
-  if (activeGateway === 'watchpay' && (!watchPayMerchantId || !watchPayApiKey)) {
-      return { error: 'WatchPay Merchant ID and API Key are required to enable this gateway.' };
+  if ((activeGateway === 'watchpay' || activeGateway === 'automated') && (!watchPayMerchantId || !watchPayApiKey)) {
+      return { error: 'WatchPay Merchant ID and API Key are required to enable this gateway mode.' };
   }
 
   const commission = parseFloat(commissionPercentage);
@@ -54,6 +54,7 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
     pay_later_upi_id: payLaterUpiId,
     referral_commission_percentage: commission,
     active_payment_gateway: activeGateway,
+    automated_gateway_mode: automatedMode,
     watchpay_merchant_id: watchPayMerchantId,
     watchpay_api_key: watchPayApiKey,
   };
