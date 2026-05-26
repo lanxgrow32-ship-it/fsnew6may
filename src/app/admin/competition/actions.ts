@@ -10,18 +10,20 @@ export async function upsertEvent(formData: FormData) {
   const endDate = formData.get('end_date') as string;
   const entryFeeStr = formData.get('entry_fee') as string;
   const status = formData.get('status') as 'ongoing' | 'upcoming' | 'completed';
+  const isFree = formData.get('is_free') === 'on';
 
-  if (!weekLabel || !startDate || !endDate || !entryFeeStr) {
+  if (!weekLabel || !startDate || !endDate) {
     return { error: 'Please fill all required fields.' };
   }
 
-  const entryFee = parseFloat(entryFeeStr);
+  const entryFee = isFree ? 0 : parseFloat(entryFeeStr || '0');
 
   const data = {
     week_label: weekLabel,
     start_date: startDate,
     end_date: endDate,
     entry_fee: entryFee,
+    is_free: isFree,
     status: status || 'upcoming',
     is_active: true
   };
@@ -89,6 +91,7 @@ export async function approveRegistration(regId: string) {
         if (updateError) throw updateError;
 
         revalidatePath('/admin/competition');
+        revalidatePath('/welcome');
         return { success: true };
     } catch (error: any) {
         console.error('Approval Error:', error);

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -8,16 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowRight, Award, TrendingDown, CheckCircle2, Copy, ShieldCheck, Trophy, Target, Ban, Zap, Clock, IndianRupee, X, PlusCircle } from 'lucide-react';
+import { Loader2, ArrowRight, Award, TrendingDown, CheckCircle2, Copy, ShieldCheck, Trophy, Target, Ban, Zap, Clock, IndianRupee, X, PlusCircle, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { registerForTournament, getCompetitionEvents } from './actions';
 import Link from 'next/link';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ClientOnly } from '@/components/ui/client-only';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { createClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 
@@ -53,6 +50,7 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
     const [error, setError] = useState<string | null>(null);
     const [selectedEventId, setSelectedEventId] = useState<string>(events.find(e => e.status === 'ongoing')?.id || events[0]?.id || '');
     const [isSuccess, setIsSuccess] = useState(false);
+    const [isFreeEntry, setIsFreeEntry] = useState(false);
 
     const selectedEvent = events.find(e => e.id === selectedEventId);
     const ongoingEvent = events.find(e => e.status === 'ongoing');
@@ -70,8 +68,9 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
             setIsLoading(false);
         } else {
             setIsSuccess(true);
+            setIsFreeEntry(result.isFree || false);
             setIsLoading(false);
-            toast({ title: "Registration Submitted", description: "Wait for admin approval. Check your email for credentials shortly." });
+            toast({ title: result.isFree ? "Successfully Joined!" : "Registration Submitted", description: result.isFree ? "Your trading account is ready." : "Wait for admin approval." });
         }
     };
 
@@ -91,9 +90,13 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
                 <div className="bg-green-500/10 text-green-500 rounded-full p-4 w-fit mx-auto mb-4">
                     <CheckCircle2 className="h-12 w-12" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Registration Received!</h2>
-                <p className="text-muted-foreground">Our team is verifying your Transaction ID (UTR). Once approved, you will receive your StockMint credentials via email.</p>
-                <Button asChild className="mt-6" variant="outline"><Link href="/login">Go to Login</Link></Button>
+                <h2 className="text-2xl font-bold text-white mb-2">{isFreeEntry ? "You are in!" : "Registration Received!"}</h2>
+                <p className="text-muted-foreground">
+                    {isFreeEntry 
+                        ? "Your free entry is confirmed. Login to your dashboard to see your credentials." 
+                        : "Our team is verifying your Transaction ID (UTR). Once approved, you will receive your StockMint credentials via email."}
+                </p>
+                <Button asChild className="mt-6" variant="outline"><Link href="/login">Go to Dashboard</Link></Button>
             </Card>
         );
     }
@@ -102,11 +105,10 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
         <div className="space-y-12 max-w-5xl mx-auto">
             <div className="text-center space-y-4">
                 <h2 className="text-4xl font-bold tracking-tight text-white">Join the Battle</h2>
-                <p className="text-muted-foreground text-lg">Pick a week, complete payment, and start trading.</p>
+                <p className="text-muted-foreground text-lg">Pick a week and secure your spot in the arena.</p>
             </div>
 
             <div className="space-y-8">
-                {/* 1. SELECTION SECTION */}
                 <div className="space-y-6">
                     {ongoingEvent && (
                         <div className="space-y-4">
@@ -124,12 +126,13 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
                                     <div className="flex items-center gap-3">
                                         <h3 className="text-2xl font-bold text-white">{ongoingEvent.week_label}</h3>
                                         <Badge className="bg-red-500 animate-pulse text-[10px] uppercase font-bold">Ongoing</Badge>
+                                        {ongoingEvent.is_free && <Badge className="bg-green-600 text-[10px] uppercase font-bold">Free Entry</Badge>}
                                     </div>
                                     <p className="text-muted-foreground">{new Date(ongoingEvent.start_date).toLocaleDateString('en-IN', { month: 'long', day: 'numeric' })} — {new Date(ongoingEvent.end_date).toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                                 </div>
                                 <div className="text-left md:text-right">
                                     <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Entry Fee</p>
-                                    <p className="text-3xl font-black text-primary">₹{Number(ongoingEvent.entry_fee).toLocaleString('en-IN')}</p>
+                                    <p className="text-3xl font-black text-primary">{ongoingEvent.is_free ? 'FREE' : `₹${Number(ongoingEvent.entry_fee).toLocaleString('en-IN')}`}</p>
                                 </div>
                                 <div className={cn("absolute right-4 top-4", selectedEventId === ongoingEvent.id ? "text-primary" : "text-transparent")}>
                                     <CheckCircle2 className="h-6 w-6" />
@@ -158,7 +161,10 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
                                             {selectedEventId === event.id && <CheckCircle2 className="h-5 w-5 text-primary" />}
                                         </div>
                                         <p className="text-xs text-muted-foreground">{new Date(event.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} - {new Date(event.end_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</p>
-                                        <p className="text-2xl font-bold text-white">₹{Number(event.entry_fee).toLocaleString('en-IN')}</p>
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-2xl font-bold text-white">{event.is_free ? 'FREE' : `₹${Number(event.entry_fee).toLocaleString('en-IN')}`}</p>
+                                            {event.is_free && <Sparkles className="w-4 h-4 text-green-400 animate-pulse" />}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -166,8 +172,7 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
                     )}
                 </div>
 
-                {/* 2. REGISTRATION FORM */}
-                <form onSubmit={handleSubmit} className="grid lg:grid-cols-2 gap-8 items-start">
+                <form onSubmit={handleSubmit} className={cn("grid gap-8 items-start", selectedEvent?.is_free ? "max-w-2xl mx-auto w-full" : "lg:grid-cols-2")}>
                     <Card className="bg-card/50 border-white/10 shadow-2xl">
                         <CardHeader>
                             <CardTitle>Registration Details</CardTitle>
@@ -182,40 +187,51 @@ function TournamentRegistration({ events, paymentSettings }: { events: any[], pa
                             </div>
                             <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" required className="bg-black/20 border-white/10" /></div>
                             <div className="space-y-2"><Label htmlFor="password">Login Password</Label><Input id="password" name="password" type="password" required className="bg-black/20 border-white/10" /></div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-card/50 border-primary/20 shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24 text-primary" /></div>
-                        <CardHeader>
-                            <CardTitle>Manual Payment</CardTitle>
-                            <CardDescription>Entry for <span className="text-white font-bold">{selectedEvent?.week_label}</span></CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="mx-auto w-fit p-3 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.1)]">
-                                {paymentSettings?.qr_code_url ? <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={220} height={220} className="rounded-lg" /> : <div className="w-[220px] h-[220px] bg-slate-100 flex items-center justify-center text-slate-800 font-black text-xl">SCAN & PAY</div>}
-                            </div>
                             
-                            <div className="text-center space-y-2">
-                                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Amount Due</p>
-                                <p className="text-4xl font-black text-primary">₹{selectedEvent ? Number(selectedEvent.entry_fee).toLocaleString('en-IN') : '0'}</p>
-                                <div className="flex items-center justify-center gap-2 text-xs font-mono bg-black/40 p-2.5 rounded-lg border border-white/5">
-                                    <span className="text-gray-300">{paymentSettings?.upi_id || 'payout@fundedstock'}</span>
-                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-primary hover:text-primary hover:bg-primary/10" onClick={() => { navigator.clipboard.writeText(paymentSettings?.upi_id); toast({ title: "Copied UPI ID" }); }}><Copy className="h-3.5 w-3.5"/></Button>
+                            {selectedEvent?.is_free && (
+                                <div className="pt-4 border-t border-white/5">
+                                    <Button type="submit" className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg shadow-green-600/20" disabled={isLoading}>
+                                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
+                                        Join Tournament Free
+                                    </Button>
                                 </div>
-                            </div>
-
-                            <div className="space-y-2 pt-4 border-t border-white/5">
-                                <Label htmlFor="utr">Enter Transaction ID (UTR)</Label>
-                                <Input id="utr" name="utr" placeholder="12-digit UPI reference number" required className="bg-black/50 border-white/10 text-white h-12" />
-                            </div>
-
-                            <Button type="submit" className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 rounded-xl" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Award className="mr-2 h-5 w-5" />}
-                                Complete Registration
-                            </Button>
+                            )}
                         </CardContent>
                     </Card>
+
+                    {!selectedEvent?.is_free && (
+                        <Card className="bg-card/50 border-primary/20 shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24 text-primary" /></div>
+                            <CardHeader>
+                                <CardTitle>Manual Payment</CardTitle>
+                                <CardDescription>Entry for <span className="text-white font-bold">{selectedEvent?.week_label}</span></CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="mx-auto w-fit p-3 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+                                    {paymentSettings?.qr_code_url ? <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={220} height={220} className="rounded-lg" /> : <div className="w-[220px] h-[220px] bg-slate-100 flex items-center justify-center text-slate-800 font-black text-xl">SCAN & PAY</div>}
+                                </div>
+                                
+                                <div className="text-center space-y-2">
+                                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Amount Due</p>
+                                    <p className="text-4xl font-black text-primary">₹{selectedEvent ? Number(selectedEvent.entry_fee).toLocaleString('en-IN') : '0'}</p>
+                                    <div className="flex items-center justify-center gap-2 text-xs font-mono bg-black/40 p-2.5 rounded-lg border border-white/5">
+                                        <span className="text-gray-300">{paymentSettings?.upi_id || 'payout@fundedstock'}</span>
+                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-primary hover:text-primary hover:bg-primary/10" onClick={() => { navigator.clipboard.writeText(paymentSettings?.upi_id); toast({ title: "Copied UPI ID" }); }}><Copy className="h-3.5 w-3.5"/></Button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 pt-4 border-t border-white/5">
+                                    <Label htmlFor="utr">Enter Transaction ID (UTR)</Label>
+                                    <Input id="utr" name="utr" placeholder="12-digit UPI reference number" required className="bg-black/50 border-white/10 text-white h-12" />
+                                </div>
+
+                                <Button type="submit" className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 rounded-xl" disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Award className="mr-2 h-5 w-5" />}
+                                    Complete Registration
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
                 </form>
             </div>
         </div>
@@ -234,7 +250,6 @@ function CompetitionLanding() {
 
     return (
         <main className="bg-background text-foreground min-h-screen relative overflow-hidden">
-            {/* Background Animations */}
             <div className="absolute inset-0 z-0 bg-transparent bg-[linear-gradient(to_right,hsl(var(--border)_/_0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)_/_0.05)_1px,transparent_1px)] bg-[size:48px_48px]"></div>
             <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_0px,hsl(var(--primary)/0.1),transparent)]"></div>
 
@@ -257,14 +272,13 @@ function CompetitionLanding() {
             </header>
             
             <div className="relative">
-                {/* Hero Section */}
                 <section className="container mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 items-center min-h-[85vh] pt-8 pb-12">
                     <div className="space-y-8 text-center lg:text-left">
                         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-primary/20">
                             <Zap className="h-3 w-3" /> The Ultimate Trading Battle
                         </div>
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter !leading-[1.1] text-white">Where Traders <br /> <span className="text-primary">Become Champions.</span></h1>
-                        <p className="text-muted-foreground max-w-md mx-auto lg:mx-0 text-lg">Weekly tournaments with live capital rewards. Join the ongoing battle or secure your spot for upcoming weeks.</p>
+                        <p className="text-muted-foreground max-w-md mx-auto lg:mx-0 text-lg">Weekly tournaments with live capital rewards. Join for free or secure your spot in premium weeks.</p>
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                              <Button size="lg" className="h-14 px-10 text-lg bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-xl shadow-primary/20 transition-all hover:scale-105" asChild><a href="#join-form">Join Tournament <ArrowRight className="ml-2 h-5 w-5" /></a></Button>
                              <Button size="lg" variant="outline" className="h-14 px-10 text-lg rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white" asChild><Link href="/competition/leaderboard">View Live Rankings <Award className="ml-2 h-5 w-5" /></Link></Button>
@@ -276,7 +290,6 @@ function CompetitionLanding() {
                     </div>
                 </section>
                 
-                {/* Rankings Preview CTA */}
                 <section className="py-20 bg-primary/5 border-y border-primary/10">
                     <div className="container mx-auto px-4 text-center space-y-6">
                         <h2 className="text-3xl md:text-4xl font-bold text-white">The Battle is Live.</h2>
@@ -290,7 +303,6 @@ function CompetitionLanding() {
                     </div>
                 </section>
 
-                {/* Prizes Section */}
                 <section id="prizes" className="py-24 bg-white/[0.02] border-y border-white/5">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
                         <div className="text-center space-y-4">
@@ -329,7 +341,6 @@ function CompetitionLanding() {
                     </div>
                 </section>
 
-                {/* Rules Section */}
                 <section id="rules" className="py-24">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
                         <div className="text-center space-y-4">
@@ -367,7 +378,6 @@ function CompetitionLanding() {
                     </div>
                 </section>
 
-                {/* Registration Section */}
                 <section id="join-form" className="py-24 bg-white/[0.01] scroll-mt-20 border-t border-white/5">
                     <div className="container mx-auto px-4">
                         <TournamentRegistration events={events} paymentSettings={paymentSettings} />
