@@ -164,7 +164,7 @@ export default function PricingPage() {
       <div className="bg-background min-h-screen text-foreground pb-24">
         <LiveViewersBanner />
         
-        <nav className="container mx-auto px-4 py-6 flex items-center justify-between">
+        <nav className="w-full px-4 md:px-12 py-6 flex items-center justify-between">
             <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground rounded-full">
                 <Link href="https://www.fundedstock.io/">
                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -174,19 +174,19 @@ export default function PricingPage() {
             <Link href="/login" className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors">LOGIN TO PORTAL</Link>
         </nav>
 
-        <main className="container mx-auto px-4 md:px-8">
+        <main className="w-full px-4 md:px-12">
           <div className="text-center mb-16 pt-8">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-primary/20 mb-6">
                 <Zap className="h-3 w-3" /> Select Your Path to Capital
               </div>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight">The Arena is Waiting.</h1>
-              <p className="mt-4 text-muted-foreground max-w-2xl mx-auto text-lg">
+              <p className="mt-4 text-muted-foreground max-w-4xl mx-auto text-lg">
                 Choose the evaluation model that fits your trading style and secure your funded account today.
               </p>
           </div>
 
           <Tabs defaultValue="instant" className="w-full">
-              <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-2xl mx-auto h-auto p-1 bg-muted border border-white/5 rounded-lg mb-16">
+              <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-4xl mx-auto h-auto p-1 bg-muted border border-white/5 rounded-lg mb-16">
                   <TabsTrigger value="instant" className="py-2.5 text-sm font-bold rounded-md">Instant Funding</TabsTrigger>
                   <TabsTrigger value="1-step" className="py-2.5 text-sm font-bold rounded-md">1-Step Fast Track</TabsTrigger>
                   <TabsTrigger value="2-step" className="py-2.5 text-sm font-bold rounded-md">2-Step Standard</TabsTrigger>
@@ -195,7 +195,7 @@ export default function PricingPage() {
               <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
                   <div className="text-center mb-12">
                       <h2 className="text-3xl font-bold text-white tracking-tight">Instant Funding</h2>
-                      <p className="mt-2 text-muted-foreground max-w-xl mx-auto">No challenges. Trade live capital within 15 minutes of activation.</p>
+                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">No challenges. Trade live capital within 15 minutes of activation.</p>
                       <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-2">
                           <Link href="/rules/instant-funding">Execution Rules <ExternalLink className="ml-2 h-3 w-3" /></Link>
                       </Button>
@@ -210,12 +210,12 @@ export default function PricingPage() {
               <TabsContent value="1-step" className="mt-8 animate-in fade-in duration-500">
                   <div className="text-center mb-12">
                       <h2 className="text-3xl font-bold text-white tracking-tight">1-Step Evaluation</h2>
-                      <p className="mt-2 text-muted-foreground max-w-xl mx-auto">Achieve 10% profit target with no time limits to secure funding.</p>
+                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Achieve 10% profit target with no time limits to secure funding.</p>
                       <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-2">
                           <Link href="/rules/one-step">Phase Rules <ExternalLink className="ml-2 h-3 w-3" /></Link>
                       </Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                       {oneStepPlans.map((plan) => (
                       <PlanCard key={plan.title} {...plan} />
                       ))}
@@ -225,12 +225,12 @@ export default function PricingPage() {
               <TabsContent value="2-step" className="mt-8 animate-in fade-in duration-500">
                   <div className="text-center mb-12">
                       <h2 className="text-3xl font-bold text-white tracking-tight">2-Step Standard</h2>
-                      <p className="mt-2 text-muted-foreground max-w-xl mx-auto">Prove consistency across two phases to unlock maximum leverage.</p>
+                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Prove consistency across two phases to unlock maximum leverage.</p>
                       <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-2">
                           <Link href="/rules/two-step-evaluation">Phase Rules <ExternalLink className="ml-2 h-3 w-3" /></Link>
                       </Button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                       {twoStepPlans.map((plan) => (
                       <PlanCard key={plan.title} {...plan} />
                       ))}
