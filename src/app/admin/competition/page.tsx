@@ -3,12 +3,13 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, Si
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Swords, Users, Newspaper, UserCheck, Plus } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Swords, Users, Newspaper, UserCheck, Plus, History } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EventManager } from './event-manager';
 import { RegistrationManager } from './registration-manager';
+import { ResultsManager } from './results-manager';
 
 export default async function AdminCompetitionPage() {
   const supabase = createClient();
@@ -55,6 +56,7 @@ export default async function AdminCompetitionPage() {
                 <TabsList className="mb-4">
                     <TabsTrigger value="registrations">Registrations</TabsTrigger>
                     <TabsTrigger value="events">Tournament Events</TabsTrigger>
+                    <TabsTrigger value="results" className="gap-2"><History className="w-4 h-4"/> Results & Archive</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="events">
@@ -63,6 +65,10 @@ export default async function AdminCompetitionPage() {
                 
                 <TabsContent value="registrations">
                     <RegistrationManager events={events || []} />
+                </TabsContent>
+
+                <TabsContent value="results">
+                    <ResultsManager events={events || []} />
                 </TabsContent>
             </Tabs>
         </main>

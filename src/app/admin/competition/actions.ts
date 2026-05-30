@@ -109,3 +109,73 @@ export async function deleteEvent(id: string) {
         return { error: error.message };
     }
 }
+
+/**
+ * ARCHIVE LOGIC:
+ * 1. Fetches final balances from StockMint for all approved users of a week.
+ * 2. Identifies Top 3 and saves them to competition_winners.
+ * 3. Marks event as archived.
+ * 4. Deletes all registration data for that week.
+ */
+export async function archiveWeekResults(eventId: string) {
+    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+
+    try {
+        // 1. Get all approved regs
+        const { data: regs, error: regsError } = await supabaseAdmin
+            .from('competition_registrations')
+            .select('user_id, stockmint_username, profiles(full_name, email)')
+            .eq('event_id', eventId)
+            .eq('is_approved', true);
+        
+        if (regsError || !regs) throw new Error("Could not find participants.");
+
+        // 2. Fetch final stats for all
+        const results = await Promise.all(regs.map(async (reg) => {
+            let balance = 100000;
+            if (reg.stockmint_username && stockmintApiKey) {
+                const res = await fetch(`https://stockmint.io/api/users/stats?email=${reg.stockmint_username}`, {
+                    headers: { 'x-api-key': stockmintApiKey }
+                });
+                if (res.ok) {
+                    const stats = await res.json();
+                    if (stats.success) balance = stats.data.balance;
+                }
+            }
+            return {
+                name: reg.profiles?.full_name || 'Champion',
+                email: reg.profiles?.email || 'N/A',
+                balance: balance
+            };
+        }));
+
+        // 3. Sort and pick winners
+        const sorted = results.sort((a, b) => b.balance - a.balance);
+        const winners = sorted.slice(0, 3);
+
+        // 4. Save Winners permanently
+        const winnerInserts = winners.map((w, index) => ({
+            event_id: eventId,
+            rank: index + 1,
+            user_name: w.name,
+            user_email: w.email,
+            final_balance: w.balance
+        }));
+
+        const { error: winError } = await supabaseAdmin.from('competition_winners').insert(winnerInserts);
+        if (winError) throw winError;
+
+        // 5. Mark as archived
+        await supabaseAdmin.from('competition_events').update({ is_archived: true }).eq('id', eventId);
+
+        // 6. Delete registrations (Cleanup)
+        await supabaseAdmin.from('competition_registrations').delete().eq('event_id', eventId);
+
+        revalidatePath('/admin/competition');
+        return { success: true };
+
+    } catch (err: any) {
+        console.error("Archive Error:", err);
+        return { error: err.message };
+    }
+}
