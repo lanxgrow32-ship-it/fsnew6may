@@ -185,12 +185,12 @@ function WinnersList({ eventId, isArchived }: { eventId: string, isArchived: boo
             {winners.length > 0 ? winners.map((winner) => (
                 <div key={winner.id} className="flex items-center gap-4 p-4 bg-background rounded-xl border">
                     <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-black text-lg",
                         winner.rank === 1 ? "bg-yellow-500/20 text-yellow-600 border border-yellow-500/30" :
                         winner.rank === 2 ? "bg-gray-300/20 text-gray-600 border border-gray-300/30" :
                         "bg-orange-500/20 text-orange-600 border border-orange-500/30"
                     )}>
-                        {winner.rank === 1 ? <Trophy className="w-5 h-5"/> : <Medal className="w-5 h-5"/>}
+                        {winner.rank}
                     </div>
                     <div className="min-w-0">
                         <p className="font-bold text-sm truncate">{winner.user_name}</p>
