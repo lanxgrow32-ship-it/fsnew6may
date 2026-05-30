@@ -58,24 +58,24 @@ const LiveViewersBanner = () => {
         <div className="bg-primary/10 border-b border-primary/20 py-2 overflow-hidden whitespace-nowrap relative">
             <div className="animate-marquee inline-block">
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🔥 {viewers} traders are currently viewing this page
+                    🔥 {viewers} are currently viewing this page
                 </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🔥 {viewers} traders are currently viewing this page
+                    🔥 {viewers} are currently viewing this page
                 </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🔥 {viewers} traders are currently viewing this page
+                    🔥 {viewers} are currently viewing this page
                 </span>
             </div>
             <div className="animate-marquee inline-block" aria-hidden="true">
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🔥 {viewers} traders are currently viewing this page
+                    🔥 {viewers} are currently viewing this page
                 </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🔥 {viewers} traders are currently viewing this page
+                    🔥 {viewers} are currently viewing this page
                 </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🔥 {viewers} traders are currently viewing this page
+                    🔥 {viewers} are currently viewing this page
                 </span>
             </div>
         </div>
@@ -205,7 +205,7 @@ export default function PricingPage() {
                           <Link href="/rules/instant-funding">Execution Rules <ExternalLink className="ml-2 h-3 w-3" /></Link>
                       </Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
                       {instantFundingPlans.map((plan, i) => (
                       <PlanCard key={plan.title} {...plan} isPopular={i === 2} />
                       ))}
@@ -220,7 +220,7 @@ export default function PricingPage() {
                           <Link href="/rules/one-step">Phase Rules <ExternalLink className="ml-2 h-3 w-3" /></Link>
                       </Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
                       {oneStepPlans.map((plan, i) => (
                       <PlanCard key={plan.title} {...plan} isPopular={i === 2} />
                       ))}
@@ -235,7 +235,7 @@ export default function PricingPage() {
                           <Link href="/rules/two-step-evaluation">Phase Rules <ExternalLink className="ml-2 h-3 w-3" /></Link>
                       </Button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
                       {twoStepPlans.map((plan, i) => (
                       <PlanCard key={plan.title} {...plan} isPopular={i === 3} />
                       ))}
