@@ -67,7 +67,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     const handlePopState = (event: PopStateEvent) => {
       if (!hasShownFomo && !isFomoApplied) {
         window.history.pushState(null, '', window.location.href);
-        setFomoSlots(Math.floor(Math.random() * 8) + 2); // Random 2-10 slots
+        setFomoSlots(Math.floor(Math.random() * 5) + 2); // Random 2-7 slots
         setShowFomo(true);
         setHasShownFomo(true);
       }
@@ -96,9 +96,8 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     setIsFomoApplied(true);
     setShowFomo(false);
     toast({
-        title: "Extra 10% Applied! 🎉",
-        description: "Your VIP bonus has been added to your order summary.",
-        variant: "default"
+        title: "Bonus Applied! 🎉",
+        description: "Extra 10% discount added to your summary.",
     });
   };
 
@@ -193,55 +192,55 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   return (
     <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12 relative font-poppins">
       
-      {/* PREMIUM FOMO EXIT DIALOG */}
+      {/* PREMIUM COMPACT FOMO EXIT DIALOG */}
       <Dialog open={showFomo} onOpenChange={setShowFomo}>
-        <DialogContent className="sm:max-w-[420px] bg-slate-950 border-white/10 p-0 overflow-hidden rounded-3xl shadow-2xl">
-            <div className="bg-gradient-to-b from-white/[0.03] to-transparent p-8 text-center space-y-6">
-                <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit border border-primary/20">
-                    <Sparkles className="h-8 w-8 text-primary" />
+        <DialogContent className="sm:max-w-[320px] bg-slate-950 border-red-500/30 p-0 overflow-hidden rounded-2xl shadow-[0_0_50px_rgba(239,68,68,0.15)]">
+            <div className="p-5 text-center space-y-4">
+                <div className="mx-auto bg-red-500/10 rounded-full p-2 w-fit border border-red-500/20">
+                    <Sparkles className="h-5 w-5 text-red-400" />
                 </div>
                 
                 <DialogHeader className="space-y-1">
-                    <DialogTitle className="text-2xl font-black text-white tracking-tight uppercase leading-none text-center">WAIT! JUST A MOMENT.</DialogTitle>
-                    <DialogDescription className="text-gray-500 text-xs font-bold uppercase tracking-widest text-center">Special Bonus Identified</DialogDescription>
+                    <DialogTitle className="text-lg font-black text-white tracking-tight uppercase text-center">WAIT! DON'T LEAVE.</DialogTitle>
+                    <DialogDescription className="text-gray-500 text-[10px] font-bold uppercase tracking-widest text-center">Exclusive Bonus Detected</DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4">
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                        We noticed you're about to leave. Since we really want to see you succeed, we've unlocked a special <span className="text-white font-bold underline">one-time bonus</span> for you.
+                <div className="space-y-3">
+                    <p className="text-gray-400 text-xs leading-relaxed">
+                        We've unlocked a special <span className="text-white font-bold underline">Final Offer</span> to help you get started today.
                     </p>
                     
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-2 relative">
-                        <div className="flex items-center justify-center gap-2 text-primary font-bold uppercase tracking-tighter text-[10px]">
-                            <Zap className="h-3 w-3" /> Exclusive Extra Discount
-                        </div>
-                        <div className="text-5xl font-black text-white tracking-tighter">EXTRA 10% OFF</div>
-                        <div className="flex items-center justify-center gap-2 pt-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                    <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4 space-y-1 relative">
+                        <div className="text-3xl font-black text-white tracking-tighter">EXTRA 10% OFF</div>
+                        <div className="flex items-center justify-center gap-2">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            </span>
                             <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">Expires in {formatTime(timeLeft)}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 py-1.5 px-4 bg-primary/5 rounded-full w-fit mx-auto border border-primary/10">
-                    <Timer className="h-3 w-3 text-primary" />
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                        Limited: Only <span className="text-white font-black">{fomoSlots} slots</span> remaining
+                <div className="flex items-center justify-center gap-2 py-1 px-3 bg-white/5 rounded-full w-fit mx-auto border border-white/5">
+                    <Timer className="h-2.5 w-2.5 text-primary" />
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
+                        Scarcity: Only <span className="text-white font-black">{fomoSlots} coupons</span> left
                     </p>
                 </div>
 
-                <div className="space-y-4 pt-2">
-                    <Button onClick={applyFomoDiscount} className="w-full h-14 text-sm font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl shadow-[0_10px_40px_rgba(234,179,8,0.2)] transition-all transform hover:scale-[1.02] active:scale-[0.98] uppercase">
-                        Apply My Extra 10% Now
+                <div className="space-y-3 pt-1">
+                    <Button onClick={applyFomoDiscount} className="w-full h-11 text-xs font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg transition-all uppercase">
+                        Claim My 10% Discount
                     </Button>
                     <button 
                         onClick={() => {
                             setShowFomo(false);
                             window.history.back();
                         }} 
-                        className="text-gray-600 text-[10px] font-bold uppercase tracking-widest hover:text-gray-400 transition-colors"
+                        className="text-gray-600 text-[9px] font-bold uppercase tracking-widest hover:text-gray-400 transition-colors"
                     >
-                        No, I will purchase later
+                        No, I will pay full price later
                     </button>
                 </div>
             </div>
@@ -284,7 +283,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                 )}
 
                 <Card className="bg-card/80 backdrop-blur-sm border-border relative overflow-hidden rounded-2xl">
-                    {isFomoApplied && <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10">VIP Bonus Applied</div>}
+                    {isFomoApplied && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10 animate-pulse">VIP Exit Bonus</div>}
                     <CardHeader className="pb-4">
                         <CardTitle className="text-base">Order Summary</CardTitle>
                     </CardHeader>
