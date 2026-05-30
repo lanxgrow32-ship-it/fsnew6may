@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, Suspense, useEffect } from 'react';
+import { useState, Suspense, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Ticket, CheckCircle, XCircle, ShieldAlert, Send, Copy } from 'lucide-react';
+import { Loader2, Ticket, CheckCircle, XCircle, ShieldAlert, Send, Copy, Sparkles, Zap, Timer, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signupAndCreateOrder, validateCoupon, validateReferralCode } from './actions';
 import { useDebounce } from 'use-debounce';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   const router = useRouter();
@@ -39,6 +41,13 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   const [finalPrice, setFinalPrice] = useState(price ? parseFloat(price.replace(/,/g, '')) : 0);
   const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
   const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
+  const [fomoDiscountAmount, setFomoDiscountAmount] = useState(0);
+  const [isFomoApplied, setIsFomoApplied] = useState(false);
+
+  // FOMO Dialog States
+  const [showFomo, setShowFomo] = useState(false);
+  const [fomoSlots, setFomoSlots] = useState(7);
+  const [hasShownFomo, setHasShownFomo] = useState(false);
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
   
@@ -51,20 +60,54 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     ? { upi_id: paymentSettings?.pay_later_upi_id, qr_code_url: paymentSettings?.pay_later_qr_code_url }
     : { upi_id: paymentSettings?.upi_id, qr_code_url: paymentSettings?.qr_code_url };
 
+  // Intercept Back Button
+  useEffect(() => {
+    // Push a dummy state into history
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      if (!hasShownFomo && !isFomoApplied) {
+        // Prevent navigation
+        window.history.pushState(null, '', window.location.href);
+        // Show FOMO
+        setFomoSlots(Math.floor(Math.random() * 14) + 2); // Random 2-15 slots
+        setShowFomo(true);
+        setHasShownFomo(true);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [hasShownFomo, isFomoApplied]);
+
+  const applyFomoDiscount = () => {
+    setIsFomoApplied(true);
+    setShowFomo(false);
+    toast({
+        title: "VIP Discount Applied! 🎉",
+        description: "An additional 15% has been deducted from your total.",
+        variant: "default"
+    });
+  };
 
   useEffect(() => {
     const couponDiscount = (originalPrice * discountPercent) / 100;
     const priceAfterCoupon = originalPrice - couponDiscount;
     const referralDiscount = isReferralDiscountApplied ? priceAfterCoupon * 0.05 : 0;
-    const newFinalPrice = priceAfterCoupon - referralDiscount;
+    const priceAfterReferral = priceAfterCoupon - referralDiscount;
+    
+    // Apply 15% FOMO discount if active
+    const fomoDiscount = isFomoApplied ? priceAfterReferral * 0.15 : 0;
+    const newFinalPrice = priceAfterReferral - fomoDiscount;
 
     setCouponDiscountAmount(couponDiscount);
     setReferralDiscountAmount(referralDiscount);
+    setFomoDiscountAmount(fomoDiscount);
     
     const roundedUpPrice = Math.ceil(newFinalPrice > 0 ? newFinalPrice : 0);
     setFinalPrice(roundedUpPrice);
 
-  }, [price, discountPercent, originalPrice, isReferralDiscountApplied]);
+  }, [price, discountPercent, originalPrice, isReferralDiscountApplied, isFomoApplied]);
 
    useEffect(() => {
     if (debouncedReferralCode) {
@@ -120,8 +163,8 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     const formData = new FormData(e.currentTarget);
     formData.append('plan_purchased', plan || '');
     formData.append('plan_price', String(originalPrice));
-    formData.append('coupon_code', discountPercent > 0 ? couponCode : '');
-    const totalDiscount = couponDiscountAmount + referralDiscountAmount;
+    formData.append('coupon_code', discountPercent > 0 ? couponCode : (isFomoApplied ? 'VIP-EXIT-OFFER' : ''));
+    const totalDiscount = couponDiscountAmount + referralDiscountAmount + fomoDiscountAmount;
     formData.append('discount_amount', String(totalDiscount));
     formData.append('final_amount_paid', String(finalPrice));
     
@@ -134,12 +177,49 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
       window.location.href = result.redirectUrl;
     } else {
       // This handles the manual flow redirect, which is done on the server.
-      // A successful manual flow doesn't return a URL, so we just wait for the page to change.
     }
   };
 
   return (
-    <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12">
+    <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12 relative">
+      
+      {/* FOMO EXIT DIALOG */}
+      <Dialog open={showFomo} onOpenChange={setShowFomo}>
+        <DialogContent className="sm:max-w-[450px] bg-slate-950 border-primary/30 p-0 overflow-hidden">
+            <div className="bg-gradient-to-br from-primary/20 to-purple-600/20 p-8 text-center space-y-6">
+                <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit animate-pulse">
+                    <Sparkles className="h-10 w-10 text-primary" />
+                </div>
+                
+                <div className="space-y-2">
+                    <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Wait! Don't Leave.</h2>
+                    <p className="text-gray-400 text-sm font-medium">We noticed you're about to leave. We'd love for you to join the FundedStock family.</p>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                    <div className="flex items-center justify-center gap-2 text-primary font-bold uppercase tracking-widest text-xs">
+                        <Zap className="h-3 w-3" /> Exclusive One-Time Offer
+                    </div>
+                    <div className="text-4xl font-black text-white">Extra 15% OFF</div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-tighter">Valid for the next 5 minutes only</p>
+                </div>
+
+                <div className="flex items-center justify-center gap-3 bg-red-500/10 border border-red-500/20 py-2 rounded-full text-red-400 text-xs font-bold animate-bounce">
+                    <Timer className="h-3 w-3" /> Only {fomoSlots} slots remaining at this price!
+                </div>
+
+                <div className="space-y-3 pt-2">
+                    <Button onClick={applyFomoDiscount} className="w-full h-14 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-[0_0_30px_rgba(234,179,8,0.3)] border-b-4 border-primary-foreground/20 active:border-b-0 active:translate-y-1 transition-all">
+                        Claim My 15% Discount Now
+                    </Button>
+                    <button onClick={() => setShowFomo(false)} className="text-gray-600 text-xs font-bold hover:text-gray-400 transition-colors">
+                        No thanks, I'll pay the full price later
+                    </button>
+                </div>
+            </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="w-full max-w-lg space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
             <h1 className="text-3xl font-bold mt-4 text-primary">Create an Account</h1>
@@ -163,18 +243,20 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                                 placeholder="Enter coupon code" 
                                 value={couponCode}
                                 onChange={(e) => setCouponCode(e.target.value)}
-                                disabled={discountPercent > 0}
+                                disabled={discountPercent > 0 || isFomoApplied}
                             />
-                            <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0}>
+                            <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0 || isFomoApplied}>
                                 {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
                             </Button>
                             </div>
                             {couponError && <p className="text-sm text-destructive mt-2">{couponError}</p>}
+                            {isFomoApplied && <p className="text-xs text-primary font-bold mt-2 flex items-center gap-1"><Sparkles className="h-3 w-3"/> VIP Exit Discount Applied</p>}
                         </CardContent>
                     </Card>
                 )}
 
-                <Card className="bg-card/80 backdrop-blur-sm border-border">
+                <Card className="bg-card/80 backdrop-blur-sm border-border relative overflow-hidden">
+                    {isFomoApplied && <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-tighter z-10">VIP Reward</div>}
                     <CardHeader>
                         <CardTitle>Order Summary</CardTitle>
                     </CardHeader>
@@ -195,9 +277,15 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                                 <p>- ₹{referralDiscountAmount.toFixed(2)}</p>
                             </div>
                         )}
+                        {fomoDiscountAmount > 0 && (
+                             <div className="flex justify-between items-center text-sm text-primary font-bold">
+                                <p className="flex items-center gap-1"><Zap className="h-3 w-3"/> Exit Offer (15%):</p>
+                                <p>- ₹{fomoDiscountAmount.toFixed(2)}</p>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
                             <p>Final Price to Pay:</p>
-                            <p>₹{finalPrice.toFixed(2)}</p>
+                            <p className={cn(isFomoApplied && "text-primary")}>₹{finalPrice.toFixed(2)}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -299,9 +387,13 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                         </Alert>
                     )}
 
-                    <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
+                    <Button type="submit" className={cn("w-full h-12 text-lg font-bold transition-all", isFomoApplied ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20" : "")} disabled={isLoading || !termsAccepted}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {activeGateway === 'manual' ? <><Send className="mr-2 h-4 w-4"/> Submit & Create Account</> : 'Proceed to Payment'}
+                        {activeGateway === 'manual' ? (
+                            <><Send className="mr-2 h-4 w-4"/> Submit & Create Account</>
+                        ) : (
+                            isFomoApplied ? `Pay ₹${finalPrice.toFixed(0)} Now` : 'Proceed to Payment'
+                        )}
                     </Button>
                     <div className="text-center text-sm text-muted-foreground pt-2">
                         Already have an account?{' '}
