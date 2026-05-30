@@ -61,10 +61,10 @@ const LiveViewersBanner = () => {
                     🔥 {viewers} traders are currently viewing this page
                 </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    ⚡ High demand detected for Instant Funding slots
+                    🔥 {viewers} traders are currently viewing this page
                 </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🏆 Join {Math.floor(viewers * 0.8)} others aiming for funding today
+                    🔥 {viewers} traders are currently viewing this page
                 </span>
             </div>
             <div className="animate-marquee inline-block" aria-hidden="true">
@@ -72,10 +72,10 @@ const LiveViewersBanner = () => {
                     🔥 {viewers} traders are currently viewing this page
                 </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    ⚡ High demand detected for Instant Funding slots
+                    🔥 {viewers} traders are currently viewing this page
                 </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🏆 Join {Math.floor(viewers * 0.8)} others aiming for funding today
+                    🔥 {viewers} traders are currently viewing this page
                 </span>
             </div>
         </div>
@@ -187,7 +187,12 @@ export default function PricingPage() {
 
           <Tabs defaultValue="instant" className="w-full">
               <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-4xl mx-auto h-auto p-1 bg-muted border border-white/5 rounded-lg mb-16">
-                  <TabsTrigger value="instant" className="py-2.5 text-sm font-bold rounded-md">Instant Funding</TabsTrigger>
+                  <TabsTrigger value="instant" className="py-2.5 text-sm font-bold rounded-md flex items-center gap-2">
+                    <span className="flex items-center gap-1">
+                        Instant Funding
+                        <Badge variant="destructive" className="text-[8px] h-4 px-1.5 font-black uppercase">🔥 Hot</Badge>
+                    </span>
+                  </TabsTrigger>
                   <TabsTrigger value="1-step" className="py-2.5 text-sm font-bold rounded-md">1-Step Fast Track</TabsTrigger>
                   <TabsTrigger value="2-step" className="py-2.5 text-sm font-bold rounded-md">2-Step Standard</TabsTrigger>
               </TabsList>
@@ -201,8 +206,8 @@ export default function PricingPage() {
                       </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                      {instantFundingPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} />
+                      {instantFundingPlans.map((plan, i) => (
+                      <PlanCard key={plan.title} {...plan} isPopular={i === 2} />
                       ))}
                   </div>
               </TabsContent>
@@ -216,8 +221,8 @@ export default function PricingPage() {
                       </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-                      {oneStepPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} />
+                      {oneStepPlans.map((plan, i) => (
+                      <PlanCard key={plan.title} {...plan} isPopular={i === 2} />
                       ))}
                   </div>
               </TabsContent>
@@ -231,8 +236,8 @@ export default function PricingPage() {
                       </Button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-                      {twoStepPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} />
+                      {twoStepPlans.map((plan, i) => (
+                      <PlanCard key={plan.title} {...plan} isPopular={i === 3} />
                       ))}
                   </div>
               </TabsContent>
