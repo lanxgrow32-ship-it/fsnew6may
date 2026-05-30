@@ -194,7 +194,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
       
       {/* PREMIUM COMPACT FOMO EXIT DIALOG */}
       <Dialog open={showFomo} onOpenChange={setShowFomo}>
-        <DialogContent className="sm:max-w-[320px] bg-slate-950 border-red-500/30 p-0 overflow-hidden rounded-2xl shadow-[0_0_50px_rgba(239,68,68,0.15)]">
+        <DialogContent className="sm:max-w-[320px] bg-[#0a0a0c] border-red-500 border-2 p-0 overflow-hidden rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.4)] backdrop-blur-xl">
             <div className="p-5 text-center space-y-4">
                 <div className="mx-auto bg-red-500/10 rounded-full p-2 w-fit border border-red-500/20">
                     <Sparkles className="h-5 w-5 text-red-400" />
@@ -206,12 +206,12 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                 </DialogHeader>
 
                 <div className="space-y-3">
-                    <p className="text-gray-400 text-xs leading-relaxed">
+                    <p className="text-gray-400 text-xs leading-relaxed px-2">
                         We've unlocked a special <span className="text-white font-bold underline">Final Offer</span> to help you get started today.
                     </p>
                     
                     <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4 space-y-1 relative">
-                        <div className="text-3xl font-black text-white tracking-tighter">EXTRA 10% OFF</div>
+                        <div className="text-3xl font-black text-primary tracking-tighter drop-shadow-sm">EXTRA 10% OFF</div>
                         <div className="flex items-center justify-center gap-2">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -240,7 +240,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                         }} 
                         className="text-gray-600 text-[9px] font-bold uppercase tracking-widest hover:text-gray-400 transition-colors"
                     >
-                        No, I will pay full price later
+                        No, I will purchase later
                     </button>
                 </div>
             </div>
