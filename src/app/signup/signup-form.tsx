@@ -48,6 +48,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   const [showFomo, setShowFomo] = useState(false);
   const [fomoSlots, setFomoSlots] = useState(7);
   const [hasShownFomo, setHasShownFomo] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(899); // 14:59 in seconds
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
   
@@ -62,15 +63,12 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
 
   // Intercept Back Button
   useEffect(() => {
-    // Push a dummy state into history
     window.history.pushState(null, '', window.location.href);
 
     const handlePopState = (event: PopStateEvent) => {
       if (!hasShownFomo && !isFomoApplied) {
-        // Prevent navigation
         window.history.pushState(null, '', window.location.href);
-        // Show FOMO
-        setFomoSlots(Math.floor(Math.random() * 14) + 2); // Random 2-15 slots
+        setFomoSlots(Math.floor(Math.random() * 8) + 2); // Random 2-10 slots
         setShowFomo(true);
         setHasShownFomo(true);
       }
@@ -80,12 +78,27 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [hasShownFomo, isFomoApplied]);
 
+  // FOMO Timer logic
+  useEffect(() => {
+    if (!showFomo) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [showFomo]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   const applyFomoDiscount = () => {
     setIsFomoApplied(true);
     setShowFomo(false);
     toast({
-        title: "VIP Discount Applied! 🎉",
-        description: "An additional 15% has been deducted from your total.",
+        title: "Extra 10% Applied! 🎉",
+        description: "Your VIP bonus has been added to your order summary.",
         variant: "default"
     });
   };
@@ -96,8 +109,8 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     const referralDiscount = isReferralDiscountApplied ? priceAfterCoupon * 0.05 : 0;
     const priceAfterReferral = priceAfterCoupon - referralDiscount;
     
-    // Apply 15% FOMO discount if active
-    const fomoDiscount = isFomoApplied ? priceAfterReferral * 0.15 : 0;
+    // Apply EXTRA 10% FOMO discount if active (additive)
+    const fomoDiscount = isFomoApplied ? priceAfterReferral * 0.10 : 0;
     const newFinalPrice = priceAfterReferral - fomoDiscount;
 
     setCouponDiscountAmount(couponDiscount);
@@ -175,45 +188,61 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
       setIsLoading(false);
     } else if (result?.redirectUrl) {
       window.location.href = result.redirectUrl;
-    } else {
-      // This handles the manual flow redirect, which is done on the server.
     }
   };
 
   return (
-    <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12 relative">
+    <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12 relative font-poppins">
       
-      {/* FOMO EXIT DIALOG */}
+      {/* PREMIUM FOMO EXIT DIALOG */}
       <Dialog open={showFomo} onOpenChange={setShowFomo}>
-        <DialogContent className="sm:max-w-[450px] bg-slate-950 border-primary/30 p-0 overflow-hidden">
-            <div className="bg-gradient-to-br from-primary/20 to-purple-600/20 p-8 text-center space-y-6">
-                <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit animate-pulse">
-                    <Sparkles className="h-10 w-10 text-primary" />
+        <DialogContent className="sm:max-w-[420px] bg-slate-950 border-white/10 p-0 overflow-hidden rounded-3xl shadow-2xl">
+            <div className="bg-gradient-to-b from-white/[0.03] to-transparent p-8 text-center space-y-6">
+                <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit border border-primary/20">
+                    <Sparkles className="h-8 w-8 text-primary" />
                 </div>
                 
-                <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Wait! Don't Leave.</h2>
-                    <p className="text-gray-400 text-sm font-medium">We noticed you're about to leave. We'd love for you to join the FundedStock family.</p>
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-black text-white tracking-tight uppercase leading-none">WAIT! JUST A MOMENT.</h2>
+                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Special Bonus Identified</p>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
-                    <div className="flex items-center justify-center gap-2 text-primary font-bold uppercase tracking-widest text-xs">
-                        <Zap className="h-3 w-3" /> Exclusive One-Time Offer
+                <div className="space-y-4">
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                        We noticed you're about to leave. Since we really want to see you succeed, we've unlocked a special <span className="text-white font-bold underline">one-time bonus</span> for you.
+                    </p>
+                    
+                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-2 relative">
+                        <div className="flex items-center justify-center gap-2 text-primary font-bold uppercase tracking-tighter text-[10px]">
+                            <Zap className="h-3 w-3" /> Exclusive Extra Discount
+                        </div>
+                        <div className="text-5xl font-black text-white tracking-tighter">EXTRA 10% OFF</div>
+                        <div className="flex items-center justify-center gap-2 pt-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                            <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">Expires in {formatTime(timeLeft)}</p>
+                        </div>
                     </div>
-                    <div className="text-4xl font-black text-white">Extra 15% OFF</div>
-                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-tighter">Valid for the next 5 minutes only</p>
                 </div>
 
-                <div className="flex items-center justify-center gap-3 bg-red-500/10 border border-red-500/20 py-2 rounded-full text-red-400 text-xs font-bold animate-bounce">
-                    <Timer className="h-3 w-3" /> Only {fomoSlots} slots remaining at this price!
+                <div className="flex items-center justify-center gap-2 py-1.5 px-4 bg-primary/5 rounded-full w-fit mx-auto border border-primary/10">
+                    <Timer className="h-3 w-3 text-primary" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                        Limited: Only <span className="text-white font-black">{fomoSlots} slots</span> remaining
+                    </p>
                 </div>
 
-                <div className="space-y-3 pt-2">
-                    <Button onClick={applyFomoDiscount} className="w-full h-14 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-[0_0_30px_rgba(234,179,8,0.3)] border-b-4 border-primary-foreground/20 active:border-b-0 active:translate-y-1 transition-all">
-                        Claim My 15% Discount Now
+                <div className="space-y-4 pt-2">
+                    <Button onClick={applyFomoDiscount} className="w-full h-14 text-sm font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl shadow-[0_10px_40px_rgba(234,179,8,0.2)] transition-all transform hover:scale-[1.02] active:scale-[0.98] uppercase">
+                        Apply My Extra 10% Now
                     </Button>
-                    <button onClick={() => setShowFomo(false)} className="text-gray-600 text-xs font-bold hover:text-gray-400 transition-colors">
-                        No thanks, I'll pay the full price later
+                    <button 
+                        onClick={() => {
+                            setShowFomo(false);
+                            window.history.back();
+                        }} 
+                        className="text-gray-600 text-[10px] font-bold uppercase tracking-widest hover:text-gray-400 transition-colors"
+                    >
+                        No, I will purchase later
                     </button>
                 </div>
             </div>
@@ -223,7 +252,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
       <div className="w-full max-w-lg space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
             <h1 className="text-3xl font-bold mt-4 text-primary">Create an Account</h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm font-medium">
                  {plan && price ? `You are purchasing the ${plan} plan.` : 'Enter your details to get started.'}
             </p>
         </div>
@@ -231,9 +260,9 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
         <form onSubmit={handleSubmit} className="space-y-6">
              <div className="space-y-6">
                  {showCoupon && (
-                    <Card className="bg-card/80 backdrop-blur-sm border-border">
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2"><Ticket className="w-5 h-5 text-primary"/> Have a coupon?</CardTitle>
+                    <Card className="bg-card/80 backdrop-blur-sm border-border rounded-2xl">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-base flex items-center gap-2"><Ticket className="w-4 h-4 text-primary"/> Have a coupon?</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex gap-2">
@@ -243,162 +272,159 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                                 placeholder="Enter coupon code" 
                                 value={couponCode}
                                 onChange={(e) => setCouponCode(e.target.value)}
-                                disabled={discountPercent > 0 || isFomoApplied}
+                                disabled={discountPercent > 0}
+                                className="bg-black/20 border-white/10"
                             />
-                            <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0 || isFomoApplied}>
+                            <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || discountPercent > 0} className="rounded-xl">
                                 {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
                             </Button>
                             </div>
-                            {couponError && <p className="text-sm text-destructive mt-2">{couponError}</p>}
-                            {isFomoApplied && <p className="text-xs text-primary font-bold mt-2 flex items-center gap-1"><Sparkles className="h-3 w-3"/> VIP Exit Discount Applied</p>}
+                            {couponError && <p className="text-xs text-destructive font-medium mt-2">{couponError}</p>}
                         </CardContent>
                     </Card>
                 )}
 
-                <Card className="bg-card/80 backdrop-blur-sm border-border relative overflow-hidden">
-                    {isFomoApplied && <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-tighter z-10">VIP Reward</div>}
-                    <CardHeader>
-                        <CardTitle>Order Summary</CardTitle>
+                <Card className="bg-card/80 backdrop-blur-sm border-border relative overflow-hidden rounded-2xl">
+                    {isFomoApplied && <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10">VIP Bonus Applied</div>}
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base">Order Summary</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex justify-between items-center text-sm">
-                            <p className="text-muted-foreground">Plan Price:</p>
-                            <p>₹{originalPrice.toFixed(2)}</p>
+                            <p className="text-muted-foreground font-medium">Plan Price:</p>
+                            <p className="font-semibold">₹{originalPrice.toFixed(2)}</p>
                         </div>
                         {couponDiscountAmount > 0 && (
-                            <div className="flex justify-between items-center text-sm text-green-600">
-                                <p className="text-muted-foreground">Coupon "{couponCode}":</p>
+                            <div className="flex justify-between items-center text-xs text-green-400 font-bold">
+                                <p className="text-muted-foreground font-medium uppercase tracking-tighter">Coupon "{couponCode.toUpperCase()}":</p>
                                 <p>- ₹{couponDiscountAmount.toFixed(2)}</p>
                             </div>
                         )}
                         {referralDiscountAmount > 0 && (
-                            <div className="flex justify-between items-center text-sm text-green-600">
-                                <p className="text-muted-foreground">Referral Discount (5%):</p>
+                            <div className="flex justify-between items-center text-xs text-green-400 font-bold">
+                                <p className="text-muted-foreground font-medium uppercase tracking-tighter">Referral Bonus (5%):</p>
                                 <p>- ₹{referralDiscountAmount.toFixed(2)}</p>
                             </div>
                         )}
                         {fomoDiscountAmount > 0 && (
-                             <div className="flex justify-between items-center text-sm text-primary font-bold">
-                                <p className="flex items-center gap-1"><Zap className="h-3 w-3"/> Exit Offer (15%):</p>
+                             <div className="flex justify-between items-center text-xs text-primary font-black">
+                                <p className="flex items-center gap-1 uppercase tracking-tighter"><Zap className="h-3 w-3"/> VIP Exit Discount (10%):</p>
                                 <p>- ₹{fomoDiscountAmount.toFixed(2)}</p>
                             </div>
                         )}
-                        <div className="flex justify-between items-center font-bold text-lg border-t pt-4 mt-4">
-                            <p>Final Price to Pay:</p>
-                            <p className={cn(isFomoApplied && "text-primary")}>₹{finalPrice.toFixed(2)}</p>
+                        <div className="flex justify-between items-center font-black text-xl border-t border-white/5 pt-4 mt-4">
+                            <p className="uppercase tracking-tighter">Total Due:</p>
+                            <p className={cn(isFomoApplied ? "text-primary" : "text-white")}>₹{finalPrice.toFixed(2)}</p>
                         </div>
                     </CardContent>
                 </Card>
 
                 {activeGateway === 'manual' && (
-                    <Card className="bg-card/90">
+                    <Card className="bg-card/90 rounded-2xl">
                             <CardHeader>
-                            <CardTitle>Step 1: Complete Payment</CardTitle>
-                            <CardDescription>Scan the QR or use the UPI ID to pay. Then enter the transaction ID below.</CardDescription>
+                            <CardTitle className="text-base">Step 1: Complete Payment</CardTitle>
+                            <CardDescription className="text-xs">Scan the QR or use the UPI ID to pay. Then enter the transaction ID below.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {manualPaymentDetails.qr_code_url ? (
-                                <div className="mx-auto w-fit p-2 bg-white rounded-md">
-                                    <Image src={manualPaymentDetails.qr_code_url} alt="UPI QR Code" width={180} height={180} />
+                                <div className="mx-auto w-fit p-3 bg-white rounded-2xl shadow-2xl">
+                                    <Image src={manualPaymentDetails.qr_code_url} alt="UPI QR Code" width={180} height={180} className="rounded-lg" />
                                 </div>
                             ) : (
                                 <p className="text-sm text-center text-muted-foreground">QR Code not available.</p>
                             )}
                             {manualPaymentDetails.upi_id && (
-                                <div>
-                                    <Label className="text-muted-foreground">Or pay to this UPI ID:</Label>
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <p className="font-mono text-lg truncate">{manualPaymentDetails.upi_id}</p>
-                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => copyToClipboard(manualPaymentDetails.upi_id)}>
-                                            <Copy className="h-4 w-4"/>
+                                <div className="text-center space-y-2">
+                                    <Label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">UPI ID</Label>
+                                    <div className="flex items-center justify-center gap-2 bg-black/40 p-2.5 rounded-xl border border-white/5">
+                                        <p className="font-mono text-sm text-gray-300 truncate">{manualPaymentDetails.upi_id}</p>
+                                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10" onClick={() => copyToClipboard(manualPaymentDetails.upi_id)}>
+                                            <Copy className="h-3.5 w-3.5"/>
                                         </Button>
                                     </div>
                                 </div>
                             )}
-                            <div className="space-y-2 pt-4">
-                                <Label htmlFor="utr">Enter UTR / Transaction ID</Label>
-                                <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required />
+                            <div className="space-y-2 pt-4 border-t border-white/5">
+                                <Label htmlFor="utr" className="text-xs font-bold uppercase tracking-widest text-gray-500">Transaction ID (UTR)</Label>
+                                <Input id="utr" name="utr" placeholder="Enter the 12-digit transaction ID" required className="bg-black/50 border-white/10 h-12 rounded-xl" />
                             </div>
                         </CardContent>
                     </Card>
                 )}
             </div>
             
-            <Card className="bg-card/80 backdrop-blur-sm border-border">
+            <Card className="bg-card/80 backdrop-blur-sm border-border rounded-2xl">
                 <CardHeader>
-                    <CardTitle>{activeGateway === 'manual' ? "Step 2: Your Details" : "Your Details"}</CardTitle>
-                    <CardDescription>Enter your registration details to create your account.</CardDescription>
+                    <CardTitle className="text-base">{activeGateway === 'manual' ? "Step 2: Your Details" : "Your Details"}</CardTitle>
+                    <CardDescription className="text-xs">Enter your registration details to create your account.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+                <CardContent className="space-y-5">
+                    {error && <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-xs py-2"><AlertDescription>{error}</AlertDescription></Alert>}
 
-                    <div className="space-y-2">
-                        <Label htmlFor="full_name">Full Name</Label>
-                        <Input id="full_name" name="full_name" required />
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <Label htmlFor="full_name" className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Full Name</Label>
+                            <Input id="full_name" name="full_name" required className="bg-black/20 border-white/10" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="mobile_number" className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Mobile Number</Label>
+                            <Input id="mobile_number" name="mobile_number" type="tel" required className="bg-black/20 border-white/10" />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" name="email" type="email" required />
+                    <div className="space-y-1">
+                        <Label htmlFor="email" className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Email Address</Label>
+                        <Input id="email" name="email" type="email" required className="bg-black/20 border-white/10" />
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="mobile_number">Mobile Number</Label>
-                        <Input id="mobile_number" name="mobile_number" type="tel" required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" name="password" type="password" required />
+                    <div className="space-y-1">
+                        <Label htmlFor="password" className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Login Password</Label>
+                        <Input id="password" name="password" type="password" required className="bg-black/20 border-white/10" />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="referral_code">Referral Code (Optional)</Label>
-                        <p className="text-xs text-muted-foreground">Use a referral code to get an additional 5% discount!</p>
+                    <div className="space-y-1">
+                        <Label htmlFor="referral_code" className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Referral Code (Optional)</Label>
                         <div className="relative">
                             <Input 
                                 id="referral_code" 
                                 name="referral_code" 
                                 value={referralCode}
                                 onChange={(e) => setReferralCode(e.target.value)}
-                                placeholder="Enter referral code" 
+                                placeholder="Enter code for 5% off" 
+                                className="bg-black/20 border-white/10 pr-10"
                             />
                             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                                {referralState === 'loading' && <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />}
-                                {referralState === 'valid' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                                {referralState === 'invalid' && <XCircle className="h-5 w-5 text-destructive" />}
+                                {referralState === 'loading' && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />}
+                                {referralState === 'valid' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                                {referralState === 'invalid' && <XCircle className="h-4 w-4 text-destructive" />}
                             </div>
                         </div>
-                        {referralState === 'invalid' && <p className="text-sm text-destructive mt-1">This referral code is not valid.</p>}
                     </div>
 
-                    <div className="flex items-start space-x-2">
-                        <Checkbox id="terms" onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} />
-                        <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground">
-                            When you register and create an account you acknowledge that you have read and accepted our <Link href="https://www.fundedstock.io/terms-and-conditions" target="_blank" className="underline hover:text-primary">terms and conditions</Link> and <Link href="https://www.fundedstock.io/privacy-policy" target="_blank" className="underline hover:text-primary">privacy policy</Link>.
+                    <div className="flex items-start space-x-2 pt-2">
+                        <Checkbox id="terms" onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} className="mt-1" />
+                        <Label htmlFor="terms" className="text-[10px] leading-relaxed font-medium text-muted-foreground">
+                            I acknowledge that I have read and accepted the <Link href="https://www.fundedstock.io/terms-and-conditions" target="_blank" className="underline hover:text-primary">terms and conditions</Link> and <Link href="https://www.fundedstock.io/privacy-policy" target="_blank" className="underline hover:text-primary">privacy policy</Link>.
                         </Label>
                     </div>
 
                     {activeGateway === 'lgpay' && (
-                        <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/50 text-amber-200">
-                            <ShieldAlert className="h-4 w-4 !text-amber-400" />
-                            <AlertTitle className="text-amber-300 font-bold">Important Payment Instructions</AlertTitle>
-                            <AlertDescription className="text-amber-300/80 space-y-2 mt-2">
-                               <p>• Please complete the payment on the gateway page within the given time limit.</p>
-                               <p>• After payment, you have to submit the UTR in the time limit also. After that, your payment will be successful.</p>
-                            </AlertDescription>
-                        </Alert>
+                        <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
+                            <p className="text-[9px] text-amber-300 font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1"><ShieldAlert className="h-3 w-3" /> Payment Notice</p>
+                            <p className="text-[9px] text-amber-200/70 leading-relaxed">Please complete payment and submit UTR on the gateway page within the time limit to avoid activation delays.</p>
+                        </div>
                     )}
 
-                    <Button type="submit" className={cn("w-full h-12 text-lg font-bold transition-all", isFomoApplied ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20" : "")} disabled={isLoading || !termsAccepted}>
+                    <Button type="submit" className={cn("w-full h-14 text-sm font-black transition-all rounded-2xl uppercase tracking-widest", isFomoApplied ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 border-b-4 border-primary-foreground/10" : "")} disabled={isLoading || !termsAccepted}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {activeGateway === 'manual' ? (
-                            <><Send className="mr-2 h-4 w-4"/> Submit & Create Account</>
+                            <><Send className="mr-2 h-4 w-4"/> Complete Registration</>
                         ) : (
-                            isFomoApplied ? `Pay ₹${finalPrice.toFixed(0)} Now` : 'Proceed to Payment'
+                            isFomoApplied ? `Pay Final ₹${finalPrice.toFixed(0)} Now` : 'Proceed to Payment'
                         )}
                     </Button>
-                    <div className="text-center text-sm text-muted-foreground pt-2">
-                        Already have an account?{' '}
-                        <Link href="/login" className="font-semibold text-primary hover:underline">
-                        Login
+                    <div className="text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest pt-2">
+                        Already registered?{' '}
+                        <Link href="/login" className="text-primary hover:underline">
+                        Login to Portal
                         </Link>
                     </div>
                 </CardContent>
