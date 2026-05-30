@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, Suspense, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -202,10 +201,10 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                     <Sparkles className="h-8 w-8 text-primary" />
                 </div>
                 
-                <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-white tracking-tight uppercase leading-none">WAIT! JUST A MOMENT.</h2>
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Special Bonus Identified</p>
-                </div>
+                <DialogHeader className="space-y-1">
+                    <DialogTitle className="text-2xl font-black text-white tracking-tight uppercase leading-none text-center">WAIT! JUST A MOMENT.</DialogTitle>
+                    <DialogDescription className="text-gray-500 text-xs font-bold uppercase tracking-widest text-center">Special Bonus Identified</DialogDescription>
+                </DialogHeader>
 
                 <div className="space-y-4">
                     <p className="text-gray-400 text-sm leading-relaxed">
