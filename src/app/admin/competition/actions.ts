@@ -115,7 +115,7 @@ export async function deleteEvent(id: string) {
  * 1. Fetches final balances from StockMint for all approved users of a week.
  * 2. Identifies Top 3 and saves them to competition_winners.
  * 3. Marks event as archived.
- * 4. Deletes all registration data for that week.
+ * NOTE: Participant deletion removed to allow permanent report exporting.
  */
 export async function archiveWeekResults(eventId: string) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
@@ -168,8 +168,7 @@ export async function archiveWeekResults(eventId: string) {
         // 5. Mark as archived
         await supabaseAdmin.from('competition_events').update({ is_archived: true }).eq('id', eventId);
 
-        // 6. Delete registrations (Cleanup)
-        await supabaseAdmin.from('competition_registrations').delete().eq('event_id', eventId);
+        // NOTE: We no longer delete registrations here so that "Export PDF" can work forever.
 
         revalidatePath('/admin/competition');
         return { success: true };

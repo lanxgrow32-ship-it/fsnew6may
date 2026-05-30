@@ -78,7 +78,7 @@ export function ResultsManager({ events }: { events: any[] }) {
         startTransition(async () => {
             const res = await archiveWeekResults(id);
             if (res.success) {
-                toast({ title: "Week Archived Successfully", description: "Top 3 saved, database cleaned." });
+                toast({ title: "Week Archived Successfully", description: "Top 3 saved to Hall of Fame." });
                 window.location.reload();
             } else {
                 toast({ title: "Archive Failed", description: res.error, variant: "destructive" });
@@ -108,36 +108,36 @@ export function ResultsManager({ events }: { events: any[] }) {
                             <CardDescription>{week.start_date} to {week.end_date}</CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
+                            {/* Always show Export PDF button */}
+                            <Button variant="outline" size="sm" onClick={() => downloadFullPDF(week)} disabled={isExporting === week.id}>
+                                {isExporting === week.id ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : <FileText className="w-4 h-4 mr-2"/>}
+                                Export PDF
+                            </Button>
+                            
                             {!week.is_archived && (
-                                <>
-                                    <Button variant="outline" size="sm" onClick={() => downloadFullPDF(week)} disabled={isExporting === week.id}>
-                                        {isExporting === week.id ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : <FileText className="w-4 h-4 mr-2"/>}
-                                        Export PDF
-                                    </Button>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="destructive" size="sm" disabled={isPending}>
-                                                {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : <Trash2 className="w-4 h-4 mr-2"/>}
-                                                Archive & Cleanup
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Archive Week & Clean Database?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This will fetch final balances from StockMint, save the **Top 3 Winners** permanently, and then **DELETE all participant data** for this week. 
-                                                    Make sure you have exported the PDF first!
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleArchive(week.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                                    Yes, Archive Results
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="sm" disabled={isPending}>
+                                            {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : <Trophy className="w-4 h-4 mr-2"/>}
+                                            Archive Results
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Archive Week Results?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will fetch final balances from StockMint and save the **Top 3 Winners** permanently to the Hall of Fame. 
+                                                The participant data will remain in the database so you can export reports anytime.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleArchive(week.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                Yes, Archive Results
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             )}
                         </div>
                     </CardHeader>
@@ -173,7 +173,7 @@ function WinnersList({ eventId, isArchived }: { eventId: string, isArchived: boo
     if (!isArchived) {
         return (
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-center">
-                <p className="text-sm text-amber-600 font-medium">Pending Archive. Click "Archive & Cleanup" to save the official winners of this week.</p>
+                <p className="text-sm text-amber-600 font-medium">Pending Archive. Click "Archive Results" to save the official winners of this week.</p>
             </div>
         );
     }
