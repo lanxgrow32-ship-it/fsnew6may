@@ -207,7 +207,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
       {/* PREMIUM ULTRA-COMPACT FOMO EXIT DIALOG - ZERO ESCAPE */}
       <Dialog open={showFomo} onOpenChange={setShowFomo}>
         <DialogContent 
-          className="w-[calc(100%-2rem)] sm:max-w-[280px] bg-[#050505] border-[#ff4d4d] border-2 p-0 overflow-hidden rounded-3xl shadow-[0_0_40px_rgba(255,77,77,0.3)] backdrop-blur-2xl [&>button]:hidden"
+          className="w-[calc(100%-2rem)] sm:max-w-[280px] bg-[#050505] border-[#ff3333] border-2 p-0 overflow-hidden rounded-3xl shadow-[0_0_40px_rgba(255,51,51,0.25)] backdrop-blur-2xl [&>button]:hidden"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -297,7 +297,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                 )}
 
                 <Card className="bg-card/80 backdrop-blur-sm border-border relative overflow-hidden rounded-2xl">
-                    {isFomoApplied && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10 animate-pulse">VIP Exit Bonus</div>}
+                    {isFomoApplied && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10 animate-pulse">Extra Bonus</div>}
                     <CardHeader className="pb-4">
                         <CardTitle className="text-base">Order Summary</CardTitle>
                     </CardHeader>
@@ -320,7 +320,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                         )}
                         {fomoDiscountAmount > 0 && (
                              <div className="flex justify-between items-center text-xs text-primary font-black">
-                                <p className="flex items-center gap-1 uppercase tracking-tighter"><Zap className="h-3 w-3"/> VIP Exit Discount (10%):</p>
+                                <p className="flex items-center gap-1 uppercase tracking-tighter"><Zap className="h-3 w-3"/> Extra Bonus (10%):</p>
                                 <p>- ₹{fomoDiscountAmount.toFixed(2)}</p>
                             </div>
                         )}
