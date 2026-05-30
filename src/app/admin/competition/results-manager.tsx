@@ -12,6 +12,7 @@ import { archiveWeekResults } from './actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { cn } from '@/lib/utils';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
