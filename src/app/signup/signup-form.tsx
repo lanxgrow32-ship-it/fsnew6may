@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense, useEffect, useCallback } from 'react';
+import { useState, Suspense, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -46,8 +46,9 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   // FOMO Dialog States
   const [showFomo, setShowFomo] = useState(false);
   const [fomoSlots, setFomoSlots] = useState(7);
-  const [hasShownFomo, setHasShownFomo] = useState(false);
   const [timeLeft, setTimeLeft] = useState(899); // 14:59 in seconds
+
+  const popStateRef = useRef<any>(null);
 
   const originalPrice = price ? parseFloat(price.replace(/,/g, '')) : 0;
   
@@ -60,22 +61,26 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     ? { upi_id: paymentSettings?.pay_later_upi_id, qr_code_url: paymentSettings?.pay_later_qr_code_url }
     : { upi_id: paymentSettings?.upi_id, qr_code_url: paymentSettings?.qr_code_url };
 
-  // Intercept Back Button
+  // BACK BUTTON INTERCEPTION LOOP
   useEffect(() => {
-    window.history.pushState(null, '', window.location.href);
+    // Initial trap state
+    window.history.pushState({ fomoTrap: true }, '', window.location.href);
 
     const handlePopState = (event: PopStateEvent) => {
-      if (!hasShownFomo && !isFomoApplied) {
-        window.history.pushState(null, '', window.location.href);
-        setFomoSlots(Math.floor(Math.random() * 5) + 2); // Random 2-7 slots
+      // If the user hasn't accepted the discount, keep trapping them
+      if (!isFomoApplied) {
+        // Re-push immediately to keep the back-button trap active
+        window.history.pushState({ fomoTrap: true }, '', window.location.href);
+        // Randomize scarcity every time they try to leave
+        setFomoSlots(Math.floor(Math.random() * 5) + 2);
         setShowFomo(true);
-        setHasShownFomo(true);
       }
     };
 
+    popStateRef.current = handlePopState;
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [hasShownFomo, isFomoApplied]);
+    return () => window.removeEventListener('popstate', popStateRef.current);
+  }, [isFomoApplied]);
 
   // FOMO Timer logic
   useEffect(() => {
@@ -101,13 +106,20 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     });
   };
 
+  const handleReallyExit = () => {
+    setShowFomo(false);
+    // Remove the listener so we can actually navigate back
+    window.removeEventListener('popstate', popStateRef.current);
+    // Go back once topricing or previous page
+    router.back();
+  };
+
   useEffect(() => {
     const couponDiscount = (originalPrice * discountPercent) / 100;
     const priceAfterCoupon = originalPrice - couponDiscount;
     const referralDiscount = isReferralDiscountApplied ? priceAfterCoupon * 0.05 : 0;
     const priceAfterReferral = priceAfterCoupon - referralDiscount;
     
-    // Apply EXTRA 10% FOMO discount if active (additive)
     const fomoDiscount = isFomoApplied ? priceAfterReferral * 0.10 : 0;
     const newFinalPrice = priceAfterReferral - fomoDiscount;
 
@@ -192,27 +204,32 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   return (
     <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12 relative font-poppins">
       
-      {/* PREMIUM COMPACT FOMO EXIT DIALOG */}
+      {/* PREMIUM COMPACT FOMO EXIT DIALOG - NO ESCAPE */}
       <Dialog open={showFomo} onOpenChange={setShowFomo}>
-        <DialogContent className="sm:max-w-[320px] bg-[#0a0a0c] border-red-500 border-2 p-0 overflow-hidden rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.4)] backdrop-blur-xl">
-            <div className="p-5 text-center space-y-4">
-                <div className="mx-auto bg-red-500/10 rounded-full p-2 w-fit border border-red-500/20">
-                    <Sparkles className="h-5 w-5 text-red-400" />
+        <DialogContent 
+          className="w-[calc(100%-2rem)] sm:max-w-[320px] bg-[#050505] border-[#ff4d4d] border-2 p-0 overflow-hidden rounded-3xl shadow-[0_0_50px_rgba(255,77,77,0.4)] backdrop-blur-2xl [&>button]:hidden"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+            <div className="p-6 text-center space-y-5">
+                <div className="mx-auto bg-red-500/10 rounded-full p-2.5 w-fit border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                    <Sparkles className="h-6 w-6 text-red-400" />
                 </div>
                 
                 <DialogHeader className="space-y-1">
-                    <DialogTitle className="text-lg font-black text-white tracking-tight uppercase text-center">WAIT! DON'T LEAVE.</DialogTitle>
-                    <DialogDescription className="text-gray-500 text-[10px] font-bold uppercase tracking-widest text-center">Exclusive Bonus Detected</DialogDescription>
+                    <DialogTitle className="text-xl font-black text-white tracking-tighter uppercase text-center">WAIT! DON'T MISS THIS.</DialogTitle>
+                    <DialogDescription className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] text-center">Exclusive Bonus Detected</DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-3">
-                    <p className="text-gray-400 text-xs leading-relaxed px-2">
-                        We've unlocked a special <span className="text-white font-bold underline">Final Offer</span> to help you get started today.
+                <div className="space-y-4">
+                    <p className="text-gray-400 text-xs leading-relaxed px-4">
+                        We've unlocked a special <span className="text-white font-bold underline decoration-red-500">Final Offer</span> just for you.
                     </p>
                     
-                    <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4 space-y-1 relative">
-                        <div className="text-3xl font-black text-primary tracking-tighter drop-shadow-sm">EXTRA 10% OFF</div>
-                        <div className="flex items-center justify-center gap-2">
+                    <div className="bg-gradient-to-b from-red-500/10 to-transparent border border-red-500/20 rounded-2xl p-5 space-y-2 relative group overflow-hidden">
+                        <div className="absolute inset-0 bg-red-500/5 animate-pulse" />
+                        <div className="text-3xl font-black text-[#ffcc00] tracking-tighter drop-shadow-[0_0_10px_rgba(255,204,0,0.3)] relative z-10">EXTRA 10% OFF</div>
+                        <div className="flex items-center justify-center gap-2 relative z-10">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -222,23 +239,20 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 py-1 px-3 bg-white/5 rounded-full w-fit mx-auto border border-white/5">
-                    <Timer className="h-2.5 w-2.5 text-primary" />
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
-                        Scarcity: Only <span className="text-white font-black">{fomoSlots} coupons</span> left
+                <div className="flex items-center justify-center gap-2 py-1.5 px-4 bg-white/5 rounded-full w-fit mx-auto border border-white/10 shadow-inner">
+                    <Timer className="h-3 w-3 text-red-500" />
+                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-tighter">
+                        Limit: Only <span className="text-white font-black px-1.5 bg-red-500/20 rounded-sm ml-1">{fomoSlots} coupons</span> left
                     </p>
                 </div>
 
-                <div className="space-y-3 pt-1">
-                    <Button onClick={applyFomoDiscount} className="w-full h-11 text-xs font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg transition-all uppercase">
-                        Claim My 10% Discount
+                <div className="space-y-4 pt-2">
+                    <Button onClick={applyFomoDiscount} className="w-full h-12 text-sm font-black bg-[#ffcc00] hover:bg-[#ffdb4d] text-black rounded-2xl shadow-[0_10px_20px_rgba(255,204,0,0.2)] transition-all transform hover:scale-[1.02] active:scale-95 uppercase tracking-tight">
+                        Apply Extra 10% Now
                     </Button>
                     <button 
-                        onClick={() => {
-                            setShowFomo(false);
-                            window.history.back();
-                        }} 
-                        className="text-gray-600 text-[9px] font-bold uppercase tracking-widest hover:text-gray-400 transition-colors"
+                        onClick={handleReallyExit} 
+                        className="text-gray-600 text-[10px] font-bold uppercase tracking-widest hover:text-gray-400 transition-colors block w-full text-center"
                     >
                         No, I will purchase later
                     </button>
