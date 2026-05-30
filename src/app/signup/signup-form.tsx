@@ -110,7 +110,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     setShowFomo(false);
     // Remove the listener so we can actually navigate back
     window.removeEventListener('popstate', popStateRef.current);
-    // Go back once topricing or previous page
+    // Go back once to pricing or previous page
     router.back();
   };
 
@@ -204,55 +204,55 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   return (
     <main className="flex min-h-screen items-start justify-center bg-background p-4 md:py-12 relative font-poppins">
       
-      {/* PREMIUM COMPACT FOMO EXIT DIALOG - NO ESCAPE */}
+      {/* PREMIUM ULTRA-COMPACT FOMO EXIT DIALOG - ZERO ESCAPE */}
       <Dialog open={showFomo} onOpenChange={setShowFomo}>
         <DialogContent 
-          className="w-[calc(100%-2rem)] sm:max-w-[320px] bg-[#050505] border-[#ff4d4d] border-2 p-0 overflow-hidden rounded-3xl shadow-[0_0_50px_rgba(255,77,77,0.4)] backdrop-blur-2xl [&>button]:hidden"
+          className="w-[calc(100%-2rem)] sm:max-w-[280px] bg-[#050505] border-[#ff4d4d] border-2 p-0 overflow-hidden rounded-3xl shadow-[0_0_40px_rgba(255,77,77,0.3)] backdrop-blur-2xl [&>button]:hidden"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
-            <div className="p-6 text-center space-y-5">
-                <div className="mx-auto bg-red-500/10 rounded-full p-2.5 w-fit border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-                    <Sparkles className="h-6 w-6 text-red-400" />
+            <div className="p-5 text-center space-y-4">
+                <div className="mx-auto bg-red-500/10 rounded-full p-2 w-fit border border-red-500/20">
+                    <Sparkles className="h-5 w-5 text-red-400" />
                 </div>
                 
                 <DialogHeader className="space-y-1">
-                    <DialogTitle className="text-xl font-black text-white tracking-tighter uppercase text-center">WAIT! DON'T MISS THIS.</DialogTitle>
-                    <DialogDescription className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] text-center">Exclusive Bonus Detected</DialogDescription>
+                    <DialogTitle className="text-base font-black text-white tracking-tighter uppercase text-center">WAIT! DON'T MISS THIS.</DialogTitle>
+                    <DialogDescription className="text-gray-500 text-[8px] font-black uppercase tracking-[0.2em] text-center">Exclusive Bonus Detected</DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4">
-                    <p className="text-gray-400 text-xs leading-relaxed px-4">
+                <div className="space-y-3">
+                    <p className="text-gray-400 text-[10px] leading-relaxed px-2">
                         We've unlocked a special <span className="text-white font-bold underline decoration-red-500">Final Offer</span> just for you.
                     </p>
                     
-                    <div className="bg-gradient-to-b from-red-500/10 to-transparent border border-red-500/20 rounded-2xl p-5 space-y-2 relative group overflow-hidden">
+                    <div className="bg-gradient-to-b from-red-500/10 to-transparent border border-red-500/20 rounded-xl p-4 space-y-1 relative group overflow-hidden">
                         <div className="absolute inset-0 bg-red-500/5 animate-pulse" />
-                        <div className="text-3xl font-black text-[#ffcc00] tracking-tighter drop-shadow-[0_0_10px_rgba(255,204,0,0.3)] relative z-10">EXTRA 10% OFF</div>
-                        <div className="flex items-center justify-center gap-2 relative z-10">
-                            <span className="relative flex h-2 w-2">
+                        <div className="text-2xl font-black text-[#ffcc00] tracking-tighter drop-shadow-[0_0_10px_rgba(255,204,0,0.3)] relative z-10">EXTRA 10% OFF</div>
+                        <div className="flex items-center justify-center gap-1.5 relative z-10">
+                            <span className="relative flex h-1.5 w-1.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
                             </span>
-                            <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">Expires in {formatTime(timeLeft)}</p>
+                            <p className="text-red-400 text-[8px] font-black uppercase tracking-widest">Expires in {formatTime(timeLeft)}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 py-1.5 px-4 bg-white/5 rounded-full w-fit mx-auto border border-white/10 shadow-inner">
-                    <Timer className="h-3 w-3 text-red-500" />
-                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-tighter">
-                        Limit: Only <span className="text-white font-black px-1.5 bg-red-500/20 rounded-sm ml-1">{fomoSlots} coupons</span> left
+                <div className="flex items-center justify-center gap-1.5 py-1 px-3 bg-white/5 rounded-full w-fit mx-auto border border-white/10 shadow-inner">
+                    <Timer className="h-2.5 w-2.5 text-red-500" />
+                    <p className="text-[8px] font-bold text-gray-300 uppercase tracking-tighter">
+                        ONLY <span className="text-white font-black px-1.5 bg-red-500/20 rounded-sm ml-0.5">{fomoSlots} COUPONS</span> LEFT
                     </p>
                 </div>
 
-                <div className="space-y-4 pt-2">
-                    <Button onClick={applyFomoDiscount} className="w-full h-12 text-sm font-black bg-[#ffcc00] hover:bg-[#ffdb4d] text-black rounded-2xl shadow-[0_10px_20px_rgba(255,204,0,0.2)] transition-all transform hover:scale-[1.02] active:scale-95 uppercase tracking-tight">
+                <div className="space-y-3 pt-1">
+                    <Button onClick={applyFomoDiscount} className="w-full h-10 text-[11px] font-black bg-[#ffcc00] hover:bg-[#ffdb4d] text-black rounded-xl shadow-lg transition-all transform active:scale-95 uppercase tracking-tight">
                         Apply Extra 10% Now
                     </Button>
                     <button 
                         onClick={handleReallyExit} 
-                        className="text-gray-600 text-[10px] font-bold uppercase tracking-widest hover:text-gray-400 transition-colors block w-full text-center"
+                        className="text-gray-600 text-[8px] font-bold uppercase tracking-widest hover:text-gray-400 transition-colors block w-full text-center"
                     >
                         No, I will purchase later
                     </button>
