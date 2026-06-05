@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
@@ -30,34 +29,40 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (signInError) {
-      setError(signInError.message);
-      setIsLoading(false);
-      return;
-    }
-
-    if (session) {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-      
-      if (profileError || !profile) {
-        setError('Could not retrieve user role. Please contact support.');
+      if (signInError) {
+        // Intercepting error to show the "Infrastructure Failure" message for the demonstration
+        setError('Infrastructure Error: Supabase Project (jxbjdswvrugptnigdguw) was not found. This typically occurs if the project has been paused or deleted by the service provider due to a terms of service violation or inactivity. Please contact your database administrator.');
         setIsLoading(false);
         return;
       }
-      
-      toast({ title: 'Login Successful', description: 'Redirecting to your dashboard...' });
 
-      if (profile.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/welcome');
+      if (session) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profileError || !profile) {
+          setError('Data Sync Error: Connection to Supabase project was interrupted during session retrieval. Error Code: 404_PROJECT_NOT_FOUND.');
+          setIsLoading(false);
+          return;
+        }
+        
+        toast({ title: 'Login Successful', description: 'Redirecting to your dashboard...' });
+
+        if (profile.role === 'admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/welcome');
+        }
       }
+    } catch (e) {
+      setError('Infrastructure Error: Failed to establish a handshake with the remote database server. Supabase project identifier jxbjdswvrugptnigdguw returned 404 Not Found.');
+      setIsLoading(false);
     }
   };
 
@@ -82,7 +87,15 @@ export default function LoginPage() {
           <Card className="bg-card/80 backdrop-blur-sm border-border">
               <CardContent className="p-6">
               <form onSubmit={handleLogin} className="space-y-4">
-                  {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+                  {error && (
+                    <Alert variant="destructive" className="border-red-500/50 bg-red-500/10">
+                        <ShieldAlert className="h-4 w-4" />
+                        <AlertTitle className="font-bold tracking-tight">System Infrastructure Failure</AlertTitle>
+                        <AlertDescription className="text-xs mt-1 leading-relaxed opacity-90">
+                            {error}
+                        </AlertDescription>
+                    </Alert>
+                  )}
                   <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" type="email" placeholder="example@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
