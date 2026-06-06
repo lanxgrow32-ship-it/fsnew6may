@@ -1,131 +1,129 @@
 'use client';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, ShieldAlert } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, RefreshCw, Sparkles, ShieldCheck, Timer, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { ClientOnly } from '@/components/ui/client-only';
-import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
-  const { toast } = useToast();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (signInError) {
-        // Intercepting error to show the "Infrastructure Failure" message for the demonstration
-        setError('Infrastructure Error: Supabase Project (jxbjdswvrugptnigdguw) was not found. This typically occurs if the project has been paused or deleted by the service provider due to a terms of service violation or inactivity. Please contact your database administrator.');
-        setIsLoading(false);
-        return;
-      }
-
-      if (session) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profileError || !profile) {
-          setError('Data Sync Error: Connection to Supabase project was interrupted during session retrieval. Error Code: 404_PROJECT_NOT_FOUND.');
-          setIsLoading(false);
-          return;
-        }
-        
-        toast({ title: 'Login Successful', description: 'Redirecting to your dashboard...' });
-
-        if (profile.role === 'admin') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/welcome');
-        }
-      }
-    } catch (e) {
-      setError('Infrastructure Error: Failed to establish a handshake with the remote database server. Supabase project identifier jxbjdswvrugptnigdguw returned 404 Not Found.');
-      setIsLoading(false);
-    }
-  };
 
   return (
-    <div className="dark-theme">
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
+    <div className="dark min-h-screen bg-slate-950 font-poppins text-gray-200">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+        <div className="absolute inset-0 z-0">
+            <div className="absolute top-[-25%] left-[-10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full filter blur-3xl opacity-20 " />
+            <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-purple-600 rounded-full filter blur-3xl opacity-10" />
+        </div>
+
         <ClientOnly>
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-xl space-y-8 relative z-10 animate-in fade-in zoom-in-95 duration-500">
           <div className="flex justify-center">
-            <Button asChild variant="outline" size="sm" className="border-border/50 text-foreground/80 hover:bg-accent/50 hover:text-foreground">
+            <Button asChild variant="outline" size="sm" className="bg-black/20 border-white/10 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all">
               <Link href="https://www.fundedstock.io/">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Main Site
               </Link>
             </Button>
           </div>
-          <div className="flex flex-col items-center justify-center text-center">
-              <FundedStockLogo className="h-10 w-10 text-primary" />
-              <h1 className="text-2xl font-bold mt-4 text-primary">Welcome Back</h1>
-              <p className="text-muted-foreground">Enter your credentials to access your account.</p>
+          
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+              <div className="bg-primary/10 p-4 rounded-3xl border border-primary/20 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+                <FundedStockLogo className="h-12 w-12 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-3xl font-black tracking-tighter text-white">System Optimization</h1>
+                <p className="text-gray-500 uppercase text-[10px] font-bold tracking-[0.3em]">Infrastructure Upgrade v2.4.0</p>
+              </div>
           </div>
-          <Card className="bg-card/80 backdrop-blur-sm border-border">
-              <CardContent className="p-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                  {error && (
-                    <Alert variant="destructive" className="border-red-500/50 bg-red-500/10">
-                        <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle className="font-bold tracking-tight">System Infrastructure Failure</AlertTitle>
-                        <AlertDescription className="text-xs mt-1 leading-relaxed opacity-90">
-                            {error}
-                        </AlertDescription>
-                    </Alert>
-                  )}
-                  <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="example@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+
+          <Card className="bg-white/5 backdrop-blur-2xl border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden">
+              <div className="bg-primary h-1.5 w-full relative">
+                 <div className="absolute inset-y-0 left-0 bg-white/30 animate-pulse w-[68%]" />
+              </div>
+              
+              <CardContent className="p-8 md:p-12 space-y-8">
+                  <div className="flex items-center gap-4 bg-primary/10 border border-primary/20 p-4 rounded-2xl">
+                      <div className="bg-primary text-primary-foreground p-2 rounded-xl animate-spin-slow">
+                          <RefreshCw className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-0.5">
+                          <p className="text-sm font-bold text-primary uppercase tracking-tight">Technical Work in Progress</p>
+                          <p className="text-[10px] text-primary/70 font-medium">Applying security patches and core performance enhancements.</p>
+                      </div>
                   </div>
-                  <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+
+                  <div className="space-y-4 text-center sm:text-left">
+                      <h2 className="text-xl font-bold text-white flex items-center justify-center sm:justify-start gap-2">
+                        <Sparkles className="h-5 w-5 text-purple-400" />
+                        Next-Level Experience Coming Soon
+                      </h2>
+                      <p className="text-gray-400 text-sm leading-relaxed">
+                        We are currently upgrading our infrastructure to provide you with a more stable, faster, and feature-rich trading environment. Our team is also resolving minor technical glitches reported during the recent high-load period.
+                      </p>
+                      <p className="text-gray-400 text-sm leading-relaxed">
+                        To ensure 100% data integrity during this core database migration, all portal access has been temporarily suspended.
+                      </p>
                   </div>
-                   <div className="flex items-start space-x-2 pt-2">
-                        <Checkbox id="terms" onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} />
-                        <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground">
-                           By logging in, you acknowledge you have read and accepted our <Link href="https://www.fundedstock.io/terms-and-conditions" target="_blank" className="underline hover:text-primary">terms and conditions</Link> and <Link href="https://www.fundedstock.io/privacy-policy" target="_blank" className="underline hover:text-primary">privacy policy</Link>.
-                        </Label>
-                    </div>
-                  <Button type="submit" className="w-full" size="lg" disabled={isLoading || !termsAccepted}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign In
-                  </Button>
-              </form>
+
+                  <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1">
+                          <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Expected Duration</p>
+                          <p className="text-white font-bold flex items-center gap-2">
+                              <Timer className="h-3.5 w-3.5 text-primary" />
+                              ~ 7 Days
+                          </p>
+                      </div>
+                      <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1">
+                          <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Status</p>
+                          <p className="text-green-400 font-bold flex items-center gap-2">
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                              Secure
+                          </p>
+                      </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5 text-center">
+                       <p className="text-[11px] text-gray-500 font-medium italic">
+                        "We apologize for the inconvenience. Our commitment to excellence remains our top priority."
+                       </p>
+                       <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+                           <Button asChild variant="outline" className="w-full sm:w-auto border-white/10 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl">
+                               <Link href="https://wa.me/917020749658" target="_blank">
+                                   <MessageSquare className="mr-2 h-4 w-4" />
+                                   Priority Support
+                               </Link>
+                           </Button>
+                           <Button disabled className="w-full sm:w-auto bg-slate-800 text-gray-500 border border-white/5 rounded-xl">
+                               Maintenance Mode Active
+                           </Button>
+                       </div>
+                  </div>
               </CardContent>
-              <CardDescription className="p-6 pt-0 text-center text-sm">
-                  Don't have an account?{' '}
-                  <Link href="/pricing" className="font-semibold text-primary hover:underline">
-                      Sign Up
-                  </Link>
-              </CardDescription>
           </Card>
+          
+          <p className="text-center text-[10px] font-bold text-gray-600 uppercase tracking-[0.4em]">
+             System Integrity Verified by FundedStock Security
+          </p>
         </div>
         </ClientOnly>
       </main>
+
+      <style jsx global>{`
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 8s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }
