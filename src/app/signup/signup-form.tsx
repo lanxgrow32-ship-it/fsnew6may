@@ -105,10 +105,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                   </div>
               </CardContent>
           </Card>
-          
-          <p className="text-center text-[10px] font-bold text-gray-600 uppercase tracking-[0.4em]">
-             System Integrity Verified by FundedStock Security
-          </p>
         </div>
       </ClientOnly>
 
