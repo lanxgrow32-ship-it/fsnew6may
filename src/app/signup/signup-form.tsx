@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useActionState, useEffect, useTransition, useCallback } from 'react';
+import { useState, useActionState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,7 +13,6 @@ import { Loader2, ArrowLeft, CheckCircle2, Wallet, Copy, Percent, Zap, IndianRup
 import { signupAndCreateOrder, validateCoupon, validateReferralCode } from './actions';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -25,7 +24,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   const planParam = searchParams.get('plan') || '1L Instant Funding';
   const priceParam = parseFloat(searchParams.get('price')?.replace(/,/g, '') || '5999');
 
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -40,20 +38,17 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   const [isCouponValidating, setIsCouponValidating] = useState(false);
   const [referralValid, setReferralValid] = useState<boolean | null>(null);
   
-  // Exit Intent / Extra Bonus State
   const [showExitOffer, setShowExitOffer] = useState(false);
   const [extraBonusApplied, setExtraBonusApplied] = useState(false);
 
   const [state, formAction, isPending] = useActionState(signupAndCreateOrder, { error: null });
 
-  // Handle gateway redirects
   useEffect(() => {
     if (state?.redirectUrl) {
         window.location.href = state.redirectUrl;
     }
   }, [state?.redirectUrl]);
 
-  // Back Button Interception for Exit Intent
   const handleExitIntent = useCallback(() => {
     if (!extraBonusApplied) {
       setShowExitOffer(true);
@@ -106,110 +101,102 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
-      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-      
-      <div className="container mx-auto px-4 pt-12 relative z-10">
+    <main className="min-h-screen bg-background text-foreground pb-20">
+      <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto space-y-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" className="bg-black/20 border-white/10 rounded-full" onClick={() => router.back()}><ArrowLeft className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" onClick={() => router.back()}><ArrowLeft className="h-4 w-4" /></Button>
                     <div>
-                        <h1 className="text-3xl font-black text-white tracking-tighter">Registration</h1>
-                        <p className="text-gray-500 uppercase text-[10px] font-bold tracking-widest">Complete your evaluation setup</p>
+                        <h1 className="text-2xl font-bold tracking-tight">Complete Registration</h1>
+                        <p className="text-sm text-muted-foreground">Set up your evaluation account</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 bg-primary/10 border border-primary/20 px-6 py-3 rounded-2xl">
-                    <div>
-                        <p className="text-[10px] text-primary/70 font-bold uppercase tracking-widest">Selected Plan</p>
-                        <p className="text-lg font-black text-white">{planParam}</p>
+                <div className="flex items-center gap-4 border px-4 py-2 rounded-lg bg-card">
+                    <div className="text-right">
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Selected Plan</p>
+                        <p className="text-sm font-bold">{planParam}</p>
                     </div>
-                    <div className="h-10 w-px bg-primary/20 mx-2" />
-                    <div>
-                        <p className="text-[10px] text-primary/70 font-bold uppercase tracking-widest">Starting Price</p>
-                        <p className="text-lg font-black text-primary">₹{priceParam.toLocaleString('en-IN')}</p>
+                    <Separator orientation="vertical" className="h-8" />
+                    <div className="text-right">
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Price</p>
+                        <p className="text-sm font-bold text-primary">₹{priceParam.toLocaleString('en-IN')}</p>
                     </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    <Card className="bg-white/5 backdrop-blur-xl border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-                        <CardHeader className="bg-white/[0.02] border-b border-white/5">
-                            <CardTitle className="text-white flex items-center gap-2">
-                                <span className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black">1</span>
-                                Personal Information
-                            </CardTitle>
+                <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">1. Personal Information</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-8 space-y-6">
-                            <div className="grid md:grid-cols-2 gap-6">
+                        <CardContent className="space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="full_name" className="text-gray-400 font-bold text-xs uppercase">Full Name</Label>
-                                    <Input id="full_name" name="full_name" required value={formData.full_name} onChange={handleInputChange} className="bg-black/20 border-white/10 text-white h-12" />
+                                    <Label htmlFor="full_name">Full Name</Label>
+                                    <Input id="full_name" name="full_name" required value={formData.full_name} onChange={handleInputChange} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="mobile_number" className="text-gray-400 font-bold text-xs uppercase">Mobile Number</Label>
-                                    <Input id="mobile_number" name="mobile_number" required value={formData.mobile_number} onChange={handleInputChange} className="bg-black/20 border-white/10 text-white h-12" />
+                                    <Label htmlFor="mobile_number">Mobile Number</Label>
+                                    <Input id="mobile_number" name="mobile_number" required value={formData.mobile_number} onChange={handleInputChange} />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-gray-400 font-bold text-xs uppercase">Email Address</Label>
-                                <Input id="email" name="email" type="email" required value={formData.email} onChange={handleInputChange} className="bg-black/20 border-white/10 text-white h-12" />
+                                <Label htmlFor="email">Email Address</Label>
+                                <Input id="email" name="email" type="email" required value={formData.email} onChange={handleInputChange} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="password" title="password" className="text-gray-400 font-bold text-xs uppercase">Account Password</Label>
-                                <Input id="password" name="password" type="password" required value={formData.password} onChange={handleInputChange} className="bg-black/20 border-white/10 text-white h-12" />
+                                <Label htmlFor="password">Account Password</Label>
+                                <Input id="password" name="password" type="password" required value={formData.password} onChange={handleInputChange} />
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white/5 backdrop-blur-xl border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-                        <CardHeader className="bg-white/[0.02] border-b border-white/5">
-                            <CardTitle className="text-white flex items-center gap-2">
-                                <span className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black">2</span>
-                                Payment & Offers
-                            </CardTitle>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">2. Offers & Payment</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-8 space-y-8">
-                             <div className="grid md:grid-cols-2 gap-6">
+                        <CardContent className="space-y-6">
+                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-gray-400 font-bold text-xs uppercase">Coupon Code</Label>
+                                    <Label>Coupon Code</Label>
                                     <div className="flex gap-2">
-                                        <Input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="PROMO50" className="bg-black/20 border-white/10 text-white h-12 uppercase" />
-                                        <Button type="button" onClick={handleValidateCoupon} disabled={isCouponValidating} className="h-12 bg-white/10 hover:bg-white/20 border border-white/10 text-white">Apply</Button>
+                                        <Input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="SAVE10" className="uppercase" />
+                                        <Button type="button" variant="outline" onClick={handleValidateCoupon} disabled={isCouponValidating}>Apply</Button>
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-gray-400 font-bold text-xs uppercase">Referral Code (Optional)</Label>
+                                    <Label>Referral Code (Optional)</Label>
                                     <div className="flex gap-2">
-                                        <Input name="referral_code" value={formData.referral_code} onChange={handleInputChange} placeholder="USER-1234" className="bg-black/20 border-white/10 text-white h-12 uppercase" />
-                                        <Button type="button" onClick={handleValidateReferral} className="h-12 bg-white/10 hover:bg-white/20 border border-white/10 text-white">Validate</Button>
+                                        <Input name="referral_code" value={formData.referral_code} onChange={handleInputChange} placeholder="USER-1234" className="uppercase" />
+                                        <Button type="button" variant="outline" onClick={handleValidateReferral}>Validate</Button>
                                     </div>
-                                    {referralValid === true && <p className="text-xs text-green-400 font-bold mt-1">✓ Referral Code Valid</p>}
+                                    {referralValid === true && <p className="text-[10px] text-green-500 font-bold mt-1">✓ Referral Valid</p>}
                                 </div>
                             </div>
 
                             {paymentSettings?.active_payment_gateway === 'manual' && (
-                                <div className="space-y-6 pt-6 border-t border-white/5">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Wallet className="h-5 w-5 text-primary" />
-                                        <h3 className="font-bold text-white">Manual Payment Details</h3>
+                                <div className="space-y-4 pt-6 border-t">
+                                    <div className="flex items-center gap-2">
+                                        <Wallet className="h-4 w-4 text-primary" />
+                                        <h3 className="font-bold">Manual Payment</h3>
                                     </div>
-                                    <div className="flex flex-col md:flex-row items-center gap-8 bg-black/40 rounded-2xl p-6 border border-white/5">
-                                         <div className="bg-white p-2 rounded-xl shrink-0">
-                                            <Image src={isPassThenPay ? paymentSettings.pay_later_qr_code_url : paymentSettings.qr_code_url} alt="UPI QR" width={160} height={160} />
+                                    <div className="flex flex-col sm:flex-row items-center gap-6 bg-muted/30 rounded-lg p-4 border">
+                                         <div className="bg-white p-2 rounded-md shrink-0">
+                                            <Image src={isPassThenPay ? paymentSettings.pay_later_qr_code_url : paymentSettings.qr_code_url} alt="UPI QR" width={140} height={140} />
                                         </div>
                                         <div className="space-y-4 w-full">
                                             <div className="space-y-1">
-                                                <Label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">UPI ID</Label>
-                                                <div className="flex items-center justify-between gap-2 bg-black/20 p-3 rounded-lg border border-white/5">
-                                                    <p className="text-sm font-mono text-white truncate">{isPassThenPay ? paymentSettings.pay_later_upi_id : paymentSettings.upi_id}</p>
-                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-gray-400" onClick={() => copyToClipboard(isPassThenPay ? paymentSettings.pay_later_upi_id : paymentSettings.upi_id)}><Copy className="h-4 w-4"/></Button>
+                                                <Label className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">UPI ID</Label>
+                                                <div className="flex items-center justify-between gap-2 bg-background p-2 rounded border">
+                                                    <p className="text-xs font-mono truncate">{isPassThenPay ? paymentSettings.pay_later_upi_id : paymentSettings.upi_id}</p>
+                                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(isPassThenPay ? paymentSettings.pay_later_upi_id : paymentSettings.upi_id)}><Copy className="h-3 w-3"/></Button>
                                                 </div>
                                             </div>
                                             <div className="space-y-1">
-                                                <Label htmlFor="utr" className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Transaction ID (UTR)</Label>
-                                                <Input id="utr" name="utr" required placeholder="Enter 12-digit UTR" value={formData.utr} onChange={handleInputChange} className="bg-black/20 border-white/10 text-white h-12" />
+                                                <Label htmlFor="utr" className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Transaction ID (UTR)</Label>
+                                                <Input id="utr" name="utr" required placeholder="12-digit UTR" value={formData.utr} onChange={handleInputChange} />
                                             </div>
                                         </div>
                                     </div>
@@ -219,36 +206,35 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                     </Card>
                 </div>
 
-                <div className="space-y-8">
-                    <Card className="bg-primary/5 border-primary/20 rounded-3xl overflow-hidden shadow-2xl relative">
-                        {extraBonusApplied && <div className="absolute top-0 right-0 p-2"><Badge className="bg-green-600 text-[10px] font-black uppercase">Bonus Applied</Badge></div>}
-                        <CardHeader className="border-b border-primary/10">
-                            <CardTitle className="text-white text-lg">Order Summary</CardTitle>
+                <div className="space-y-6">
+                    <Card className="border-primary/20 bg-primary/[0.02]">
+                        <CardHeader>
+                            <CardTitle className="text-base">Order Summary</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-6 space-y-4">
+                        <CardContent className="space-y-4">
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-400">Plan Price</span>
-                                <span className="text-white font-bold">₹{priceParam.toLocaleString('en-IN')}</span>
+                                <span className="text-muted-foreground">Base Price</span>
+                                <span className="font-bold">₹{priceParam.toLocaleString('en-IN')}</span>
                             </div>
                             {discount > 0 && (
-                                <div className="flex justify-between text-sm text-green-400">
+                                <div className="flex justify-between text-sm text-green-600">
                                     <span className="flex items-center gap-1"><Percent className="h-3 w-3"/> Coupon Applied</span>
                                     <span className="font-bold">- ₹{discount.toLocaleString('en-IN')}</span>
                                 </div>
                             )}
                             {extraBonusApplied && (
-                                 <div className="flex justify-between text-sm text-green-400">
+                                 <div className="flex justify-between text-sm text-green-600">
                                     <span className="flex items-center gap-1"><Zap className="h-3 w-3"/> Extra Bonus (10%)</span>
                                     <span className="font-bold">- ₹{(priceParam * 0.1).toLocaleString('en-IN')}</span>
                                 </div>
                             )}
-                            <Separator className="bg-primary/10" />
-                            <div className="flex justify-between items-center">
-                                <span className="text-white font-black text-lg">Total Due</span>
-                                <span className="text-primary text-3xl font-black">₹{finalPrice.toLocaleString('en-IN')}</span>
+                            <Separator />
+                            <div className="flex justify-between items-center pt-2">
+                                <span className="font-bold">Total Due</span>
+                                <span className="text-2xl font-bold text-primary">₹{finalPrice.toLocaleString('en-IN')}</span>
                             </div>
                         </CardContent>
-                        <CardFooter className="bg-primary/10 border-t border-primary/10 p-6">
+                        <CardFooter>
                             <form action={formAction} className="w-full">
                                 <input type="hidden" name="full_name" value={formData.full_name} />
                                 <input type="hidden" name="email" value={formData.email} />
@@ -262,27 +248,27 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                                 <input type="hidden" name="discount_amount" value={discount} />
                                 <input type="hidden" name="final_amount_paid" value={finalPrice} />
 
-                                <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20">
-                                    {isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <><IndianRupee className="mr-2 h-5 w-5" /> COMPLETE PAYMENT</>}
+                                <Button type="submit" disabled={isPending} className="w-full font-bold h-12">
+                                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <><IndianRupee className="mr-2 h-4 w-4" /> Complete Payment</>}
                                 </Button>
                             </form>
                         </CardFooter>
                     </Card>
 
                     {state?.error && (
-                        <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 rounded-2xl">
-                            <AlertTitle className="font-bold">Error</AlertTitle>
-                            <AlertDescription className="text-sm font-medium">{state.error}</AlertDescription>
+                        <Alert variant="destructive">
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{state.error}</AlertDescription>
                         </Alert>
                     )}
 
-                    <div className="bg-white/5 rounded-3xl p-6 border border-white/10 space-y-4">
-                        <div className="flex items-center gap-3">
-                            <ShieldCheck className="h-6 w-6 text-green-400" />
-                            <h3 className="font-bold text-white text-sm">Security Assured</h3>
+                    <div className="rounded-lg border p-4 bg-muted/10 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-5 w-5 text-green-500" />
+                            <h3 className="font-bold text-sm">Security Assured</h3>
                         </div>
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                            Your registration is secured with 256-bit encryption. All funds are held in escrow during the verification period.
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            Your registration is secured with 256-bit encryption. All transactions are verified manually to ensure system integrity.
                         </p>
                     </div>
                 </div>
@@ -290,7 +276,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
         </div>
       </div>
 
-      {/* Exit Intent Dialog (Zero Escape Loop) */}
       <Dialog open={showExitOffer} onOpenChange={setShowExitOffer}>
         <DialogContent className="max-w-[280px] w-[calc(100%-2rem)] p-0 bg-[#0a0a0c] border-[#ff3333] shadow-[0_0_40px_rgba(239,68,68,0.4)] rounded-2xl overflow-hidden focus:outline-none [&>button]:hidden">
             <DialogHeader className="p-4 pb-2 text-center">
