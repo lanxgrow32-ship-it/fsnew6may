@@ -207,7 +207,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
 
                 <div className="space-y-6">
                     {/* Order Summary & Completion */}
-                    <Card className="border-primary/20 bg-primary/[0.02] sticky top-24">
+                    <Card className="border-primary/20 bg-primary/[0.02] lg:sticky lg:top-24">
                         <CardHeader>
                             <CardTitle className="text-base">Order Summary</CardTitle>
                         </CardHeader>
