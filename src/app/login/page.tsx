@@ -1,16 +1,19 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, RefreshCw, Sparkles, ShieldCheck, Timer, MessageSquare } from 'lucide-react';
+
+import { useActionState } from 'react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { login } from './actions';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { ClientOnly } from '@/components/ui/client-only';
-import { cn } from '@/lib/utils';
 
 export default function LoginPage() {
-  const router = useRouter();
+  const [state, formAction, isPending] = useActionState(login, { error: null });
 
   return (
     <div className="dark min-h-screen bg-slate-950 font-poppins text-gray-200">
@@ -23,103 +26,75 @@ export default function LoginPage() {
         </div>
 
         <ClientOnly>
-        <div className="w-full max-w-xl space-y-8 relative z-10 animate-in fade-in zoom-in-95 duration-500">
-          <div className="flex justify-center">
-            <Button asChild variant="outline" size="sm" className="bg-black/20 border-white/10 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all">
-              <Link href="https://www.fundedstock.io/">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Main Site
-              </Link>
-            </Button>
-          </div>
-          
-          <div className="flex flex-col items-center justify-center text-center space-y-4">
-              <div className="bg-primary/10 p-4 rounded-3xl border border-primary/20 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
-                <FundedStockLogo className="h-12 w-12 text-primary" />
-              </div>
-              <div className="space-y-1">
-                <h1 className="text-3xl font-black tracking-tighter text-white">System Optimization</h1>
-                <p className="text-gray-500 uppercase text-[10px] font-bold tracking-[0.3em]">Infrastructure Upgrade v2.4.0</p>
-              </div>
-          </div>
+            <div className="w-full max-w-md space-y-8 relative z-10 animate-in fade-in zoom-in-95 duration-500">
+                <div className="flex justify-center">
+                    <Button asChild variant="outline" size="sm" className="bg-black/20 border-white/10 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all">
+                        <Link href="/">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Home
+                        </Link>
+                    </Button>
+                </div>
 
-          <Card className="bg-white/5 backdrop-blur-2xl border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden">
-              <div className="bg-primary h-1.5 w-full relative">
-                 <div className="absolute inset-y-0 left-0 bg-white/30 animate-pulse w-[68%]" />
-              </div>
-              
-              <CardContent className="p-8 md:p-12 space-y-8">
-                  <div className="flex items-center gap-4 bg-primary/10 border border-primary/20 p-4 rounded-2xl">
-                      <div className="bg-primary text-primary-foreground p-2 rounded-xl animate-spin-slow">
-                          <RefreshCw className="h-5 w-5" />
-                      </div>
-                      <div className="space-y-0.5">
-                          <p className="text-sm font-bold text-primary uppercase tracking-tight">Technical Work in Progress</p>
-                          <p className="text-[10px] text-primary/70 font-medium">Applying security patches and core performance enhancements.</p>
-                      </div>
-                  </div>
+                <div className="flex flex-col items-center justify-center text-center space-y-2">
+                    <div className="bg-primary/10 p-3 rounded-2xl border border-primary/20 shadow-[0_0_30px_rgba(234,179,8,0.1)] mb-4">
+                        <FundedStockLogo className="h-10 w-10 text-primary" />
+                    </div>
+                    <h1 className="text-3xl font-black tracking-tighter text-white">Welcome Back</h1>
+                    <p className="text-gray-500 uppercase text-[10px] font-bold tracking-[0.2em]">Trader Portal Login</p>
+                </div>
 
-                  <div className="space-y-4 text-center sm:text-left">
-                      <h2 className="text-xl font-bold text-white flex items-center justify-center sm:justify-start gap-2">
-                        <Sparkles className="h-5 w-5 text-purple-400" />
-                        Next-Level Experience Coming Soon
-                      </h2>
-                      <p className="text-gray-400 text-sm leading-relaxed">
-                        We are currently upgrading our infrastructure to provide you with a more stable, faster, and feature-rich trading environment. Our team is also resolving minor technical glitches reported during the recent high-load period.
-                      </p>
-                      <p className="text-gray-400 text-sm leading-relaxed">
-                        To ensure 100% data integrity during this core database migration, all portal access has been temporarily suspended.
-                      </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1">
-                          <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Expected Duration</p>
-                          <p className="text-white font-bold flex items-center gap-2">
-                              <Timer className="h-3.5 w-3.5 text-primary" />
-                              ~ 7 Days
-                          </p>
-                      </div>
-                      <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1">
-                          <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Status</p>
-                          <p className="text-green-400 font-bold flex items-center gap-2">
-                              <ShieldCheck className="h-3.5 w-3.5" />
-                              Secure
-                          </p>
-                      </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/5 text-center">
-                       <p className="text-[11px] text-gray-500 font-medium italic">
-                        "We apologize for the inconvenience. Our commitment to excellence remains our top priority."
-                       </p>
-                       <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-                           <Button asChild variant="outline" className="w-full sm:w-auto border-white/10 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl">
-                               <Link href="https://wa.me/917020749658" target="_blank">
-                                   <MessageSquare className="mr-2 h-4 w-4" />
-                                   Priority Support
-                               </Link>
-                           </Button>
-                           <Button disabled className="w-full sm:w-auto bg-slate-800 text-gray-500 border border-white/5 rounded-xl">
-                               Maintenance Mode Active
-                           </Button>
-                       </div>
-                  </div>
-              </CardContent>
-          </Card>
-        </div>
+                <Card className="bg-white/5 backdrop-blur-2xl border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+                    <form action={formAction}>
+                        <CardHeader>
+                            <CardTitle className="text-xl text-white">Sign In</CardTitle>
+                            <CardDescription className="text-gray-400">Enter your credentials to access your dashboard.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {state?.error && (
+                                <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 animate-in shake-1">
+                                    <AlertTitle>Login Error</AlertTitle>
+                                    <AlertDescription>{state.error}</AlertDescription>
+                                </Alert>
+                            )}
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-gray-300">Email Address</Label>
+                                <Input 
+                                    id="email" 
+                                    name="email" 
+                                    type="email" 
+                                    placeholder="name@example.com" 
+                                    required 
+                                    className="bg-black/20 border-white/10 text-white h-12 focus:ring-primary/50" 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="password" title="password" className="text-gray-300">Password</Label>
+                                    <Link href="#" className="text-xs text-primary hover:underline font-bold">Forgot Password?</Link>
+                                </div>
+                                <Input 
+                                    id="password" 
+                                    name="password" 
+                                    type="password" 
+                                    required 
+                                    className="bg-black/20 border-white/10 text-white h-12 focus:ring-primary/50" 
+                                />
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex flex-col space-y-4 pb-8">
+                            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black h-12 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]" disabled={isPending}>
+                                {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Authorizing...</> : 'LOGIN TO DASHBOARD'}
+                            </Button>
+                            <p className="text-sm text-center text-gray-500">
+                                New to FundedStock? <Link href="/pricing" className="text-primary hover:underline font-bold">Start Evaluation</Link>
+                            </p>
+                        </CardFooter>
+                    </form>
+                </Card>
+            </div>
         </ClientOnly>
       </main>
-
-      <style jsx global>{`
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-          animation: spin-slow 8s linear infinite;
-        }
-      `}</style>
     </div>
   );
 }
