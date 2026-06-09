@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, CheckCircle2, Wallet, Copy, Percent, Zap, IndianRupee, Timer, ShieldCheck } from 'lucide-react';
+import { Loader2, ArrowLeft, Copy, Percent, Zap, IndianRupee, Timer, ShieldCheck } from 'lucide-react';
 import { signupAndCreateOrder, validateCoupon, validateReferralCode } from './actions';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -104,7 +104,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
     <main className="min-h-screen bg-background text-foreground pb-20">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
-            {/* Simplified Header */}
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" onClick={() => router.back()} className="shrink-0"><ArrowLeft className="h-4 w-4" /></Button>
                 <h1 className="text-xl md:text-2xl font-bold tracking-tight whitespace-nowrap">Complete Registration</h1>
@@ -113,7 +112,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
                     
-                    {/* 1. Payment Details Section (QR First) */}
                     {paymentSettings?.active_payment_gateway === 'manual' && (
                         <Card className="border-primary/20">
                             <CardHeader>
@@ -150,7 +148,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                         </Card>
                     )}
 
-                    {/* 2. Personal Information Section */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-lg">2. Personal Information</CardTitle>
@@ -178,7 +175,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                         </CardContent>
                     </Card>
 
-                    {/* 3. Offers & Coupons */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-lg">3. Offers & Coupons</CardTitle>
@@ -206,7 +202,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                 </div>
 
                 <div className="space-y-6">
-                    {/* Order Summary & Completion */}
                     <Card className="border-primary/20 bg-primary/[0.02] lg:sticky lg:top-24">
                         <CardHeader>
                             <CardTitle className="text-base">Order Summary</CardTitle>
@@ -261,16 +256,6 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
                             <AlertDescription>{state.error}</AlertDescription>
                         </Alert>
                     )}
-
-                    <div className="rounded-lg border p-4 bg-muted/10 space-y-3">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck className="h-5 w-5 text-green-500" />
-                            <h3 className="font-bold text-sm">Security Assured</h3>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            Your registration is secured with 256-bit encryption. All transactions are verified manually to ensure system integrity.
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -280,7 +265,7 @@ export function SignupForm({ paymentSettings }: { paymentSettings: any }) {
         <DialogContent className="max-w-[280px] w-[calc(100%-2rem)] p-0 bg-[#0a0a0c] border-[#ff3333] shadow-[0_0_40px_rgba(239,68,68,0.4)] rounded-2xl overflow-hidden focus:outline-none [&>button]:hidden">
             <DialogHeader className="p-4 pb-2 text-center">
                 <div className="mx-auto bg-[#ff3333]/10 w-fit p-2 rounded-full mb-3">
-                    <Zap className="h-6 w-6 text-[#ff3333]" />
+                    <Zap className="h-6 v-6 text-[#ff3333]" />
                 </div>
                 <DialogTitle className="text-lg font-black text-white tracking-tight">WAIT! SPECIAL GIFT.</DialogTitle>
                 <DialogDescription className="text-[11px] text-gray-400 mt-1 uppercase font-bold tracking-wider">Don't leave empty handed</DialogDescription>
