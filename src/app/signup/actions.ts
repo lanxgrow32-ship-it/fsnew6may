@@ -9,7 +9,7 @@ import { generateWatchPaySignature } from '@/lib/watchpay';
 import { randomBytes } from 'crypto';
 import { headers } from 'next/headers';
 
-export async function signupAndCreateOrder(formData: FormData) {
+export async function signupAndCreateOrder(prevState: any, formData: FormData) {
   const supabase = createClient();
 
   // 1. Securely fetch settings via admin to bypass RLS
