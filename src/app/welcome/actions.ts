@@ -6,25 +6,37 @@ import { revalidatePath } from 'next/cache';
 
 /**
  * Helper to upload images for support chat
+ * Hardened for robust multi-device support
  */
 async function uploadSupportImage(file: File, conversationId: string) {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `support-${conversationId}-${Date.now()}.${fileExt}`;
-  
-  const { data, error } = await supabaseAdmin.storage
-    .from('support-attachments')
-    .upload(fileName, file);
-
-  if (error) {
-    console.error('Error uploading support image:', error);
-    throw new Error('Failed to upload image.');
-  }
-
-  const { data: urlData } = supabaseAdmin.storage
-    .from('support-attachments')
-    .getPublicUrl(data.path);
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `support-${conversationId}-${Date.now()}.${fileExt}`;
     
-  return urlData.publicUrl;
+    // Upload to 'support-attachments' bucket (Must be created in Supabase Dashboard)
+    const { data, error } = await supabaseAdmin.storage
+      .from('support-attachments')
+      .upload(fileName, buffer, {
+          contentType: file.type,
+          upsert: true
+      });
+
+    if (error) {
+      console.error('Supabase Storage Error:', error);
+      throw new Error('Storage server rejected the file.');
+    }
+
+    const { data: urlData } = supabaseAdmin.storage
+      .from('support-attachments')
+      .getPublicUrl(data.path);
+      
+    return urlData.publicUrl;
+  } catch (e: any) {
+      console.error('Internal Upload Error:', e);
+      throw new Error('Failed to upload image.');
+  }
 }
 
 /**
