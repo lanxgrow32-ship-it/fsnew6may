@@ -93,12 +93,12 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
         <section className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-white tracking-tight">Your Portfolio</h2>
-                    <p className="text-gray-400 mt-1">Manage all your trading accounts from one place.</p>
+                    <h2 className="text-4xl font-black text-white tracking-tighter">Your Portfolio</h2>
+                    <p className="text-gray-400 text-lg mt-1 font-medium">Manage multiple accounts and track your performance.</p>
                 </div>
                  {!kycVerified && (
-                    <div className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-full border border-amber-400/20 text-sm font-semibold">
-                        <ShieldAlert className="w-4 h-4"/> KYC Verification Required
+                    <div className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-full border border-amber-400/20 text-sm font-bold">
+                        <ShieldAlert className="w-4 h-4"/> KYC Required
                     </div>
                 )}
             </div>
@@ -108,11 +108,11 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                     accounts.map((acc: any) => <AccountCard key={acc.id} account={acc} kycVerified={kycVerified} />)
                 ) : (
                     <GlassCard className="col-span-full p-16 text-center border-dashed">
-                        <PlusCircle className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                        <h3 className="text-2xl font-bold text-white">No active accounts</h3>
-                        <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8">Choose a funding plan from the marketplace to start your journey.</p>
-                        <Button onClick={onSwitchToGetFunded} size="lg" className="bg-primary text-white font-bold rounded-xl px-8">
-                            Browse Plans <ArrowRight className="ml-2 h-4 w-4"/>
+                        <PlusCircle className="h-16 w-16 text-gray-800 mx-auto mb-4" />
+                        <h3 className="text-2xl font-black text-white">No active accounts</h3>
+                        <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8 font-medium">Choose a funding plan to start your journey into the markets.</p>
+                        <Button onClick={onSwitchToGetFunded} size="lg" className="bg-primary text-white font-black rounded-2xl px-12 h-14 text-lg shadow-xl shadow-primary/20">
+                            Browse Plans <ArrowRight className="ml-2 h-5 w-5"/>
                         </Button>
                     </GlassCard>
                 )}

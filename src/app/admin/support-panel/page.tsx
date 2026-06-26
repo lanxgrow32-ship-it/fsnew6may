@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,6 @@ import {
     User,
     Headphones,
     Search,
-    CheckCircle,
     Inbox,
     ArrowRight
 } from 'lucide-react';
@@ -70,7 +69,9 @@ export default function SupportAgentPanel() {
     }, [activeConversation]);
 
     useEffect(() => {
-        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
     }, [messages]);
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -83,33 +84,33 @@ export default function SupportAgentPanel() {
     };
 
     return (
-        <div className="flex h-screen bg-slate-950 text-white overflow-hidden">
+        <div className="flex h-screen bg-slate-950 text-white overflow-hidden font-poppins">
             {/* Sidebar */}
-            <div className="w-80 border-r border-white/5 bg-slate-900/50 flex flex-col">
-                <div className="p-6 border-b border-white/5">
-                    <h1 className="text-xl font-black tracking-tighter">Support Agent Panel</h1>
-                    <div className="relative mt-4">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-500" />
-                        <Input placeholder="Search sessions..." className="pl-8 bg-black/20 border-white/10 h-9 text-xs" />
+            <div className="w-85 border-r border-white/5 bg-slate-900/50 flex flex-col">
+                <div className="p-8 border-b border-white/5">
+                    <h1 className="text-2xl font-black tracking-tighter">Support Terminal</h1>
+                    <div className="relative mt-6">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
+                        <Input placeholder="Filter sessions..." className="pl-10 bg-black/40 border-white/10 h-11 text-xs font-bold uppercase tracking-widest" />
                     </div>
                 </div>
                 <ScrollArea className="flex-grow">
-                    {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto opacity-20"/></div> : (
+                    {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto opacity-20"/></div> : (
                         conversations.map(c => (
                             <button 
                                 key={c.id} 
                                 onClick={() => setActiveConversation(c)}
                                 className={cn(
-                                    "w-full p-4 border-b border-white/5 text-left transition-all hover:bg-white/5",
-                                    activeConversation?.id === c.id && "bg-primary/10 border-r-2 border-r-primary"
+                                    "w-full p-5 border-b border-white/5 text-left transition-all hover:bg-white/5",
+                                    activeConversation?.id === c.id && "bg-primary/10 border-r-4 border-r-primary"
                                 )}
                             >
-                                <div className="flex justify-between items-start mb-1">
-                                    <p className="text-sm font-bold truncate max-w-[140px]">{c.profiles?.full_name}</p>
-                                    <Badge variant="outline" className={cn("text-[8px] px-1", c.status === 'open' ? "text-green-400 border-green-500/20" : "text-gray-500")}>{c.status}</Badge>
+                                <div className="flex justify-between items-start mb-2">
+                                    <p className="text-sm font-black truncate max-w-[150px]">{c.profiles?.full_name}</p>
+                                    <Badge variant="outline" className={cn("text-[9px] px-2 font-black uppercase tracking-widest", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
                                 </div>
-                                <p className="text-[10px] text-gray-500 truncate mb-2">{c.subject === 'LIVE_CHAT' ? 'LIVE ASSISTANCE' : c.subject}</p>
-                                <p className="text-[9px] text-gray-700 font-bold uppercase tracking-widest">{new Date(c.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate mb-3">{c.subject === 'LIVE_CHAT' ? 'DIRECT LIVE CHAT' : c.subject}</p>
+                                <p className="text-[9px] text-gray-700 font-black uppercase tracking-[0.3em]">{new Date(c.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                             </button>
                         ))
                     )}
@@ -120,48 +121,48 @@ export default function SupportAgentPanel() {
             <div className="flex-grow flex flex-col relative">
                 {!activeConversation ? (
                     <div className="flex-grow flex flex-col items-center justify-center text-center p-12">
-                        <Inbox className="h-16 w-16 text-gray-800 mb-4" />
-                        <h2 className="text-2xl font-black text-white">Inbox Zero.</h2>
-                        <p className="text-gray-600 text-sm max-w-xs mt-2">Select a support session from the sidebar to begin helping your users.</p>
+                        <Inbox className="h-20 w-20 text-gray-900 mb-6" />
+                        <h2 className="text-3xl font-black text-white tracking-tighter">Terminal Ready.</h2>
+                        <p className="text-gray-600 text-lg font-medium max-w-sm mt-2">Select a protocol session from the sidebar to begin assistance.</p>
                     </div>
                 ) : (
                     <>
-                        <header className="p-4 border-b border-white/5 bg-slate-900/50 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                    <User className="h-5 w-5" />
+                        <header className="p-6 border-b border-white/5 bg-slate-900/80 backdrop-blur-md flex items-center justify-between">
+                            <div className="flex items-center gap-5">
+                                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                                    <User className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white text-sm">{activeConversation.profiles?.full_name}</h3>
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{activeConversation.profiles?.email}</p>
+                                    <h3 className="font-black text-white text-xl tracking-tight">{activeConversation.profiles?.full_name}</h3>
+                                    <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-1">{activeConversation.profiles?.email}</p>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-xs h-8">Close Session</Button>
+                            <div className="flex gap-3">
+                                <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-[10px] font-black uppercase tracking-widest h-10 px-6">Archive Protocol</Button>
                             </div>
                         </header>
 
-                        <ScrollArea ref={scrollRef} className="flex-grow p-8">
-                            <div className="space-y-6 max-w-3xl mx-auto">
-                                <div className="text-center py-4">
-                                    <p className="text-[9px] text-gray-800 font-black uppercase tracking-[0.4em]">Protocol Session Initiated</p>
+                        <ScrollArea ref={scrollRef} className="flex-grow p-10 bg-slate-950">
+                            <div className="space-y-8 max-w-4xl mx-auto">
+                                <div className="text-center py-6">
+                                    <p className="text-[9px] text-gray-800 font-black uppercase tracking-[0.5em]">Secure Agent Connection Established</p>
                                 </div>
                                 {messages.map(m => (
-                                    <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
-                                        <div className={cn("max-w-[75%] p-4 rounded-2xl text-sm", m.sender_role === 'admin' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none")}>
+                                    <div key={m.id} className={cn("flex items-end gap-4", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
+                                        <div className={cn("max-w-[70%] p-5 rounded-3xl text-sm leading-relaxed shadow-lg", m.sender_role === 'admin' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none")}>
                                             {m.message}
-                                            <p className="mt-2 text-[8px] opacity-30 font-black uppercase tracking-widest">{new Date(m.created_at).toLocaleTimeString()}</p>
+                                            <p className="mt-3 text-[9px] opacity-40 font-black uppercase tracking-[0.2em]">{new Date(m.created_at).toLocaleTimeString()}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </ScrollArea>
 
-                        <div className="p-6 bg-slate-900/80 border-t border-white/5 backdrop-blur-md">
-                            <form onSubmit={handleSendMessage} className="flex gap-4 max-w-4xl mx-auto">
-                                <Input name="message" autoComplete="off" placeholder="Type your response..." className="flex-grow bg-black/40 border-white/10 h-12" />
-                                <Button type="submit" className="h-12 w-12 rounded-xl">
-                                    <Send className="h-5 w-5" />
+                        <div className="p-8 bg-slate-900/90 border-t border-white/5 backdrop-blur-xl">
+                            <form onSubmit={handleSendMessage} className="flex gap-5 max-w-5xl mx-auto">
+                                <Input name="message" autoComplete="off" placeholder="Type agent response..." className="flex-grow bg-black/40 border-white/10 h-14 text-white rounded-2xl px-6" />
+                                <Button type="submit" className="h-14 w-14 rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                                    <Send className="h-6 w-6" />
                                 </Button>
                             </form>
                         </div>

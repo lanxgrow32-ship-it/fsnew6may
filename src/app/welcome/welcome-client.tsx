@@ -32,7 +32,6 @@ import { WalletView } from './wallet-view';
 import { TransactionsView } from './transactions-view';
 import { CompetitionView } from './competition-view';
 import { SupportView } from './support-view';
-import KycPage from '@/app/kyc/page';
 
 const Logo = () => (
     <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
@@ -70,11 +69,11 @@ export function WelcomeClient({
         { id: 'transactions', label: "Transactions", icon: History },
         { id: 'competition', label: "Tournaments", icon: Trophy },
         { id: 'support', label: "Support", icon: LifeBuoy },
-        { id: 'kyc', label: "KYC Verification", icon: FileCheck },
+        { id: 'kyc', label: "KYC", icon: FileCheck },
     ];
 
     return (
-        <div className="dark min-h-screen bg-slate-950 text-gray-200 relative overflow-hidden pb-20">
+        <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
             {/* Background Decorative Elements */}
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
@@ -134,17 +133,16 @@ export function WelcomeClient({
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col">
                                 <SheetHeader className="p-6 border-b border-white/5">
-                                    <SheetTitle className="flex items-center gap-3 text-left">
+                                    <SheetTitle className="sr-only">Main Navigation</SheetTitle>
+                                    <div className="flex items-center gap-3 text-left">
                                         <Logo />
                                         <span className="text-white font-bold">FundedStock</span>
-                                    </SheetTitle>
+                                    </div>
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-4 gap-2 overflow-y-auto">
-                                    <div className="px-4 py-6 mb-6 sm:hidden bg-black/40 rounded-2xl border border-white/10">
+                                    <div className="px-4 py-6 mb-6 sm:hidden bg-black/40 rounded-2xl border border-white/10 text-center">
                                         <p className="text-xs font-medium text-gray-500">Wallet Balance</p>
-                                        <div className="flex items-center justify-between mt-2">
-                                            <p className="text-primary font-bold text-3xl">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
-                                        </div>
+                                        <p className="text-primary font-bold text-3xl mt-2">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                                     </div>
                                     <div className="space-y-1">
                                         {navItems.map((item) => (
@@ -167,7 +165,7 @@ export function WelcomeClient({
                                         ))}
                                     </div>
                                     
-                                    <div className="mt-auto pt-8 pb-4">
+                                    <div className="mt-auto pt-8 pb-8">
                                         <div className="pt-4 border-t border-white/5">
                                             <form action={signOut}>
                                                 <button 
@@ -213,7 +211,11 @@ export function WelcomeClient({
                     </TabsContent>
 
                     <TabsContent value="kyc" className="animate-in fade-in duration-300">
-                        <KycPage />
+                        <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
+                            <h2 className="text-4xl font-black text-white">KYC Verification</h2>
+                            <p className="text-gray-400">Complete your profile to unlock all features.</p>
+                            <Button asChild size="lg" className="mt-8 rounded-2xl px-10 h-14 font-bold text-lg"><Link href="/kyc">Start Verification Process</Link></Button>
+                        </div>
                     </TabsContent>
                 </Tabs>
             </main>

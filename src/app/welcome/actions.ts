@@ -72,7 +72,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     plan_name: plan.title,
     status: 'pending',
     is_approved: true, // Internal purchases are pre-verified
-    account_model: plan.title.toLowerCase().includes('passthenpay') ? 'passthrupay' : 'normal',
+    account_model: plan.title.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal',
     final_amount_paid: price,
     transaction_id: 'WALLET_PURCHASE'
   });

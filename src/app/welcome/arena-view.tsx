@@ -82,45 +82,45 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
             <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-xl font-bold">₹{plan.size}</CardTitle>
-                        <CardDescription className="text-sm font-medium text-gray-500 mt-1">{category}</CardDescription>
+                        <CardTitle className="text-xl font-black">₹{plan.size}</CardTitle>
+                        <CardDescription className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1">{category}</CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-xs">80% Share</Badge>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-black uppercase tracking-tighter">80% Share</Badge>
                 </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
                 <div className="space-y-2 text-sm border-t border-white/5 pt-4">
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         <span>Target: {category === 'Instant' ? '0%' : category.includes('PTP') ? '6%' : '10%'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         <span>Drawdown: 10%</span>
                     </div>
                 </div>
                 <div className="pt-4 border-t border-white/5">
-                    <p className="text-xs font-medium text-gray-500">Price</p>
-                    <p className="text-2xl font-bold text-primary mt-0.5">₹{plan.price}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Capital Fee</p>
+                    <p className="text-2xl font-black text-primary mt-0.5">₹{plan.price}</p>
                 </div>
             </CardContent>
             <CardFooter>
                 <Button 
                     onClick={() => handlePurchase(plan)} 
                     disabled={isPurchasing !== null}
-                    className="w-full font-bold h-11"
+                    className="w-full font-black h-12 uppercase tracking-widest"
                 >
-                    {isPurchasing === plan.title ? <Loader2 className="animate-spin h-4 w-4" /> : 'Buy Now'}
+                    {isPurchasing === plan.title ? <Loader2 className="animate-spin h-4 w-4" /> : 'Activate Now'}
                 </Button>
             </CardFooter>
         </Card>
     );
 
     return (
-        <div className="space-y-12">
+        <div className="space-y-12 animate-in fade-in duration-500">
             <div className="text-center space-y-2">
-                <h2 className="text-3xl font-bold text-white tracking-tight">Get Funded</h2>
-                <p className="text-gray-400 text-lg max-w-2xl mx-auto">Select a path to start earning performance rewards.</p>
+                <h2 className="text-4xl font-black text-white tracking-tighter">Get Funded</h2>
+                <p className="text-gray-400 text-lg font-medium max-w-2xl mx-auto">Select your path to instant capital and professional scaling.</p>
             </div>
 
             <Tabs defaultValue="instant" className="w-full">
