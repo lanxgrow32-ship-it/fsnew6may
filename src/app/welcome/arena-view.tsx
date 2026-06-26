@@ -22,19 +22,19 @@ import { cn } from '@/lib/utils';
 
 const plans = {
     instant: [
-        { size: '1 Lakh', price: '5,999', title: '1L Instant Funding' },
-        { size: '2 Lakh', price: '9,999', title: '2L Instant Funding' },
-        { size: '5 Lakh', price: '17,999', title: '5L Instant Funding' },
-        { size: '10 Lakh', price: '28,999', title: '10L Instant Funding' },
-        { size: '25 Lakh', price: '49,500', title: '25L Instant Funding' },
+        { size: '1 Lakh', price: '5,999', title: '1L Instant' },
+        { size: '2 Lakh', price: '9,999', title: '2L Instant' },
+        { size: '5 Lakh', price: '17,999', title: '5L Instant' },
+        { size: '10 Lakh', price: '28,999', title: '10L Instant' },
+        { size: '25 Lakh', price: '49,500', title: '25L Instant' },
     ],
     oneStep: [
-        { size: '1 Lakh', price: '4,599', title: '1L 1-Step Fast Track' },
-        { size: '2 Lakh', price: '7,599', title: '2L 1-Step Fast Track' },
-        { size: '5 Lakh', price: '12,599', title: '5L 1-Step Fast Track' },
-        { size: '10 Lakh', price: '19,599', title: '10L 1-Step Fast Track' },
-        { size: '25 Lakh', price: '34,999', title: '25L 1-Step Fast Track' },
-        { size: '50 Lakh', price: '54,999', title: '50L 1-Step Fast Track' },
+        { size: '1 Lakh', price: '4,599', title: '1L 1-Step' },
+        { size: '2 Lakh', price: '7,599', title: '2L 1-Step' },
+        { size: '5 Lakh', price: '12,599', title: '5L 1-Step' },
+        { size: '10 Lakh', price: '19,599', title: '10L 1-Step' },
+        { size: '25 Lakh', price: '34,999', title: '25L 1-Step' },
+        { size: '50 Lakh', price: '54,999', title: '50L 1-Step' },
     ],
     twoStep: [
         { size: '1 Lakh', price: '2,999', title: '1L 2-Step' },
@@ -45,10 +45,10 @@ const plans = {
         { size: '50 Lakh', price: '35,999', title: '50L 2-Step' },
     ],
     ptp: [
-        { size: '5 Lakh', price: '199', title: '5L PassThenPay' },
-        { size: '10 Lakh', price: '299', title: '10L PassThenPay' },
-        { size: '25 Lakh', price: '399', title: '25L PassThenPay' },
-        { size: '50 Lakh', price: '499', title: '50L PassThenPay' },
+        { size: '5 Lakh', price: '199', title: '5L PTP' },
+        { size: '10 Lakh', price: '299', title: '10L PTP' },
+        { size: '25 Lakh', price: '399', title: '25L PTP' },
+        { size: '50 Lakh', price: '499', title: '50L PTP' },
     ]
 };
 
@@ -61,7 +61,7 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
         if (profile.wallet_balance < price) {
             toast({ 
                 title: "Insufficient Balance", 
-                description: `You need ₹${(price - profile.wallet_balance).toLocaleString('en-IN')} more. Top up your wallet to continue.`,
+                description: `You need ₹${(price - profile.wallet_balance).toLocaleString('en-IN')} more.`,
                 variant: "destructive"
             });
             onSwitchToWallet();
@@ -73,7 +73,7 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
         if (res.error) {
             toast({ title: "Purchase Failed", description: res.error, variant: "destructive" });
         } else {
-            toast({ title: "Account Secured!", description: "Your purchase is complete. Verification is in progress." });
+            toast({ title: "Account Secured!", description: "Account created successfully." });
         }
         setIsPurchasing(null);
     };
@@ -83,36 +83,35 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
             <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-2xl font-bold">₹{plan.size}</CardTitle>
-                        <CardDescription className="text-xs uppercase tracking-widest font-semibold mt-1">{category}</CardDescription>
+                        <CardTitle className="text-xl font-bold">₹{plan.size}</CardTitle>
+                        <CardDescription className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-500 mt-1">{category}</CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px]">80% SHARE</Badge>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[9px] font-black uppercase">80% SHARE</Badge>
                 </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
-                <div className="space-y-2 text-sm border-t border-white/5 pt-4">
+                <div className="space-y-2 text-xs border-t border-white/5 pt-4">
                     <div className="flex items-center gap-2 text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <CheckCircle className="h-3 w-3 text-green-500" />
                         <span>Target: {category === 'Instant' ? '0%' : category.includes('PTP') ? '6%' : '10%'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span>Max Drawdown: 10%</span>
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <span>Drawdown: 10%</span>
                     </div>
                 </div>
                 <div className="pt-4 border-t border-white/5">
-                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Price</p>
-                    <p className="text-3xl font-bold text-primary">₹{plan.price}</p>
-                    <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest">50% DISCOUNT APPLIED</Badge>
+                    <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Protocol Access</p>
+                    <p className="text-2xl font-black text-primary mt-0.5">₹{plan.price}</p>
                 </div>
             </CardContent>
             <CardFooter>
                 <Button 
                     onClick={() => handlePurchase(plan)} 
                     disabled={isPurchasing !== null}
-                    className="w-full font-bold uppercase tracking-widest"
+                    className="w-full font-black uppercase tracking-widest text-[10px] h-11"
                 >
-                    {isPurchasing === plan.title ? <Loader2 className="animate-spin h-4 w-4" /> : 'Buy Account'}
+                    {isPurchasing === plan.title ? <Loader2 className="animate-spin h-4 w-4" /> : 'Buy Protocol'}
                 </Button>
             </CardFooter>
         </Card>
@@ -120,30 +119,30 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
 
     return (
         <div className="space-y-12">
-            <div className="text-center space-y-4">
-                <h2 className="text-4xl font-extrabold text-white tracking-tight">The Arena</h2>
-                <p className="text-gray-400 text-lg max-w-2xl mx-auto">Purchase funding protocols instantly using your wallet balance.</p>
+            <div className="text-center space-y-2">
+                <h2 className="text-3xl font-black text-white tracking-tighter uppercase tracking-[0.05em]">Get Funded</h2>
+                <p className="text-gray-500 text-sm max-w-2xl mx-auto uppercase tracking-widest font-bold">Secure a capital protocol using your wallet liquidity.</p>
             </div>
 
             <Tabs defaultValue="instant" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 max-w-3xl mx-auto h-auto p-1 bg-black/40 border border-white/5 rounded-xl mb-12">
-                    <TabsTrigger value="instant" className="py-2.5 rounded-lg">Instant</TabsTrigger>
-                    <TabsTrigger value="oneStep" className="py-2.5 rounded-lg">1-Step</TabsTrigger>
-                    <TabsTrigger value="twoStep" className="py-2.5 rounded-lg">2-Step</TabsTrigger>
-                    <TabsTrigger value="ptp" className="py-2.5 rounded-lg">PassThenPay</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-12">
+                    <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest">Instant</TabsTrigger>
+                    <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest">1-Step</TabsTrigger>
+                    <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest">2-Step</TabsTrigger>
+                    <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest">PTP</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="instant" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
-                    {plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant Funding" />)}
+                <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
+                    {plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />)}
                 </TabsContent>
-                <TabsContent value="oneStep" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
-                    {plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step Fast Track" />)}
+                <TabsContent value="oneStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
+                    {plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step" />)}
                 </TabsContent>
-                <TabsContent value="twoStep" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
-                    {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step Standard" />)}
+                <TabsContent value="twoStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
+                    {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}
                 </TabsContent>
-                <TabsContent value="ptp" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in zoom-in-95">
-                    {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PassThenPay" />)}
+                <TabsContent value="ptp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in zoom-in-95">
+                    {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
                 </TabsContent>
             </Tabs>
         </div>
