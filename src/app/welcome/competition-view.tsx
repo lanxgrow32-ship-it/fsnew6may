@@ -76,7 +76,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
             <div className="space-y-8 animate-in fade-in zoom-in-95">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" onClick={() => setView('hub')} className="text-gray-500 hover:text-white"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
-                    <h2 className="text-2xl font-black text-white tracking-tight">Tournament Browser</h2>
+                    <h2 className="text-3xl font-black text-white tracking-tight">Tournament Browser</h2>
                 </div>
 
                 <div className="grid gap-6">

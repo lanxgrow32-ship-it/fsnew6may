@@ -35,8 +35,8 @@ import { CompetitionView } from './competition-view';
 import { SupportView } from './support-view';
 
 const Logo = () => (
-    <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-xl text-2xl font-bold border border-white/10 shadow-inner shadow-black/50 overflow-hidden">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M2 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M22 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -83,19 +83,19 @@ export function WelcomeClient({
             </div>
 
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-                {/* Header */}
+                {/* Unified Header redesigned based on reference */}
                 <header className="flex items-center justify-between mb-12 z-20 relative">
                     <div className="flex items-center gap-8">
                         <Logo />
-                        <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
+                        <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg h-[50px]">
                             {navItems.map((item) => (
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={cn(
-                                        "px-4 py-2 text-sm font-semibold transition-colors flex items-center gap-2",
+                                        "px-5 py-2 text-sm font-semibold transition-all flex items-center gap-2.5 rounded-full h-[42px]",
                                         activeTab === item.id
-                                        ? "bg-primary rounded-full text-white shadow-md"
+                                        ? "bg-white/15 text-white shadow-sm border border-white/10"
                                         : "text-gray-400 hover:text-white"
                                     )}
                                 >
@@ -111,15 +111,16 @@ export function WelcomeClient({
                             </form>
                         </nav>
                     </div>
-                    <div className="flex items-center gap-4">
+
+                    <div className="flex items-center gap-6">
                         <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-xs font-medium text-gray-500">Wallet Balance</span>
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-0.5">Wallet Balance</span>
                             <div className="flex items-center gap-2">
-                                <span className="text-primary font-bold text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                                <span className="text-primary font-black text-2xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                         
-                        <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden">
+                        <div className="relative h-11 w-11 rounded-full border border-white/10 overflow-hidden shadow-xl">
                             <Avatar className="h-full w-full">
                                 <AvatarImage src={`https://avatar.vercel.sh/${profile.email}.png`} alt={profile.full_name || 'User'} />
                                 <AvatarFallback className="bg-primary/20 text-primary font-bold">{profile.full_name?.[0].toUpperCase()}</AvatarFallback>
@@ -128,22 +129,22 @@ export function WelcomeClient({
                         
                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                             <SheetTrigger asChild>
-                                <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
+                                <button className="h-11 w-11 flex items-center justify-center rounded-xl bg-black/20 border border-white/10 md:hidden transition-colors">
                                     <Menu className="h-6 w-6 text-gray-300" />
                                 </button>
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col">
                                 <SheetHeader className="p-6 border-b border-white/5">
-                                    <SheetTitle className="sr-only">Main Navigation</SheetTitle>
+                                    <SheetTitle className="sr-only">Navigation Protocol</SheetTitle>
                                     <div className="flex items-center gap-3 text-left">
                                         <Logo />
-                                        <span className="text-white font-bold">FundedStock</span>
+                                        <span className="text-white font-bold tracking-tight">FundedStock</span>
                                     </div>
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-4 gap-2 overflow-y-auto">
-                                    <div className="px-4 py-6 mb-6 sm:hidden bg-black/40 rounded-2xl border border-white/10 text-center">
-                                        <p className="text-xs font-medium text-gray-500">Wallet Balance</p>
-                                        <p className="text-primary font-bold text-3xl mt-2">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                                    <div className="px-4 py-6 mb-6 bg-black/40 rounded-2xl border border-white/10 text-center">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Balance</p>
+                                        <p className="text-primary font-black text-3xl mt-2 tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                                     </div>
                                     <div className="space-y-1">
                                         {navItems.map((item) => (
@@ -174,7 +175,7 @@ export function WelcomeClient({
                                                     className="w-full px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-all rounded-xl flex items-center gap-3 group"
                                                 >
                                                     <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-                                                    Logout
+                                                    Terminate Session
                                                 </button>
                                             </form>
                                         </div>
@@ -214,8 +215,8 @@ export function WelcomeClient({
                     <TabsContent value="kyc" className="animate-in fade-in duration-300">
                         <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
                             <h2 className="text-3xl font-black text-white tracking-tight">KYC Verification</h2>
-                            <p className="text-gray-400 text-lg font-medium">Complete your profile to unlock all features.</p>
-                            <Button asChild size="lg" className="mt-8 rounded-2xl px-10 h-14 font-bold text-lg"><Link href="/kyc">Start Verification Process</Link></Button>
+                            <p className="text-gray-400 text-lg font-medium">Complete your identity verification protocol.</p>
+                            <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-black text-lg shadow-xl shadow-primary/20"><Link href="/kyc">Start Verification Process</Link></Button>
                         </div>
                     </TabsContent>
                 </Tabs>
