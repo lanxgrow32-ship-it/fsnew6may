@@ -27,7 +27,8 @@ import {
     Search,
     Settings,
     Bell,
-    LifeBuoy
+    LifeBuoy,
+    Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -124,11 +125,20 @@ export function WelcomeClient({
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Balance</span>
-                            <span className="text-primary font-black text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Wallet Balance</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-primary font-black text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                                <button 
+                                    onClick={() => setActiveTab('wallet')}
+                                    className="p-1 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors"
+                                    title="Add Funds"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                </button>
+                            </div>
                         </div>
                         
-                        {/* Profile Icon (Non-dropdown) */}
+                        {/* Profile Icon */}
                         <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden">
                             <Avatar className="h-full w-full">
                                 <AvatarImage src={`https://avatar.vercel.sh/${profile.email}.png`} alt={profile.full_name || 'User'} />
@@ -150,9 +160,20 @@ export function WelcomeClient({
                                     </SheetTitle>
                                 </SheetHeader>
                                 <div className="flex flex-col p-4 gap-2">
-                                    <div className="px-4 py-2 mb-4 sm:hidden">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Available Balance</p>
-                                        <p className="text-primary font-black text-2xl mt-1">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                                    <div className="px-4 py-4 mb-4 sm:hidden bg-black/20 rounded-2xl border border-white/5">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Wallet Balance</p>
+                                        <div className="flex items-center justify-between mt-1">
+                                            <p className="text-primary font-black text-2xl">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                                            <button 
+                                                onClick={() => {
+                                                    setActiveTab('wallet');
+                                                    setIsSidebarOpen(false);
+                                                }}
+                                                className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                     {navItems.map((item) => (
                                         <button

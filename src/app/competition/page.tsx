@@ -4,19 +4,14 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowRight, Award, TrendingDown, CheckCircle2, Copy, ShieldCheck, Trophy, Target, Ban, Zap, Clock, IndianRupee, X, PlusCircle, Sparkles } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { registerForTournament, getCompetitionEvents } from './actions';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, ArrowRight, Award, TrendingDown, ShieldCheck, Trophy, Target, Ban, Zap, Clock, IndianRupee, X, CheckCircle } from 'lucide-react';
+import { getCompetitionEvents } from './actions';
 import Link from 'next/link';
 import { ClientOnly } from '@/components/ui/client-only';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { createClient } from '@/lib/supabase/client';
-import { Badge } from '@/components/ui/badge';
 
 const navItems = [
     { href: "https://www.fundedstock.io/funding", label: "Funded Plans" },
@@ -44,208 +39,11 @@ const RuleCard = ({ title, icon, children }: { title: string, icon: React.ReactN
     </Card>
 );
 
-function TournamentRegistration({ events, paymentSettings }: { events: any[], paymentSettings: any }) {
-    const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [selectedEventId, setSelectedEventId] = useState<string>(events.find(e => e.status === 'ongoing')?.id || events[0]?.id || '');
-    const [isSuccess, setIsSuccess] = useState(false);
-    const [isFreeEntry, setIsFreeEntry] = useState(false);
-
-    const selectedEvent = events.find(e => e.id === selectedEventId);
-    const ongoingEvent = events.find(e => e.status === 'ongoing');
-    const upcomingEvents = events.filter(e => e.status === 'upcoming').slice(0, 3);
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
-        const formData = new FormData(e.currentTarget);
-        const result = await registerForTournament(formData);
-
-        if (result.error) {
-            setError(result.error);
-            setIsLoading(false);
-        } else {
-            setIsSuccess(true);
-            setIsFreeEntry(result.isFree || false);
-            setIsLoading(false);
-            toast({ title: result.isFree ? "Successfully Joined!" : "Registration Submitted", description: result.isFree ? "Your trading account is ready." : "Wait for admin approval." });
-        }
-    };
-
-    if (events.length === 0) {
-        return (
-            <Card className="bg-card/50 border-white/10 text-center p-12">
-                <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-bold text-white">No Tournaments Scheduled</h3>
-                <p className="text-muted-foreground">Check back soon for upcoming weekly competitions!</p>
-            </Card>
-        );
-    }
-
-    if (isSuccess) {
-        return (
-            <Card className="bg-card/50 border-green-500/50 text-center p-8 max-w-lg mx-auto">
-                <div className="bg-green-500/10 text-green-500 rounded-full p-4 w-fit mx-auto mb-4">
-                    <CheckCircle2 className="h-12 w-12" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">{isFreeEntry ? "You are in!" : "Registration Received!"}</h2>
-                <p className="text-muted-foreground">
-                    {isFreeEntry 
-                        ? "Your free entry is confirmed. Login to your dashboard to see your credentials." 
-                        : "Our team is verifying your Transaction ID (UTR). Once approved, you will receive your StockMint credentials via email."}
-                </p>
-                <Button asChild className="mt-6" variant="outline"><Link href="/login">Go to Dashboard</Link></Button>
-            </Card>
-        );
-    }
-
-    return (
-        <div className="space-y-12 max-w-5xl mx-auto">
-            <div className="text-center space-y-4">
-                <h2 className="text-4xl font-bold tracking-tight text-white">Join the Battle</h2>
-                <p className="text-muted-foreground text-lg">Pick a week and secure your spot in the arena.</p>
-            </div>
-
-            <div className="space-y-8">
-                <div className="space-y-6">
-                    {ongoingEvent && (
-                        <div className="space-y-4">
-                            <Label className="text-lg font-bold text-white uppercase tracking-wider text-primary">Live Now</Label>
-                            <div 
-                                onClick={() => setSelectedEventId(ongoingEvent.id)}
-                                className={cn(
-                                    "relative group cursor-pointer transition-all duration-300 rounded-2xl overflow-hidden border-2 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6",
-                                    selectedEventId === ongoingEvent.id 
-                                        ? "bg-primary/10 border-primary shadow-[0_0_30px_rgba(234,179,8,0.2)]" 
-                                        : "bg-card/50 border-white/5 hover:border-white/20"
-                                )}
-                            >
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className="text-2xl font-bold text-white">{ongoingEvent.week_label}</h3>
-                                        <Badge className="bg-red-500 animate-pulse text-[10px] uppercase font-bold">Ongoing</Badge>
-                                        {ongoingEvent.is_free && <Badge className="bg-green-600 text-[10px] uppercase font-bold">Free Entry</Badge>}
-                                    </div>
-                                    <p className="text-muted-foreground">{new Date(ongoingEvent.start_date).toLocaleDateString('en-IN', { month: 'long', day: 'numeric' })} — {new Date(ongoingEvent.end_date).toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                                </div>
-                                <div className="text-left md:text-right">
-                                    <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Entry Fee</p>
-                                    <p className="text-3xl font-black text-primary">{ongoingEvent.is_free ? 'FREE' : `₹${Number(ongoingEvent.entry_fee).toLocaleString('en-IN')}`}</p>
-                                </div>
-                                <div className={cn("absolute right-4 top-4", selectedEventId === ongoingEvent.id ? "text-primary" : "text-transparent")}>
-                                    <CheckCircle2 className="h-6 w-6" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {upcomingEvents.length > 0 && (
-                        <div className="space-y-4">
-                            <Label className="text-lg font-bold text-white uppercase tracking-wider text-gray-400">Upcoming Weeks</Label>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {upcomingEvents.map((event) => (
-                                    <div 
-                                        key={event.id}
-                                        onClick={() => setSelectedEventId(event.id)}
-                                        className={cn(
-                                            "cursor-pointer transition-all duration-300 rounded-2xl border-2 p-6 space-y-4",
-                                            selectedEventId === event.id 
-                                                ? "bg-primary/5 border-primary shadow-[0_0_20px_rgba(234,179,8,0.1)]" 
-                                                : "bg-card/50 border-white/5 hover:border-white/20"
-                                        )}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="text-xl font-bold text-white">{event.week_label}</h3>
-                                            {selectedEventId === event.id && <CheckCircle2 className="h-5 w-5 text-primary" />}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">{new Date(event.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} - {new Date(event.end_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</p>
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-2xl font-bold text-white">{event.is_free ? 'FREE' : `₹${Number(event.entry_fee).toLocaleString('en-IN')}`}</p>
-                                            {event.is_free && <Sparkles className="w-4 h-4 text-green-400 animate-pulse" />}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <form onSubmit={handleSubmit} className={cn("grid gap-8 items-start", selectedEvent?.is_free ? "max-w-2xl mx-auto w-full" : "lg:grid-cols-2")}>
-                    <Card className="bg-card/50 border-white/10 shadow-2xl">
-                        <CardHeader>
-                            <CardTitle>Registration Details</CardTitle>
-                            <CardDescription>We'll use these to create your competition account.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {error && <Alert variant="destructive" className="bg-destructive/10 border-destructive/20"><AlertDescription>{error}</AlertDescription></Alert>}
-                            <input type="hidden" name="event_id" value={selectedEventId} />
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label htmlFor="full_name">Full Name</Label><Input id="full_name" name="full_name" required className="bg-black/20 border-white/10" /></div>
-                                <div className="space-y-2"><Label htmlFor="mobile_number">Mobile Number</Label><Input id="mobile_number" name="mobile_number" required className="bg-black/20 border-white/10" /></div>
-                            </div>
-                            <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" required className="bg-black/20 border-white/10" /></div>
-                            <div className="space-y-2"><Label htmlFor="password">Login Password</Label><Input id="password" name="password" type="password" required className="bg-black/20 border-white/10" /></div>
-                            
-                            {selectedEvent?.is_free && (
-                                <div className="pt-4 border-t border-white/5">
-                                    <Button type="submit" className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg shadow-green-600/20" disabled={isLoading}>
-                                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-                                        Join Tournament Free
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {!selectedEvent?.is_free && (
-                        <Card className="bg-card/50 border-primary/20 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24 text-primary" /></div>
-                            <CardHeader>
-                                <CardTitle>Manual Payment</CardTitle>
-                                <CardDescription>Entry for <span className="text-white font-bold">{selectedEvent?.week_label}</span></CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="mx-auto w-fit p-3 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.1)]">
-                                    {paymentSettings?.qr_code_url ? <Image src={paymentSettings.qr_code_url} alt="UPI QR Code" width={220} height={220} className="rounded-lg" /> : <div className="w-[220px] h-[220px] bg-slate-100 flex items-center justify-center text-slate-800 font-black text-xl">SCAN & PAY</div>}
-                                </div>
-                                
-                                <div className="text-center space-y-2">
-                                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Amount Due</p>
-                                    <p className="text-4xl font-black text-primary">₹{selectedEvent ? Number(selectedEvent.entry_fee).toLocaleString('en-IN') : '0'}</p>
-                                    <div className="flex items-center justify-center gap-2 text-xs font-mono bg-black/40 p-2.5 rounded-lg border border-white/5">
-                                        <span className="text-gray-300">{paymentSettings?.upi_id || 'payout@fundedstock'}</span>
-                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-primary hover:text-primary hover:bg-primary/10" onClick={() => { navigator.clipboard.writeText(paymentSettings?.upi_id); toast({ title: "Copied UPI ID" }); }}><Copy className="h-3.5 w-3.5"/></Button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2 pt-4 border-t border-white/5">
-                                    <Label htmlFor="utr">Enter Transaction ID (UTR)</Label>
-                                    <Input id="utr" name="utr" placeholder="12-digit UPI reference number" required className="bg-black/50 border-white/10 text-white h-12" />
-                                </div>
-
-                                <Button type="submit" className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 rounded-xl" disabled={isLoading}>
-                                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Award className="mr-2 h-5 w-5" />}
-                                    Complete Registration
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    )}
-                </form>
-            </div>
-        </div>
-    );
-}
-
 function CompetitionLanding() {
     const [events, setEvents] = useState<any[]>([]);
-    const [paymentSettings, setPaymentSettings] = useState<any>(null);
-    const supabase = createClient();
 
     useEffect(() => {
         getCompetitionEvents().then(setEvents);
-        supabase.from('payment_details').select('*').eq('id', 1).single().then(({data}) => setPaymentSettings(data));
     }, []);
 
     return (
@@ -266,7 +64,7 @@ function CompetitionLanding() {
                     </nav>
                     <div className="flex items-center gap-4">
                          <Button asChild variant="ghost" className="text-white hover:text-primary"><Link href="/login">Login</Link></Button>
-                         <Button asChild className="rounded-full shadow-lg shadow-primary/20"><Link href="#join-form">Register Now</Link></Button>
+                         <Button asChild className="rounded-full shadow-lg shadow-primary/20"><Link href="/signup">Join Now</Link></Button>
                     </div>
                 </div>
             </header>
@@ -278,9 +76,9 @@ function CompetitionLanding() {
                             <Zap className="h-3 w-3" /> The Ultimate Trading Battle
                         </div>
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter !leading-[1.1] text-white">Where Traders <br /> <span className="text-primary">Become Champions.</span></h1>
-                        <p className="text-muted-foreground max-w-md mx-auto lg:mx-0 text-lg">Weekly tournaments with live capital rewards. Join for free or secure your spot in premium weeks.</p>
+                        <p className="text-muted-foreground max-w-md mx-auto lg:mx-0 text-lg">Weekly tournaments with live capital rewards. Join thousands of traders in India's most competitive arena.</p>
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                             <Button size="lg" className="h-14 px-10 text-lg bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-xl shadow-primary/20 transition-all hover:scale-105" asChild><a href="#join-form">Join Tournament <ArrowRight className="ml-2 h-5 w-5" /></a></Button>
+                             <Button size="lg" className="h-14 px-10 text-lg bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-xl shadow-primary/20 transition-all hover:scale-105" asChild><Link href="/signup">Join Next Battle <ArrowRight className="ml-2 h-5 w-5" /></Link></Button>
                              <Button size="lg" variant="outline" className="h-14 px-10 text-lg rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white" asChild><Link href="/competition/leaderboard">View Live Rankings <Award className="ml-2 h-5 w-5" /></Link></Button>
                         </div>
                     </div>
@@ -290,19 +88,6 @@ function CompetitionLanding() {
                     </div>
                 </section>
                 
-                <section className="py-20 bg-primary/5 border-y border-primary/10">
-                    <div className="container mx-auto px-4 text-center space-y-6">
-                        <h2 className="text-3xl md:text-4xl font-bold text-white">The Battle is Live.</h2>
-                        <p className="text-gray-400 max-w-2xl mx-auto">Check the real-time performance of current participants and see who's leading the charge for this week's funding rewards.</p>
-                        <Button asChild size="lg" className="h-14 px-12 rounded-full bg-white text-black hover:bg-gray-200 transition-all font-bold">
-                            <Link href="/competition/leaderboard">
-                                <TrendingDown className="mr-2 rotate-180 h-5 w-5" />
-                                Open Dedicated Leaderboard
-                            </Link>
-                        </Button>
-                    </div>
-                </section>
-
                 <section id="prizes" className="py-24 bg-white/[0.02] border-y border-white/5">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
                         <div className="text-center space-y-4">
@@ -378,9 +163,19 @@ function CompetitionLanding() {
                     </div>
                 </section>
 
-                <section id="join-form" className="py-24 bg-white/[0.01] scroll-mt-20 border-t border-white/5">
-                    <div className="container mx-auto px-4">
-                        <TournamentRegistration events={events} paymentSettings={paymentSettings} />
+                <section id="join-form" className="py-24 bg-white/[0.01] border-t border-white/5">
+                    <div className="container mx-auto px-4 text-center">
+                        <Card className="max-w-2xl mx-auto bg-slate-900 border-primary/20 p-12">
+                            <CardHeader>
+                                <Trophy className="h-16 w-16 text-primary mx-auto mb-4" />
+                                <CardTitle className="text-3xl font-bold">Join the Next Battle</CardTitle>
+                                <CardDescription className="text-lg">Register for your trader portal to join this week's tournament instantly using your wallet balance.</CardDescription>
+                            </CardHeader>
+                            <CardFooter className="flex flex-col gap-4 mt-6">
+                                <Button asChild size="lg" className="w-full h-14 text-xl font-bold rounded-2xl"><Link href="/signup">Create Account to Join</Link></Button>
+                                <p className="text-sm text-gray-500">Already have an account? <Link href="/login" className="text-primary hover:underline">Login here</Link></p>
+                            </CardFooter>
+                        </Card>
                     </div>
                 </section>
             </div>
