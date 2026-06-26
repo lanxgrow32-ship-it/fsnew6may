@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -7,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { signOut } from '@/app/actions';
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
     LayoutDashboard, 
     ShoppingCart, 
@@ -17,8 +17,7 @@ import {
     LogOut, 
     Menu,
     History,
-    MessageSquare,
-    CheckCircle
+    MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -37,12 +36,6 @@ import { WalletView } from './wallet-view';
 import { TransactionsView } from './transactions-view';
 import { SupportView } from './support-view';
 import { CompetitionView } from './competition-view';
-
-const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
-    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
-        {children}
-    </div>
-);
 
 const Logo = () => (
     <div className="flex items-center gap-2">
@@ -88,13 +81,13 @@ function WelcomeContent({
     // Real-time unread badges for Live Chat
     useEffect(() => {
         const channel = supabase
-            .channel('user-support-updates')
+            .channel('user-support-updates-v2')
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'support_conversations', 
                 filter: `user_id=eq.${profile.id}` 
-            }, async (payload) => {
+            }, async () => {
                 const { data } = await supabase
                     .from('support_conversations')
                     .select('*')
@@ -107,7 +100,6 @@ function WelcomeContent({
         return () => { supabase.removeChannel(channel); };
     }, [profile.id, supabase]);
 
-    // Ensure scrolling to top when switching views
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [activeTab]);
@@ -115,13 +107,13 @@ function WelcomeContent({
     const totalUnread = supportConversations.reduce((sum, conv) => sum + (conv.unread_count_user || 0), 0);
 
     const navItems = [
-        { id: 'hub', label: "Portfolio", mobileLabel: "Portfolio", icon: LayoutDashboard },
-        { id: 'marketplace', label: "Get Funded", mobileLabel: "Get Funded", icon: ShoppingCart },
-        { id: 'competition', label: "Competition", mobileLabel: "Competition", icon: Trophy },
-        { id: 'wallet', label: "Wallet", mobileLabel: "Wallet", icon: Wallet },
-        { id: 'transactions', label: "History", mobileLabel: "History", icon: History },
-        { id: 'support', label: "Live Chat", mobileLabel: "Live Chat", icon: MessageSquare, hasBadge: totalUnread > 0 },
-        { id: 'kyc', label: "KYC", mobileLabel: "KYC", icon: FileCheck },
+        { id: 'hub', label: "Portfolio", icon: LayoutDashboard },
+        { id: 'marketplace', label: "Get Funded", icon: ShoppingCart },
+        { id: 'competition', label: "Competition", icon: Trophy },
+        { id: 'wallet', label: "Wallet", icon: Wallet },
+        { id: 'transactions', label: "History", icon: History },
+        { id: 'support', label: "Live Chat", icon: MessageSquare, hasBadge: totalUnread > 0 },
+        { id: 'kyc', label: "KYC", icon: FileCheck },
     ];
 
     return (
@@ -217,7 +209,7 @@ function WelcomeContent({
                                                 )}
                                             >
                                                 <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
-                                                {item.mobileLabel}
+                                                {item.label}
                                                 {item.hasBadge && (
                                                     <span className="absolute right-5 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
                                                         {totalUnread}
@@ -286,7 +278,7 @@ function WelcomeContent({
                                     <h2 className="text-2xl font-bold text-white tracking-tight">KYC Status</h2>
                                     <p className="text-gray-400 text-sm font-medium">Your identity verification has been confirmed.</p>
                                 </div>
-                                <GlassCard className="p-8 border-green-500/20 bg-green-500/5">
+                                <div className="bg-white/10 backdrop-blur-2xl border border-green-500/20 bg-green-500/5 rounded-2xl p-8 shadow-lg overflow-hidden">
                                     <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                                         <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 shadow-[0_0_40px_rgba(34,197,94,0.2)]">
                                             <CheckCircle className="h-10 w-10" />
@@ -322,7 +314,7 @@ function WelcomeContent({
                                             </div>
                                         </div>
                                     )}
-                                </GlassCard>
+                                </div>
                             </div>
                         ) : (
                             <div className="max-w-3xl mx-auto py-12 text-center space-y-4">

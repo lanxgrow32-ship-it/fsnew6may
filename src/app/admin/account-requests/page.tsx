@@ -16,6 +16,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useToast } from '@/hooks/use-toast';
 import { approveAccount, deleteAccountRequest } from './actions';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export default function AccountRequestsPage() {
     const supabase = createClient();
@@ -26,7 +27,7 @@ export default function AccountRequestsPage() {
 
     const fetchRequests = async () => {
         setLoading(true);
-        // FETCH ALL (Persistent Ledger): Removed the is_approved=false filter
+        // FETCH ALL (Persistent Ledger)
         const { data } = await supabase
             .from('user_accounts')
             .select('*, profiles(full_name, email, kyc_status)')
@@ -53,7 +54,6 @@ export default function AccountRequestsPage() {
 
     const handleReject = (id: string) => {
         startTransition(async () => {
-            // Updated action to reject instead of delete for persistence
             const res = await deleteAccountRequest(id);
             if (res.error) toast({ title: "Error", description: res.error, variant: "destructive" });
             else {

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -182,8 +183,8 @@ export async function purchaseWithWallet(userId: string, plan: any) {
             .eq('credentials_provided', true);
 
           const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
-          const [base, domain] = profile.email.split('@');
-          const stockmintUsername = `${base}${versionSuffix}@${domain}`;
+          const [baseEmail, domain] = profile.email.split('@');
+          const stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`;
 
           const res = await fetch('https://stockmint.io/api/users/create', {
               method: 'POST',
