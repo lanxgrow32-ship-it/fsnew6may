@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Table, 
@@ -20,6 +20,7 @@ import {
     History,
     RefreshCw
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
@@ -80,7 +81,7 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
                             </TableCell>
                             <TableCell>
                                 <Badge variant="outline" className={cn(
-                                    "capitalize text-[10px] py-0 px-2",
+                                    "capitalize text-xs font-medium py-0 px-2",
                                     tx.status === 'completed' ? "text-green-400 border-green-500/20 bg-green-500/5" :
                                     tx.status === 'pending' ? "text-amber-400 border-amber-500/20 bg-amber-500/5" :
                                     "text-red-400 border-red-500/20 bg-red-500/5"
@@ -112,10 +113,10 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
     const bonuses = transactions.filter(t => t.type === 'bonus');
 
     return (
-        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+        <div className="space-y-8 animate-in fade-in duration-500">
             <div>
                 <h2 className="text-3xl font-bold text-white tracking-tight">Transaction History</h2>
-                <p className="text-gray-500 mt-1">A detailed log of your account activity.</p>
+                <p className="text-gray-400 mt-1 text-sm">Review your deposits, purchases, and bonuses.</p>
             </div>
 
             <Tabs defaultValue="all" className="w-full">

@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,24 +10,11 @@ import {
     ShoppingCart, 
     Wallet, 
     Trophy, 
-    User, 
     FileCheck, 
-    MessageSquare, 
     LogOut, 
     Menu,
-    PlusCircle,
-    ArrowRight,
-    ShieldAlert,
-    Clock,
-    CheckCircle,
-    Grid3x3,
-    IndianRupee,
-    Search,
-    Settings,
-    Bell,
-    LifeBuoy,
-    Plus,
-    History
+    History,
+    LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -108,7 +93,7 @@ export function WelcomeClient({
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={cn(
-                                        "px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2",
+                                        "px-4 py-2 text-sm font-semibold transition-colors flex items-center gap-2",
                                         activeTab === item.id
                                         ? "bg-primary rounded-full text-white shadow-md"
                                         : "text-gray-400 hover:text-white"
@@ -119,7 +104,7 @@ export function WelcomeClient({
                                 </button>
                             ))}
                             <form action={signOut} className="inline-block border-l border-white/10 ml-2 pl-1">
-                                <button type="submit" className="px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 transition-colors flex items-center gap-2">
+                                <button type="submit" className="px-4 py-2 text-sm font-semibold text-red-400 hover:text-red-300 transition-colors flex items-center gap-2">
                                     <LogOut className="w-4 h-4" />
                                     Logout
                                 </button>
@@ -134,7 +119,6 @@ export function WelcomeClient({
                             </div>
                         </div>
                         
-                        {/* Profile Icon */}
                         <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden">
                             <Avatar className="h-full w-full">
                                 <AvatarImage src={`https://avatar.vercel.sh/${profile.email}.png`} alt={profile.full_name || 'User'} />
@@ -171,7 +155,7 @@ export function WelcomeClient({
                                                     setIsSidebarOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "w-full px-4 py-4 text-sm font-medium transition-all flex items-center gap-3 rounded-xl",
+                                                    "w-full px-4 py-4 text-sm font-semibold transition-all flex items-center gap-3 rounded-xl",
                                                     activeTab === item.id
                                                     ? "bg-primary text-white shadow-lg shadow-primary/10"
                                                     : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -188,7 +172,7 @@ export function WelcomeClient({
                                             <form action={signOut}>
                                                 <button 
                                                     type="submit"
-                                                    className="w-full px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all rounded-xl flex items-center gap-3 group"
+                                                    className="w-full px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-all rounded-xl flex items-center gap-3 group"
                                                 >
                                                     <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
                                                     Logout
@@ -204,31 +188,31 @@ export function WelcomeClient({
 
                 {/* Main Content Areas */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsContent value="hub" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent value="hub" className="animate-in fade-in duration-300">
                         <AccountsHub accounts={accounts} profile={profile} onSwitchToGetFunded={() => setActiveTab('get-funded')} />
                     </TabsContent>
 
-                    <TabsContent value="get-funded" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent value="get-funded" className="animate-in fade-in duration-300">
                         <ArenaView profile={profile} onSwitchToWallet={() => setActiveTab('wallet')} />
                     </TabsContent>
 
-                    <TabsContent value="wallet" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent value="wallet" className="animate-in fade-in duration-300">
                         <WalletView profile={profile} paymentSettings={paymentSettings} />
                     </TabsContent>
 
-                    <TabsContent value="transactions" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent value="transactions" className="animate-in fade-in duration-300">
                         <TransactionsView transactions={walletTransactions} />
                     </TabsContent>
 
-                    <TabsContent value="competition" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent value="competition" className="animate-in fade-in duration-300">
                         <CompetitionView registrations={competitions} profile={profile} onSwitchToWallet={() => setActiveTab('wallet')} />
                     </TabsContent>
 
-                    <TabsContent value="support" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent value="support" className="animate-in fade-in duration-300">
                         <SupportView profile={profile} conversations={supportConversations} />
                     </TabsContent>
 
-                    <TabsContent value="kyc" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent value="kyc" className="animate-in fade-in duration-300">
                         <KycPage />
                     </TabsContent>
                 </Tabs>
