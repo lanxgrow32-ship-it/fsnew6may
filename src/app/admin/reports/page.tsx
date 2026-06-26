@@ -250,7 +250,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
     );
 }
 
-export default function ReportsPage() {
+function ReportsPageInner() {
     const searchParams = useSearchParams();
     const masterView = searchParams.get('master_view') === 'true';
     const [initialData, setInitialData] = useState<SalesData | null>(null);
@@ -298,5 +298,13 @@ export default function ReportsPage() {
                 </main>
             </SidebarInset>
         </SidebarProvider>
+    );
+}
+
+export default function ReportsPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-slate-950"><Loader2 className="h-10 w-10 animate-spin text-primary"/></div>}>
+            <ReportsPageInner />
+        </Suspense>
     );
 }
