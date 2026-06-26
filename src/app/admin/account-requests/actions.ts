@@ -103,8 +103,16 @@ export async function approveAccount(accountId: string) {
     return { success: true };
 }
 
+/**
+ * Rejects an account request.
+ * Updated to update status instead of deleting for the persistent ledger.
+ */
 export async function deleteAccountRequest(accountId: string) {
-    const { error } = await supabaseAdmin.from('user_accounts').delete().eq('id', accountId);
+    const { error } = await supabaseAdmin
+        .from('user_accounts')
+        .update({ status: 'rejected' })
+        .eq('id', accountId);
+    
     if (error) return { error: error.message };
     revalidatePath('/admin/account-requests');
     return { success: true };
