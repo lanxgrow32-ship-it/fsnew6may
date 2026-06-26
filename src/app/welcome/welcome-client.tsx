@@ -29,6 +29,7 @@ import {
     SheetTitle, 
     SheetTrigger 
 } from '@/components/ui/sheet';
+import { createClient } from '@/lib/supabase/client';
 
 // Sub-views
 import { AccountsHub } from './accounts-hub';
@@ -61,7 +62,7 @@ function WelcomeContent({
     walletTransactions, 
     paymentSettings,
     competitions,
-    supportConversations
+    supportConversations: initialSupportConversations
 }: { 
     profile: any, 
     accounts: any[], 
@@ -74,7 +75,10 @@ function WelcomeContent({
     const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState('hub');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [supportConversations, setSupportConversations] = useState(initialSupportConversations);
+    const supabase = createClient();
 
+    // Sync active tab with URL params
     useEffect(() => {
         const validTabs = ['hub', 'marketplace', 'competition', 'wallet', 'transactions', 'support', 'kyc'];
         if (tabParam && validTabs.includes(tabParam)) {
@@ -82,8 +86,31 @@ function WelcomeContent({
         }
     }, [tabParam]);
 
+    // Real-time unread badges for Live Chat
     useEffect(() => {
-        window.scrollTo(0, 0);
+        const channel = supabase
+            .channel('user-support-updates')
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'support_conversations', 
+                filter: `user_id=eq.${profile.id}` 
+            }, async (payload) => {
+                const { data } = await supabase
+                    .from('support_conversations')
+                    .select('*')
+                    .eq('user_id', profile.id)
+                    .order('last_message_at', { ascending: false });
+                if (data) setSupportConversations(data);
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [profile.id, supabase]);
+
+    // Ensure scrolling to top when switching views
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [activeTab]);
 
     const totalUnread = supportConversations.reduce((sum, conv) => sum + (conv.unread_count_user || 0), 0);
@@ -107,7 +134,7 @@ function WelcomeContent({
             </div>
 
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-                <header className="flex items-center justify-between mb-12 z-20 relative">
+                <header className="flex items-center justify-between mb-12 z-20 relative border-b border-white/5 pb-6">
                     <div className="flex items-center gap-6">
                         <Logo />
                         <nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">

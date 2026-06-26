@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect, useRef } from 'react';
@@ -39,9 +40,14 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     
     const { toast } = useToast();
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const supabase = createClient();
+
+    // Auto-scroll logic
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
 
     // Automatically open the most recent active live chat if it exists
     useEffect(() => {
@@ -78,10 +84,9 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
         }
     }, [activeConversation]);
 
+    // Triggers scroll whenever messages update
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
+        scrollToBottom();
     }, [messages]);
 
     const handleStartChat = () => {
@@ -133,6 +138,9 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
             setSelectedImage(imageToSend);
             if (imageToSend) setImagePreview(URL.createObjectURL(imageToSend));
             toast({ title: "Failed to send", description: res.error, variant: "destructive" });
+        } else {
+            // Force a scroll immediately after sending
+            setTimeout(scrollToBottom, 100);
         }
         setIsSending(false);
     };
@@ -208,7 +216,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
             </div>
 
             <GlassCard className="flex-grow flex flex-col p-0 border-white/10 shadow-2xl">
-                <ScrollArea ref={scrollRef} className="flex-1 p-6">
+                <ScrollArea className="flex-1 p-6">
                     <div className="space-y-6">
                         <div className="text-center py-8 border-b border-white/5 mb-6">
                              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-[0.3em]">Secure connection established</p>
@@ -231,6 +239,8 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                 </div>
                             </div>
                         ))}
+                        {/* Invisible anchor for auto-scrolling */}
+                        <div ref={messagesEndRef} />
                     </div>
                 </ScrollArea>
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -32,10 +33,15 @@ export default function AgentLiveChat() {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const supabase = createClient();
+
+    // Auto-scroll logic
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
 
     const fetchConversations = async () => {
         const { data } = await supabase
@@ -90,10 +96,9 @@ export default function AgentLiveChat() {
         }
     }, [activeConversation]);
 
+    // Triggers scroll whenever messages update
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
+        scrollToBottom();
     }, [messages]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,6 +134,9 @@ export default function AgentLiveChat() {
             setSelectedImage(imageToSend);
             if (imageToSend) setImagePreview(URL.createObjectURL(imageToSend));
             toast({ title: "Failed to send message", description: res.error, variant: "destructive" });
+        } else {
+            // Force scroll after sending
+            setTimeout(scrollToBottom, 100);
         }
         setIsSending(false);
     };
@@ -197,7 +205,7 @@ export default function AgentLiveChat() {
                             <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-xs font-bold h-8 px-4 rounded-lg">Close Chat</Button>
                         </header>
 
-                        <ScrollArea ref={scrollRef} className="flex-grow p-6">
+                        <ScrollArea className="flex-grow p-6">
                             <div className="space-y-6 max-w-3xl mx-auto">
                                 <div className="text-center py-4 border-b border-white/5 mb-8">
                                     <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Protocol connection established</p>
@@ -217,6 +225,8 @@ export default function AgentLiveChat() {
                                         </div>
                                     </div>
                                 ))}
+                                {/* Invisible anchor for auto-scrolling */}
+                                <div ref={messagesEndRef} />
                             </div>
                         </ScrollArea>
 
