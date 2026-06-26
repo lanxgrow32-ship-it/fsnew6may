@@ -40,15 +40,12 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
 export function TransactionsView({ transactions }: { transactions: Transaction[] }) {
     const [filter, setFilter] = useState('all');
 
-    // Logic to expand transactions that have bonuses into two separate visual line items
     const displayTransactions = useMemo(() => {
         const expanded: any[] = [];
         
         transactions.forEach(tx => {
-            // First, add the main transaction (Deposit or Purchase)
             expanded.push({ ...tx, isBonusEntry: false });
             
-            // If it's a completed deposit with a bonus, create the virtual bonus entry immediately after
             if (tx.status === 'completed' && tx.type === 'deposit' && tx.bonus_amount && tx.bonus_amount > 0) {
                 expanded.push({
                     ...tx,
@@ -166,7 +163,7 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
                 </div>
             </GlassCard>
 
-            <p className="text-center text-[10px] font-bold text-gray-700 uppercase tracking-widest">
+            <p className="text-center text-[10px] font-bold text-gray-700 font-medium">
                 End of encrypted ledger
             </p>
         </div>

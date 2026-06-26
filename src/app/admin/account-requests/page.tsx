@@ -24,7 +24,6 @@ export default function AccountRequestsPage() {
 
     const fetchRequests = async () => {
         setLoading(true);
-        // Increased range to handle large queues
         const { data } = await supabase
             .from('user_accounts')
             .select('*, profiles(full_name, email, kyc_status)')

@@ -121,7 +121,7 @@ export function ArenaView({
                 
                 <div className="text-center space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Payment Method</h2>
-                    <p className="text-gray-400 text-sm font-medium">Choose your preferred way to activate {selectedPlan.title}.</p>
+                    <p className="text-gray-400 text-base font-medium">Choose your preferred way to activate {selectedPlan.title}.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,7 +134,7 @@ export function ArenaView({
                             <Wallet className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="text-base font-bold text-white">Wallet Balance</p>
+                            <p className="text-base font-bold text-white">Pay via Wallet</p>
                             <p className="text-xs text-gray-500 font-medium">Available: ₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                         </div>
                         {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
@@ -149,7 +149,7 @@ export function ArenaView({
                         </div>
                         <div>
                             <p className="text-base font-bold text-white">Direct Payment</p>
-                            <p className="text-xs text-gray-500 font-medium">Instant UPI / QR Verification</p>
+                            <p className="text-xs text-gray-500 font-medium">Instant UPI / QR verification</p>
                         </div>
                     </button>
                 </div>
@@ -166,14 +166,14 @@ export function ArenaView({
 
                 <div className="text-center space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Direct Purchase</h2>
-                    <p className="text-gray-400 text-sm font-medium">Scan to pay for the {selectedPlan.title} and provide reference.</p>
+                    <p className="text-gray-400 text-base font-medium">Scan to pay for the {selectedPlan.title} and provide reference.</p>
                 </div>
 
                 <GlassCard className="p-0 border-primary/20">
                     <div className="flex flex-col md:flex-row">
                         <div className="p-8 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[280px] shrink-0 flex flex-col items-center justify-center gap-6">
                             <div className="text-center space-y-1">
-                                <p className="text-[11px] text-gray-500 font-bold">Pay Exactly</p>
+                                <p className="text-xs text-gray-500 font-bold">Pay Exactly</p>
                                 <p className="text-4xl font-bold text-primary tracking-tight">₹{selectedPlan.price.toLocaleString('en-IN')}</p>
                             </div>
 
@@ -186,7 +186,7 @@ export function ArenaView({
                             </div>
                             
                             <div className="text-center space-y-1">
-                                <p className="text-[11px] text-gray-500 font-bold">UPI Address</p>
+                                <p className="text-xs text-gray-500 font-bold">UPI Address</p>
                                 <div className="flex items-center gap-2 group">
                                     <p className="font-mono text-xs font-bold text-white truncate max-w-[150px]">{paymentSettings?.upi_id || 'pay@fundedstock'}</p>
                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-600 hover:text-white" onClick={() => { navigator.clipboard.writeText(paymentSettings?.upi_id || ''); toast({title: "Copied"}); }}><Copy className="w-3 h-3"/></Button>
