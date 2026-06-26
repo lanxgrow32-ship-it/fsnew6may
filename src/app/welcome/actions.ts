@@ -203,3 +203,12 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     revalidatePath('/welcome');
     return { success: true };
 }
+
+export async function getCompetitionEvents() {
+    const { data } = await supabaseAdmin
+        .from('competition_events')
+        .select('*')
+        .eq('is_active', true)
+        .order('start_date', { ascending: true });
+    return data || [];
+}
