@@ -1,626 +1,200 @@
+
 'use client';
 
-import { useState, useEffect, use, useActionState, useRef } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFormStatus } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, Download, PanelLeft, ShieldAlert, CheckCircle, XCircle, Info, Send } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, ArrowLeft, ShieldAlert, CheckCircle, XCircle, User as UserIcon, Trophy, IndianRupee, LayoutGrid, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateProfile, resetPassword, sendBreachRecoveryEmail } from './actions';
+import { updateProfile, resetPassword } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 
-type Profile = {
-  id: string;
-  full_name: string;
-  email: string;
-  plan_purchased: string;
-  transaction_id: string;
-  crypto_transaction_hash: string | null;
-  is_approved: boolean;
-  credentials_provided: boolean;
-  trading_username: string;
-  trading_password: string;
-  kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected';
-  mobile_number: string;
-  pan_number: string;
-  aadhar_number: string;
-  selfie_url: string; // Now stores Aadhaar photo
-  selfie_with_aadhaar_url: string | null; // The new selfie with aadhaar
-  city_state: string;
-  traded_before: boolean;
-  trading_experience: string;
-  comments: string;
-  trading_style: string[];
-  drawdown_rules_accepted: boolean;
-  risk_rules_understood: boolean;
-  terms_accepted: boolean;
-  plan_price: number | null;
-  coupon_code: string | null;
-  discount_amount: number | null;
-  final_amount_paid: number | null;
-  is_breached: boolean;
-  breach_reason: string | null;
-  breach_image_url: string | null;
-  role: string;
-  is_pan_verified: boolean;
-  is_aadhaar_verified: boolean; // Now means Aadhaar photo submitted
-  digilocker_verification_id: string | null;
-  account_classification: string | null;
-};
+const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: string | number, icon: any, color: string }) => (
+    <Card className="bg-muted/20 border-white/5">
+        <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{title}</p>
+                    <p className="text-2xl font-black mt-1">{value}</p>
+                </div>
+                <div className={cn("p-2.5 rounded-xl bg-white/5", color)}>
+                    <Icon className="h-5 w-5" />
+                </div>
+            </div>
+        </CardContent>
+    </Card>
+);
 
-// Helper function to parse plan name into account balance
-function getBalanceFromPlanName(planName: string): number {
-    if (!planName) return 0;
+import { cn } from '@/lib/utils';
 
-    const name = planName.toLowerCase();
-    // Match numbers and units like K, L, Cr
-    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
-    
-    if (match) {
-        let amount = parseFloat(match[1].replace(/,/g, ''));
-        const unit = match[2];
-
-        if (unit === 'k') {
-            amount *= 1000;
-        } else if (unit === 'l' || unit === 'lakh') {
-            amount *= 100000;
-        } else if (unit === 'cr' || unit === 'crore') {
-            amount *= 10000000;
-        }
-        return amount;
-    }
-    
-    // Fallback for names like "25000" without a unit
-    const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
-    }
-
-    return 0;
-}
-
-function BreachRecoveryForm({ userId }: { userId: string }) {
-    const { toast } = useToast();
-    const [state, formAction] = useActionState(sendBreachRecoveryEmail, { error: null, success: null });
-
-    useEffect(() => {
-        if (state.error) {
-            toast({
-                title: "Error Sending Email",
-                description: state.error,
-                variant: "destructive",
-            });
-        }
-        if (state.success) {
-            toast({
-                title: "Success",
-                description: state.success,
-            });
-        }
-    }, [state, toast]);
-
-    function SubmitButton() {
-        const { pending } = useFormStatus();
-        return (
-            <Button type="submit" disabled={pending}>
-                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : <><Send className="mr-2 h-4 w-4" /> Send Breach Recovery Email</>}
-            </Button>
-        );
-    }
-
-    return (
-        <Card>
-            <form action={formAction}>
-                <input type="hidden" name="userId" value={userId} />
-                <CardHeader>
-                    <CardTitle>Send Promotional Email</CardTitle>
-                    <CardDescription>Manually send a breach recovery email with a discount code to this user.</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                    <SubmitButton />
-                </CardFooter>
-            </form>
-        </Card>
-    );
-}
-
-function ResetPasswordForm({ userId, role }: { userId: string, role: string }) {
-    const formRef = useRef<HTMLFormElement>(null);
-    const { toast } = useToast();
-    const [state, formAction] = useActionState(resetPassword, { error: null, success: false });
-
-    useEffect(() => {
-        if (state.error) {
-            toast({
-                title: "Error Resetting Password",
-                description: state.error,
-                variant: "destructive",
-            });
-        }
-        if (state.success) {
-            toast({
-                title: "Success",
-                description: "User password has been reset successfully.",
-            });
-            formRef.current?.reset();
-        }
-    }, [state, toast]);
-
-    function SubmitButton() {
-        const { pending } = useFormStatus();
-        return (
-            <Button type="submit" disabled={pending} variant="destructive">
-                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resetting...</> : 'Reset Password'}
-            </Button>
-        );
-    }
-    
-    if (role === 'admin') {
-        return (
-             <Card>
-                <CardHeader>
-                    <CardTitle>Reset Password</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">You cannot reset the password for another admin user.</p>
-                </CardContent>
-            </Card>
-        )
-    }
-
-    return (
-        <Card>
-            <form action={formAction} ref={formRef}>
-                <input type="hidden" name="id" value={userId} />
-                <CardHeader>
-                    <CardTitle>Reset Password</CardTitle>
-                    <CardDescription>Enter a new password for the user. They will be logged out and will need to sign in again.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="password">New Password</Label>
-                        <Input id="password" name="password" type="password" required />
-                        <p className="text-xs text-muted-foreground">Must be at least 6 characters long.</p>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <SubmitButton />
-                </CardFooter>
-            </form>
-        </Card>
-    );
-}
-
-export default function ProfilePage({ params }: { params: { id: string } }) {
+export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const mainFormRef = useRef<HTMLFormElement>(null);
   
-  // State for controlled components
-  const [tradingUsername, setTradingUsername] = useState('');
-  const [tradingPassword, setTradingPassword] = useState('');
-  const [showAutomationPreview, setShowAutomationPreview] = useState(false);
-  const [credentialsProvided, setCredentialsProvided] = useState(false);
-
-
-  const { id } = use(params);
+  const [profile, setProfile] = useState<any>(null);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [competitions, setCompetitions] = useState<any[]>([]);
+  const [isFetching, setIsFetching] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!id) return;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) {
-        setError('Failed to fetch profile.');
-        console.error(error);
-      } else {
-        setProfile(data);
-        setTradingUsername(data.trading_username || '');
-        setTradingPassword(data.trading_password || '');
-        setCredentialsProvided(data.credentials_provided);
-      }
+    const fetchData = async () => {
+      const [pRes, aRes, cRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', id).single(),
+        supabase.from('user_accounts').select('*').eq('user_id', id),
+        supabase.from('competition_registrations').select('*').eq('user_id', id)
+      ]);
+      if (pRes.data) setProfile(pRes.data);
+      if (aRes.data) setAccounts(aRes.data);
+      if (cRes.data) setCompetitions(cRes.data);
       setIsFetching(false);
     };
-
-    fetchProfile();
+    fetchData();
   }, [id, supabase]);
-
-  const handleCredentialsToggle = (checked: boolean) => {
-    setCredentialsProvided(checked);
-    setShowAutomationPreview(checked);
-    if (checked && profile) {
-        setTradingUsername(profile.email);
-        setTradingPassword(profile.email);
-    } else {
-        // If toggling off, clear the fields if they were auto-filled
-        if (profile && tradingUsername === profile.email) setTradingUsername('');
-        if (profile && tradingPassword === profile.email) setTradingPassword('');
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!profile) return;
-    
-    // Client-side validation
-    if (credentialsProvided && !profile.credentials_provided && (!tradingUsername || !tradingPassword)) {
-        toast({ title: 'Missing Information', description: 'Trading username and password are required when creating a trading account.', variant: 'destructive'});
-        return;
-    }
-
-    setIsLoading(true);
-    setError(null);
+    setIsSaving(true);
     const formData = new FormData(e.currentTarget);
-    formData.append('id', profile.id);
-    formData.append('full_name', profile.full_name);
-    formData.append('email', profile.email);
-    
-    const result = await updateProfile(formData);
-
-    if (result.error) {
-      setError(result.error);
-       toast({ title: 'Error', description: result.error, variant: 'destructive' });
-    } else {
-      toast({ title: 'Profile Updated Successfully' });
-      router.push('/admin/dashboard');
-    }
-    setIsLoading(false);
+    formData.append('id', id);
+    const res = await updateProfile(formData);
+    if (res.error) toast({ title: "Error", description: res.error, variant: "destructive" });
+    else toast({ title: "Profile Updated" });
+    setIsSaving(false);
   };
-  
-  if (isFetching) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
-  }
 
-  if (error && !profile) {
-     return <div className="flex min-h-screen items-center justify-center"><Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert></div>
-  }
+  if (isFetching) return <div className="h-screen flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin h-8 w-8 text-primary"/></div>;
 
-  if (!profile) {
-    return <div className="flex min-h-screen items-center justify-center"><p>Profile not found.</p></div>
-  }
-
-  const VerificationStatus = ({ label, isVerified }: { label: string, isVerified: boolean }) => (
-    <div className={`flex items-center gap-2 font-medium ${isVerified ? 'text-green-600' : 'text-destructive'}`}>
-        {isVerified ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
-        <span>{label} {isVerified ? 'Verified' : 'Not Verified'}</span>
-    </div>
-  );
-  
-  const initialBalanceForPreview = getBalanceFromPlanName(profile.plan_purchased || '');
-
+  const fundedCount = accounts.filter(a => a.account_model !== 'passthrupay').length;
+  const instantCount = accounts.filter(a => a.plan_name.toLowerCase().includes('instant')).length;
+  const oneStepCount = accounts.filter(a => a.plan_name.toLowerCase().includes('1-step')).length;
+  const twoStepCount = accounts.filter(a => a.plan_name.toLowerCase().includes('2-step')).length;
+  const ptpCount = accounts.filter(a => a.account_model === 'passthrupay').length;
 
   return (
-    <div className="bg-muted/40 min-h-screen">
-        <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-           <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" asChild>
-                    <Link href="/admin/dashboard">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Link>
-                </Button>
-                <h1 className="text-xl font-semibold">Manage User Profile</h1>
-           </div>
-        </header>
-        <main className="p-4 md:p-8">
-            <div className="max-w-6xl mx-auto">
-                <div className="space-y-8">
-                    {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-                    
-                    <form onSubmit={handleSubmit} ref={mainFormRef}>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Left Column */}
-                        <div className="lg:col-span-2 space-y-8">
-                           <Card>
-                                <CardHeader>
-                                    <CardTitle>KYC & Verification Details</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                        <VerificationStatus label="PAN" isVerified={profile.is_pan_verified} />
-                                        <VerificationStatus label="Aadhaar Photo Submitted" isVerified={profile.is_aadhaar_verified} />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm pt-4 border-t">
-                                        <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">Mobile</p>
-                                            <p>{profile.mobile_number || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">PAN</p>
-                                            <p>{profile.pan_number || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">Aadhar Number</p>
-                                            <p>{profile.aadhar_number || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">Location</p>
-                                            <p>{profile.city_state || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">Traded Before</p>
-                                            <p>{profile.traded_before ? 'Yes' : 'No'}</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                                        {profile.selfie_url && (
-                                            <div className="space-y-2">
-                                                <p className="font-medium text-muted-foreground text-sm">Aadhaar Photo</p>
-                                                <Image src={profile.selfie_url} alt="User Aadhaar photo" width={200} height={120} className="rounded-md border p-1" />
-                                            </div>
-                                        )}
-                                        {profile.selfie_with_aadhaar_url && (
-                                            <div className="space-y-2">
-                                                <p className="font-medium text-muted-foreground text-sm">Selfie with Aadhaar</p>
-                                                <Image src={profile.selfie_with_aadhaar_url} alt="User selfie with Aadhaar" width={200} height={120} className="rounded-md border p-1" />
-                                            </div>
-                                        )}
-                                    </div>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="admin_aadhaar_photo">Upload/Replace Aadhaar Photo</Label>
-                                            <Input id="admin_aadhaar_photo" name="admin_aadhaar_photo" type="file" accept="image/*" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="admin_selfie_with_aadhaar">Upload/Replace Selfie with Aadhaar</Label>
-                                            <Input id="admin_selfie_with_aadhaar" name="admin_selfie_with_aadhaar" type="file" accept="image/*" />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader><CardTitle>Agreements & Trading Background</CardTitle></CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4 pt-4 text-sm">
-                                        <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">Trading Experience</p>
-                                            <p>{profile.trading_experience || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">Comments</p>
-                                            <p>{profile.comments || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-medium text-muted-foreground">Trading Styles</p>
-                                            <p>{profile.trading_style?.join(', ') || 'N/A'}</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2 pt-4 mt-4 border-t text-sm">
-                                        <p><strong>Drawdown Rules Accepted:</strong> {profile.drawdown_rules_accepted ? 'Yes' : 'No'}</p>
-                                        <p><strong>Risk Rules Understood:</strong> {profile.risk_rules_understood ? 'Yes' : 'No'}</p>
-                                        <p><strong>Terms Accepted:</strong> {profile.terms_accepted ? 'Yes' : 'No'}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            
-                             {/* Purchase Details */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Purchase Details</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm text-muted-foreground">{profile.plan_purchased}</p>
-                                        <p className="text-sm">₹{profile.plan_price?.toFixed(2) ?? 'N/A'}</p>
-                                    </div>
-                                    {profile.coupon_code && (
-                                    <div className="flex items-center justify-between text-green-600">
-                                        <p className="text-sm text-muted-foreground">Coupon "{profile.coupon_code}"</p>
-                                        <p className="text-sm">- ₹{profile.discount_amount?.toFixed(2)}</p>
-                                    </div>
-                                    )}
-                                    <div className="flex items-center justify-between border-t pt-4 font-bold">
-                                        <p>Final Amount Paid</p>
-                                        <p>₹{profile.final_amount_paid?.toFixed(2) ?? 'N/A'}</p>
-                                    </div>
-                                    {profile.crypto_transaction_hash && (
-                                        <div className="flex items-center justify-between border-t pt-4">
-                                            <p className="text-sm font-medium">Crypto Tx Hash:</p>
-                                            <p className="text-sm font-mono truncate max-w-[200px]">{profile.crypto_transaction_hash}</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                        {/* Right Column */}
-                        <div className="space-y-8">
-                            {/* User Details */}
-                            <Card>
-                                <CardHeader>
-                                <CardTitle>User Details</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">Name</p>
-                                        <p>{profile.full_name}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">Email</p>
-                                        <p>{profile.email}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">Plan</p>
-                                        <p>{profile.plan_purchased}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">Transaction ID</p>
-                                        <p className="truncate">{profile.transaction_id || profile.crypto_transaction_hash}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            {/* Admin Controls */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Admin Controls</CardTitle>
-                                </CardHeader>
-                                 <CardContent className="space-y-6">
-                                    <div className="flex items-center justify-between space-x-2">
-                                        <Label htmlFor="is_approved" className="font-semibold">Payment Approved</Label>
-                                        <Switch id="is_approved" name="is_approved" defaultChecked={profile.is_approved} />
-                                    </div>
-                                     <div className="flex items-center justify-between space-x-2">
-                                         <Label htmlFor="credentials_provided" className="font-semibold">Create Trading Account</Label>
-                                         <Switch 
-                                            id="credentials_provided" 
-                                            name="credentials_provided" 
-                                            checked={credentialsProvided}
-                                            onCheckedChange={handleCredentialsToggle}
-                                          />
-                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="kyc_status" className="font-semibold">KYC Status</Label>
-                                        <Select name="kyc_status" defaultValue={profile.kyc_status}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Set Status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="pending">Pending Submission</SelectItem>
-                                                <SelectItem value="submitted">Submitted for Review</SelectItem>
-                                                <SelectItem value="verified">Verified</SelectItem>
-                                                <SelectItem value="rejected">Rejected</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="account_classification" className="font-semibold">Account Classification</Label>
-                                        <Select name="account_classification" defaultValue={profile.account_classification || 'evaluation'}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Set Classification" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="evaluation">Evaluation</SelectItem>
-                                                <SelectItem value="live">Live Account</SelectItem>
-                                                <SelectItem value="phase_1_1_step">Phase 1 (1-Step)</SelectItem>
-                                                <SelectItem value="phase_1_2_step">Phase 1 (2-Step)</SelectItem>
-                                                <SelectItem value="phase_2_2_step">Phase 2 (2-Step)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 space-y-4">
-                                        <div className="flex items-center justify-between space-x-2">
-                                            <Label htmlFor="is_breached" className="font-semibold text-destructive flex items-center gap-2">
-                                                <ShieldAlert className="h-5 w-5" />
-                                                Account Breached
-                                            </Label>
-                                            <Switch id="is_breached" name="is_breached" defaultChecked={profile.is_breached} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="breach_reason" className="text-destructive">Reason for Breach</Label>
-                                            <Textarea 
-                                                id="breach_reason" 
-                                                name="breach_reason" 
-                                                defaultValue={profile.breach_reason || ''}
-                                                placeholder="Explain why the account was marked as breached..."
-                                                className="bg-background"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="breach_image" className="text-destructive">Breach Proof Image</Label>
-                                            <Input id="breach_image" name="breach_image" type="file" accept="image/*" className="bg-background" />
-                                            {profile.breach_image_url && (
-                                                <div className="mt-2">
-                                                    <p className="text-xs text-destructive mb-1">Current Image:</p>
-                                                    <Image src={profile.breach_image_url} alt="Breach proof" width={100} height={100} className="rounded-md border" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            {/* Automation Preview */}
-                             {showAutomationPreview && !profile.credentials_provided && (
-                                <Card className="border-dashed border-primary bg-primary/5">
-                                    <CardHeader>
-                                        <CardTitle className="text-primary flex items-center gap-2">
-                                            <Send className="h-5 w-5"/>
-                                            Automation Preview
-                                        </CardTitle>
-                                        <CardDescription>
-                                            On save, an account will be created on StockMint.io with these details.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3 text-sm">
-                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
-                                            <span className="font-semibold">Endpoint:</span> https://stockmint.io/api/users/create
-                                        </div>
-                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
-                                            <span className="font-semibold">Full Name:</span> {profile.full_name}
-                                        </div>
-                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
-                                            <span className="font-semibold">Email:</span> {profile.email}
-                                        </div>
-                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
-                                            <span className="font-semibold">Password:</span> {profile.email}
-                                        </div>
-                                        <div className="font-mono bg-muted/80 p-2 rounded-md">
-                                            <span className="font-semibold">Initial Balance:</span> ₹{initialBalanceForPreview.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                             {/* Trading Credentials */}
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Trading Credentials</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                     <Alert variant="default" className="flex items-start gap-3">
-                                        <Info className="h-5 w-5 mt-0.5"/>
-                                        <div>
-                                        <AlertTitle>Important</AlertTitle>
-                                        <AlertDescription>
-                                            The Trading Username and Password will be automatically set to the user's email when you enable "Create Trading Account". These credentials will be sent to the user via webhook.
-                                        </AlertDescription>
-                                        </div>
-                                    </Alert>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="trading_username">Trading Username</Label>
-                                        <Input id="trading_username" name="trading_username" value={tradingUsername} onChange={(e) => setTradingUsername(e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="trading_password">Trading Password</Label>
-                                        <Input id="trading_password" name="trading_password" value={tradingPassword} onChange={(e) => setTradingPassword(e.target.value)} />
-                                    </div>
-                                </CardContent>
-                             </Card>
-                            <CardFooter className="mt-8 flex justify-end gap-4">
-                                <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-                                <Button type="submit" size="lg" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Changes
-                                </Button>
-                            </CardFooter>
-                        </div>
-                        </div>
-                    </form>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                         <div className="lg:col-span-2" />
-                         <div className="space-y-8">
-                            <BreachRecoveryForm userId={profile.id} />
-                            <ResetPasswordForm userId={profile.id} role={profile.role}/>
-                        </div>
-                    </div>
-                </div>
+    <div className="bg-slate-950 min-h-screen font-poppins pb-20">
+        <header className="flex h-16 items-center gap-4 px-6 border-b border-white/5 bg-slate-900/50 sticky top-0 z-50">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full"><ArrowLeft className="h-5 w-5"/></Button>
+            <div>
+                <h1 className="text-xl font-black tracking-tight text-white">{profile.full_name}</h1>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{profile.email}</p>
             </div>
+        </header>
+
+        <main className="max-w-7xl mx-auto p-6 space-y-8">
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard title="Funded Accounts" value={fundedCount} icon={IndianRupee} color="text-green-400" />
+                <StatCard title="PTP Accounts" value={ptpCount} icon={Zap} color="text-amber-400" />
+                <StatCard title="Tournaments" value={competitions.length} icon={Trophy} color="text-primary" />
+                <StatCard title="Wallet Balance" value={`₹${profile.wallet_balance?.toLocaleString()}`} icon={LayoutGrid} color="text-blue-400" />
+            </div>
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8">
+                    <Card className="bg-muted/10 border-white/5">
+                        <CardHeader><CardTitle>KYC & Verification Details</CardTitle></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-gray-500 font-bold uppercase">PAN Number</Label>
+                                    <p className="font-mono text-white font-bold">{profile.pan_number || 'Not Linked'}</p>
+                                    <Badge variant={profile.is_pan_verified ? "default" : "destructive"}>{profile.is_pan_verified ? 'Verified' : 'Unverified'}</Badge>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-gray-500 font-bold uppercase">Identity Photo</Label>
+                                    <div className="flex gap-4">
+                                        {profile.selfie_url && <Image src={profile.selfie_url} alt="Aadhaar" width={100} height={60} className="rounded-md border border-white/10" />}
+                                        {profile.selfie_with_aadhaar_url && <Image src={profile.selfie_with_aadhaar_url} alt="Selfie" width={100} height={60} className="rounded-md border border-white/10" />}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="pt-6 border-t border-white/5 grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Manual KYC Status</Label>
+                                    <Select name="kyc_status" defaultValue={profile.kyc_status}>
+                                        <SelectTrigger className="bg-black/40 border-white/10"><SelectValue/></SelectTrigger>
+                                        <SelectContent><SelectItem value="pending">Pending</SelectItem><SelectItem value="submitted">Review Required</SelectItem><SelectItem value="verified">Verified</SelectItem><SelectItem value="rejected">Rejected</SelectItem></SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Account Classification</Label>
+                                    <Select name="account_classification" defaultValue={profile.account_classification || 'evaluation'}>
+                                        <SelectTrigger className="bg-black/40 border-white/10"><SelectValue/></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="evaluation">Evaluation</SelectItem>
+                                            <SelectItem value="instant_live">Instant Live</SelectItem>
+                                            <SelectItem value="one_step_phase_1">1-Step Phase 1</SelectItem>
+                                            <SelectItem value="two_step_phase_1">2-Step Phase 1</SelectItem>
+                                            <SelectItem value="live">Live/Funded</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-muted/10 border-white/5">
+                        <CardHeader><CardTitle>Portfolio History</CardTitle><CardDescription>Detailed list of all accounts owned by this trader.</CardDescription></CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {accounts.length > 0 ? accounts.map(acc => (
+                                    <div key={acc.id} className="p-4 bg-black/20 rounded-xl border border-white/5 flex items-center justify-between">
+                                        <div>
+                                            <p className="font-bold text-white">{acc.plan_name}</p>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">ID: {acc.id.substring(0,8)} · {acc.account_classification?.replace(/_/g, ' ')}</p>
+                                        </div>
+                                        <Badge className={acc.status === 'active' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>{acc.status}</Badge>
+                                    </div>
+                                )) : <div className="py-12 text-center text-gray-500 font-bold italic">No account records found.</div>}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="space-y-8">
+                    <Card className="bg-muted/10 border-white/5">
+                        <CardHeader><CardTitle>Portfolio Mix</CardTitle></CardHeader>
+                        <CardContent className="space-y-3">
+                            <div className="flex justify-between items-center text-sm"><span className="text-gray-400">Instant</span> <span className="font-bold">{instantCount}</span></div>
+                            <div className="flex justify-between items-center text-sm"><span className="text-gray-400">1-Step</span> <span className="font-bold">{oneStepCount}</span></div>
+                            <div className="flex justify-between items-center text-sm"><span className="text-gray-400">2-Step</span> <span className="font-bold">{twoStepCount}</span></div>
+                            <div className="flex justify-between items-center text-sm pt-2 border-t border-white/5 text-primary"><span className="font-bold">PassThenPay</span> <span className="font-bold">{ptpCount}</span></div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-muted/10 border-white/5">
+                        <CardHeader><CardTitle>Admin Controls</CardTitle></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <Label className="font-bold">Payment Approved</Label>
+                                <Switch name="is_approved" defaultChecked={profile.is_approved} />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <Label className="font-bold text-red-400">Account Breached</Label>
+                                <Switch name="is_breached" defaultChecked={profile.is_breached} />
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" disabled={isSaving} className="w-full h-11 font-black">
+                                {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : null}
+                                Save Global Profile
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </div>
+            </form>
         </main>
     </div>
   );
