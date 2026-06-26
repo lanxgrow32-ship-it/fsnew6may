@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -17,7 +16,8 @@ import {
     LogOut, 
     Menu,
     History,
-    MessageSquare
+    MessageSquare,
+    User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -81,7 +81,7 @@ function WelcomeContent({
     // Real-time unread badges for Live Chat
     useEffect(() => {
         const channel = supabase
-            .channel('user-support-updates-v2')
+            .channel('user-support-realtime-v3')
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
@@ -119,11 +119,7 @@ function WelcomeContent({
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-            <div className="absolute inset-0 z-0">
-                <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full filter blur-3xl opacity-20 " />
-                <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
-            </div>
-
+            
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 <header className="flex items-center justify-between mb-12 z-20 relative border-b border-white/5 pb-6">
                     <div className="flex items-center gap-6">
@@ -152,19 +148,21 @@ function WelcomeContent({
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-[9px] font-bold text-gray-600 mb-0.5 uppercase tracking-wider">Balance</span>
+                        <div className="hidden sm:flex flex-col items-end mr-2">
+                            <span className="text-[9px] font-bold text-gray-600 mb-0.5 uppercase tracking-widest">Available Cash</span>
                             <span className="text-primary font-bold text-base">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
                         <div className="flex items-center gap-3">
-                            <div className="relative h-9 w-9 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center">
-                                <span className="text-primary font-bold text-xs">
-                                    {profile.full_name?.[0].toUpperCase()}
-                                </span>
-                            </div>
+                            <Link href="/profile" className="relative group">
+                                <div className="h-9 w-9 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center group-hover:border-primary transition-all">
+                                    <span className="text-primary font-bold text-xs">
+                                        {profile.full_name?.[0].toUpperCase()}
+                                    </span>
+                                </div>
+                            </Link>
                             <form action={signOut} className="hidden lg:block">
-                                <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2">
+                                <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2 h-9">
                                     <LogOut className="w-3.5 h-3.5" />
                                     Logout
                                 </Button>
@@ -184,7 +182,7 @@ function WelcomeContent({
                                 <SheetHeader className="p-6 border-b border-white/5">
                                     <SheetTitle className="sr-only">Navigation Drawer</SheetTitle>
                                     <div className="flex items-center gap-3 text-left">
-                                        <div className="bg-primary h-8 w-8 flex items-center justify-center rounded-lg">
+                                        <div className="bg-primary h-8 w-8 flex items-center justify-center rounded-lg shadow-lg">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
@@ -275,53 +273,51 @@ function WelcomeContent({
                         {profile.kyc_status === 'verified' ? (
                             <div className="max-w-4xl mx-auto space-y-6">
                                 <div className="space-y-1">
-                                    <h2 className="text-2xl font-bold text-white tracking-tight">KYC Status</h2>
-                                    <p className="text-gray-400 text-sm font-medium">Your identity verification has been confirmed.</p>
+                                    <h2 className="text-2xl font-bold text-white tracking-tight">Identity Status</h2>
+                                    <p className="text-gray-400 text-sm font-medium">Your verification credentials are verified.</p>
                                 </div>
-                                <div className="bg-white/10 backdrop-blur-2xl border border-green-500/20 bg-green-500/5 rounded-2xl p-8 shadow-lg overflow-hidden">
-                                    <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-                                        <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 shadow-[0_0_40px_rgba(34,197,94,0.2)]">
+                                <div className="bg-white/10 backdrop-blur-2xl border border-green-500/20 bg-green-500/5 rounded-3xl p-8 shadow-2xl overflow-hidden relative">
+                                    <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12"><ShieldCheck className="w-48 h-48 text-green-400"/></div>
+                                    <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left relative z-10">
+                                        <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 shadow-[0_0_40px_rgba(34,197,94,0.2)] border border-green-500/20">
                                             <CheckCircle className="h-10 w-10" />
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white">Identity Verified</h3>
-                                            <p className="text-gray-400 text-sm mt-1">You are fully eligible for Performance Rewards and payouts.</p>
+                                            <h3 className="text-xl font-bold text-white">Verification Confirmed</h3>
+                                            <p className="text-gray-400 text-sm mt-1">Eligible for 80% Performance Reward disbursements.</p>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-10 pt-10 border-t border-white/5">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-10 pt-10 border-t border-white/5 relative z-10">
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Full Name</p>
+                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Full Name</p>
                                             <p className="text-white font-bold">{profile.full_name}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">PAN Number</p>
+                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">PAN Identification</p>
                                             <p className="text-white font-mono font-bold">{profile.pan_number || '••••••••••'}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Mobile Number</p>
+                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Contact Register</p>
                                             <p className="text-white font-bold">{profile.mobile_number}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">System Identifier</p>
+                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">System Protocol ID</p>
                                             <p className="text-white font-mono text-xs">{profile.id}</p>
                                         </div>
                                     </div>
-                                    {profile.selfie_url && (
-                                        <div className="mt-8 pt-8 border-t border-white/5">
-                                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-4">Verification Document</p>
-                                            <div className="relative w-48 h-28 rounded-xl overflow-hidden border border-white/10 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer shadow-lg bg-black/40">
-                                                <Image src={profile.selfie_url} alt="KYC Document" layout="fill" className="object-cover" />
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         ) : (
-                            <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
-                                <h2 className="text-2xl font-bold text-white tracking-tight">KYC Verification</h2>
-                                <p className="text-gray-400 text-sm font-medium">Complete your identity verification to activate your funded status and payouts.</p>
-                                <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-bold text-lg shadow-xl shadow-primary/20">
-                                    <Link href="/kyc">Start KYC</Link>
+                            <div className="max-w-3xl mx-auto py-20 text-center space-y-6">
+                                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto shadow-2xl border border-primary/20">
+                                    <FileCheck className="h-10 w-10" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h2 className="text-3xl font-bold text-white tracking-tight">KYC Verification</h2>
+                                    <p className="text-gray-400 text-sm font-medium max-w-sm mx-auto">Complete your one-time identity verification to activate your funded account and payouts.</p>
+                                </div>
+                                <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-bold text-base shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                                    <Link href="/kyc">Initialize Verification</Link>
                                 </Button>
                             </div>
                         )}

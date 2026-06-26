@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use, useActionState } from 'react';
@@ -157,12 +156,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-white text-xs font-bold uppercase">Classification promotion</Label>
+                                        <Label className="text-white text-xs font-bold uppercase">Classification Promotion</Label>
                                         <Select name="account_classification" defaultValue={profile.account_classification || 'evaluation'}>
                                             <SelectTrigger className="bg-black/40 border-white/10 text-white h-11"><SelectValue/></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="evaluation">Registered User</SelectItem>
-                                                <SelectItem value="passthenpay" className="text-amber-500 font-bold">PassThenPay</SelectItem>
+                                                <SelectItem value="evaluation">Default Evaluation</SelectItem>
+                                                <SelectItem value="passthenpay" className="text-amber-400 font-bold">PassThenPay (6%)</SelectItem>
                                                 <SelectItem value="instant_live" className="text-green-500 font-bold">Instant (Live)</SelectItem>
                                                 <SelectItem value="one_step_phase_1">1-Step (Phase 1)</SelectItem>
                                                 <SelectItem value="one_step_live" className="text-green-500 font-bold">1-Step (Live)</SelectItem>
@@ -171,7 +170,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                                 <SelectItem value="two_step_live" className="text-green-500 font-bold">2-Step (Live)</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tight">Syncs instantly with StockMint on save</p>
+                                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tight">Updates terminal rules instantly on save</p>
                                     </div>
                                 </div>
                             </CardContent>
