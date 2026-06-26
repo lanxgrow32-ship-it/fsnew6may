@@ -142,7 +142,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
             <div className="space-y-6 animate-in fade-in zoom-in-95 font-poppins max-w-4xl mx-auto">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Live Chat</h2>
-                    <p className="text-gray-400 text-sm font-medium">Chat directly with our senior support desk for instant assistance.</p>
+                    <p className="text-gray-400 text-sm font-medium">Chat directly with our support desk for instant assistance.</p>
                 </div>
 
                 <div className="pt-8">
@@ -172,7 +172,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                             <MessageSquare className="w-4 h-4 text-primary" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-white">Live Support Session</p>
+                                            <p className="text-sm font-bold text-white">Support Session</p>
                                             <p className="text-[10px] text-gray-500">{new Date(c.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
@@ -208,7 +208,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
             </div>
 
             <GlassCard className="flex-grow flex flex-col p-0 border-white/10 shadow-2xl">
-                <ScrollArea ref={scrollRef} className="flex-grow p-6">
+                <ScrollArea ref={scrollRef} className="flex-1 p-6">
                     <div className="space-y-6">
                         <div className="text-center py-8 border-b border-white/5 mb-6">
                              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-[0.3em]">Secure connection established</p>
