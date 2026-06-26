@@ -77,7 +77,6 @@ export function ArenaView({
     const [checkoutStep, setCheckoutStep] = useState<'selection' | 'method' | 'direct-pay'>('selection');
     const [utr, setUtr] = useState('');
 
-    // Ensure page is at top when switching steps
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [checkoutStep]);
@@ -167,40 +166,49 @@ export function ArenaView({
 
                 <div className="text-center space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Direct Purchase</h2>
-                    <p className="text-gray-400 text-sm font-medium">Scan to pay ₹{selectedPlan.price} and provide the reference ID.</p>
+                    <p className="text-gray-400 text-sm font-medium">Scan to pay for the {selectedPlan.title} and provide reference.</p>
                 </div>
 
                 <GlassCard className="p-0 border-primary/20">
                     <div className="flex flex-col md:flex-row">
-                        <div className="p-6 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[260px] shrink-0 flex flex-col items-center justify-center gap-4">
+                        <div className="p-8 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[280px] shrink-0 flex flex-col items-center justify-center gap-6">
+                            <div className="text-center space-y-1">
+                                <p className="text-[11px] text-gray-500 font-bold">Pay Exactly</p>
+                                <p className="text-4xl font-bold text-primary tracking-tight">₹{selectedPlan.price.toLocaleString('en-IN')}</p>
+                            </div>
+
                             <div className="bg-white p-2 rounded-xl shadow-2xl">
                                 {paymentSettings?.qr_code_url ? (
-                                    <Image src={paymentSettings.qr_code_url} alt="Payment QR" width={140} height={140} />
+                                    <Image src={paymentSettings.qr_code_url} alt="Payment QR" width={160} height={160} />
                                 ) : (
-                                    <div className="w-[140px] h-[140px] flex items-center justify-center text-slate-950 font-bold text-xs">QR Loading...</div>
+                                    <div className="w-[160px] h-[160px] flex items-center justify-center text-slate-950 font-bold text-xs">QR Loading...</div>
                                 )}
                             </div>
+                            
                             <div className="text-center space-y-1">
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">UPI Address</p>
+                                <p className="text-[11px] text-gray-500 font-bold">UPI Address</p>
                                 <div className="flex items-center gap-2 group">
                                     <p className="font-mono text-xs font-bold text-white truncate max-w-[150px]">{paymentSettings?.upi_id || 'pay@fundedstock'}</p>
                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-600 hover:text-white" onClick={() => { navigator.clipboard.writeText(paymentSettings?.upi_id || ''); toast({title: "Copied"}); }}><Copy className="w-3 h-3"/></Button>
                                 </div>
                             </div>
                         </div>
-                        <form onSubmit={handleDirectSubmit} className="flex-1 p-6 space-y-6">
-                            <div className="space-y-2">
+                        <form onSubmit={handleDirectSubmit} className="flex-1 p-8 flex flex-col justify-center space-y-8">
+                            <div className="space-y-3">
                                 <Label className="text-xs font-bold text-gray-500">Transaction ID (UTR)</Label>
                                 <Input 
                                     placeholder="Enter 12-digit UPI reference" 
                                     value={utr} 
                                     onChange={(e) => setUtr(e.target.value)} 
                                     required 
-                                    className="bg-black/20 border-white/10 h-12 text-white text-base focus:ring-primary/50" 
+                                    className="bg-black/20 border-white/10 h-14 text-white text-lg font-mono focus:ring-primary/50" 
                                 />
-                                <p className="text-[10px] text-gray-500">Usually verified by our audit team within 15 minutes.</p>
+                                <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium bg-white/5 p-2 rounded-lg border border-white/5">
+                                    <CheckCircle className="h-3 w-3 text-green-500"/>
+                                    Verified by our team within 15 minutes.
+                                </div>
                             </div>
-                            <Button type="submit" className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-sm">
+                            <Button type="submit" className="w-full h-14 font-bold rounded-2xl shadow-xl shadow-primary/20 text-base">
                                 Confirm & Activate Plan
                             </Button>
                         </form>
