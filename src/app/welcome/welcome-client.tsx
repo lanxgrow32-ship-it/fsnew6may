@@ -32,6 +32,7 @@ import { ArenaView } from './arena-view';
 import { WalletView } from './wallet-view';
 import { TransactionsView } from './transactions-view';
 import { SupportView } from './support-view';
+import { CompetitionView } from './competition-view';
 
 const Logo = () => (
     <div className="flex items-center gap-2">
@@ -40,7 +41,7 @@ const Logo = () => (
                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
         </div>
-        <span className="font-poppins font-black text-lg tracking-tighter text-white hidden lg:block">FundedStock</span>
+        <span className="font-poppins font-black text-lg tracking-tighter text-white hidden lg:block uppercase">FundedStock</span>
     </div>
 );
 
@@ -62,10 +63,11 @@ export function WelcomeClient({
     const [activeTab, setActiveTab] = useState('hub');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Optimized labels based on your refinement
+    // Optimized labels for the desktop navigation and mobile drawer
     const navItems = [
         { id: 'hub', label: "Portfolio", mobileLabel: "Account Hub", icon: LayoutDashboard },
         { id: 'marketplace', label: "Marketplace", mobileLabel: "Marketplace", icon: ShoppingCart },
+        { id: 'competition', label: "Competition", mobileLabel: "Battles", icon: Trophy },
         { id: 'wallet', label: "Wallet", mobileLabel: "Wallet", icon: Wallet },
         { id: 'transactions', label: "History", mobileLabel: "Transactions", icon: History },
         { id: 'support', label: "Support", mobileLabel: "Support", icon: LifeBuoy },
@@ -86,7 +88,7 @@ export function WelcomeClient({
                 <header className="flex items-center justify-between mb-12 z-20 relative">
                     <div className="flex items-center gap-6">
                         <Logo />
-                        <nav className="hidden md:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[44px]">
+                        <nav className="hidden xl:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[44px]">
                             {navItems.map((item) => (
                                 <button
                                     key={item.id}
@@ -101,11 +103,6 @@ export function WelcomeClient({
                                     {item.label}
                                 </button>
                             ))}
-                            <form action={signOut} className="inline-block border-l border-white/10 ml-1.5 pl-1.5">
-                                <button type="submit" className="px-3 py-1.5 text-[13px] font-bold text-red-400 hover:text-red-300 transition-colors">
-                                    Logout
-                                </button>
-                            </form>
                         </nav>
                     </div>
 
@@ -115,17 +112,15 @@ export function WelcomeClient({
                             <span className="text-primary font-black text-xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
-                        <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden shadow-xl">
-                            <Avatar className="h-full w-full">
-                                <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
-                                    {profile.full_name?.[0].toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
+                        <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center">
+                            <span className="text-primary font-bold text-sm">
+                                {profile.full_name?.[0].toUpperCase()}
+                            </span>
                         </div>
                         
                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                             <SheetTrigger asChild>
-                                <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 md:hidden transition-colors shadow-lg">
+                                <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 xl:hidden transition-colors shadow-lg">
                                     <Menu className="h-5 w-5 text-gray-300" />
                                 </button>
                             </SheetTrigger>
@@ -138,7 +133,7 @@ export function WelcomeClient({
                                                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
                                         </div>
-                                        <span className="text-white font-black text-lg tracking-tight">FundedStock</span>
+                                        <span className="text-white font-black text-lg tracking-tight uppercase">FundedStock</span>
                                     </div>
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto">
@@ -192,7 +187,14 @@ export function WelcomeClient({
                         <ArenaView 
                             profile={profile} 
                             onSwitchToWallet={() => setActiveTab('wallet')} 
-                            registrations={competitions}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="competition" className="animate-in fade-in duration-300">
+                        <CompetitionView 
+                            profile={profile} 
+                            registrations={competitions} 
+                            onSwitchToWallet={() => setActiveTab('wallet')}
                         />
                     </TabsContent>
 
@@ -211,7 +213,7 @@ export function WelcomeClient({
                     <TabsContent value="kyc" className="animate-in fade-in duration-300">
                         <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
                             <h2 className="text-3xl font-black text-white tracking-tight">KYC Verification</h2>
-                            <p className="text-gray-400 text-lg font-medium">Complete your identity verification protocol.</p>
+                            <p className="text-gray-400 text-lg font-medium">Complete your identity verification protocol to activate your funded status.</p>
                             <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-black text-lg shadow-xl shadow-primary/20">
                                 <Link href="/kyc">Start Verification Process</Link>
                             </Button>
