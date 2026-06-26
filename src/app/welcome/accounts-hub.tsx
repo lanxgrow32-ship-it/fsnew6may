@@ -93,7 +93,7 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
         <section className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-4xl font-black text-white tracking-tighter">Your Portfolio</h2>
+                    <h2 className="text-3xl font-black text-white tracking-tight">Your Portfolio</h2>
                     <p className="text-gray-400 text-lg mt-1 font-medium">Manage multiple accounts and track your performance.</p>
                 </div>
                  {!kycVerified && (

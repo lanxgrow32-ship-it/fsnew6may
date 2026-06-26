@@ -213,7 +213,7 @@ export function WelcomeClient({
 
                     <TabsContent value="kyc" className="animate-in fade-in duration-300">
                         <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
-                            <h2 className="text-4xl font-black text-white tracking-tighter">KYC Verification</h2>
+                            <h2 className="text-3xl font-black text-white tracking-tight">KYC Verification</h2>
                             <p className="text-gray-400 text-lg font-medium">Complete your profile to unlock all features.</p>
                             <Button asChild size="lg" className="mt-8 rounded-2xl px-10 h-14 font-bold text-lg"><Link href="/kyc">Start Verification Process</Link></Button>
                         </div>

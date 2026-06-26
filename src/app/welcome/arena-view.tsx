@@ -119,7 +119,7 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
     return (
         <div className="space-y-12 animate-in fade-in duration-500">
             <div className="space-y-2">
-                <h2 className="text-4xl font-black text-white tracking-tighter">Get Funded</h2>
+                <h2 className="text-3xl font-black text-white tracking-tight">Get Funded</h2>
                 <p className="text-gray-400 text-lg mt-1 font-medium">Select your path to instant capital and professional scaling.</p>
             </div>
 

@@ -116,7 +116,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
         return (
             <div className="space-y-8 animate-in fade-in zoom-in-95">
                 <div className="space-y-2">
-                    <h2 className="text-4xl font-black text-white tracking-tighter">Support Hub</h2>
+                    <h2 className="text-3xl font-black text-white tracking-tight">Support Hub</h2>
                     <p className="text-gray-400 text-lg mt-1 font-medium">How can we assist your trading journey today?</p>
                 </div>
 

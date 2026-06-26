@@ -76,7 +76,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
             <div className="space-y-8 animate-in fade-in zoom-in-95">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" onClick={() => setView('hub')} className="text-gray-500 hover:text-white"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
-                    <h2 className="text-2xl font-black text-white tracking-tighter">Tournament Browser</h2>
+                    <h2 className="text-2xl font-black text-white tracking-tight">Tournament Browser</h2>
                 </div>
 
                 <div className="grid gap-6">
@@ -114,7 +114,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         return (
             <div className="space-y-8 animate-in fade-in">
                 <div className="space-y-2">
-                    <h2 className="text-4xl font-black text-white tracking-tighter">Tournaments</h2>
+                    <h2 className="text-3xl font-black text-white tracking-tight">Tournaments</h2>
                     <p className="text-gray-400 text-lg mt-1 font-medium">Battle with other traders for massive funded rewards.</p>
                 </div>
                 <GlassCard className="text-center p-20 border-dashed border-white/5">
@@ -133,7 +133,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
-                    <h2 className="text-4xl font-black text-white tracking-tighter">Active Tournament</h2>
+                    <h2 className="text-3xl font-black text-white tracking-tight">Active Tournament</h2>
                     <p className="text-gray-400 text-lg mt-1 font-medium">Tracking your performance for the current tournament week.</p>
                 </div>
                 <Button onClick={handleBrowse} variant="outline" className="bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 rounded-full font-bold uppercase text-[10px] tracking-widest">
