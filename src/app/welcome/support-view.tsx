@@ -114,10 +114,10 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
 
     if (view === 'options') {
         return (
-            <div className="space-y-8 max-w-5xl mx-auto animate-in fade-in zoom-in-95">
-                <div className="text-center space-y-2">
+            <div className="space-y-8 animate-in fade-in zoom-in-95">
+                <div className="space-y-2">
                     <h2 className="text-4xl font-black text-white tracking-tighter">Support Hub</h2>
-                    <p className="text-gray-400 text-lg font-medium">How can we assist your trading journey today?</p>
+                    <p className="text-gray-400 text-lg mt-1 font-medium">How can we assist your trading journey today?</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8 pt-8">
@@ -151,7 +151,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
 
                 {conversations.length > 0 && (
                     <div className="pt-12">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-6 px-2">Active Interactions</h4>
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">Active Interactions</h4>
                         <div className="grid gap-4">
                             {conversations.map(c => (
                                 <button key={c.id} onClick={() => { setActiveConversation(c); setView('chat'); }} className="w-full text-left bg-black/20 border border-white/5 rounded-2xl p-4 flex items-center justify-between hover:border-white/20 transition-all">
@@ -161,7 +161,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-white">{c.subject === 'LIVE_CHAT' ? 'Live Session' : c.subject}</p>
-                                            <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5">{new Date(c.created_at).toLocaleDateString()}</p>
+                                            <p className="text-xs text-gray-500 mt-1">{new Date(c.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
                                     <Badge variant="outline" className={cn("text-[9px] uppercase font-black tracking-widest px-3", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
@@ -186,11 +186,11 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Protocol Subject</Label>
+                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-500">Protocol Subject</Label>
                                 <Input name="subject" placeholder="e.g. KYC Verification Hold" required className="bg-black/20 border-white/10 h-12 text-white" />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Detailed Description</Label>
+                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-500">Detailed Description</Label>
                                 <Textarea name="message" rows={5} placeholder="Provide full context for our team..." required className="bg-black/20 border-white/10 text-white" />
                             </div>
                         </CardContent>

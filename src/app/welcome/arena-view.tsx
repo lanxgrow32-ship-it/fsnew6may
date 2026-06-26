@@ -83,7 +83,7 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle className="text-xl font-black">₹{plan.size}</CardTitle>
-                        <CardDescription className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1">{category}</CardDescription>
+                        <CardDescription className="text-sm font-medium text-gray-400 mt-1">{category}</CardDescription>
                     </div>
                     <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-black uppercase tracking-tighter">80% Share</Badge>
                 </div>
@@ -100,7 +100,7 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
                     </div>
                 </div>
                 <div className="pt-4 border-t border-white/5">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Capital Fee</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">Capital Fee</p>
                     <p className="text-2xl font-black text-primary mt-0.5">₹{plan.price}</p>
                 </div>
             </CardContent>
@@ -118,9 +118,9 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
 
     return (
         <div className="space-y-12 animate-in fade-in duration-500">
-            <div className="text-center space-y-2">
+            <div className="space-y-2">
                 <h2 className="text-4xl font-black text-white tracking-tighter">Get Funded</h2>
-                <p className="text-gray-400 text-lg font-medium max-w-2xl mx-auto">Select your path to instant capital and professional scaling.</p>
+                <p className="text-gray-400 text-lg mt-1 font-medium">Select your path to instant capital and professional scaling.</p>
             </div>
 
             <Tabs defaultValue="instant" className="w-full">

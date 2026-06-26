@@ -112,7 +112,7 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            <div>
+            <div className="space-y-2">
                 <h2 className="text-4xl font-black text-white tracking-tighter">Transaction History</h2>
                 <p className="text-gray-400 mt-1 text-lg font-medium">Review your account's financial audit trail.</p>
             </div>

@@ -113,9 +113,9 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
     if (!activeReg) {
         return (
             <div className="space-y-8 animate-in fade-in">
-                <div className="text-center space-y-4">
-                    <h2 className="text-4xl font-extrabold text-white tracking-tight">Tournaments</h2>
-                    <p className="text-gray-400 text-lg">Battle with other traders for massive funded rewards.</p>
+                <div className="space-y-2">
+                    <h2 className="text-4xl font-black text-white tracking-tighter">Tournaments</h2>
+                    <p className="text-gray-400 text-lg mt-1 font-medium">Battle with other traders for massive funded rewards.</p>
                 </div>
                 <GlassCard className="text-center p-20 border-dashed border-white/5">
                     <Trophy className="h-16 w-16 text-gray-700 mx-auto mb-4" />
@@ -131,8 +131,11 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">Active Tournament</h2>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="space-y-2">
+                    <h2 className="text-4xl font-black text-white tracking-tighter">Active Tournament</h2>
+                    <p className="text-gray-400 text-lg mt-1 font-medium">Tracking your performance for the current tournament week.</p>
+                </div>
                 <Button onClick={handleBrowse} variant="outline" className="bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 rounded-full font-bold uppercase text-[10px] tracking-widest">
                     <PlusCircle className="mr-2 w-4 h-4 text-primary"/> Join Next Week
                 </Button>
