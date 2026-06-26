@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -130,7 +129,7 @@ function WelcomeContent({
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full filter blur-3xl opacity-20 " />
-                <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-purple-600 rounded-full filter blur-3xl opacity-10" />
+                <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
 
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -166,10 +165,18 @@ function WelcomeContent({
                             <span className="text-primary font-bold text-base">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
-                        <div className="relative h-9 w-9 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center">
-                            <span className="text-primary font-bold text-xs">
-                                {profile.full_name?.[0].toUpperCase()}
-                            </span>
+                        <div className="flex items-center gap-3">
+                            <div className="relative h-9 w-9 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center">
+                                <span className="text-primary font-bold text-xs">
+                                    {profile.full_name?.[0].toUpperCase()}
+                                </span>
+                            </div>
+                            <form action={signOut} className="hidden lg:block">
+                                <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2">
+                                    <LogOut className="w-3.5 h-3.5" />
+                                    Logout
+                                </Button>
+                            </form>
                         </div>
                         
                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>

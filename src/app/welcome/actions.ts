@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -9,10 +8,13 @@ import { revalidatePath } from 'next/cache';
  */
 function getAutoClassification(planName: string): string {
     const name = planName.toLowerCase();
+    // Strict PTP Check
+    if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
+        return 'passthenpay';
+    }
     if (name.includes('instant')) return 'instant_live';
     if (name.includes('1-step')) return 'one_step_phase_1';
     if (name.includes('2-step')) return 'two_step_phase_1';
-    if (name.includes('ptp')) return 'one_step_phase_1';
     return 'evaluation';
 }
 
@@ -283,21 +285,48 @@ export async function markSupportRead(convId: string, role: 'admin' | 'user') {
  */
 export async function purchaseTournamentEntry(userId: string, eventId: string) {
     const { data: event } = await supabaseAdmin.from('competition_events').select('*').eq('id', eventId).single();
-    const { data: profile } = await supabaseAdmin.from('profiles').select('wallet_balance').eq('id', userId).single();
+    const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
 
     if (!event || !profile) return { error: 'Data not found' };
 
+    // 1. Process Wallet Payment if not free
     if (!event.is_free) {
         if (profile.wallet_balance < event.entry_fee) return { error: 'Insufficient cash.' };
         await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance - event.entry_fee }).eq('id', userId);
         await supabaseAdmin.from('wallet_transactions').insert({ user_id: userId, amount: -event.entry_fee, type: 'purchase', status: 'completed', description: `Entry for ${event.week_label}` });
     }
 
+    // 2. Virtual Email for Competition
+    const stockmintUsername = `${profile.email.split('@')[0]}-comp-${eventId.substring(0,4)}@${profile.email.split('@')[1]}`;
+    const stockmintPassword = stockmintUsername;
+
+    // 3. Trigger StockMint API
+    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+    if (stockmintApiKey) {
+        try {
+            await fetch('https://stockmint.io/api/users/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
+                body: JSON.stringify({ 
+                    fullName: profile.full_name,
+                    email: stockmintUsername,
+                    password: stockmintPassword,
+                    initialBalance: 100000,
+                    accountClassification: 'evaluation',
+                    accountModel: 'normal'
+                }),
+            });
+        } catch (e) { console.error('Competition StockMint API failed:', e); }
+    }
+
+    // 4. Save Registration
     const { error } = await supabaseAdmin.from('competition_registrations').insert({
         user_id: userId,
         event_id: eventId,
         transaction_id: event.is_free ? 'FREE_JOIN' : 'WALLET_JOIN',
-        is_approved: true
+        is_approved: true,
+        stockmint_username: stockmintUsername,
+        stockmint_password: stockmintPassword
     });
 
     if (error) return { error: error.message };
@@ -306,6 +335,11 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
 }
 
 export async function getCompetitionEvents() {
-    const { data } = await supabaseAdmin.from('competition_events').select('*').eq('is_active', true).order('start_date', { ascending: true });
+    const { data } = await supabaseAdmin
+        .from('competition_events')
+        .select('*')
+        .eq('is_active', true)
+        .neq('status', 'completed')
+        .order('start_date', { ascending: true });
     return data || [];
 }

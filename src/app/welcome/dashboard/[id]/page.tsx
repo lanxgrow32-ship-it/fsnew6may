@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,12 +38,12 @@ const Logo = () => (
 );
 
 const navItems = [
-    { href: "/welcome", label: "Account Overview" },
-    { href: "/guide", label: "Trading Guide" },
+    { href: "/welcome", label: "Portfolio" },
+    { href: "/guide", label: "Guide" },
     { href: "/referrals", label: "Referrals" },
     { href: "/welcome?tab=support", label: "Live Chat" },
     { href: "/mentor", label: "AI Mentor" },
-    { href: "/welcome?tab=marketplace", label: "Get Funded" },
+    { href: "/welcome?tab=marketplace", label: "Market" },
 ];
 
 const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
@@ -59,7 +58,13 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
             ))}
       </nav>
     </div>
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
+        <form action={signOut} className="hidden lg:block">
+            <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2">
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+            </Button>
+        </form>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -186,7 +191,7 @@ export default async function AccountDashboardPage({ params }: { params: Promise
             </div>
 
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-                <DashboardHeader profile={profile} activePage="Account Hub" />
+                <DashboardHeader profile={profile} activePage="Portfolio" />
 
                 <div className="flex items-center gap-4 mb-8">
                     <Button variant="outline" size="icon" asChild className="bg-black/20 border-white/10 hover:bg-white/20"><Link href="/welcome"><Grid3x3 className="w-4 h-4"/></Link></Button>
@@ -208,19 +213,21 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Initial</p>
-                                <p className="text-xl font-bold text-white mt-1">₹{initialBalance.toLocaleString('en-IN')}</p>
+                                <p className="text-lg font-bold text-white mt-1">₹{initialBalance.toLocaleString('en-IN')}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Model</p>
-                                <p className="text-xl font-bold text-white mt-1 capitalize">{account.account_model === 'passthrupay' ? 'PassThenPay' : 'Standard'}</p>
+                                <p className="text-lg font-bold text-white mt-1 capitalize truncate">{account.account_model === 'passthrupay' ? 'PassThenPay' : 'Standard'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Live Status</p>
-                                <p className="text-xl font-bold text-primary mt-1 capitalize">{currentClassification.replace(/_/g, ' ')}</p>
+                                <p className="text-lg font-bold text-primary mt-1 capitalize whitespace-nowrap overflow-hidden text-ellipsis">
+                                    {currentClassification === 'passthenpay' ? 'PassThenPay' : currentClassification.replace(/_/g, ' ')}
+                                </p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Account</p>
-                                <p className={cn("text-xl font-bold mt-1 capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
+                                <p className={cn("text-lg font-bold mt-1 capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>
                     </GlassCard>

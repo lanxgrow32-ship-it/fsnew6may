@@ -47,7 +47,8 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
     const handleBrowse = async () => {
         setIsLoadingEvents(true);
         const data = await getCompetitionEvents();
-        setEvents(data);
+        // Filter out completed ones again on client side just to be safe
+        setEvents(data.filter(e => e.status !== 'completed'));
         setIsLoadingEvents(false);
         setView('browser');
     };
@@ -69,7 +70,9 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         setIsPurchasing(null);
     };
 
-    const activeReg = registrations.find(r => r.competition_events.status === 'ongoing') || registrations[0];
+    // Only show registrations for competitions that are NOT completed in the hub
+    const filteredRegs = registrations.filter(r => r.competition_events.status !== 'completed');
+    const activeReg = filteredRegs.find(r => r.competition_events.status === 'ongoing') || filteredRegs[0];
 
     if (view === 'browser') {
         return (
@@ -80,7 +83,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
                 </div>
 
                 <div className="grid gap-4">
-                    {isLoadingEvents ? <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : (
+                    {isLoadingEvents ? <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : events.length > 0 ? (
                         events.map(event => (
                             <GlassCard key={event.id} className={cn("p-5 flex flex-col md:flex-row items-center justify-between gap-6", event.status === 'ongoing' && "border-primary/30 bg-primary/5")}>
                                 <div className="space-y-1 text-center md:text-left">
@@ -104,6 +107,8 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
                                 </div>
                             </GlassCard>
                         ))
+                    ) : (
+                        <div className="py-20 text-center text-gray-500 italic">No upcoming competitions found at the moment.</div>
                     )}
                 </div>
             </div>
@@ -119,10 +124,10 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
                 </div>
                 <GlassCard className="text-center p-16 border-dashed border-white/5">
                     <Trophy className="h-12 w-12 text-gray-800 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-white">No active accounts</h3>
+                    <h3 className="text-xl font-bold text-white">No active entries</h3>
                     <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8 text-sm font-medium">Join the next competition to prove your consistency and earn instant funding.</p>
                     <Button onClick={handleBrowse} size="lg" className="px-8 h-12 rounded-xl font-bold shadow-xl shadow-primary/20 text-sm">
-                        Browse Competitions <ArrowRight className="ml-2 h-4 w-4"/>
+                        Browse Arena <ArrowRight className="ml-2 h-4 w-4"/>
                     </Button>
                 </GlassCard>
             </div>
