@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -6,14 +5,13 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-
-async function uploadTicketAttachment(file: File, ticketId: number) {
+async function uploadSupportAttachment(file: File, conversationId: string) {
   const fileExt = file.name.split('.').pop();
-  const fileName = `ticket-${ticketId}-${Date.now()}.${fileExt}`;
+  const fileName = `support-${conversationId}-${Date.now()}.${fileExt}`;
   const { data, error } = await supabaseAdmin.storage.from('ticket-attachments').upload(fileName, file);
 
   if (error) {
-    console.error('Error uploading ticket attachment:', error);
+    console.error('Error uploading attachment:', error);
     throw new Error('Failed to upload image.');
   }
 
@@ -37,55 +35,50 @@ export async function createTicket(prevState: any, formData: FormData) {
         return { error: 'Subject and description are required.' };
     }
     
-    const insertData: {
-        user_id: string;
-        subject: string;
-        description: string;
-        updated_at: string;
-        image_url?: string;
-    } = {
-        user_id: user.id,
-        subject,
-        description,
-        updated_at: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabaseAdmin
-        .from('tickets')
-        .insert(insertData)
+    // Create conversation
+    const { data: conv, error: convError } = await supabaseAdmin
+        .from('support_conversations')
+        .insert({
+            user_id: user.id,
+            subject,
+            unread_count_admin: 1
+        })
         .select()
         .single();
     
-    if (error) {
-        console.error('Error creating ticket:', error);
-        return { error: `Failed to create ticket: ${error.message}` };
+    if (convError || !conv) {
+        return { error: `Failed to initialize support session: ${convError?.message}` };
     }
 
-    // Now handle image upload if it exists
-    if (imageFile && imageFile.size > 0 && data) {
+    let imageUrl: string | undefined;
+    if (imageFile && imageFile.size > 0) {
         try {
-            const imageUrl = await uploadTicketAttachment(imageFile, data.id);
-            const { error: updateError } = await supabaseAdmin
-                .from('tickets')
-                .update({ image_url: imageUrl })
-                .eq('id', data.id);
-            if (updateError) throw updateError;
-        } catch(uploadError: any) {
-             // If image upload fails, we don't fail the whole ticket creation
-             // but we can log it. A more robust solution might delete the ticket
-             // or mark it as having a failed upload.
-             console.error("Ticket created, but image upload failed:", uploadError.message);
+            imageUrl = await uploadSupportAttachment(imageFile, conv.id);
+        } catch (e) {
+            console.error("Image upload failed", e);
         }
     }
 
+    // Insert first message
+    const { error: msgError } = await supabaseAdmin.from('support_messages').insert({
+        conversation_id: conv.id,
+        sender_id: user.id,
+        sender_role: 'user',
+        message: description,
+        image_url: imageUrl
+    });
+
+    if (msgError) {
+        return { error: `Failed to submit initial message: ${msgError.message}` };
+    }
 
     revalidatePath('/tickets');
     revalidatePath('/admin/tickets');
-    redirect(`/tickets/${data.id}`);
+    revalidatePath('/support-agent/tickets');
+    redirect(`/tickets/${conv.id}`);
 }
 
-
-export async function addReply(ticketId: number, formData: FormData) {
+export async function addReply(conversationId: string, formData: FormData) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -100,49 +93,33 @@ export async function addReply(ticketId: number, formData: FormData) {
         return { error: 'Reply message or image is required.' };
     }
     
-    const { data: profile } = await supabase.from('profiles').select('full_name, role').eq('id', user.id).single();
-
-    if (!profile) {
-        return { error: 'Profile not found.' };
-    }
-
     let imageUrl: string | undefined;
     if (imageFile && imageFile.size > 0) {
         try {
-            imageUrl = await uploadTicketAttachment(imageFile, ticketId);
-        } catch (uploadError: any) {
-            return { error: uploadError.message };
+            imageUrl = await uploadSupportAttachment(imageFile, conversationId);
+        } catch (e) {
+            console.error("Upload error", e);
         }
     }
 
-    const replyObject = {
-        author: profile.full_name,
-        author_role: profile.role,
+    // Insert message
+    const { error: msgError } = await supabaseAdmin.from('support_messages').insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        sender_role: 'user',
         message: reply,
-        created_at: new Date().toISOString(),
-        image_url: imageUrl,
-    };
-
-    // This custom RPC is necessary because of Supabase's RLS limitations with updating arrays.
-    // It is defined in the initial SQL script.
-    const { error } = await supabaseAdmin.rpc('append_to_jsonb_array', {
-        table_name: 'tickets',
-        column_name: 'replies',
-        row_id: ticketId,
-        new_element: replyObject
+        image_url: imageUrl
     });
-    
-    if (error) {
-        console.error('Error adding reply:', error);
-        return { error: 'Failed to add reply.' };
-    }
-    
-    // Also update the `updated_at` timestamp
-    await supabaseAdmin.from('tickets').update({ updated_at: new Date().toISOString() }).eq('id', ticketId);
 
+    if (msgError) return { error: msgError.message };
 
-    revalidatePath(`/tickets/${ticketId}`);
-    revalidatePath(`/admin/tickets/${ticketId}`);
-    revalidatePath('/admin/tickets');
+    // Update unread count for admin
+    await supabaseAdmin.rpc('increment_support_unread', { 
+        conv_id: conversationId, 
+        role_to_increment: 'admin' 
+    });
+
+    revalidatePath(`/tickets/${conversationId}`);
+    revalidatePath('/support-agent/tickets');
     return { success: true };
 }
