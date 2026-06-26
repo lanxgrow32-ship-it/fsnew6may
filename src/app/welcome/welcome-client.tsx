@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { signOut } from '@/app/actions';
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
     LayoutDashboard, 
     ShoppingCart, 
@@ -36,12 +35,6 @@ import { TransactionsView } from './transactions-view';
 import { SupportView } from './support-view';
 import { CompetitionView } from './competition-view';
 
-const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
-    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
-        {children}
-    </div>
-);
-
 const Logo = () => (
     <div className="flex items-center gap-2">
         <div className="bg-primary h-7 w-7 flex items-center justify-center rounded-lg shadow-lg shadow-primary/20">
@@ -50,6 +43,12 @@ const Logo = () => (
             </svg>
         </div>
         <span className="font-poppins font-bold text-base tracking-tight text-white hidden lg:block">FundedStock</span>
+    </div>
+);
+
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
+        {children}
     </div>
 );
 
@@ -70,6 +69,11 @@ export function WelcomeClient({
 }) {
     const [activeTab, setActiveTab] = useState('hub');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // FIX: Ensure page scrolls to top when tab changes or on initial load
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
 
     // Calculate total unread messages for the notification badge
     const totalUnread = supportConversations.reduce((sum, conv) => sum + (conv.unread_count_user || 0), 0);

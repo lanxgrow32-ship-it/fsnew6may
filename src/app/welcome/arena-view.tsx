@@ -17,7 +17,8 @@ import {
     Send,
     ChevronLeft,
     HelpCircle,
-    Info
+    Info,
+    Timer
 } from 'lucide-react';
 import { purchaseWithWallet } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -124,35 +125,37 @@ export function ArenaView({
                 
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Payment Method</h2>
-                    <p className="text-gray-400 text-sm font-medium">Choose your preferred way to activate {selectedPlan.title}.</p>
+                    <p className="text-gray-400 text-sm font-medium">Select your activation protocol for the {selectedPlan.title}.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button 
                         onClick={handleWalletPurchase} 
                         disabled={isActionPending}
-                        className="group relative flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
+                        className="group relative flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50 shadow-2xl"
                     >
-                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                            <Wallet className="w-5 h-5" />
+                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(139,44,245,0.1)]">
+                            <Wallet className="w-6 h-6" />
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-white">Pay via Wallet</p>
-                            <p className="text-[11px] text-gray-500 font-medium">Available: ₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                        <div className="flex-1">
+                            <p className="text-base font-bold text-white">Pay via Wallet</p>
+                            <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
+                                <Timer className="w-3 h-3" /> Express activation — ready in seconds
+                            </p>
                         </div>
                         {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
                     </button>
 
                     <button 
                         onClick={() => setCheckoutStep('direct-pay')}
-                        className="group flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
+                        className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
                     >
-                        <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                            <CreditCard className="w-5 h-5" />
+                        <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                            <CreditCard className="w-6 h-6" />
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-white">Direct Payment</p>
-                            <p className="text-[11px] text-gray-500 font-medium">Instant UPI / QR verification</p>
+                        <div className="flex-1">
+                            <p className="text-base font-bold text-white">Direct Payment</p>
+                            <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Standard verification — verifies in ~30 mins</p>
                         </div>
                     </button>
                 </div>
@@ -196,7 +199,7 @@ export function ArenaView({
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">UPI Address</p>
                                 <div className="flex items-center gap-2 justify-center">
                                     <p className="font-mono text-[10px] font-bold text-white truncate max-w-[140px]">{upiId || 'pay@fundedstock'}</p>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-600 hover:text-white" onClick={() => { navigator.clipboard.writeText(upiId || ''); toast({title: "Copied"}); }}><Copy className="w-3 h-3"/></Button>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-600 hover:text-white" onClick={() => { navigator.clipboard.writeText(upiId || ''); toast({title: "Copied"}); }}><Copy className="w-3.5 h-3.5"/></Button>
                                 </div>
                             </div>
                         </div>
