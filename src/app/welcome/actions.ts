@@ -1,150 +1,94 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { format } from 'date-fns';
-import { redirect } from 'next/navigation';
 
-// Helper function to get account size text from plan name
-function getAccountSizeText(planName: string): string {
-    if (!planName) return 'N/A';
-    const lowerPlanName = planName.toLowerCase();
-
-    if (lowerPlanName.includes('1l') || lowerPlanName.includes('1,00,000')) return '1,00,000';
-    if (lowerPlanName.includes('2l') || lowerPlanName.includes('2,00,000')) return '2,00,000';
-    if (lowerPlanName.includes('5l') || lowerPlanName.includes('5,00,000')) return '5,00,000';
-    if (lowerPlanName.includes('10l') || lowerPlanName.includes('10,00,000')) return '10,00,000';
-    if (lowerPlanName.includes('25l') || lowerPlanName.includes('25,00,000')) return '25,00,000';
-    if (lowerPlanName.includes('50l') || lowerPlanName.includes('50,00_000')) return '50,00,000';
-    
-    const plainNumberMatch = lowerPlanName.match(/^[\d,._]+/);
-    if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, '')).toLocaleString('en-IN', {useGrouping: false});
-    }
-
-    return 'N/A';
-}
-
-// Helper to determine initial balance
-function getBalanceFromPlanName(planName: string): number {
-    if (!planName) return 0;
-    const name = planName.toLowerCase();
-    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
-    if (match) {
-        let amount = parseFloat(match[1].replace(/,/g, ''));
-        const unit = match[2];
-        if (unit === 'k') amount *= 1000;
-        else if (unit === 'l' || unit === 'lakh') amount *= 100000;
-        else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
-        return amount;
-    }
-    const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
-    return 0;
-}
-
-export async function purchaseNewAccount(formData: FormData) {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return { error: 'Not authenticated' };
-
-    const planName = formData.get('plan_name') as string;
-    const utr = formData.get('utr') as string;
-    const finalPrice = parseFloat(formData.get('final_price') as string);
-
-    if (!planName || !utr || isNaN(finalPrice)) {
-        return { error: 'All fields are required.' };
-    }
-
-    // We use supabaseAdmin here to bypass RLS policies and ensure the purchase is recorded reliably.
-    const { error } = await supabaseAdmin
-        .from('user_accounts')
-        .insert({
-            user_id: user.id,
-            plan_name: planName,
-            transaction_id: utr,
-            final_amount_paid: finalPrice,
-            status: 'pending',
-            is_approved: false,
-            account_model: planName.toLowerCase().includes('passthenpay') ? 'passthrupay' : 'normal',
-        });
-
-    if (error) return { error: error.message };
-
-    revalidatePath('/welcome');
-    return { success: true };
-}
-
-// Competition Credentials Logic preserved and adjusted for versioned accounts
-async function createStockMintAccount(fullName: string, email: string, initialBalance: number, isPTP: boolean = false) {
-    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-    if (!stockmintApiKey || initialBalance <= 0) {
-        return { success: false, error: 'API Error' };
-    }
-
-    try {
-        const payload: any = { fullName, email, password: email, initialBalance };
-        if (isPTP) payload.accountModel = 'passthenpay';
-
-        const response = await fetch('https://stockmint.io/api/users/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-            body: JSON.stringify(payload),
-        });
-        return { success: response.ok };
-    } catch (e: any) {
-        return { success: false, error: e.message };
-    }
-}
-
-export async function generateCompetitionCredentials() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: 'Not authenticated' };
-
-    const { data: session } = await supabaseAdmin
-        .from('payment_sessions')
-        .select('*')
-        .eq('email', user.email)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-    
-    if (!session) return { error: 'No completed payment' };
-
-    const periodIdentifier = session.plan_type === 'monthly' ? format(new Date(), 'yyyy-MM') : format(new Date(), 'yyyy-II');
-
-    const { data: existing } = await supabaseAdmin.from('competition_entries').select('id').eq('user_id', user.id).eq('week_identifier', periodIdentifier).limit(1).single();
-    if (existing) return { success: true };
-
-    const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', user.id).single();
-    const { count } = await supabaseAdmin.from('competition_entries').select('id', { count: 'exact' }).eq('user_id', user.id);
-    
-    const version = (count || 0) + 1;
-    const stockmintUsername = `${user.email.split('@')[0]}-p${version}@${user.email.split('@')[1]}`;
-    const initialBalance = session.plan_type === 'weekly' ? 100000 : 500000;
-
-    const res = await createStockMintAccount(profile!.full_name!, stockmintUsername, initialBalance);
-    if (!res.success) return { error: 'StockMint Error' };
-
-    await supabaseAdmin.from('competition_entries').insert({ user_id: user.id, week_identifier: periodIdentifier, stockmint_username: stockmintUsername, stockmint_password: stockmintUsername, account_balance: initialBalance });
-
-    revalidatePath('/welcome');
-    return { success: true };
-}
-
-export async function submitUtr(prevState: any, formData: FormData) {
-  // Legacy UTR submission for the main profile (kept for fallback)
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not logged in' };
+/**
+ * Handles wallet top-up requests
+ */
+export async function topUpWallet(formData: FormData) {
+  const userId = formData.get('user_id') as string;
+  const amount = parseFloat(formData.get('amount') as string);
   const utr = formData.get('utr') as string;
-  if (!utr) return { error: 'UTR is required' };
 
-  await supabaseAdmin.from('profiles').update({ transaction_id: utr }).eq('id', user.id);
+  if (!userId || isNaN(amount) || amount <= 0 || !utr) {
+    return { error: 'Invalid top-up details.' };
+  }
+
+  const { error } = await supabaseAdmin
+    .from('wallet_transactions')
+    .insert({
+      user_id: userId,
+      amount: amount,
+      type: 'deposit',
+      gateway_transaction_id: utr,
+      status: 'pending',
+      description: 'Wallet Top-up Request'
+    });
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/welcome');
+  return { success: true };
+}
+
+/**
+ * Handles internal account purchases using wallet balance
+ */
+export async function purchaseWithWallet(userId: string, plan: any) {
+  if (!userId || !plan) return { error: 'Missing details.' };
+
+  // 1. Fetch Current Balance
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('wallet_balance')
+    .eq('id', userId)
+    .single();
+  
+  if (!profile) return { error: 'Profile not found.' };
+  
+  const price = parseFloat(plan.price.replace(/,/g, ''));
+  if (profile.wallet_balance < price) {
+      return { error: 'Insufficient wallet balance. Please top up your wallet.' };
+  }
+
+  // 2. Deduct Balance
+  const newBalance = profile.wallet_balance - price;
+  const { error: balanceError } = await supabaseAdmin
+    .from('profiles')
+    .update({ wallet_balance: newBalance })
+    .eq('id', userId);
+  
+  if (balanceError) return { error: 'Balance deduction failed.' };
+
+  // 3. Create Transaction Record
+  await supabaseAdmin.from('wallet_transactions').insert({
+    user_id: userId,
+    amount: -price,
+    type: 'purchase',
+    status: 'completed',
+    description: `Purchase of ${plan.title}`
+  });
+
+  // 4. Create User Account
+  const { error: accountError } = await supabaseAdmin.from('user_accounts').insert({
+    user_id: userId,
+    plan_name: plan.title,
+    status: 'pending',
+    is_approved: false, // Evaluation needs to be set up by admin
+    account_model: plan.title.toLowerCase().includes('passthenpay') ? 'passthrupay' : 'normal',
+    final_amount_paid: price,
+    transaction_id: 'WALLET_PURCHASE'
+  });
+
+  if (accountError) {
+      // Refund on failure
+      await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance }).eq('id', userId);
+      return { error: 'Failed to create account record.' };
+  }
+
   revalidatePath('/welcome');
   return { success: true };
 }

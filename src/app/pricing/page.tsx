@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -141,7 +142,7 @@ const PlanCard = ({ size, title, price, isPopular }: { size: string; title: stri
         </div>
 
         <Button asChild className="w-full mt-auto font-bold uppercase tracking-widest" size="lg">
-          <Link href={`/signup?plan=${encodeURIComponent(title)}&price=${price}`}>Select Plan <ArrowLeft className="rotate-180 h-4 w-4 ml-2"/></Link>
+          <Link href="/signup">Select Plan <ArrowLeft className="rotate-180 h-4 w-4 ml-2"/></Link>
         </Button>
       </CardContent>
     </Card>
