@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Eye, EyeOff, History, Copy, Clock, ShieldCheck, CheckCircle, PlusCircle, Zap, Timer } from 'lucide-react';
+import { Loader2, ExternalLink, Eye, EyeOff, History, Copy, Clock, ShieldCheck, CheckCircle, PlusCircle, Zap, Timer, Trophy, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { purchaseTournamentEntry, getCompetitionEvents } from './actions';
 
 type Registration = {
     id: string;
@@ -19,9 +20,13 @@ type Registration = {
     current_balance: number;
     created_at: string;
     competition_events: {
+        id: string;
         week_label: string;
         start_date: string;
         end_date: string;
+        entry_fee: number;
+        is_free: boolean;
+        status: string;
     };
 };
 
@@ -31,252 +36,168 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
     </div>
 );
 
-function CountdownTimer({ targetDate }: { targetDate: string }) {
-    const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
-
-    useEffect(() => {
-        const calculateTime = () => {
-            // Set target time to 9:00 AM on the start date
-            const target = new Date(targetDate);
-            target.setHours(9, 0, 0, 0);
-            
-            const now = new Date();
-            const difference = target.getTime() - now.getTime();
-
-            if (difference <= 0) {
-                setTimeLeft(null);
-                return;
-            }
-
-            setTimeLeft({
-                days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                minutes: Math.floor((difference / 1000 / 60) % 60),
-                seconds: Math.floor((difference / 1000) % 60),
-            });
-        };
-
-        calculateTime();
-        const interval = setInterval(calculateTime, 1000);
-        return () => clearInterval(interval);
-    }, [targetDate]);
-
-    if (!timeLeft) return null;
-
-    const TimeBlock = ({ value, label }: { value: number; label: string }) => (
-        <div className="flex flex-col items-center bg-black/40 rounded-xl p-3 min-w-[70px] border border-white/5">
-            <span className="text-2xl font-black text-primary leading-none">{value}</span>
-            <span className="text-[9px] uppercase font-bold text-gray-500 mt-1 tracking-tighter">{label}</span>
-        </div>
-    );
-
-    return (
-        <div className="flex gap-2 justify-center py-4">
-            <TimeBlock value={timeLeft.days} label="Days" />
-            <TimeBlock value={timeLeft.hours} label="Hours" />
-            <TimeBlock value={timeLeft.minutes} label="Mins" />
-            <TimeBlock value={timeLeft.seconds} label="Secs" />
-        </div>
-    );
-}
-
-export function CompetitionView({ registrations }: { registrations: Registration[] }) {
+export function CompetitionView({ registrations, profile, onSwitchToWallet }: { registrations: Registration[], profile: any, onSwitchToWallet: () => void }) {
     const { toast } = useToast();
+    const [view, setView] = useState<'hub' | 'browser'>('hub');
+    const [events, setEvents] = useState<any[]>([]);
+    const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+    const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
-    const [isClient, setIsClient] = useState(false);
 
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
-    const togglePasswordVisibility = (id: string) => {
-        setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
+    const handleBrowse = async () => {
+        setIsLoadingEvents(true);
+        const data = await getCompetitionEvents();
+        setEvents(data);
+        setIsLoadingEvents(false);
+        setView('browser');
     };
-    
-    const copyToClipboard = (text: string | null) => {
-        if (!text) return;
-        navigator.clipboard.writeText(text);
-        toast({ title: "Copied to clipboard!" });
-    }
-    
-    const activeReg = registrations?.[0];
 
-    if (!activeReg) {
+    const handleJoin = async (event: any) => {
+        if (!event.is_free && profile.wallet_balance < event.entry_fee) {
+            toast({ title: "Insufficient Cash", description: "Top up your wallet to join this tournament.", variant: "destructive" });
+            onSwitchToWallet();
+            return;
+        }
+
+        setIsPurchasing(event.id);
+        const res = await purchaseTournamentEntry(profile.id, event.id);
+        if (res.error) toast({ title: "Failed", description: res.error, variant: "destructive" });
+        else {
+            toast({ title: "Welcome to the Arena!", description: "You are registered for this week." });
+            window.location.reload();
+        }
+        setIsPurchasing(null);
+    };
+
+    const activeReg = registrations.find(r => r.competition_events.status === 'ongoing') || registrations[0];
+
+    if (view === 'browser') {
         return (
-            <GlassCard className="text-center p-12">
-                <Clock className="h-12 w-12 mx-auto text-gray-600 mb-4" />
-                <h3 className="text-xl font-bold text-white">No Active Registrations</h3>
-                <p className="text-gray-400 mt-2 mb-6">You haven't joined any tournament weeks yet.</p>
-                <Button asChild className="bg-purple-600 hover:bg-purple-700">
-                    <Link href="/competition">Browse Tournaments</Link>
-                </Button>
-            </GlassCard>
+            <div className="space-y-8 animate-in fade-in zoom-in-95">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" onClick={() => setView('hub')} className="text-gray-500 hover:text-white"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
+                    <h2 className="text-2xl font-black text-white tracking-tighter">Tournament Browser</h2>
+                </div>
+
+                <div className="grid gap-6">
+                    {isLoadingEvents ? <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : (
+                        events.map(event => (
+                            <GlassCard key={event.id} className={cn("p-6 flex flex-col md:flex-row items-center justify-between gap-6", event.status === 'ongoing' && "border-primary/30 bg-primary/5")}>
+                                <div className="space-y-1 text-center md:text-left">
+                                    <div className="flex items-center gap-3 justify-center md:justify-start">
+                                        <h3 className="text-xl font-bold text-white">{event.week_label}</h3>
+                                        {event.status === 'ongoing' && <Badge className="bg-red-500 animate-pulse text-[8px] font-black uppercase">LIVE NOW</Badge>}
+                                        {event.is_free && <Badge className="bg-green-600 text-[8px] font-black uppercase">FREE</Badge>}
+                                    </div>
+                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                                        {new Date(event.start_date).toLocaleDateString()} — {new Date(event.end_date).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-8">
+                                    <div className="text-center md:text-right">
+                                        <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Entrance Fee</p>
+                                        <p className="text-2xl font-black text-primary">{event.is_free ? 'FREE' : `₹${event.entry_fee}`}</p>
+                                    </div>
+                                    <Button onClick={() => handleJoin(event)} disabled={isPurchasing !== null} className="rounded-xl px-8 font-black uppercase tracking-widest h-12">
+                                        {isPurchasing === event.id ? <Loader2 className="animate-spin h-4 w-4"/> : 'Join Week'}
+                                    </Button>
+                                </div>
+                            </GlassCard>
+                        ))
+                    )}
+                </div>
+            </div>
         );
     }
 
-    // Date Logic for Reveal
-    const today = new Date();
-    const startDate = new Date(activeReg.competition_events?.start_date);
-    // Add 9 hours to start at 9:00 AM IST approx
-    startDate.setHours(9, 0, 0, 0);
-    
-    const isLocked = isClient && today < startDate;
+    if (!activeReg) {
+        return (
+            <div className="space-y-8 animate-in fade-in">
+                <div className="text-center space-y-4">
+                    <h2 className="text-4xl font-extrabold text-white tracking-tight">Tournaments</h2>
+                    <p className="text-gray-400 text-lg">Battle with other traders for massive funded rewards.</p>
+                </div>
+                <GlassCard className="text-center p-20 border-dashed border-white/5">
+                    <Trophy className="h-16 w-16 text-gray-700 mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold text-white">No active entries</h3>
+                    <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8 text-sm">Join the next weekly tournament to prove your consistency and earn instant funding.</p>
+                    <Button onClick={handleBrowse} size="lg" className="px-10 h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20">
+                        Browse Active Tournaments <ArrowRight className="ml-2 w-4 h-4"/>
+                    </Button>
+                </GlassCard>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">Competition Hub</h2>
-                <Button asChild variant="outline" className="bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 rounded-full">
-                    <Link href="/competition"><PlusCircle className="mr-2 w-4 h-4"/> Join Next Week</Link>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight">Active Tournament</h2>
+                <Button onClick={handleBrowse} variant="outline" className="bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 rounded-full font-bold uppercase text-[10px] tracking-widest">
+                    <PlusCircle className="mr-2 w-4 h-4 text-primary"/> Join Next Week
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-8">
-                {/* Primary/Active Registration */}
-                <GlassCard className={cn("border-white/10", !activeReg.is_approved && "border-amber-400/30", isLocked && "border-primary/20")}>
-                    <CardHeader className="bg-white/[0.02] border-b border-white/5">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle className="text-2xl font-bold text-white">{activeReg.competition_events?.week_label || 'Weekly Tournament'}</CardTitle>
-                                <CardDescription className="text-gray-400">
-                                    {activeReg.competition_events ? (
-                                        <>
-                                            {new Date(activeReg.competition_events.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} — 
-                                            {new Date(activeReg.competition_events.end_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </>
-                                    ) : (
-                                        'Tournament Dates'
-                                    )}
-                                </CardDescription>
-                            </div>
-                            {!activeReg.is_approved ? (
-                                <Badge className="bg-amber-400/20 text-amber-400 border-amber-400/30 px-3 py-1 animate-pulse">Verification Pending</Badge>
-                            ) : isLocked ? (
-                                <Badge className="bg-primary/20 text-primary border-primary/30 px-3 py-1 flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5"/> Verified & Secured</Badge>
-                            ) : (
-                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-3 py-1">Active</Badge>
-                            )}
+            <GlassCard className="border-primary/20 bg-primary/5">
+                <CardHeader className="border-b border-white/5 pb-6">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle className="text-3xl font-black text-white">{activeReg.competition_events.week_label}</CardTitle>
+                            <CardDescription className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-2">
+                                Starts: {new Date(activeReg.competition_events.start_date).toLocaleDateString()} · Ends: {new Date(activeReg.competition_events.end_date).toLocaleDateString()}
+                            </CardDescription>
                         </div>
-                    </CardHeader>
-                    
-                    <CardContent className="p-8">
-                        {!activeReg.is_approved ? (
-                            <div className="text-center space-y-4 py-8">
-                                <div className="mx-auto bg-amber-400/10 rounded-full p-4 w-fit">
-                                    <Loader2 className="h-10 w-10 text-amber-400 animate-spin" />
+                        <Badge className="bg-primary text-white font-black px-4 py-1 rounded-full text-[10px] tracking-widest">SECURED ENTRY</Badge>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-8">
+                    <div className="grid md:grid-cols-2 gap-8 items-center">
+                         <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                                    <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Current Balance</p>
+                                    <p className="text-2xl font-black text-primary mt-1">₹{Number(activeReg.current_balance).toLocaleString('en-IN')}</p>
                                 </div>
-                                <h3 className="text-xl font-bold text-white">Payment Being Verified</h3>
-                                <p className="text-gray-400 max-w-sm mx-auto">
-                                    Our team is checking your transaction ID. Credentials will appear here automatically once approved.
-                                </p>
-                            </div>
-                        ) : isLocked ? (
-                            <div className="text-center space-y-6 py-6">
-                                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-primary/20">
-                                    <Zap className="h-3 w-3" /> Battle Starts In
-                                </div>
-                                
-                                <CountdownTimer targetDate={activeReg.competition_events.start_date} />
-                                
-                                <div className="max-w-md mx-auto space-y-3">
-                                    <h3 className="text-xl font-bold text-white">Your spot is secured!</h3>
-                                    <p className="text-gray-400 text-sm">
-                                        To ensure a fair start for all champions, trading credentials and the platform login will be revealed here exactly when the tournament begins.
-                                    </p>
-                                </div>
-
-                                <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 max-w-lg mx-auto">
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-white/5 p-3 rounded-full"><Clock className="w-6 h-6 text-gray-400"/></div>
-                                        <div className="text-left">
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Release Date</p>
-                                            <p className="text-white font-bold">{new Date(activeReg.competition_events.start_date).toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Time</p>
-                                        <p className="text-white font-bold">09:00 AM IST</p>
-                                    </div>
+                                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                                    <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Rank</p>
+                                    <p className="text-2xl font-black text-white mt-1">#--</p>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="space-y-8">
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                    <div className="bg-black/20 p-5 rounded-2xl border border-white/5 space-y-1">
-                                        <Label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Trading Username</Label>
-                                        <div className="flex items-center justify-between gap-2">
-                                            <p className="text-lg font-mono font-bold text-white truncate">{activeReg.stockmint_username}</p>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white" onClick={() => copyToClipboard(activeReg.stockmint_username)}>
-                                                <Copy className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                            <div className="p-6 bg-black/40 rounded-2xl border border-white/10 space-y-4">
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] text-gray-600 uppercase font-black tracking-widest">Trading ID</Label>
+                                    <div className="flex items-center justify-between">
+                                        <p className="font-mono font-bold text-white">{activeReg.stockmint_username || 'AWAITING SETUP'}</p>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400" onClick={() => { navigator.clipboard.writeText(activeReg.stockmint_username || ''); toast({title: "Copied"}); }}><Copy className="w-4 h-4"/></Button>
                                     </div>
-                                    <div className="bg-black/20 p-5 rounded-2xl border border-white/5 space-y-1">
-                                        <Label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Trading Password</Label>
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-lg font-mono font-bold text-white tracking-widest">
-                                                {visiblePasswords[activeReg.id] ? activeReg.stockmint_password : '••••••••••'}
-                                            </p>
-                                            <div className="flex items-center gap-1">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white" onClick={() => togglePasswordVisibility(activeReg.id)}>
-                                                    {visiblePasswords[activeReg.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white" onClick={() => copyToClipboard(activeReg.stockmint_password)}>
-                                                    <Copy className="h-4 w-4" />
-                                                </Button>
-                                            </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] text-gray-600 uppercase font-black tracking-widest">Master Password</Label>
+                                    <div className="flex items-center justify-between">
+                                        <p className="font-mono font-bold text-white">{visiblePasswords[activeReg.id] ? activeReg.stockmint_password : '••••••••••'}</p>
+                                        <div className="flex gap-1">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400" onClick={() => setVisiblePasswords(p => ({...p, [activeReg.id]: !p[activeReg.id]}))}>{visiblePasswords[activeReg.id] ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400" onClick={() => { navigator.clipboard.writeText(activeReg.stockmint_password || ''); toast({title: "Copied"}); }}><Copy className="w-4 h-4"/></Button>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <Button asChild size="lg" className="flex-1 bg-purple-600 hover:bg-purple-500 text-white shadow-xl shadow-purple-600/20 font-bold h-14 rounded-xl">
-                                        <Link href="https://www.stockmint.io/login" target="_blank">
-                                            Launch Trading Software <ExternalLink className="ml-2 h-5 w-5" />
-                                        </Link>
-                                    </Button>
-                                    <div className="bg-white/5 px-6 py-4 rounded-xl border border-white/5 flex flex-col justify-center">
-                                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Live Balance</span>
-                                        <span className="text-xl font-black text-primary">₹{Number(activeReg.current_balance).toLocaleString('en-IN')}</span>
-                                    </div>
-                                </div>
                             </div>
-                        )}
-                    </CardContent>
-                </GlassCard>
-
-                {/* Registration History */}
-                {registrations.length > 1 && (
-                    <GlassCard>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-white"><History className="w-5 h-5" /> Tournament History</CardTitle>
-                            <CardDescription className="text-gray-400">Past weekly entries and results.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="border-white/5">
-                                        <TableHead className="text-gray-500 uppercase text-[10px] font-bold tracking-wider">Tournament</TableHead>
-                                        <TableHead className="text-gray-500 uppercase text-[10px] font-bold tracking-wider">Status</TableHead>
-                                        <TableHead className="text-right text-gray-500 uppercase text-[10px] font-bold tracking-wider">Ending Balance</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {registrations.slice(1).map((reg) => (
-                                        <TableRow key={reg.id} className="border-white/5">
-                                            <TableCell className="font-semibold text-white">{reg.competition_events?.week_label || 'Completed Week'}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="text-[10px] border-white/10 text-gray-400">Completed</Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono text-white">₹{Number(reg.current_balance).toLocaleString('en-IN')}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </GlassCard>
-                )}
-            </div>
+                         </div>
+                         <div className="text-center space-y-6">
+                            <div className="mx-auto h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_30px_rgba(139,44,245,0.2)]">
+                                <Zap className="h-10 w-10 text-primary animate-pulse" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-black text-white">Software Ready.</h3>
+                                <p className="text-xs text-gray-400 max-w-[250px] mx-auto">Launch the StockMint terminal and login using the credentials on the left.</p>
+                            </div>
+                            <Button asChild size="lg" className="w-full h-14 text-lg font-black tracking-widest rounded-2xl shadow-xl shadow-primary/20">
+                                <a href="https://stockmint.io/login" target="_blank">LAUNCH TERMINAL <ExternalLink className="ml-2 h-4 w-4"/></a>
+                            </Button>
+                         </div>
+                    </div>
+                </CardContent>
+            </GlassCard>
         </div>
     );
 }

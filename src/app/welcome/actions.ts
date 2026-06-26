@@ -1,18 +1,12 @@
-
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
 /**
  * Handles wallet top-up requests
  */
-export async function topUpWallet(formData: FormData) {
-  const userId = formData.get('user_id') as string;
-  const amount = parseFloat(formData.get('amount') as string);
-  const utr = formData.get('utr') as string;
-
+export async function topUpWallet(userId: string, amount: number, utr: string) {
   if (!userId || isNaN(amount) || amount <= 0 || !utr) {
     return { error: 'Invalid top-up details.' };
   }
@@ -77,7 +71,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     user_id: userId,
     plan_name: plan.title,
     status: 'pending',
-    is_approved: false, // Evaluation needs to be set up by admin
+    is_approved: true, // Internal purchases are pre-verified
     account_model: plan.title.toLowerCase().includes('passthenpay') ? 'passthrupay' : 'normal',
     final_amount_paid: price,
     transaction_id: 'WALLET_PURCHASE'
@@ -91,4 +85,94 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
   revalidatePath('/welcome');
   return { success: true };
+}
+
+/**
+ * Support Actions
+ */
+export async function createSupportConversation(userId: string, subject: string, firstMessage?: string) {
+    const { data: conversation, error } = await supabaseAdmin
+        .from('support_conversations')
+        .insert({ user_id: userId, subject })
+        .select()
+        .single();
+    
+    if (error) return { error: error.message };
+
+    if (firstMessage) {
+        await supabaseAdmin.from('support_messages').insert({
+            conversation_id: conversation.id,
+            sender_id: userId,
+            sender_role: 'user',
+            message: firstMessage
+        });
+    }
+
+    revalidatePath('/welcome');
+    return { data: conversation };
+}
+
+export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string) {
+    const { error } = await supabaseAdmin
+        .from('support_messages')
+        .insert({
+            conversation_id: convId,
+            sender_id: senderId,
+            sender_role: role,
+            message: message
+        });
+    
+    if (!error) {
+        await supabaseAdmin.from('support_conversations').update({ last_message_at: new Date().toISOString() }).eq('id', convId);
+    }
+    
+    return { error: error?.message };
+}
+
+/**
+ * Competition Actions
+ */
+export async function getCompetitionEvents() {
+    const { data } = await supabaseAdmin
+        .from('competition_events')
+        .select('*')
+        .eq('is_active', true)
+        .eq('is_archived', false)
+        .order('start_date', { ascending: true });
+    return data || [];
+}
+
+export async function purchaseTournamentEntry(userId: string, eventId: string) {
+    const { data: event } = await supabaseAdmin.from('competition_events').select('*').eq('id', eventId).single();
+    const { data: profile } = await supabaseAdmin.from('profiles').select('wallet_balance').eq('id', userId).single();
+
+    if (!event || !profile) return { error: 'Data not found' };
+
+    if (!event.is_free) {
+        if (profile.wallet_balance < event.entry_fee) return { error: 'Insufficient wallet balance' };
+        
+        // Deduct balance
+        await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance - event.entry_fee }).eq('id', userId);
+        
+        // Log transaction
+        await supabaseAdmin.from('wallet_transactions').insert({
+            user_id: userId,
+            amount: -event.entry_fee,
+            type: 'purchase',
+            status: 'completed',
+            description: `Entry for ${event.week_label}`
+        });
+    }
+
+    // Register
+    const { error } = await supabaseAdmin.from('competition_registrations').insert({
+        user_id: userId,
+        event_id: eventId,
+        transaction_id: event.is_free ? 'FREE_JOIN' : 'WALLET_JOIN',
+        is_approved: true
+    });
+
+    if (error) return { error: error.message };
+    revalidatePath('/welcome');
+    return { success: true };
 }

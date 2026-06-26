@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -18,9 +17,6 @@ import {
     FileCheck, 
     MessageSquare, 
     LogOut, 
-    Search, 
-    Settings, 
-    Bell, 
     Menu,
     PlusCircle,
     ArrowRight,
@@ -28,7 +24,11 @@ import {
     Clock,
     CheckCircle,
     Grid3x3,
-    IndianRupee
+    IndianRupee,
+    Search,
+    Settings,
+    Bell,
+    LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,12 +37,7 @@ import { AccountsHub } from './accounts-hub';
 import { ArenaView } from './arena-view';
 import { WalletView } from './wallet-view';
 import { CompetitionView } from './competition-view';
-
-const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
-    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
-        {children}
-    </div>
-);
+import { SupportView } from './support-view';
 
 const Logo = () => (
     <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
@@ -55,8 +50,21 @@ const Logo = () => (
     </div>
 );
 
-export function WelcomeClient({ profile, accounts, walletTransactions, paymentSettings }: { profile: any, accounts: any[], walletTransactions: any[], paymentSettings: any }) {
-    const router = useRouter();
+export function WelcomeClient({ 
+    profile, 
+    accounts, 
+    walletTransactions, 
+    paymentSettings,
+    competitions,
+    supportConversations
+}: { 
+    profile: any, 
+    accounts: any[], 
+    walletTransactions: any[], 
+    paymentSettings: any,
+    competitions: any[],
+    supportConversations: any[]
+}) {
     const [activeTab, setActiveTab] = useState('hub');
 
     const navItems = [
@@ -64,6 +72,7 @@ export function WelcomeClient({ profile, accounts, walletTransactions, paymentSe
         { id: 'arena', label: "Arena", icon: ShoppingCart },
         { id: 'wallet', label: "Wallet", icon: Wallet },
         { id: 'competition', label: "Tournaments", icon: Trophy },
+        { id: 'support', label: "Support", icon: LifeBuoy },
     ];
 
     return (
@@ -72,7 +81,7 @@ export function WelcomeClient({ profile, accounts, walletTransactions, paymentSe
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full filter blur-3xl opacity-20 " />
-                <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
+                <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-purple-600 rounded-full filter blur-3xl opacity-10" />
             </div>
 
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -86,9 +95,9 @@ export function WelcomeClient({ profile, accounts, walletTransactions, paymentSe
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={cn(
-                                        "px-4 py-1.5 text-sm transition-colors flex items-center gap-2",
+                                        "px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2",
                                         activeTab === item.id
-                                        ? "font-medium bg-white/10 rounded-full text-white shadow-md"
+                                        ? "bg-primary rounded-full text-white shadow-md"
                                         : "text-gray-400 hover:text-white"
                                     )}
                                 >
@@ -96,13 +105,13 @@ export function WelcomeClient({ profile, accounts, walletTransactions, paymentSe
                                     {item.label}
                                 </button>
                             ))}
-                            <Link href="/guide" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">Guide</Link>
+                            <Link href="/guide" className="px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Guide</Link>
                         </nav>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Balance</span>
-                            <span className="text-primary font-bold text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                            <span className="text-primary font-black text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         <UserNav profile={profile} />
                         <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors"><Menu className="h-5 w-5 text-gray-300" /></button>
@@ -124,9 +133,11 @@ export function WelcomeClient({ profile, accounts, walletTransactions, paymentSe
                     </TabsContent>
 
                     <TabsContent value="competition" className="animate-in fade-in slide-in-from-bottom-2">
-                        <div className="max-w-4xl mx-auto">
-                            <CompetitionView registrations={[]} /> {/* This would ideally fetch actual competition data */}
-                        </div>
+                        <CompetitionView registrations={competitions} profile={profile} onSwitchToWallet={() => setActiveTab('wallet')} />
+                    </TabsContent>
+
+                    <TabsContent value="support" className="animate-in fade-in slide-in-from-bottom-2">
+                        <SupportView profile={profile} conversations={supportConversations} />
                     </TabsContent>
                 </Tabs>
             </main>
@@ -138,29 +149,34 @@ function UserNav({ profile }: { profile: any}) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10 border border-white/10">
+                <button className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden hover:opacity-80 transition-opacity">
+                    <Avatar className="h-full w-full">
                         <AvatarImage src={`https://avatar.vercel.sh/${profile.email}.png`} alt={profile.full_name || 'User'} />
-                        <AvatarFallback>{profile.full_name?.[0].toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className="bg-primary/20 text-primary font-bold">{profile.full_name?.[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
-                </Button>
+                </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent className="w-56 bg-slate-900 border-white/10 text-white" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{profile.full_name}</p>
+                        <p className="text-sm font-bold leading-none">{profile.full_name}</p>
                         <p className="text-xs leading-none text-muted-foreground">{profile.email}</p>
                     </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem asChild><Link href="/profile"><User className="mr-2 h-4 w-4" /><span>My Profile</span></Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/kyc"><FileCheck className="mr-2 h-4 w-4" /><span>KYC Status</span></Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/tickets"><MessageSquare className="mr-2 h-4 w-4" /><span>Support</span></Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="hover:bg-white/5 cursor-pointer"><Link href="/profile" className="flex items-center"><User className="mr-2 h-4 w-4" /><span>My Profile</span></Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="hover:bg-white/5 cursor-pointer"><Link href="/kyc" className="flex items-center"><FileCheck className="mr-2 h-4 w-4" /><span>KYC Status</span></Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="hover:bg-white/5 cursor-pointer"><Link href="/tickets" className="flex items-center"><MessageSquare className="mr-2 h-4 w-4" /><span>My Tickets</span></Link></DropdownMenuItem>
                 </DropdownMenuGroup>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-white/5" />
                  <form action={signOut}>
-                    <DropdownMenuItem asChild><button type="submit" className="w-full"><LogOut className="mr-2 h-4 w-4" /><span>Log out</span></button></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="hover:bg-white/5 cursor-pointer focus:bg-destructive focus:text-destructive-foreground">
+                        <button type="submit" className="w-full flex items-center">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </button>
+                    </DropdownMenuItem>
                 </form>
             </DropdownMenuContent>
         </DropdownMenu>
