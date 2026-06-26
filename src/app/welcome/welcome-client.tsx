@@ -83,7 +83,7 @@ export function WelcomeClient({
             </div>
 
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-                {/* Unified Header redesigned based on reference */}
+                {/* Unified Header */}
                 <header className="flex items-center justify-between mb-12 z-20 relative">
                     <div className="flex items-center gap-8">
                         <Logo />
@@ -93,7 +93,7 @@ export function WelcomeClient({
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={cn(
-                                        "px-5 py-2 text-sm font-semibold transition-all flex items-center gap-2.5 rounded-full h-[42px]",
+                                        "px-5 py-2 text-sm font-bold transition-all flex items-center gap-2.5 rounded-full h-[42px]",
                                         activeTab === item.id
                                         ? "bg-white/15 text-white shadow-sm border border-white/10"
                                         : "text-gray-400 hover:text-white"
@@ -104,7 +104,7 @@ export function WelcomeClient({
                                 </button>
                             ))}
                             <form action={signOut} className="inline-block border-l border-white/10 ml-2 pl-1">
-                                <button type="submit" className="px-4 py-2 text-sm font-semibold text-red-400 hover:text-red-300 transition-colors flex items-center gap-2">
+                                <button type="submit" className="px-4 py-2 text-sm font-bold text-red-400 hover:text-red-300 transition-colors flex items-center gap-2">
                                     <LogOut className="w-4 h-4" />
                                     Logout
                                 </button>
@@ -133,20 +133,22 @@ export function WelcomeClient({
                                     <Menu className="h-6 w-6 text-gray-300" />
                                 </button>
                             </SheetTrigger>
-                            <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col">
+                            <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col font-poppins">
                                 <SheetHeader className="p-6 border-b border-white/5">
                                     <SheetTitle className="sr-only">Navigation Protocol</SheetTitle>
                                     <div className="flex items-center gap-3 text-left">
                                         <Logo />
-                                        <span className="text-white font-bold tracking-tight">FundedStock</span>
+                                        <span className="text-white font-black text-lg tracking-tight">FundedStock</span>
                                     </div>
                                 </SheetHeader>
-                                <div className="flex flex-col flex-1 p-4 gap-2 overflow-y-auto">
-                                    <div className="px-4 py-6 mb-6 bg-black/40 rounded-2xl border border-white/10 text-center">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Balance</p>
-                                        <p className="text-primary font-black text-3xl mt-2 tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                                <div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto">
+                                    {/* Mobile Balance Box matching Reference Image */}
+                                    <div className="px-6 py-8 mb-8 bg-black/60 rounded-3xl border border-white/5 text-center shadow-2xl">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-2">Balance</p>
+                                        <p className="text-primary font-black text-4xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                                     </div>
-                                    <div className="space-y-1">
+
+                                    <div className="space-y-2">
                                         {navItems.map((item) => (
                                             <button
                                                 key={item.id}
@@ -155,13 +157,13 @@ export function WelcomeClient({
                                                     setIsSidebarOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "w-full px-4 py-4 text-sm font-semibold transition-all flex items-center gap-3 rounded-xl",
+                                                    "w-full px-5 py-4 text-sm font-bold transition-all flex items-center gap-4 rounded-2xl",
                                                     activeTab === item.id
-                                                    ? "bg-primary text-white shadow-lg shadow-primary/10"
+                                                    ? "bg-primary text-white border border-white shadow-xl shadow-primary/20"
                                                     : "text-gray-400 hover:text-white hover:bg-white/5"
                                                 )}
                                             >
-                                                <item.icon className="w-5 h-5" />
+                                                <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
                                                 {item.label}
                                             </button>
                                         ))}
@@ -172,10 +174,10 @@ export function WelcomeClient({
                                             <form action={signOut}>
                                                 <button 
                                                     type="submit"
-                                                    className="w-full px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-all rounded-xl flex items-center gap-3 group"
+                                                    className="w-full px-5 py-4 text-sm font-bold text-red-400 hover:bg-red-500/10 transition-all rounded-2xl flex items-center gap-4 group"
                                                 >
                                                     <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-                                                    Terminate Session
+                                                    Logout Session
                                                 </button>
                                             </form>
                                         </div>
@@ -216,7 +218,9 @@ export function WelcomeClient({
                         <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
                             <h2 className="text-3xl font-black text-white tracking-tight">KYC Verification</h2>
                             <p className="text-gray-400 text-lg font-medium">Complete your identity verification protocol.</p>
-                            <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-black text-lg shadow-xl shadow-primary/20"><Link href="/kyc">Start Verification Process</Link></Button>
+                            <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-black text-lg shadow-xl shadow-primary/20">
+                                <Link href="/kyc">Start Verification Process</Link>
+                            </Button>
                         </div>
                     </TabsContent>
                 </Tabs>
