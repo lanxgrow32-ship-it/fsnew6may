@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { signOut } from '@/app/actions';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
     LayoutDashboard, 
     ShoppingCart, 
@@ -35,6 +37,12 @@ import { WalletView } from './wallet-view';
 import { TransactionsView } from './transactions-view';
 import { SupportView } from './support-view';
 import { CompetitionView } from './competition-view';
+
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
+        {children}
+    </div>
+);
 
 const Logo = () => (
     <div className="flex items-center gap-2">
