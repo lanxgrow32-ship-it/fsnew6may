@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { signOut } from '@/app/actions';
 import Link from 'next/link';
 import { 
@@ -35,13 +35,13 @@ import { CompetitionView } from './competition-view';
 import { SupportView } from './support-view';
 
 const Logo = () => (
-    <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-xl text-2xl font-bold border border-white/10 shadow-inner shadow-black/50 overflow-hidden">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M2 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M22 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M12 22V12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+    <div className="flex items-center gap-2">
+        <div className="bg-primary h-8 w-8 flex items-center justify-center rounded-lg shadow-lg shadow-primary/20">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+        </div>
+        <span className="font-poppins font-black text-lg tracking-tighter text-white hidden lg:block">FundedStock</span>
     </div>
 );
 
@@ -63,14 +63,15 @@ export function WelcomeClient({
     const [activeTab, setActiveTab] = useState('hub');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // Shorter labels for a more compact dashboard
     const navItems = [
-        { id: 'hub', label: "Account Hub", icon: LayoutDashboard },
-        { id: 'get-funded', label: "Get Funded", icon: ShoppingCart },
-        { id: 'wallet', label: "Wallet", icon: Wallet },
-        { id: 'transactions', label: "Transactions", icon: History },
-        { id: 'competition', label: "Tournaments", icon: Trophy },
-        { id: 'support', label: "Support", icon: LifeBuoy },
-        { id: 'kyc', label: "KYC", icon: FileCheck },
+        { id: 'hub', label: "Portfolio", mobileLabel: "Account Hub", icon: LayoutDashboard },
+        { id: 'get-funded', label: "Arena", mobileLabel: "Get Funded", icon: ShoppingCart },
+        { id: 'wallet', label: "Wallet", mobileLabel: "Wallet", icon: Wallet },
+        { id: 'transactions', label: "History", mobileLabel: "Transactions", icon: History },
+        { id: 'competition', label: "Battles", mobileLabel: "Tournaments", icon: Trophy },
+        { id: 'support', label: "Help", mobileLabel: "Support", icon: LifeBuoy },
+        { id: 'kyc', label: "Verify", mobileLabel: "KYC", icon: FileCheck },
     ];
 
     return (
@@ -83,68 +84,68 @@ export function WelcomeClient({
             </div>
 
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-                {/* Unified Header */}
+                {/* Unified Compact Header */}
                 <header className="flex items-center justify-between mb-12 z-20 relative">
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-6">
                         <Logo />
-                        <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg h-[50px]">
+                        <nav className="hidden md:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[44px]">
                             {navItems.map((item) => (
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={cn(
-                                        "px-5 py-2 text-sm font-bold transition-all flex items-center gap-2.5 rounded-full h-[42px]",
+                                        "px-4 py-1.5 text-[13px] font-bold transition-all rounded-full h-[36px] whitespace-nowrap shrink-0",
                                         activeTab === item.id
-                                        ? "bg-white/15 text-white shadow-sm border border-white/10"
+                                        ? "bg-white/10 text-white border border-white/10 shadow-sm"
                                         : "text-gray-400 hover:text-white"
                                     )}
                                 >
-                                    <item.icon className="w-4 h-4" />
                                     {item.label}
                                 </button>
                             ))}
-                            <form action={signOut} className="inline-block border-l border-white/10 ml-2 pl-1">
-                                <button type="submit" className="px-4 py-2 text-sm font-bold text-red-400 hover:text-red-300 transition-colors flex items-center gap-2">
-                                    <LogOut className="w-4 h-4" />
+                            <form action={signOut} className="inline-block border-l border-white/10 ml-1.5 pl-1.5">
+                                <button type="submit" className="px-3 py-1.5 text-[13px] font-bold text-red-400 hover:text-red-300 transition-colors">
                                     Logout
                                 </button>
                             </form>
                         </nav>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-0.5">Wallet Balance</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-primary font-black text-2xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
-                            </div>
+                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Wallet</span>
+                            <span className="text-primary font-black text-xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
-                        <div className="relative h-11 w-11 rounded-full border border-white/10 overflow-hidden shadow-xl">
+                        <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden shadow-xl">
                             <Avatar className="h-full w-full">
-                                <AvatarImage src={`https://avatar.vercel.sh/${profile.email}.png`} alt={profile.full_name || 'User'} />
-                                <AvatarFallback className="bg-primary/20 text-primary font-bold">{profile.full_name?.[0].toUpperCase()}</AvatarFallback>
+                                <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
+                                    {profile.full_name?.[0].toUpperCase()}
+                                </AvatarFallback>
                             </Avatar>
                         </div>
                         
                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                             <SheetTrigger asChild>
-                                <button className="h-11 w-11 flex items-center justify-center rounded-xl bg-black/20 border border-white/10 md:hidden transition-colors">
-                                    <Menu className="h-6 w-6 text-gray-300" />
+                                <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 md:hidden transition-colors shadow-lg">
+                                    <Menu className="h-5 w-5 text-gray-300" />
                                 </button>
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col font-poppins">
                                 <SheetHeader className="p-6 border-b border-white/5">
                                     <SheetTitle className="sr-only">Navigation Protocol</SheetTitle>
                                     <div className="flex items-center gap-3 text-left">
-                                        <Logo />
+                                        <div className="bg-primary h-8 w-8 flex items-center justify-center rounded-lg">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </div>
                                         <span className="text-white font-black text-lg tracking-tight">FundedStock</span>
                                     </div>
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto">
-                                    {/* Mobile Balance Box matching Reference Image */}
-                                    <div className="px-6 py-8 mb-8 bg-black/60 rounded-3xl border border-white/5 text-center shadow-2xl">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-2">Balance</p>
+                                    <div className="px-6 py-8 mb-6 bg-black/60 rounded-3xl border border-white/5 text-center shadow-2xl">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-2">BALANCE</p>
                                         <p className="text-primary font-black text-4xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                                     </div>
 
@@ -164,7 +165,7 @@ export function WelcomeClient({
                                                 )}
                                             >
                                                 <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
-                                                {item.label}
+                                                {item.mobileLabel}
                                             </button>
                                         ))}
                                     </div>
@@ -176,7 +177,7 @@ export function WelcomeClient({
                                                     type="submit"
                                                     className="w-full px-5 py-4 text-sm font-bold text-red-400 hover:bg-red-500/10 transition-all rounded-2xl flex items-center gap-4 group"
                                                 >
-                                                    <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                                                    <LogOut className="w-5 h-5" />
                                                     Logout Session
                                                 </button>
                                             </form>
