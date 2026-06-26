@@ -9,10 +9,13 @@ import { revalidatePath } from 'next/cache';
  */
 function getAutoClassification(planName: string): string {
     const name = planName.toLowerCase();
+    // Strict PTP Check
+    if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
+        return 'passthenpay';
+    }
     if (name.includes('instant')) return 'instant_live';
     if (name.includes('1-step')) return 'one_step_phase_1';
     if (name.includes('2-step')) return 'two_step_phase_1';
-    if (name.includes('ptp')) return 'one_step_phase_1';
     return 'evaluation';
 }
 
@@ -105,7 +108,6 @@ export async function approveAccount(accountId: string) {
 
 /**
  * Rejects an account request.
- * Updated to update status instead of deleting for the persistent ledger.
  */
 export async function deleteAccountRequest(accountId: string) {
     const { error } = await supabaseAdmin

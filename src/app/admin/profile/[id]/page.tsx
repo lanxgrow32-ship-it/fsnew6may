@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use, useActionState } from 'react';
@@ -161,6 +162,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                             <SelectTrigger className="bg-black/40 border-white/10 text-white h-11"><SelectValue/></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="evaluation">Registered User</SelectItem>
+                                                <SelectItem value="passthenpay" className="text-amber-500 font-bold">PassThenPay</SelectItem>
                                                 <SelectItem value="instant_live" className="text-green-500 font-bold">Instant (Live)</SelectItem>
                                                 <SelectItem value="one_step_phase_1">1-Step (Phase 1)</SelectItem>
                                                 <SelectItem value="one_step_live" className="text-green-500 font-bold">1-Step (Live)</SelectItem>

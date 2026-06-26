@@ -8,6 +8,10 @@ import { format } from 'date-fns';
 // Helper to determine starting classification
 function getAutoClassification(planName: string): string {
     const name = planName.toLowerCase();
+    // Strict PTP Check
+    if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
+        return 'passthenpay';
+    }
     if (name.includes('instant')) return 'instant_live';
     if (name.includes('1-step')) return 'one_step_phase_1';
     if (name.includes('2-step')) return 'two_step_phase_1';
@@ -33,32 +37,6 @@ function getAccountSizeText(planName: string): string {
 
     return 'N/A';
 }
-
-// Helper function to parse plan name into account balance
-function getBalanceFromPlanName(planName: string): number {
-    if (!planName) return 0;
-
-    const name = planName.toLowerCase();
-    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
-    
-    if (match) {
-        let amount = parseFloat(match[1].replace(/,/g, ''));
-        const unit = match[2];
-
-        if (unit === 'k') amount *= 1000;
-        else if (unit === 'l' || unit === 'lakh') amount *= 100000;
-        else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
-        return amount;
-    }
-    
-    const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
-    }
-
-    return 0;
-}
-
 
 export async function createAdmin(prevState: any, formData: FormData) {
   const fullName = formData.get('full_name') as string;

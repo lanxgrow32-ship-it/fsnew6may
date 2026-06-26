@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,7 +63,7 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
         <form action={signOut} className="hidden lg:block">
             <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2">
                 <LogOut className="w-3.5 h-3.5" />
-                Sign Out
+                Logout
             </Button>
         </form>
         <DropdownMenu>
@@ -167,7 +168,6 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                             .update({ account_classification: stats.accountClassification })
                             .eq('id', id);
                         
-                        // Also sync the main profile if this is the user's primary/last used account
                         await supabaseAdmin
                             .from('profiles')
                             .update({ account_classification: stats.accountClassification })
@@ -207,27 +207,27 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                             <UserAvatar />
                             <div>
                                 <h2 className="text-2xl font-bold text-white">{profile.full_name}</h2>
-                                <p className="text-gray-400">Account ID: {account.id.substring(0, 12)}</p>
+                                <p className="text-gray-400 text-xs truncate">Account ID: {account.id}</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <div className="bg-black/20 p-4 rounded-xl border border-white/5 overflow-hidden">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Initial</p>
-                                <p className="text-lg font-bold text-white mt-1">₹{initialBalance.toLocaleString('en-IN')}</p>
+                                <p className="text-base font-bold text-white mt-1 truncate">₹{initialBalance.toLocaleString('en-IN')}</p>
                             </div>
-                            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <div className="bg-black/20 p-4 rounded-xl border border-white/5 overflow-hidden">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Model</p>
-                                <p className="text-lg font-bold text-white mt-1 capitalize truncate">{account.account_model === 'passthrupay' ? 'PassThenPay' : 'Standard'}</p>
+                                <p className="text-base font-bold text-white mt-1 capitalize truncate">{account.account_model === 'passthrupay' ? 'PassThenPay' : 'Standard'}</p>
                             </div>
-                            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <div className="bg-black/20 p-4 rounded-xl border border-white/5 overflow-hidden">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Live Status</p>
-                                <p className="text-lg font-bold text-primary mt-1 capitalize whitespace-nowrap overflow-hidden text-ellipsis">
+                                <p className="text-base font-bold text-primary mt-1 capitalize truncate">
                                     {currentClassification === 'passthenpay' ? 'PassThenPay' : currentClassification.replace(/_/g, ' ')}
                                 </p>
                             </div>
-                            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <div className="bg-black/20 p-4 rounded-xl border border-white/5 overflow-hidden">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Account</p>
-                                <p className={cn("text-lg font-bold mt-1 capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
+                                <p className={cn("text-base font-bold mt-1 capitalize truncate", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>
                     </GlassCard>
@@ -258,17 +258,17 @@ const AccountDetails = ({ account }: { account: any }) => (
             <h3 className="font-semibold mb-4 text-white tracking-wide">Account credentials</h3>
             <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5">
-                        <div><p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Trading ID</p><p className="font-semibold font-mono text-white mt-0.5">{account.trading_username || 'Awaiting Setup'}</p></div>
-                        <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white" />
+                    <div className="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5 overflow-hidden">
+                        <div className="min-w-0"><p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Trading ID</p><p className="font-semibold font-mono text-white mt-0.5 truncate">{account.trading_username || 'Awaiting Setup'}</p></div>
+                        <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white shrink-0 ml-2" />
                     </div>
-                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                     <div className="bg-black/20 p-3 rounded-lg border border-white/5 overflow-hidden">
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Password</p>
-                        <p className="font-semibold font-mono text-white text-sm mt-0.5">{account.trading_password || '••••••••'}</p>
+                        <p className="font-semibold font-mono text-white text-sm mt-0.5 truncate">{account.trading_password || '••••••••'}</p>
                     </div>
-                    <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                    <div className="bg-black/20 p-3 rounded-lg border border-white/5 overflow-hidden">
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Terminal</p>
-                         <a href="https://stockmint.io" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:underline flex items-center gap-1 mt-0.5">Stockmint.io <ExternalLink className="w-3 h-3" /></a>
+                         <a href="https://stockmint.io" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:underline flex items-center gap-1 mt-0.5 truncate">Stockmint.io <ExternalLink className="w-3 h-3" /></a>
                     </div>
                 </div>
             </div>
