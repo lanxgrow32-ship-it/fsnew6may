@@ -31,6 +31,13 @@ import {
     LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { 
+    Sheet, 
+    SheetContent, 
+    SheetHeader, 
+    SheetTitle, 
+    SheetTrigger 
+} from '@/components/ui/sheet';
 
 // Sub-views
 import { AccountsHub } from './accounts-hub';
@@ -66,6 +73,7 @@ export function WelcomeClient({
     supportConversations: any[]
 }) {
     const [activeTab, setActiveTab] = useState('hub');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const navItems = [
         { id: 'hub', label: "Account Hub", icon: LayoutDashboard },
@@ -114,7 +122,54 @@ export function WelcomeClient({
                             <span className="text-primary font-black text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         <UserNav profile={profile} />
-                        <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors"><Menu className="h-5 w-5 text-gray-300" /></button>
+                        
+                        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                            <SheetTrigger asChild>
+                                <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
+                                    <Menu className="h-5 w-5 text-gray-300" />
+                                </button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0">
+                                <SheetHeader className="p-6 border-b border-white/5">
+                                    <SheetTitle className="flex items-center gap-3 text-left">
+                                        <Logo />
+                                        <span className="text-white font-bold">FundedStock</span>
+                                    </SheetTitle>
+                                </SheetHeader>
+                                <div className="flex flex-col p-4 gap-2">
+                                    <div className="px-4 py-2 mb-4 sm:hidden">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Available Balance</p>
+                                        <p className="text-primary font-black text-2xl mt-1">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                                    </div>
+                                    {navItems.map((item) => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                setActiveTab(item.id);
+                                                setIsSidebarOpen(false);
+                                            }}
+                                            className={cn(
+                                                "w-full px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-3 rounded-xl",
+                                                activeTab === item.id
+                                                ? "bg-primary text-white shadow-md"
+                                                : "text-gray-400 hover:text-white hover:bg-white/5"
+                                            )}
+                                        >
+                                            <item.icon className="w-4 h-4" />
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                    <Link 
+                                        href="/guide" 
+                                        onClick={() => setIsSidebarOpen(false)}
+                                        className="w-full px-4 py-3 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 transition-colors rounded-xl flex items-center gap-3"
+                                    >
+                                        <FileCheck className="w-4 h-4" />
+                                        Guide
+                                    </Link>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
                     </div>
                 </header>
 
