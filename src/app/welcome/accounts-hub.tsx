@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -87,7 +86,7 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
     );
 };
 
-export function AccountsHub({ accounts, profile, onSwitchToArena }: { accounts: any[], profile: any, onSwitchToArena: () => void }) {
+export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accounts: any[], profile: any, onSwitchToGetFunded: () => void }) {
     const kycVerified = profile.kyc_status === 'verified';
 
     return (
@@ -98,9 +97,9 @@ export function AccountsHub({ accounts, profile, onSwitchToArena }: { accounts: 
                     <p className="text-gray-400 mt-1 text-lg">Manage multiple accounts and track your performance.</p>
                 </div>
                  {!kycVerified && (
-                    <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-full border border-amber-400/20 text-sm font-semibold hover:bg-amber-400/20 transition-all">
-                        <ShieldAlert className="w-4 h-4"/> Complete KYC to Activate Accounts
-                    </Link>
+                    <div className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-full border border-amber-400/20 text-sm font-semibold">
+                        <ShieldAlert className="w-4 h-4"/> Identity Verification Required
+                    </div>
                 )}
             </div>
 
@@ -112,8 +111,8 @@ export function AccountsHub({ accounts, profile, onSwitchToArena }: { accounts: 
                         <PlusCircle className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                         <h3 className="text-xl font-bold text-white">No active accounts</h3>
                         <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8">Ready to start trading? Select your first funding plan from our marketplace.</p>
-                        <Button onClick={onSwitchToArena} size="lg" className="bg-primary text-primary-foreground font-bold rounded-xl px-8">
-                            Open Marketplace <ArrowRight className="ml-2 h-4 w-4"/>
+                        <Button onClick={onSwitchToGetFunded} size="lg" className="bg-primary text-primary-foreground font-bold rounded-xl px-8">
+                            Get Funding Plan <ArrowRight className="ml-2 h-4 w-4"/>
                         </Button>
                     </GlassCard>
                 )}
