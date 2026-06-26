@@ -10,6 +10,7 @@ import { signOut } from '@/app/actions';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Bell, Copy, DollarSign, ExternalLink, FileCheck, LogOut, Menu, Search, Settings, ShieldAlert, User, MessageSquare, LineChart, Briefcase, Grid3x3, Calendar, EyeOff, Eye, CheckCircle } from 'lucide-react';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
@@ -27,13 +28,13 @@ const UserAvatar = () => (
 );
 
 const Logo = () => (
-    <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M2 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M22 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M12 22V12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+    <div className="flex items-center gap-2">
+        <div className="bg-primary h-7 w-7 flex items-center justify-center rounded-lg shadow-lg shadow-primary/20">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+        </div>
+        <span className="font-poppins font-bold text-base tracking-tight text-white hidden lg:block">FundedStock</span>
     </div>
 );
 
@@ -124,7 +125,9 @@ export default async function AccountDashboardPage({ params }: { params: Promise
 
     const profile = account.profiles;
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-    let stats = { balance: 0, totalPnl: 0, winRate: 0, activeTradingDays: 0 };
+    
+    // Default stats
+    let stats = { balance: 0, totalPnl: 0, winRate: 0, activeTradingDays: 0, accountClassification: account.account_classification };
 
     if (stockmintApiKey && account.trading_username) {
         try {
@@ -133,20 +136,37 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                 cache: 'no-store',
             });
             if (res.ok) {
-                const data = await res.json();
-                if (data.success) stats = data.data;
+                const json = await res.json();
+                if (json.success) {
+                    stats = json.data;
+                    
+                    // BIDIRECTIONAL SYNC: Update database if StockMint classification has changed
+                    if (stats.accountClassification && stats.accountClassification !== account.account_classification) {
+                        await supabaseAdmin
+                            .from('user_accounts')
+                            .update({ account_classification: stats.accountClassification })
+                            .eq('id', id);
+                        
+                        // Also update the main profile if it matches the current account being viewed
+                        await supabaseAdmin
+                            .from('profiles')
+                            .update({ account_classification: stats.accountClassification })
+                            .eq('id', session.user.id);
+                    }
+                }
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error('Stats Sync Error:', e); }
     }
 
     const initialBalance = getBalanceFromPlanName(account.plan_name);
     const pnlProgress = initialBalance > 0 ? (stats.totalPnl / initialBalance) * 100 : 0;
+    const currentClassification = stats.accountClassification || account.account_classification || 'evaluation';
 
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
-                <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
+                <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full filter blur-3xl opacity-20 " />
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
 
@@ -180,11 +200,11 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                                 <p className="text-xl font-bold text-white mt-1 capitalize">{account.account_model === 'passthrupay' ? 'PassThenPay' : 'Standard'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Type</p>
-                                <p className="text-xl font-bold text-white mt-1 capitalize">{account.account_classification?.replace(/_/g, ' ') || 'Evaluation'}</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Live Status</p>
+                                <p className="text-xl font-bold text-primary mt-1 capitalize">{currentClassification.replace(/_/g, ' ')}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Status</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Account</p>
                                 <p className={cn("text-xl font-bold mt-1 capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>
