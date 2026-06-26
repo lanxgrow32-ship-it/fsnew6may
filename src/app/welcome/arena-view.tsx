@@ -114,14 +114,14 @@ export function ArenaView({
 
     if (checkoutStep === 'method') {
         return (
-            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95">
+            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
                 <Button variant="ghost" onClick={() => setCheckoutStep('selection')} className="text-gray-500 hover:text-white font-bold p-0 h-auto">
                     <ChevronLeft className="mr-1 h-4 w-4" /> Back to Plans
                 </Button>
                 
-                <div className="text-center space-y-1">
+                <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Payment Method</h2>
-                    <p className="text-gray-400 text-base font-medium">Choose your preferred way to activate {selectedPlan.title}.</p>
+                    <p className="text-gray-400 text-sm font-medium">Choose your preferred way to activate {selectedPlan.title}.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -130,12 +130,12 @@ export function ArenaView({
                         disabled={isActionPending}
                         className="group relative flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
                     >
-                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                            <Wallet className="w-6 h-6" />
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <Wallet className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-base font-bold text-white">Pay via Wallet</p>
-                            <p className="text-xs text-gray-500 font-medium">Available: ₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                            <p className="text-sm font-bold text-white">Pay via Wallet</p>
+                            <p className="text-[11px] text-gray-500 font-medium">Available: ₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                         </div>
                         {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
                     </button>
@@ -144,12 +144,12 @@ export function ArenaView({
                         onClick={() => setCheckoutStep('direct-pay')}
                         className="group flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
                     >
-                        <div className="h-12 w-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                            <CreditCard className="w-6 h-6" />
+                        <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                            <CreditCard className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-base font-bold text-white">Direct Payment</p>
-                            <p className="text-xs text-gray-500 font-medium">Instant UPI / QR verification</p>
+                            <p className="text-sm font-bold text-white">Direct Payment</p>
+                            <p className="text-[11px] text-gray-500 font-medium">Instant UPI / QR verification</p>
                         </div>
                     </button>
                 </div>
@@ -158,57 +158,61 @@ export function ArenaView({
     }
 
     if (checkoutStep === 'direct-pay') {
+        const isPTP = selectedPlan.title.toLowerCase().includes('ptp');
+        const upiId = isPTP ? paymentSettings?.pay_later_upi_id : paymentSettings?.upi_id;
+        const qrUrl = isPTP ? paymentSettings?.pay_later_qr_code_url : paymentSettings?.qr_code_url;
+
         return (
-            <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in zoom-in-95">
+            <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
                 <Button variant="ghost" onClick={() => setCheckoutStep('method')} className="text-gray-500 hover:text-white font-bold p-0 h-auto">
                     <ChevronLeft className="mr-1 h-4 w-4" /> Back
                 </Button>
 
-                <div className="text-center space-y-1">
+                <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Direct Purchase</h2>
-                    <p className="text-gray-400 text-base font-medium">Scan to pay for the {selectedPlan.title} and provide reference.</p>
+                    <p className="text-gray-400 text-sm font-medium">Scan to pay for the {selectedPlan.title} and provide reference.</p>
                 </div>
 
                 <GlassCard className="p-0 border-primary/20">
                     <div className="flex flex-col md:flex-row">
-                        <div className="p-8 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[280px] shrink-0 flex flex-col items-center justify-center gap-6">
-                            <div className="text-center space-y-1">
-                                <p className="text-xs text-gray-500 font-bold">Pay Exactly</p>
-                                <p className="text-4xl font-bold text-primary tracking-tight">₹{selectedPlan.price.toLocaleString('en-IN')}</p>
+                        <div className="p-8 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[280px] shrink-0 flex flex-col items-center justify-center gap-6 text-center">
+                            <div className="space-y-1">
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Pay Exactly</p>
+                                <p className="text-3xl font-bold text-primary tracking-tight">₹{selectedPlan.price}</p>
                             </div>
 
                             <div className="bg-white p-2 rounded-xl shadow-2xl">
-                                {paymentSettings?.qr_code_url ? (
-                                    <Image src={paymentSettings.qr_code_url} alt="Payment QR" width={160} height={160} />
+                                {qrUrl ? (
+                                    <Image src={qrUrl} alt="Payment QR" width={140} height={140} />
                                 ) : (
-                                    <div className="w-[160px] h-[160px] flex items-center justify-center text-slate-950 font-bold text-xs">QR Loading...</div>
+                                    <div className="w-[140px] h-[140px] flex items-center justify-center text-slate-950 font-bold text-[10px]">QR Loading...</div>
                                 )}
                             </div>
                             
-                            <div className="text-center space-y-1">
-                                <p className="text-xs text-gray-500 font-bold">UPI Address</p>
-                                <div className="flex items-center gap-2 group">
-                                    <p className="font-mono text-xs font-bold text-white truncate max-w-[150px]">{paymentSettings?.upi_id || 'pay@fundedstock'}</p>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-600 hover:text-white" onClick={() => { navigator.clipboard.writeText(paymentSettings?.upi_id || ''); toast({title: "Copied"}); }}><Copy className="w-3 h-3"/></Button>
+                            <div className="space-y-1">
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">UPI Address</p>
+                                <div className="flex items-center gap-2 justify-center">
+                                    <p className="font-mono text-[10px] font-bold text-white truncate max-w-[140px]">{upiId || 'pay@fundedstock'}</p>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-600 hover:text-white" onClick={() => { navigator.clipboard.writeText(upiId || ''); toast({title: "Copied"}); }}><Copy className="w-3 h-3"/></Button>
                                 </div>
                             </div>
                         </div>
-                        <form onSubmit={handleDirectSubmit} className="flex-1 p-8 flex flex-col justify-center space-y-8">
+                        <form onSubmit={handleDirectSubmit} className="flex-1 p-8 flex flex-col justify-center space-y-6">
                             <div className="space-y-3">
-                                <Label className="text-xs font-bold text-gray-500">Transaction ID (UTR)</Label>
+                                <Label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Transaction ID (UTR)</Label>
                                 <Input 
                                     placeholder="Enter 12-digit UPI reference" 
                                     value={utr} 
                                     onChange={(e) => setUtr(e.target.value)} 
                                     required 
-                                    className="bg-black/20 border-white/10 h-14 text-white text-lg font-mono focus:ring-primary/50" 
+                                    className="bg-black/20 border-white/10 h-12 text-white text-base font-mono focus:ring-primary/50" 
                                 />
                                 <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium bg-white/5 p-2 rounded-lg border border-white/5">
                                     <CheckCircle className="h-3 w-3 text-green-500"/>
                                     Verified by our team within 15 minutes.
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full h-14 font-bold rounded-2xl shadow-xl shadow-primary/20 text-base">
+                            <Button type="submit" className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs">
                                 Confirm & Activate Plan
                             </Button>
                         </form>
@@ -241,7 +245,7 @@ export function ArenaView({
                     </div>
                 </div>
                 <div className="pt-4 border-t border-white/5">
-                    <p className="text-xs font-bold text-gray-600">Capital Fee</p>
+                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Capital Fee</p>
                     <p className="text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left">₹{plan.price}</p>
                 </div>
             </CardContent>
@@ -257,10 +261,10 @@ export function ArenaView({
     );
 
     return (
-        <div className="space-y-10 animate-in fade-in duration-500">
+        <div className="space-y-8 animate-in fade-in duration-500">
             <div className="space-y-1">
                 <h2 className="text-2xl font-bold text-white tracking-tight">Get Funded</h2>
-                <p className="text-gray-400 text-base mt-1 font-medium">Select your path to instant capital and professional scaling.</p>
+                <p className="text-gray-400 text-sm font-medium">Select your path to instant capital and professional scaling.</p>
             </div>
 
             <Tabs defaultValue="instant" className="w-full">

@@ -36,8 +36,8 @@ import { CompetitionView } from './competition-view';
 
 const Logo = () => (
     <div className="flex items-center gap-2">
-        <div className="bg-primary h-8 w-8 flex items-center justify-center rounded-lg shadow-lg shadow-primary/20">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div className="bg-primary h-7 w-7 flex items-center justify-center rounded-lg shadow-lg shadow-primary/20">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
         </div>
@@ -87,13 +87,13 @@ export function WelcomeClient({
                 <header className="flex items-center justify-between mb-12 z-20 relative">
                     <div className="flex items-center gap-6">
                         <Logo />
-                        <nav className="hidden xl:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[44px]">
+                        <nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">
                             {navItems.map((item) => (
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={cn(
-                                        "px-4 py-1.5 text-[13px] font-bold transition-all rounded-full h-[36px] whitespace-nowrap shrink-0",
+                                        "px-4 py-1.5 text-[12px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0",
                                         activeTab === item.id
                                         ? "bg-white/10 text-white border border-white/10 shadow-sm"
                                         : "text-gray-400 hover:text-white"
@@ -108,19 +108,19 @@ export function WelcomeClient({
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
                             <span className="text-[9px] font-bold text-gray-600 mb-0.5 uppercase tracking-wider">Balance</span>
-                            <span className="text-primary font-bold text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                            <span className="text-primary font-bold text-base">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
-                        <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center">
-                            <span className="text-primary font-bold text-sm">
+                        <div className="relative h-9 w-9 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center">
+                            <span className="text-primary font-bold text-xs">
                                 {profile.full_name?.[0].toUpperCase()}
                             </span>
                         </div>
                         
                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                             <SheetTrigger asChild>
-                                <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 xl:hidden transition-colors shadow-lg">
-                                    <Menu className="h-5 w-5 text-gray-300" />
+                                <button className="h-9 w-9 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 lg:hidden transition-colors shadow-lg">
+                                    <Menu className="h-4 w-4 text-gray-300" />
                                 </button>
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col font-poppins">

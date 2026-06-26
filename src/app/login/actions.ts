@@ -31,6 +31,9 @@ export async function login(prevState: any, formData: FormData) {
 
   if (profile?.role === 'admin') {
     redirect('/admin/dashboard');
+  } else if (profile?.role === 'support') {
+    // Redirect support agents directly to the ticket management system
+    redirect('/admin/tickets');
   } else {
     redirect('/welcome');
   }
