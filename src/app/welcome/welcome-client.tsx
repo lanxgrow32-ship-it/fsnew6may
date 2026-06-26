@@ -1,7 +1,7 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -47,13 +47,7 @@ const Logo = () => (
     </div>
 );
 
-const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
-    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
-        {children}
-    </div>
-);
-
-export function WelcomeClient({ 
+function WelcomeContent({ 
     profile, 
     accounts, 
     walletTransactions, 
@@ -68,15 +62,22 @@ export function WelcomeClient({
     competitions: any[],
     supportConversations: any[]
 }) {
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState('hub');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // FIX: Ensure page scrolls to top when tab changes or on initial load
+    useEffect(() => {
+        const validTabs = ['hub', 'marketplace', 'competition', 'wallet', 'transactions', 'support', 'kyc'];
+        if (tabParam && validTabs.includes(tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
+
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [activeTab]);
 
-    // Calculate total unread messages for the notification badge
     const totalUnread = supportConversations.reduce((sum, conv) => sum + (conv.unread_count_user || 0), 0);
 
     const navItems = [
@@ -91,7 +92,6 @@ export function WelcomeClient({
 
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
-            {/* Background Decorative Elements */}
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full filter blur-3xl opacity-20 " />
@@ -99,7 +99,6 @@ export function WelcomeClient({
             </div>
 
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-                {/* Unified Compact Header */}
                 <header className="flex items-center justify-between mb-12 z-20 relative">
                     <div className="flex items-center gap-6">
                         <Logo />
@@ -296,5 +295,13 @@ export function WelcomeClient({
                 </Tabs>
             </main>
         </div>
+    );
+}
+
+export function WelcomeClient(props: any) {
+    return (
+        <Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-950 text-white">Initializing Dashboard...</div>}>
+            <WelcomeContent {...props} />
+        </Suspense>
     );
 }

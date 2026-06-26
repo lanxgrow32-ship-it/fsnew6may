@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useActionState, useRef } from 'react';
@@ -71,10 +70,6 @@ function UserNav({ profile }: { profile: any}) {
                         <FileCheck className="mr-2 h-4 w-4" />
                         <span>KYC</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/tickets')}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        <span>Support</span>
-                    </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                  <form action={signOut}>
@@ -94,9 +89,9 @@ const navItems = [
     { href: "/welcome", label: "Account Overview" },
     { href: "/guide", label: "Trading Guide" },
     { href: "/referrals", label: "Referrals" },
-    { href: "/tickets", label: "Support" },
+    { href: "/welcome?tab=support", label: "Live Chat" },
     { href: "/mentor", label: "AI Mentor" },
-    { href: "/pricing", label: "Purchase New Plan" },
+    { href: "/welcome?tab=marketplace", label: "Get Funded" },
 ];
 
 const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
@@ -121,15 +116,6 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
       </nav>
     </div>
     <div className="flex items-center gap-2">
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Search className="h-5 w-5 text-gray-300" />
-      </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Settings className="h-5 w-5 text-gray-300" />
-      </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Bell className="h-5 w-5 text-gray-300" />
-      </button>
       <UserNav profile={profile} />
       <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
         <Menu className="h-5 w-5 text-gray-300" />

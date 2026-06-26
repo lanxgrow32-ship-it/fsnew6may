@@ -37,11 +37,12 @@ const Logo = () => (
 );
 
 const navItems = [
-    { href: "/welcome", label: "Account Hub" },
+    { href: "/welcome", label: "Account Overview" },
     { href: "/guide", label: "Trading Guide" },
     { href: "/referrals", label: "Referrals" },
-    { href: "/tickets", label: "Support" },
+    { href: "/welcome?tab=support", label: "Live Chat" },
     { href: "/mentor", label: "AI Mentor" },
+    { href: "/welcome?tab=marketplace", label: "Get Funded" },
 ];
 
 const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
@@ -191,7 +192,7 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                         <div className="bg-purple-600/20 p-4 rounded-full"><MessageSquare className="w-8 h-8 text-purple-400"/></div>
                         <h3 className="text-lg font-bold text-white">Need Help?</h3>
                         <p className="text-sm text-gray-400">Contact our 24/7 support team for assistance with this account.</p>
-                        <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 border border-purple-400/50 shadow-lg shadow-purple-500/20"><Link href="/tickets">Create Support Ticket</Link></Button>
+                        <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 border border-purple-400/50 shadow-lg shadow-purple-500/20"><Link href="/welcome?tab=support">Live Chat</Link></Button>
                     </GlassCard>
                 </div>
 

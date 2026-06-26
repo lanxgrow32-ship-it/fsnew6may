@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,15 +15,6 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
         {children}
     </div>
-);
-
-const UserAvatar = ({ className }: { className?: string }) => (
-  <div className={cn('relative h-16 w-16', className)}>
-    <div className="absolute -inset-1 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full blur-md opacity-75"></div>
-    <div className="relative h-16 w-16 flex items-center justify-center bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden">
-      <Image src="/bitmoji.png" alt="User Avatar" width={64} height={64} className="object-cover" />
-    </div>
-  </div>
 );
 
 const Logo = () => (
@@ -70,12 +60,6 @@ function UserNav({ profile }: { profile: any}) {
                             <span>KYC</span>
                         </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/tickets">
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            <span>Support</span>
-                        </Link>
-                    </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                  <form action={signOut}>
@@ -95,9 +79,9 @@ const navItems = [
     { href: "/welcome", label: "Account Overview" },
     { href: "/guide", label: "Trading Guide" },
     { href: "/referrals", label: "Referrals" },
-    { href: "/tickets", label: "Support" },
+    { href: "/welcome?tab=support", label: "Live Chat" },
     { href: "/mentor", label: "AI Mentor" },
-    { href: "/pricing", label: "Purchase New Plan" },
+    { href: "/welcome?tab=marketplace", label: "Get Funded" },
 ];
 
 const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
@@ -122,15 +106,6 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
       </nav>
     </div>
     <div className="flex items-center gap-2">
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Search className="h-5 w-5 text-gray-300" />
-      </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Settings className="h-5 w-5 text-gray-300" />
-      </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Bell className="h-5 w-5 text-gray-300" />
-      </button>
       <UserNav profile={profile} />
       <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
         <Menu className="h-5 w-5 text-gray-300" />
