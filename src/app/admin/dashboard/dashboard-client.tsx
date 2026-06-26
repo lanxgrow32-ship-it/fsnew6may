@@ -101,7 +101,6 @@ function AdminNav() {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border">
-                        <AvatarImage src={`https://avatar.vercel.sh/admin.png`} alt="Admin" />
                         <AvatarFallback>A</AvatarFallback>
                     </Avatar>
                 </Button>
@@ -234,6 +233,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
             <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/tickets" tooltip="Support"><MessageSquare />Support</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>

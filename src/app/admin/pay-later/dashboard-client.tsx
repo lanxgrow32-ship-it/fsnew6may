@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useActionState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -28,7 +27,6 @@ function AdminNav() {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border">
-                        <AvatarImage src={`https://avatar.vercel.sh/admin.png`} alt="Admin" />
                         <AvatarFallback>A</AvatarFallback>
                     </Avatar>
                 </Button>
@@ -190,6 +188,7 @@ export default function PayLaterDashboardClient({ initialProfiles, masterView }:
                 Blog
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton href="/admin/payouts" tooltip="Payouts">
                     <Banknote />
@@ -208,7 +207,7 @@ export default function PayLaterDashboardClient({ initialProfiles, masterView }:
                     Reports
                 </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports">
                 <LineChart />
                 Pay Later Reports

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, Loader2, Check, X, Copy, MessageSquare, LineChart, Swords, Users, Newspaper } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, Loader2, Check, X, Copy, MessageSquare, LineChart, Swords, Users, Newspaper, UserCheck } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -72,7 +71,7 @@ function PayoutActions({ request, onStatusChange }: { request: PayoutRequest, on
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Revert Payout Status?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This will change the status of this payout request back to "pending". The user's balance will not be automatically refunded.
                         </AlertDialogDescription>
@@ -265,6 +264,7 @@ export default function PayoutsPage() {
                                 Dashboard
                             </SidebarMenuButton>
                         </SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
                          <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/competition" tooltip="Competition">
                                 <Swords />
@@ -289,6 +289,7 @@ export default function PayoutsPage() {
                             Blog
                           </SidebarMenuButton>
                         </SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/payouts" isActive tooltip="Payouts">
                                 <Banknote />

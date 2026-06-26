@@ -445,6 +445,7 @@ function ReportsPageContent() {
                             Blog
                           </SidebarMenuButton>
                         </SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton>
                         </SidebarMenuItem>
