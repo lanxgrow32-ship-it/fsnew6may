@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -20,7 +21,7 @@ import {
     Info,
     Timer
 } from 'lucide-react';
-import { purchaseWithWallet } from './actions';
+import { purchaseWithWallet, requestManualAccount } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -111,17 +112,28 @@ export function ArenaView({
     const handleDirectSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!utr) return;
-        toast({ title: "Submission Received", description: "Admin will verify your direct payment shortly." });
-        setSelectedPlan(null);
-        setCheckoutStep('selection');
+
+        const price = parseFloat(selectedPlan.price.replace(/,/g, ''));
+        
+        startTransition(async () => {
+            const res = await requestManualAccount(profile.id, selectedPlan.title, price, utr);
+            if (res.error) {
+                toast({ title: "Submission Failed", description: res.error, variant: "destructive" });
+            } else {
+                toast({ title: "Submission Received", description: "Admin will verify your direct payment shortly." });
+                setSelectedPlan(null);
+                setCheckoutStep('selection');
+                window.location.reload();
+            }
+        });
     };
 
     if (checkoutStep === 'method') {
         return (
             <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
-                <Button variant="ghost" onClick={() => setCheckoutStep('selection')} className="text-gray-500 hover:text-white font-bold p-0 h-auto">
+                <button onClick={() => setCheckoutStep('selection')} className="flex items-center text-gray-500 hover:text-white font-bold p-0 h-auto transition-colors">
                     <ChevronLeft className="mr-1 h-4 w-4" /> Back to Plans
-                </Button>
+                </button>
                 
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Payment Method</h2>
@@ -170,9 +182,9 @@ export function ArenaView({
 
         return (
             <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
-                <Button variant="ghost" onClick={() => setCheckoutStep('method')} className="text-gray-500 hover:text-white font-bold p-0 h-auto">
+                <button onClick={() => setCheckoutStep('method')} className="flex items-center text-gray-500 hover:text-white font-bold p-0 h-auto transition-colors">
                     <ChevronLeft className="mr-1 h-4 w-4" /> Back
-                </Button>
+                </button>
 
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Direct Purchase</h2>
@@ -215,10 +227,11 @@ export function ArenaView({
                                 />
                                 <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium bg-white/5 p-2 rounded-lg border border-white/5">
                                     <CheckCircle className="h-3 w-3 text-green-500"/>
-                                    Verified by our team within 15 minutes.
+                                    Verified by our team within 30 minutes.
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs">
+                            <Button type="submit" disabled={isActionPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">
+                                {isActionPending ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : null}
                                 Confirm & Activate Plan
                             </Button>
                         </form>
@@ -258,7 +271,7 @@ export function ArenaView({
             <CardFooter>
                 <Button 
                     onClick={() => { setSelectedPlan(plan); setCheckoutStep('method'); }} 
-                    className="w-full font-bold h-10 rounded-xl text-xs shadow-lg"
+                    className="w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest"
                 >
                     Activate Now
                 </Button>

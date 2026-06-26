@@ -5,6 +5,36 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
 /**
+ * Handles manual account purchase requests (Direct UPI/QR)
+ */
+export async function requestManualAccount(userId: string, planName: string, amount: number, utr: string) {
+  if (!userId || !planName || !amount || !utr) {
+    return { error: 'Invalid request details.' };
+  }
+
+  const { error } = await supabaseAdmin
+    .from('user_accounts')
+    .insert({
+      user_id: userId,
+      plan_name: planName,
+      status: 'pending',
+      is_approved: false,
+      final_amount_paid: amount,
+      transaction_id: utr,
+      account_model: planName.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal'
+    });
+
+  if (error) {
+    console.error("Manual Request Error:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/welcome');
+  revalidatePath('/admin/account-requests');
+  return { success: true };
+}
+
+/**
  * Handles wallet top-up requests
  */
 export async function topUpWallet(userId: string, amount: number, utr: string) {
@@ -26,6 +56,7 @@ export async function topUpWallet(userId: string, amount: number, utr: string) {
   if (error) return { error: error.message };
 
   revalidatePath('/welcome');
+  revalidatePath('/admin/wallet-requests');
   return { success: true };
 }
 
@@ -129,7 +160,6 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
         });
     
     if (!error) {
-        // Fetch current unread counts to increment correctly
         const { data: conv } = await supabaseAdmin
             .from('support_conversations')
             .select('unread_count_user, unread_count_admin')
@@ -179,10 +209,8 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     if (!event.is_free) {
         if (profile.wallet_balance < event.entry_fee) return { error: 'Insufficient wallet balance' };
         
-        // Deduct balance
         await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance - event.entry_fee }).eq('id', userId);
         
-        // Log transaction
         await supabaseAdmin.from('wallet_transactions').insert({
             user_id: userId,
             amount: -event.entry_fee,
@@ -192,7 +220,6 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
         });
     }
 
-    // Register
     const { error } = await supabaseAdmin.from('competition_registrations').insert({
         user_id: userId,
         event_id: eventId,

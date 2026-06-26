@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -80,6 +81,7 @@ export default function AccountRequestsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports/wallet" tooltip="Wallet Reports"><Wallet />Wallet Reports</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
@@ -89,46 +91,44 @@ export default function AccountRequestsPage() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Account Purchase Requests</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Account Purchase Requests</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Pending Secondary Purchases</CardTitle>
-                            <CardDescription>Approve new account requests from existing users.</CardDescription>
+                            <CardTitle>Manual Payment Verification Queue</CardTitle>
+                            <CardDescription>Review and activate accounts for manual UPI/Direct purchases.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {loading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin"/></div> : (
+                            {loading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div> : (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Date</TableHead>
                                             <TableHead>User</TableHead>
                                             <TableHead>Plan</TableHead>
-                                            <TableHead>UTR / Transaction</TableHead>
-                                            <TableHead>KYC Status</TableHead>
+                                            <TableHead>UTR / Reference</TableHead>
+                                            <TableHead>Amount</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {requests.length > 0 ? requests.map((req) => (
-                                            <TableRow key={req.id}>
-                                                <TableCell>{new Date(req.created_at).toLocaleDateString()}</TableCell>
+                                            <TableRow key={req.id} className="group hover:bg-muted/30">
+                                                <TableCell className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString()}</TableCell>
                                                 <TableCell>
-                                                    <div className="font-medium">{req.profiles?.full_name}</div>
-                                                    <div className="text-xs text-muted-foreground">{req.profiles?.email}</div>
+                                                    <div className="font-bold text-sm">{req.profiles?.full_name}</div>
+                                                    <div className="text-[10px] text-muted-foreground uppercase font-bold">{req.profiles?.email}</div>
                                                 </TableCell>
-                                                <TableCell>{req.plan_name}</TableCell>
-                                                <TableCell className="font-mono text-xs">{req.transaction_id}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={req.profiles?.kyc_status === 'verified' ? 'default' : 'secondary'}>
-                                                        {req.profiles?.kyc_status || 'pending'}
-                                                    </Badge>
+                                                    <Badge variant="outline" className="font-bold bg-primary/5 text-primary border-primary/20">{req.plan_name}</Badge>
                                                 </TableCell>
+                                                <TableCell className="font-mono text-xs font-black text-foreground">{req.transaction_id}</TableCell>
+                                                <TableCell className="font-bold text-sm">₹{Number(req.final_amount_paid).toLocaleString('en-IN')}</TableCell>
                                                 <TableCell className="text-right space-x-2">
-                                                    <Button size="sm" variant="outline" onClick={() => handleApprove(req.id)} className="text-green-600 border-green-600 hover:bg-green-50" disabled={isPending}>
-                                                        <Check className="w-4 h-4 mr-1"/> Approve
+                                                    <Button size="sm" onClick={() => handleApprove(req.id)} className="bg-green-600 hover:bg-green-700 font-bold" disabled={isPending}>
+                                                        {isPending ? <Loader2 className="w-3 h-3 animate-spin"/> : <Check className="w-3 h-3 mr-1"/>} Approve
                                                     </Button>
                                                     <Button size="sm" variant="ghost" onClick={() => handleDelete(req.id)} className="text-red-600 hover:bg-red-50" disabled={isPending}>
                                                         <X className="w-4 h-4"/>
@@ -136,7 +136,7 @@ export default function AccountRequestsPage() {
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
-                                            <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No pending account requests.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">No pending purchase requests at this time.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
