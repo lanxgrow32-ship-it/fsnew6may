@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -128,7 +129,7 @@ export default async function AccountDashboardPage({ params }: { params: Promise
     if (stockmintApiKey && account.trading_username) {
         try {
             const res = await fetch(`https://stockmint.io/api/users/stats?email=${account.trading_username}`, {
-                headers: { 'x-api-key': stockmintApiKey },
+                headers: { 'X-API-Key': stockmintApiKey },
                 cache: 'no-store',
             });
             if (res.ok) {
@@ -180,7 +181,7 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Type</p>
-                                <p className="text-xl font-bold text-white mt-1 capitalize">{account.account_classification}</p>
+                                <p className="text-xl font-bold text-white mt-1 capitalize">{account.account_classification?.replace(/_/g, ' ') || 'Evaluation'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Status</p>

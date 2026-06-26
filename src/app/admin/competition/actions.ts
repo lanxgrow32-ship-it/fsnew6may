@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -70,7 +71,9 @@ export async function approveRegistration(regId: string) {
                         fullName: reg.profiles.full_name,
                         email: stockmintUsername,
                         password: stockmintUsername,
-                        initialBalance: 100000 
+                        initialBalance: 100000,
+                        accountClassification: 'evaluation',
+                        accountModel: 'normal'
                     }),
                 });
                 if (!response.ok) {
@@ -115,7 +118,7 @@ export async function deleteEvent(id: string) {
  * 1. Fetches final balances from StockMint for all approved users of a week.
  * 2. Identifies Top 3 and saves them to competition_winners.
  * 3. Marks event as archived.
- * NOTE: Participant deletion removed to allow permanent report exporting.
+ * NOTE: Participant data remains for reporting.
  */
 export async function archiveWeekResults(eventId: string) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
@@ -130,12 +133,12 @@ export async function archiveWeekResults(eventId: string) {
         
         if (regsError || !regs) throw new Error("Could not find participants.");
 
-        // 2. Fetch final stats for all
+        // 2. Fetch final stats for all using stats endpoint
         const results = await Promise.all(regs.map(async (reg) => {
             let balance = 100000;
             if (reg.stockmint_username && stockmintApiKey) {
                 const res = await fetch(`https://stockmint.io/api/users/stats?email=${reg.stockmint_username}`, {
-                    headers: { 'x-api-key': stockmintApiKey }
+                    headers: { 'X-API-Key': stockmintApiKey }
                 });
                 if (res.ok) {
                     const stats = await res.json();
@@ -167,8 +170,6 @@ export async function archiveWeekResults(eventId: string) {
 
         // 5. Mark as archived
         await supabaseAdmin.from('competition_events').update({ is_archived: true }).eq('id', eventId);
-
-        // NOTE: We no longer delete registrations here so that "Export PDF" can work forever.
 
         revalidatePath('/admin/competition');
         return { success: true };

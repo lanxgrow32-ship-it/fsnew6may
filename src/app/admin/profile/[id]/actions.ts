@@ -69,7 +69,7 @@ export async function updateProfile(formData: FormData) {
       
       if (apiKey && accounts && accounts.length > 0) {
           try {
-              // Loop through and update every account StockMint knows about
+              // Loop through and update every account StockMint knows about via POST /api/users/update
               await Promise.all(accounts.map(async (acc) => {
                   if (acc.trading_username) {
                       await fetch('https://stockmint.io/api/users/update', {
@@ -83,7 +83,7 @@ export async function updateProfile(formData: FormData) {
                   }
               }));
           } catch (e) {
-              console.error('StockMint Manual Sync Error:', e);
+              console.error('StockMint Promotion Sync Error:', e);
           }
       }
   }

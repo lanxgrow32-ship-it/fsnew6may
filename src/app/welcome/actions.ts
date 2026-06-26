@@ -183,19 +183,17 @@ export async function purchaseWithWallet(userId: string, plan: any) {
           const [base, domain] = profile.email.split('@');
           const stockmintUsername = `${base}${versionSuffix}@${domain}`;
 
-          const payload: any = { 
-              fullName: profile.full_name,
-              email: stockmintUsername,
-              password: stockmintUsername,
-              initialBalance,
-              accountClassification: classification,
-              accountModel: isPTP ? 'passthenpay' : 'normal'
-          };
-
           const res = await fetch('https://stockmint.io/api/users/create', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-              body: JSON.stringify(payload),
+              body: JSON.stringify({ 
+                  fullName: profile.full_name,
+                  email: stockmintUsername,
+                  password: stockmintUsername,
+                  initialBalance,
+                  accountClassification: classification,
+                  accountModel: isPTP ? 'passthenpay' : 'normal'
+              }),
           });
 
           if (res.ok) {
@@ -206,9 +204,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
                   status: 'active'
               }).eq('id', account.id);
           }
-      } catch (e) {
-          console.error('StockMint API Error:', e);
-      }
+      } catch (e) { console.error('StockMint API Error:', e); }
   }
 
   revalidatePath('/welcome');
@@ -242,65 +238,43 @@ export async function createSupportConversation(userId: string, subject: string,
 }
 
 export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string, imageFile?: File) {
-    if (!convId || !senderId || (!message.trim() && !imageFile)) {
-        return { error: 'Invalid message data.' };
-    }
+    if (!convId || !senderId || (!message.trim() && !imageFile)) return { error: 'Invalid message.' };
 
     let imageUrl: string | undefined;
     if (imageFile) {
         try {
             imageUrl = await uploadSupportImage(imageFile, convId);
-        } catch (e: any) {
-            return { error: e.message };
-        }
+        } catch (e: any) { return { error: e.message }; }
     }
 
-    const { error } = await supabaseAdmin
-        .from('support_messages')
-        .insert({
-            conversation_id: convId,
-            sender_id: senderId,
-            sender_role: role,
-            message: message.trim(),
-            image_url: imageUrl
-        });
+    const { error } = await supabaseAdmin.from('support_messages').insert({
+        conversation_id: convId,
+        sender_id: senderId,
+        sender_role: role,
+        message: message.trim(),
+        image_url: imageUrl
+    });
     
     if (!error) {
-        const { data: conv } = await supabaseAdmin
-            .from('support_conversations')
-            .select('unread_count_user, unread_count_admin')
-            .eq('id', convId)
-            .single();
-
+        const { data: conv } = await supabaseAdmin.from('support_conversations').select('*').eq('id', convId).single();
         const updateData: any = { 
             last_message_at: new Date().toISOString(),
             last_message_preview: message.trim() || (imageUrl ? '📷 Photo' : '')
         };
+        if (role === 'admin') updateData.unread_count_user = (conv?.unread_count_user || 0) + 1;
+        else updateData.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
 
-        if (role === 'admin') {
-            updateData.unread_count_user = (conv?.unread_count_user || 0) + 1;
-        } else {
-            updateData.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
-        }
-
-        await supabaseAdmin.from('support_conversations')
-            .update(updateData)
-            .eq('id', convId);
+        await supabaseAdmin.from('support_conversations').update(updateData).eq('id', convId);
     }
     
     revalidatePath('/welcome');
-    revalidatePath('/support-agent/chat');
     return { error: error?.message };
 }
 
 export async function markSupportRead(convId: string, role: 'admin' | 'user') {
     const field = role === 'admin' ? 'unread_count_admin' : 'unread_count_user';
-    await supabaseAdmin.from('support_conversations')
-        .update({ [field]: 0 })
-        .eq('id', convId);
-    
+    await supabaseAdmin.from('support_conversations').update({ [field]: 0 }).eq('id', convId);
     revalidatePath('/welcome');
-    revalidatePath('/support-agent/chat');
     return { success: true };
 }
 
@@ -314,17 +288,9 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     if (!event || !profile) return { error: 'Data not found' };
 
     if (!event.is_free) {
-        if (profile.wallet_balance < event.entry_fee) return { error: 'Insufficient wallet balance' };
-        
+        if (profile.wallet_balance < event.entry_fee) return { error: 'Insufficient cash.' };
         await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance - event.entry_fee }).eq('id', userId);
-        
-        await supabaseAdmin.from('wallet_transactions').insert({
-            user_id: userId,
-            amount: -event.entry_fee,
-            type: 'purchase',
-            status: 'completed',
-            description: `Entry for ${event.week_label}`
-        });
+        await supabaseAdmin.from('wallet_transactions').insert({ user_id: userId, amount: -event.entry_fee, type: 'purchase', status: 'completed', description: `Entry for ${event.week_label}` });
     }
 
     const { error } = await supabaseAdmin.from('competition_registrations').insert({
@@ -340,10 +306,6 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
 }
 
 export async function getCompetitionEvents() {
-    const { data } = await supabaseAdmin
-        .from('competition_events')
-        .select('*')
-        .eq('is_active', true)
-        .order('start_date', { ascending: true });
+    const { data } = await supabaseAdmin.from('competition_events').select('*').eq('is_active', true).order('start_date', { ascending: true });
     return data || [];
 }

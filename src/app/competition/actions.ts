@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -16,79 +17,47 @@ export async function registerForTournament(formData: FormData) {
     return { error: 'All fields are required.' };
   }
 
-  // 1. Fetch event to check if it's free
+  // 1. Fetch event
   const { data: event, error: eventError } = await supabaseAdmin
     .from('competition_events')
     .select('*')
     .eq('id', eventId)
     .single();
 
-  if (eventError || !event) {
-      return { error: 'Tournament week not found.' };
-  }
-
-  if (!event.is_free && !utr) {
-      return { error: 'Transaction ID (UTR) is required for paid tournaments.' };
-  }
+  if (eventError || !event) return { error: 'Tournament not found.' };
+  if (!event.is_free && !utr) return { error: 'Transaction ID is required.' };
 
   const supabase = createClient();
-  
-  // 2. Check if user already exists
   const { data: existingUser } = await supabaseAdmin.from('profiles').select('id').eq('email', email).single();
   
   let userId: string;
 
   if (existingUser) {
-    // Check if they are already registered for THIS specific event
-    const { data: existingReg } = await supabaseAdmin
-        .from('competition_registrations')
-        .select('id')
-        .eq('user_id', existingUser.id)
-        .eq('event_id', eventId)
-        .single();
-    
-    if (existingReg) {
-        return { error: 'You are already registered for this week.' };
-    }
+    const { data: existingReg } = await supabaseAdmin.from('competition_registrations').select('id').eq('user_id', existingUser.id).eq('event_id', eventId).single();
+    if (existingReg) return { error: 'Already registered for this week.' };
     userId = existingUser.id;
   } else {
-    // 3. Create the user in Supabase Auth if they don't exist
     const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-            data: {
-                full_name: fullName,
-                role: 'user',
-            },
-        },
+        options: { data: { full_name: fullName, role: 'user' } },
     });
-
     if (signUpError) return { error: signUpError.message };
-    if (!user) return { error: 'Failed to create account.' };
+    if (!user) return { error: 'Account creation failed.' };
     userId = user.id;
-
-    // Update profile for competition
-    await supabaseAdmin.from('profiles').update({ 
-        account_type: 'competition',
-        mobile_number: mobileNumber,
-        full_name: fullName 
-    }).eq('id', userId);
+    await supabaseAdmin.from('profiles').update({ account_type: 'competition', mobile_number: mobileNumber, full_name: fullName }).eq('id', userId);
   }
   
-  // 4. Handle Free vs Paid registration
   let stockmintUsername = null;
   let stockmintPassword = null;
   let isApproved = false;
 
   if (event.is_free) {
       isApproved = true;
-      // Generate credentials immediately for free events
       const weekSuffix = event.week_label.replace(/\s+/g, '-').toLowerCase();
       stockmintUsername = `${email.split('@')[0]}-${weekSuffix}@${email.split('@')[1]}`;
       stockmintPassword = stockmintUsername;
 
-      // Create StockMint account automatically
       const stockmintApiKey = process.env.STOCKMINT_API_KEY;
       if (stockmintApiKey) {
           try {
@@ -99,93 +68,59 @@ export async function registerForTournament(formData: FormData) {
                       fullName,
                       email: stockmintUsername,
                       password: stockmintUsername,
-                      initialBalance: 100000 
+                      initialBalance: 100000,
+                      accountClassification: 'evaluation',
+                      accountModel: 'normal'
                   }),
               });
-          } catch (e) {
-              console.error('StockMint API failed for free registration:', e);
-          }
+          } catch (e) { console.error('StockMint failed:', e); }
       }
   }
 
-  // 5. Create the registration entry
-  const { error: regError } = await supabaseAdmin
-    .from('competition_registrations')
-    .insert({
+  const { error: regError } = await supabaseAdmin.from('competition_registrations').insert({
         user_id: userId,
         event_id: eventId,
         transaction_id: utr || 'FREE-ENTRY',
         is_approved: isApproved,
         stockmint_username: stockmintUsername,
         stockmint_password: stockmintPassword
-    });
+  });
 
-  if (regError) {
-      console.error('Registration Error:', regError);
-      return { error: 'Failed to submit registration.' };
-  }
-
+  if (regError) return { error: 'Registration submission failed.' };
   revalidatePath('/competition');
-  revalidatePath('/welcome');
   return { success: true, isFree: event.is_free };
 }
 
 export async function getCompetitionEvents() {
-    const { data } = await supabaseAdmin
-        .from('competition_events')
-        .select('*')
-        .eq('is_active', true)
-        .order('start_date', { ascending: true });
+    const { data } = await supabaseAdmin.from('competition_events').select('*').eq('is_active', true).order('start_date', { ascending: true });
     return data || [];
 }
 
 export async function getLeaderboard(eventId: string) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-
-    const { data: regs, error } = await supabaseAdmin
-        .from('competition_registrations')
-        .select('stockmint_username, profiles(full_name)')
-        .eq('event_id', eventId)
-        .eq('is_approved', true);
-    
+    const { data: regs, error } = await supabaseAdmin.from('competition_registrations').select('stockmint_username, profiles(full_name)').eq('event_id', eventId).eq('is_approved', true);
     if (error || !regs || regs.length === 0) return [];
 
     if (stockmintApiKey) {
         try {
             const leaderboardData = await Promise.all(regs.map(async (reg) => {
                 let balance = 100000;
-                
                 if (reg.stockmint_username) {
                     try {
                         const res = await fetch(`https://stockmint.io/api/users/stats?email=${reg.stockmint_username}`, {
-                            headers: { 'x-api-key': stockmintApiKey },
+                            headers: { 'X-API-Key': stockmintApiKey },
                             next: { revalidate: 60 }
                         });
                         if (res.ok) {
                             const statsRes = await res.json();
-                            if (statsRes.success && statsRes.data) {
-                                balance = statsRes.data.balance;
-                            }
+                            if (statsRes.success && statsRes.data) balance = statsRes.data.balance;
                         }
-                    } catch (apiErr) {
-                        console.error(`Leaderboard API Error for ${reg.stockmint_username}:`, apiErr);
-                    }
+                    } catch (e) {}
                 }
-
-                return {
-                    name: reg.profiles?.full_name || 'Champion Trader',
-                    balance: balance
-                };
+                return { name: reg.profiles?.full_name || 'Trader', balance: balance };
             }));
-
             return leaderboardData.sort((a, b) => b.balance - a.balance).slice(0, 50);
-        } catch (e) {
-            console.error('Major error in getLeaderboard parallel fetch:', e);
-        }
+        } catch (e) {}
     }
-
-    return regs.map(r => ({ 
-        name: r.profiles?.full_name || 'Champion Trader', 
-        balance: 100000 
-    })).slice(0, 50);
+    return regs.map(r => ({ name: r.profiles?.full_name || 'Trader', balance: 100000 }));
 }

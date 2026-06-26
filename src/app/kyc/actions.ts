@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -15,33 +16,32 @@ function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
 
     const name = planName.toLowerCase();
-    // Match numbers and units like K, L, Cr
     const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
     
     if (match) {
         let amount = parseFloat(match[1].replace(/,/g, ''));
         const unit = match[2];
 
-        if (unit === 'k') {
-            amount *= 1000;
-        } else if (unit === 'l' || unit === 'lakh') {
-            amount *= 100000;
-        } else if (unit === 'cr' || unit === 'crore') {
-            amount *= 10000000;
-        }
+        if (unit === 'k') amount *= 1000;
+        else if (unit === 'l' || unit === 'lakh') amount *= 100000;
+        else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
         return amount;
     }
     
-    // Fallback for names like "25000" without a unit
     const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
-    }
-
+    if (plainNumberMatch) return parseFloat(plainNumberMatch[0].replace(/[,_]/g, ''));
     return 0;
 }
 
-// Helper function to get account size text from plan name
+// Helper to determine starting classification
+function getAutoClassification(planName: string): string {
+    const name = planName.toLowerCase();
+    if (name.includes('instant')) return 'instant_live';
+    if (name.includes('1-step')) return 'one_step_phase_1';
+    if (name.includes('2-step')) return 'two_step_phase_1';
+    return 'evaluation';
+}
+
 function getAccountSizeText(planName: string): string {
     if (!planName) return 'N/A';
     const lowerPlanName = planName.toLowerCase();
@@ -63,20 +63,12 @@ function getAccountSizeText(planName: string): string {
 
 
 export async function verifyPan(panNumber: string) {
-  if (!panNumber) {
-    return { error: 'PAN number is required.' };
-  }
-
-  if (!ekycUsername || !ekycToken) {
-    console.error('eKYCHub credentials are not set in environment variables.');
-    return { error: 'Verification service is not configured on the server.' };
-  }
+  if (!panNumber) return { error: 'PAN number is required.' };
+  if (!ekycUsername || !ekycToken) return { error: 'Verification service is not configured.' };
 
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: 'You must be logged in.' };
-  }
+  if (!user) return { error: 'You must be logged in.' };
   
   const orderId = randomUUID();
   const url = `https://connect.ekychub.in/v3/verification/pan_verification?username=${ekycUsername}&token=${ekycToken}&pan=${panNumber}&orderid=${orderId}`;
@@ -93,23 +85,18 @@ export async function verifyPan(panNumber: string) {
         .select()
         .single();
       
-      if (updateError) {
-        throw new Error(`Failed to save PAN data to profile: ${updateError.message}`);
-      }
-      
+      if (updateError) throw new Error(updateError.message);
       revalidatePath('/kyc');
       return { success: true, data: apiResponse, updatedProfile };
     } else {
-      return { error: apiResponse.message || 'Failed to verify PAN. Please check the number and try again.' };
+      return { error: apiResponse.message || 'Verification failed.' };
     }
   } catch (error) {
-    console.error('Error calling verifyPan API:', error);
-    return { error: 'An unexpected error occurred while contacting the verification service.' };
+    return { error: 'Server error during PAN verification.' };
   }
 }
 
 async function uploadKycImage(base64: string, userId: string, type: 'aadhaar' | 'selfie-with-aadhaar') {
-    // Remove data URI prefix if present
     const base64Data = base64.split(',')[1] || base64;
     const buffer = Buffer.from(base64Data, 'base64');
     const fileName = `${userId}-${type}-${Date.now()}.jpeg`;
@@ -118,11 +105,7 @@ async function uploadKycImage(base64: string, userId: string, type: 'aadhaar' | 
         contentType: 'image/jpeg',
     });
 
-    if (error) {
-        console.error(`Error uploading ${type} image:`, error);
-        throw new Error(`Failed to upload ${type} image.`);
-    }
-
+    if (error) throw new Error(`Failed to upload ${type} image.`);
     const { data: urlData } = supabaseAdmin.storage.from('kyc-documents').getPublicUrl(data.path);
     return urlData.publicUrl;
 }
@@ -130,10 +113,7 @@ async function uploadKycImage(base64: string, userId: string, type: 'aadhaar' | 
 export async function saveKycStep(step: number, formData: FormData) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'You must be logged in to submit KYC.' };
-  }
+  if (!user) return { error: 'Authentication required.' };
 
   let profileUpdateData: any = {};
   let isFinalStep = false;
@@ -142,153 +122,84 @@ export async function saveKycStep(step: number, formData: FormData) {
     switch (step) {
       case 1:
         const aadhaarPhoto = formData.get('aadhaar_photo') as string;
-        if (aadhaarPhoto) {
-            const aadhaarPhotoUrl = await uploadKycImage(aadhaarPhoto, user.id, 'aadhaar');
-            profileUpdateData.selfie_url = aadhaarPhotoUrl; // This is the Aadhaar photo
-            profileUpdateData.is_aadhaar_verified = true; // Mark as submitted for manual verification
-        }
+        if (aadhaarPhoto) profileUpdateData.selfie_url = await uploadKycImage(aadhaarPhoto, user.id, 'aadhaar');
         break;
-
       case 2:
         const selfieWithAadhaarPhoto = formData.get('selfie_with_aadhaar_photo') as string;
-        if (selfieWithAadhaarPhoto) {
-            const selfieUrl = await uploadKycImage(selfieWithAadhaarPhoto, user.id, 'selfie-with-aadhaar');
-            profileUpdateData.selfie_with_aadhaar_url = selfieUrl;
-        }
+        if (selfieWithAadhaarPhoto) profileUpdateData.selfie_with_aadhaar_url = await uploadKycImage(selfieWithAadhaarPhoto, user.id, 'selfie-with-aadhaar');
         break;
-
-      case 3: // Trading Background
+      case 3:
         profileUpdateData = {
           traded_before: formData.get('traded_before') === 'yes',
           trading_experience: formData.get('trading_experience') as string,
-          comments: formData.get('comments') as string,
           trading_style: formData.getAll('trading_style') as string[],
         };
         break;
-
-      case 4: // Agreements
+      case 4:
         isFinalStep = true;
         profileUpdateData = {
           drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes',
           risk_rules_understood: formData.get('risk_rules_understood') === 'yes',
           terms_accepted: formData.get('terms_accepted') === 'yes',
-          kyc_status: 'verified', // Final step sets status to verified
+          kyc_status: 'verified',
         };
         break;
-
-      default:
-        return { error: 'Invalid KYC step.' };
+      default: return { error: 'Invalid step.' };
     }
     
-    // --- DATABASE UPDATE ---
-    const { data: updatedProfile, error: updateError } = await supabase
-      .from('profiles')
-      .update(profileUpdateData)
-      .eq('id', user.id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error(`Error updating profile on step ${step}:`, updateError);
-      return { error: `Failed to save KYC data: ${updateError.message}` };
-    }
+    const { data: updatedProfile, error: updateError } = await supabase.from('profiles').update(profileUpdateData).eq('id', user.id).select().single();
+    if (updateError) return { error: updateError.message };
     
-    // --- AUTOMATION ON FINAL STEP ---
     if (isFinalStep && updatedProfile) {
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
         const initialBalance = getBalanceFromPlanName(updatedProfile.plan_purchased || '');
-        const tradingUsername = updatedProfile.email;
-        const tradingPassword = updatedProfile.email; 
+        const classification = getAutoClassification(updatedProfile.plan_purchased || '');
+        const isPTP = updatedProfile.account_model === 'passthrupay';
 
-        // 1. StockMint Account Creation
+        // 1. StockMint Account Activation via POST /api/users/create
         if (stockmintApiKey && initialBalance > 0) {
              try {
-                const stockmintPayload: any = { 
-                    fullName: updatedProfile.full_name,
-                    email: updatedProfile.email,
-                    password: tradingPassword,
-                    initialBalance: initialBalance,
-                };
-                 if (updatedProfile.account_model === 'passthrupay') {
-                    stockmintPayload.accountModel = 'passthenpay';
-                }
-
-                const response = await fetch('https://stockmint.io/api/users/create', {
+                await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-API-Key': stockmintApiKey,
-                    },
-                    body: JSON.stringify(stockmintPayload),
+                    headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
+                    body: JSON.stringify({ 
+                        fullName: updatedProfile.full_name,
+                        email: updatedProfile.email,
+                        password: updatedProfile.email,
+                        initialBalance: initialBalance,
+                        accountClassification: classification,
+                        accountModel: isPTP ? 'passthenpay' : 'normal'
+                    }),
                 });
-                if (!response.ok) {
-                    const errorBody = await response.text();
-                    console.error(`Failed to trigger StockMint webhook. Status: ${response.status}. Body: ${errorBody}`);
-                }
-            } catch (webhookError) {
-                console.error('Failed to trigger StockMint webhook:', webhookError);
-            }
+            } catch (e) { console.error('StockMint creation failed:', e); }
         }
 
-        // 2. Update profile with credentials in our database
-        await supabaseAdmin.from('profiles').update({
-            credentials_provided: true,
-            trading_username: tradingUsername,
-            trading_password: tradingPassword
-        }).eq('id', user.id);
-
-        // 3. Update the specific account in user_accounts table (The first one)
-        const { data: firstAccount } = await supabaseAdmin
-            .from('user_accounts')
-            .select('id')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: true })
-            .limit(1)
-            .single();
-
-        if (firstAccount) {
-            await supabaseAdmin.from('user_accounts').update({
-                credentials_provided: true,
-                trading_username: tradingUsername,
-                trading_password: tradingPassword,
-                status: 'active'
-            }).eq('id', firstAccount.id);
+        // 2. Sync Database
+        await supabaseAdmin.from('profiles').update({ credentials_provided: true, trading_username: updatedProfile.email, trading_password: updatedProfile.email }).eq('id', user.id);
+        const { data: account } = await supabaseAdmin.from('user_accounts').select('id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single();
+        if (account) {
+            await supabaseAdmin.from('user_accounts').update({ credentials_provided: true, trading_username: updatedProfile.email, trading_password: updatedProfile.email, status: 'active', account_classification: classification }).eq('id', account.id);
         }
 
-        // 4. Trigger KYC Approved Webhook
+        // 3. Webhook Alert
         const kycApprovedWebhookUrl = process.env.MAKE_KYC_APPROVED_WEBHOOK_URL;
         if (kycApprovedWebhookUrl) {
-            try {
-                const account_size_text = getAccountSizeText(updatedProfile.plan_purchased || '');
-                const kycApprovedPayload = {
+            fetch(kycApprovedWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     user_name: updatedProfile.full_name,
                     email: updatedProfile.email,
-                    trading_username: tradingUsername,
-                    trading_password: tradingPassword,
                     plan_name: updatedProfile.plan_purchased,
-                    account_size: account_size_text,
                     activation_date: format(new Date(), 'dd MMMM yyyy'),
-                };
-
-                fetch(kycApprovedWebhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(kycApprovedPayload),
-                }).catch(e => console.error("KYC Approved webhook failed (from kyc/actions):", e));
-
-            } catch (webhookError: any) {
-                console.error("Failed to construct or send KYC Approved webhook from kyc/actions:", webhookError.message);
-            }
+                }),
+            }).catch(e => console.error(e));
         }
     }
     
     revalidatePath('/kyc');
     revalidatePath('/welcome');
-    revalidatePath('/admin/dashboard');
-    revalidatePath(`/admin/profile/${user.id}`);
-    return { error: null, success: true, updatedProfile };
-
-
+    return { success: true, updatedProfile };
   } catch (error: any) {
     return { error: error.message };
   }
