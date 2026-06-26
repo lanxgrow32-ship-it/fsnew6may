@@ -115,8 +115,8 @@ export function WelcomeClient({
                                     {item.label}
                                 </button>
                             ))}
-                            <form action={signOut} className="inline-block">
-                                <button type="submit" className="px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-red-400 transition-colors flex items-center gap-2">
+                            <form action={signOut} className="inline-block border-l border-white/10 ml-2 pl-1">
+                                <button type="submit" className="px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors flex items-center gap-2">
                                     <LogOut className="w-3.5 h-3.5" />
                                     Logout
                                 </button>
@@ -152,58 +152,62 @@ export function WelcomeClient({
                                     <Menu className="h-5 w-5 text-gray-300" />
                                 </button>
                             </SheetTrigger>
-                            <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0">
+                            <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col">
                                 <SheetHeader className="p-6 border-b border-white/5">
                                     <SheetTitle className="flex items-center gap-3 text-left">
                                         <Logo />
                                         <span className="text-white font-bold">FundedStock</span>
                                     </SheetTitle>
                                 </SheetHeader>
-                                <div className="flex flex-col p-4 gap-2">
-                                    <div className="px-4 py-4 mb-4 sm:hidden bg-black/20 rounded-2xl border border-white/5">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Wallet Balance</p>
-                                        <div className="flex items-center justify-between mt-1">
-                                            <p className="text-primary font-black text-2xl">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                                <div className="flex flex-col flex-1 p-4 gap-2 overflow-y-auto">
+                                    <div className="px-4 py-6 mb-6 sm:hidden bg-black/40 rounded-2xl border border-white/10">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Wallet Balance</p>
+                                        <div className="flex items-center justify-between mt-2">
+                                            <p className="text-primary font-black text-3xl">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                                             <button 
                                                 onClick={() => {
                                                     setActiveTab('wallet');
                                                     setIsSidebarOpen(false);
                                                 }}
-                                                className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white"
+                                                className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20"
                                             >
-                                                <Plus className="w-4 h-4" />
+                                                <Plus className="w-5 h-5" />
                                             </button>
                                         </div>
                                     </div>
-                                    {navItems.map((item) => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => {
-                                                setActiveTab(item.id);
-                                                setIsSidebarOpen(false);
-                                            }}
-                                            className={cn(
-                                                "w-full px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-3 rounded-xl",
-                                                activeTab === item.id
-                                                ? "bg-primary text-white shadow-md"
-                                                : "text-gray-400 hover:text-white hover:bg-white/5"
-                                            )}
-                                        >
-                                            <item.icon className="w-4 h-4" />
-                                            {item.label}
-                                        </button>
-                                    ))}
-                                    
-                                    <div className="mt-4 pt-4 border-t border-white/5">
-                                        <form action={signOut}>
-                                            <button 
-                                                type="submit"
-                                                className="w-full px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-colors rounded-xl flex items-center gap-3"
+                                    <div className="space-y-1">
+                                        {navItems.map((item) => (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => {
+                                                    setActiveTab(item.id);
+                                                    setIsSidebarOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "w-full px-4 py-4 text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-3 rounded-xl",
+                                                    activeTab === item.id
+                                                    ? "bg-primary text-white shadow-lg shadow-primary/10"
+                                                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                                                )}
                                             >
-                                                <LogOut className="w-4 h-4" />
-                                                Logout
+                                                <item.icon className="w-4 h-4" />
+                                                {item.label}
                                             </button>
-                                        </form>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="mt-auto pt-8 pb-4">
+                                        <div className="pt-4 border-t border-white/5">
+                                            <form action={signOut}>
+                                                <button 
+                                                    type="submit"
+                                                    className="w-full px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-all rounded-xl flex items-center gap-3 group"
+                                                >
+                                                    <LogOut className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                                                    Logout
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </SheetContent>
@@ -213,27 +217,27 @@ export function WelcomeClient({
 
                 {/* Main Content Areas */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsContent value="hub" className="animate-in fade-in slide-in-from-bottom-2">
+                    <TabsContent value="hub" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <AccountsHub accounts={accounts} profile={profile} onSwitchToGetFunded={() => setActiveTab('get-funded')} />
                     </TabsContent>
 
-                    <TabsContent value="get-funded" className="animate-in fade-in slide-in-from-bottom-2">
+                    <TabsContent value="get-funded" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <ArenaView profile={profile} onSwitchToWallet={() => setActiveTab('wallet')} />
                     </TabsContent>
 
-                    <TabsContent value="wallet" className="animate-in fade-in slide-in-from-bottom-2">
+                    <TabsContent value="wallet" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <WalletView profile={profile} transactions={walletTransactions} paymentSettings={paymentSettings} />
                     </TabsContent>
 
-                    <TabsContent value="competition" className="animate-in fade-in slide-in-from-bottom-2">
+                    <TabsContent value="competition" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <CompetitionView registrations={competitions} profile={profile} onSwitchToWallet={() => setActiveTab('wallet')} />
                     </TabsContent>
 
-                    <TabsContent value="support" className="animate-in fade-in slide-in-from-bottom-2">
+                    <TabsContent value="support" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <SupportView profile={profile} conversations={supportConversations} />
                     </TabsContent>
 
-                    <TabsContent value="kyc" className="animate-in fade-in slide-in-from-bottom-2">
+                    <TabsContent value="kyc" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <KycPage />
                     </TabsContent>
                 </Tabs>
