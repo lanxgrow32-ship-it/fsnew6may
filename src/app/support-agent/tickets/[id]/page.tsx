@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, Send, Check, RefreshCw, Paperclip, ShieldCheck } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Check, RefreshCw, Paperclip } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addAdminReply, updateTicketStatus, getTicketById } from '@/app/admin/tickets/actions';
 import { Badge } from '@/components/ui/badge';
@@ -89,7 +89,7 @@ export default function AgentTicketDetailsPage({ params }: { params: Promise<{ i
       setAttachment(null);
       setPreview(null);
       (e.target as HTMLFormElement).reset();
-      toast({ title: 'Reply transmitted' });
+      toast({ title: 'Reply sent' });
       fetchTicket();
     }
     setIsLoading(false);
@@ -101,14 +101,14 @@ export default function AgentTicketDetailsPage({ params }: { params: Promise<{ i
       if (result.error) {
           toast({ title: 'Error', description: result.error, variant: 'destructive' });
       } else {
-          toast({ title: `Protocol ${status === 'Closed' ? 'Resolved' : 'Reopened'}` });
+          toast({ title: `Ticket ${status === 'Closed' ? 'Resolved' : 'Reopened'}` });
           fetchTicket();
       }
       setIsLoading(false);
   }
 
   if (isFetching) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-  if (error || !ticket) return <div className="p-8"><Alert variant="destructive"><AlertTitle>Protocol Error</AlertTitle><AlertDescription>{error || 'Access Denied.'}</AlertDescription></Alert></div>
+  if (error || !ticket) return <div className="p-8"><Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error || 'Ticket not found.'}</AlertDescription></Alert></div>
 
   return (
     <div className="bg-slate-950 min-h-screen">
@@ -119,7 +119,7 @@ export default function AgentTicketDetailsPage({ params }: { params: Promise<{ i
                 </Button>
                 <div>
                     <h1 className="text-xl font-bold text-white tracking-tight">{ticket.subject}</h1>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Ref: {ticket.id} · {ticket.profiles?.full_name}</p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">ID: {ticket.id} · {ticket.profiles?.full_name}</p>
                 </div>
            </div>
            <div className="flex items-center gap-3">
@@ -144,7 +144,7 @@ export default function AgentTicketDetailsPage({ params }: { params: Promise<{ i
                             <AvatarFallback className="bg-slate-800 text-gray-400 font-bold">{ticket.profiles?.full_name?.[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 bg-white/5 border border-white/5 rounded-2xl p-6 shadow-2xl">
-                            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Original Submission</p>
+                            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">User Message</p>
                             <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{ticket.description}</p>
                             {ticket.image_url && (
                                 <div className="mt-6 rounded-xl overflow-hidden border border-white/10 w-fit">
@@ -180,20 +180,20 @@ export default function AgentTicketDetailsPage({ params }: { params: Promise<{ i
                 {ticket.status === 'Open' && (
                     <Card className="bg-white/5 border-white/10 shadow-2xl overflow-hidden">
                         <CardHeader className="bg-black/20 border-b border-white/5">
-                            <CardTitle className="text-lg font-bold text-white flex items-center gap-2"><Send className="w-4 h-4 text-primary" /> Transmit Response</CardTitle>
+                            <CardTitle className="text-lg font-bold text-white flex items-center gap-2"><Send className="w-4 h-4 text-primary" /> Send Response</CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <Textarea
                                 value={reply}
                                 onChange={(e) => setReply(e.target.value)}
-                                placeholder="Detail the resolution or request further information..."
+                                placeholder="Type your response to the trader..."
                                 rows={6}
                                 className="bg-black/40 border-white/10 text-white text-sm focus:ring-primary/50"
                             />
                             <div className="flex items-center justify-between gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="agent-upload" className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:text-white transition-colors">
-                                        <Paperclip className="w-3.5 h-3.5"/> Attach Visual Proof
+                                        <Paperclip className="w-3.5 h-3.5"/> Attach Image
                                     </Label>
                                     <Input id="agent-upload" name="image" type="file" accept="image/*" onChange={handleFileChange} className="sr-only"/>
                                     {preview && (
@@ -203,7 +203,7 @@ export default function AgentTicketDetailsPage({ params }: { params: Promise<{ i
                                     )}
                                 </div>
                                 <Button onClick={handleReplySubmit} disabled={isLoading || (!reply.trim() && !attachment)} className="bg-primary hover:bg-primary/90 text-white font-bold h-12 px-10 rounded-xl shadow-xl shadow-primary/20">
-                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />} Transmit
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />} Send Reply
                                 </Button>
                             </div>
                         </CardContent>

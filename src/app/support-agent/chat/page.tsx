@@ -7,14 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
     MessageSquare, 
-    LifeBuoy, 
     Send, 
     Loader2, 
     User,
     Search,
     Inbox,
-    Headphones,
-    ArrowRight
+    Headphones
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { sendSupportMessage } from '@/app/welcome/actions';
@@ -90,7 +88,7 @@ export default function AgentLiveChat() {
                 <div className="p-6 border-b border-white/5">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-600" />
-                        <Input placeholder="Filter sessions..." className="pl-9 bg-black/40 border-white/10 h-10 text-[10px] font-bold uppercase tracking-widest" />
+                        <Input placeholder="Search chats..." className="pl-9 bg-black/40 border-white/10 h-10 text-[10px] font-bold uppercase tracking-widest" />
                     </div>
                 </div>
                 <ScrollArea className="flex-grow">
@@ -108,7 +106,7 @@ export default function AgentLiveChat() {
                                     <p className="text-xs font-bold truncate max-w-[140px] text-white">{c.profiles?.full_name}</p>
                                     <Badge variant="outline" className={cn("text-[8px] h-4 px-1.5 font-bold uppercase tracking-wider", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
                                 </div>
-                                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Protocol' : c.subject}</p>
+                                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Message' : c.subject}</p>
                             </button>
                         ))
                     )}
@@ -120,8 +118,8 @@ export default function AgentLiveChat() {
                 {!activeConversation ? (
                     <div className="flex-grow flex flex-col items-center justify-center text-center p-12">
                         <Inbox className="h-16 w-16 text-gray-900 mb-6" />
-                        <h2 className="text-2xl font-bold text-white tracking-tight">Terminal Ready.</h2>
-                        <p className="text-gray-600 text-sm font-medium max-w-xs mt-2">Select an active session to begin protocol assistance.</p>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">Chat Desk</h2>
+                        <p className="text-gray-500 text-sm font-medium max-w-xs mt-2">Select a chat session to start messaging.</p>
                     </div>
                 ) : (
                     <>
@@ -135,13 +133,13 @@ export default function AgentLiveChat() {
                                     <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1.5">{activeConversation.profiles?.email}</p>
                                 </div>
                             </div>
-                            <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-[9px] font-bold uppercase tracking-widest h-8 px-4">Archive Session</Button>
+                            <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-[9px] font-bold uppercase tracking-widest h-8 px-4">Close Chat</Button>
                         </header>
 
                         <ScrollArea ref={scrollRef} className="flex-grow p-6">
                             <div className="space-y-6 max-w-3xl mx-auto">
                                 <div className="text-center py-4 border-b border-white/5 mb-8">
-                                    <p className="text-[9px] text-gray-800 font-bold uppercase tracking-[0.4em]">Secure Agent Connection Established</p>
+                                    <p className="text-[9px] text-gray-800 font-bold uppercase tracking-[0.4em]">Connected to trader</p>
                                 </div>
                                 {messages.map(m => (
                                     <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
@@ -158,7 +156,7 @@ export default function AgentLiveChat() {
 
                         <div className="p-5 bg-slate-900/80 border-t border-white/5 backdrop-blur-xl">
                             <form onSubmit={handleSendMessage} className="flex gap-4 max-w-4xl mx-auto">
-                                <Input name="message" autoComplete="off" placeholder="Type agent response..." className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl px-5" />
+                                <Input name="message" autoComplete="off" placeholder="Type a message..." className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl px-5" />
                                 <Button type="submit" size="icon" className="h-12 w-12 rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
                                     <Send className="h-5 w-5" />
                                 </Button>

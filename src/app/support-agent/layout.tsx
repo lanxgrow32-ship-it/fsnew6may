@@ -12,7 +12,7 @@ export default function SupportAgentLayout({ children }: { children: React.React
         <SidebarHeader className="border-b border-white/5 p-4 h-[57px] flex items-center">
             <Link href="/support-agent" className="flex items-center gap-2 font-bold text-lg">
                 <FundedStockLogo className="w-8 h-8 text-primary" />
-                <span className="text-white">Agent Desk</span>
+                <span className="text-white">Support Desk</span>
             </Link>
         </SidebarHeader>
         <SidebarContent>
@@ -24,7 +24,7 @@ export default function SupportAgentLayout({ children }: { children: React.React
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton href="/support-agent/chat" tooltip="Live Chat">
-                <MessageSquare /> Live Protocols
+                <MessageSquare /> Live Chat
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -52,7 +52,7 @@ export default function SupportAgentLayout({ children }: { children: React.React
         <header className="flex h-[57px] items-center justify-between p-4 border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
-                <h1 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Support Terminal v2.0</h1>
+                <h1 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Support Dashboard</h1>
            </div>
            <ThemeToggle />
         </header>

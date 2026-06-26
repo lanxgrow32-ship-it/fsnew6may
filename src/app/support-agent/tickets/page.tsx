@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LifeBuoy, Clock, User } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,7 +61,7 @@ function TicketsTable({ tickets }: { tickets: Ticket[] }) {
                     </TableRow>
                 )) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="h-40 text-center text-gray-600 font-medium italic">No tickets found in this segment.</TableCell>
+                        <TableCell colSpan={4} className="h-40 text-center text-gray-600 font-medium italic">No tickets found.</TableCell>
                     </TableRow>
                 )}
             </TableBody>
@@ -83,12 +82,12 @@ export default async function SupportAgentTicketsPage() {
         <main className="p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Ticket Desk</h2>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Tickets</h2>
                     <p className="text-gray-400 text-sm font-medium">Manage and resolve trader inquiries.</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Protocol Active</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Live Help Desk</span>
                 </div>
             </div>
 
@@ -96,7 +95,7 @@ export default async function SupportAgentTicketsPage() {
                 <Tabs defaultValue="open">
                     <TabsList className="bg-black/40 border-b border-white/5 w-full justify-start rounded-none h-auto p-0">
                         <TabsTrigger value="open" className="py-4 px-8 rounded-none data-[state=active]:bg-primary/10 data-[state=active]:text-primary border-r border-white/5 font-bold text-xs uppercase tracking-widest">
-                            Open Protocol <Badge className="ml-3 bg-primary/20 text-primary border-primary/20">{openTickets.length}</Badge>
+                            Open Tickets <Badge className="ml-3 bg-primary/20 text-primary border-primary/20">{openTickets.length}</Badge>
                         </TabsTrigger>
                         <TabsTrigger value="closed" className="py-4 px-8 rounded-none data-[state=active]:bg-white/5 data-[state=active]:text-white font-bold text-xs uppercase tracking-widest">
                             Resolved <Badge variant="outline" className="ml-3 border-white/10 text-gray-500">{closedTickets.length}</Badge>

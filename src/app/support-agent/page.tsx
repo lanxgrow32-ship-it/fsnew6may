@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
-import { MessageSquare, LifeBuoy, Users, Zap, Clock } from 'lucide-react';
+import { MessageSquare, LifeBuoy, Users, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SupportAgentDashboard() {
@@ -49,7 +49,7 @@ export default function SupportAgentDashboard() {
         <main className="p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
             <div className="space-y-1">
                 <h2 className="text-2xl font-bold text-white tracking-tight">Agent Overview</h2>
-                <p className="text-gray-400 text-sm font-medium">Monitor active protocols and system health.</p>
+                <p className="text-gray-400 text-sm font-medium">Monitor active support sessions and platform health.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -57,34 +57,13 @@ export default function SupportAgentDashboard() {
                 <StatCard title="Open Support Tickets" value={stats.openTickets} icon={LifeBuoy} color="text-purple-400" />
                 <StatCard title="Total Traders" value={stats.totalUsers} icon={Users} color="text-blue-400" />
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
-                <Card className="bg-white/5 border-white/10">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-bold flex items-center gap-2 text-white">
-                            <Zap className="w-5 h-5 text-primary" /> System Directives
-                        </CardTitle>
-                        <CardDescription className="text-xs font-medium">Standard operating procedures for agents.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="p-4 rounded-xl bg-black/20 border border-white/5 text-sm leading-relaxed text-gray-300">
-                            <p className="font-bold text-white mb-2">Rule 01: Protocol Compliance</p>
-                            Ensure all KYC verifications are manually cross-referenced with Aadhaar/PAN data before approval.
-                        </div>
-                        <div className="p-4 rounded-xl bg-black/20 border border-white/5 text-sm leading-relaxed text-gray-300">
-                            <p className="font-bold text-white mb-2">Rule 02: Response SLA</p>
-                            Maintain a maximum first-response time of 5 minutes for live chat sessions.
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-white/5 border-white/10 flex flex-col justify-center items-center text-center p-8">
-                    <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 mb-6 shadow-[0_0_40px_rgba(139,44,245,0.15)]">
-                        <Users className="h-10 w-10" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Protocol Ready</h3>
-                    <p className="text-sm text-gray-500 max-w-xs mb-8 font-medium">Select a module from the sidebar to begin assisting traders in the arena.</p>
-                </Card>
+            
+            <div className="pt-12 text-center">
+                <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 mx-auto mb-6 shadow-[0_0_50px_rgba(139,44,245,0.1)]">
+                    <Users className="h-10 w-10" />
+                </div>
+                <h3 className="text-xl font-bold text-white">Welcome back.</h3>
+                <p className="text-gray-500 text-sm max-w-xs mx-auto mt-2">Ready to assist traders. Select a module from the sidebar to begin.</p>
             </div>
         </main>
     );
