@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +11,7 @@ import {
     User,
     Search,
     Inbox,
-    Headphones,
-    ChevronLeft
+    Headphones
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { sendSupportMessage } from '@/app/welcome/actions';
@@ -96,13 +94,13 @@ export default function AgentLiveChat() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-57px)] text-white overflow-hidden bg-slate-950">
+        <div className="flex h-[calc(100vh-57px)] text-white overflow-hidden bg-slate-950 font-poppins">
             {/* Conversations Sidebar */}
             <div className="w-80 border-r border-white/5 bg-slate-900/30 flex flex-col shrink-0">
                 <div className="p-6 border-b border-white/5">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-600" />
-                        <Input placeholder="Search chats..." className="pl-9 bg-black/40 border-white/10 h-10 text-xs font-semibold" />
+                        <Input placeholder="Search chats..." className="pl-9 bg-black/40 border-white/10 h-10 text-xs font-semibold rounded-xl" />
                     </div>
                 </div>
                 <ScrollArea className="flex-grow">
@@ -118,7 +116,7 @@ export default function AgentLiveChat() {
                             >
                                 <div className="flex justify-between items-start mb-1.5">
                                     <p className="text-sm font-bold truncate max-w-[140px] text-white">{c.profiles?.full_name}</p>
-                                    <Badge variant="outline" className={cn("text-[10px] font-bold px-2 py-0", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
+                                    <Badge variant="outline" className={cn("text-[10px] font-bold px-2 py-0 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
                                 </div>
                                 <p className="text-[11px] text-gray-500 font-medium truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Message' : c.subject}</p>
                             </button>
@@ -147,7 +145,7 @@ export default function AgentLiveChat() {
                                     <p className="text-[11px] text-gray-500 font-medium mt-1.5">{activeConversation.profiles?.email}</p>
                                 </div>
                             </div>
-                            <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-xs font-bold h-8 px-4">Close Chat</Button>
+                            <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-xs font-bold h-8 px-4 rounded-lg">Close Chat</Button>
                         </header>
 
                         <ScrollArea ref={scrollRef} className="flex-grow p-6">

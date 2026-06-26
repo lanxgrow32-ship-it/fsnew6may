@@ -110,7 +110,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
 
     if (view === 'options') {
         return (
-            <div className="space-y-6 animate-in fade-in zoom-in-95">
+            <div className="space-y-6 animate-in fade-in zoom-in-95 font-poppins">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Support</h2>
                     <p className="text-gray-400 text-sm font-medium">How can we assist your trading journey today?</p>
@@ -160,7 +160,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                             <p className="text-[10px] text-gray-500">{new Date(c.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
-                                    <Badge variant="outline" className={cn("text-[9px] font-bold px-2.5", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
+                                    <Badge variant="outline" className={cn("text-[9px] font-bold px-2.5 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
                                 </button>
                             ))}
                         </div>
@@ -172,7 +172,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
 
     if (view === 'ticket-form') {
         return (
-            <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
+            <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 font-poppins">
                 <Button variant="ghost" onClick={() => setView('options')} className="text-gray-500 hover:text-white font-bold p-0 h-auto"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Support</Button>
                 <GlassCard>
                     <form onSubmit={handleNewTicket}>
@@ -183,17 +183,17 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                         <CardContent className="space-y-5">
                             <div className="space-y-1.5">
                                 <Label className="text-[11px] font-bold text-gray-500">Subject</Label>
-                                <Input name="subject" placeholder="e.g. KYC Verification Hold" required className="bg-black/20 border-white/10 h-11 text-sm text-white" />
+                                <Input name="subject" placeholder="e.g. KYC Verification Hold" required className="bg-black/20 border-white/10 h-11 text-sm text-white rounded-xl" />
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-[11px] font-bold text-gray-500">Detailed Description</Label>
-                                <Textarea name="message" rows={4} placeholder="Provide full context for our team..." required className="bg-black/20 border-white/10 text-sm text-white" />
+                                <Textarea name="message" rows={4} placeholder="Provide full context for our team..." required className="bg-black/20 border-white/10 text-sm text-white rounded-xl" />
                             </div>
                         </CardContent>
                         <CardFooter>
                             <Button type="submit" disabled={isPending} className="w-full h-11 font-bold rounded-xl shadow-lg">
                                 {isPending ? <Loader2 className="animate-spin mr-2" /> : <LifeBuoy className="mr-2 h-4 w-4" />}
-                                Submit Protocol
+                                Submit Request
                             </Button>
                         </CardFooter>
                     </form>
@@ -203,7 +203,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
     }
 
     return (
-        <div className="max-w-4xl mx-auto h-[65vh] flex flex-col animate-in fade-in slide-in-from-bottom-4">
+        <div className="max-w-4xl mx-auto h-[65vh] flex flex-col animate-in fade-in slide-in-from-bottom-4 font-poppins">
             <div className="flex items-center justify-between mb-4 px-2">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => setView('options')} className="text-gray-500 hover:text-white">
@@ -211,18 +211,18 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                     </Button>
                     <div>
                         <h3 className="font-bold text-white text-base leading-none">{activeConversation.subject === 'LIVE_CHAT' ? 'Live Chat' : activeConversation.subject}</h3>
-                        <p className="text-[10px] text-gray-600 font-bold mt-1.5 uppercase">Encrypted Connection</p>
+                        <p className="text-[10px] text-gray-600 font-bold mt-1.5 uppercase">Secure Connection</p>
                     </div>
                 </div>
                 <Badge className="bg-green-500/10 text-green-400 border-green-500/20 font-bold text-[9px] px-2.5">Agent Live</Badge>
             </div>
 
-            <GlassCard className="flex-grow flex flex-col p-0">
+            <GlassCard className="flex-grow flex flex-col p-0 border-white/10">
                 <ScrollArea ref={scrollRef} className="flex-grow p-5 h-[350px]">
                     <div className="space-y-5">
                         <div className="text-center py-6 border-b border-white/5 mb-4">
                              <LifeBuoy className="h-8 w-8 text-gray-800 mx-auto mb-2" />
-                             <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Protocol Session Active</p>
+                             <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Secure session active</p>
                         </div>
                         {messages.map((m) => (
                             <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'user' ? "flex-row-reverse" : "flex-row")}>
@@ -242,7 +242,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
 
                 <div className="p-4 bg-black/40 border-t border-white/5 backdrop-blur-md">
                     <form onSubmit={handleSendMessage} className="flex gap-3">
-                        <Input name="message" autoComplete="off" placeholder="Type agent message..." className="flex-grow bg-black/40 border-white/10 h-11 text-xs text-white rounded-xl" />
+                        <Input name="message" autoComplete="off" placeholder="Type a message..." className="flex-grow bg-black/40 border-white/10 h-11 text-xs text-white rounded-xl px-4" />
                         <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary text-white shadow-lg transition-all hover:scale-105 active:scale-95">
                             <Send className="h-4 w-4" />
                         </Button>

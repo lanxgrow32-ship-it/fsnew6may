@@ -132,16 +132,6 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 /**
  * Competition Actions
  */
-export async function getCompetitionEvents() {
-    const { data } = await supabaseAdmin
-        .from('competition_events')
-        .select('*')
-        .eq('is_active', true)
-        .eq('is_archived', false)
-        .order('start_date', { ascending: true });
-    return data || [];
-}
-
 export async function purchaseTournamentEntry(userId: string, eventId: string) {
     const { data: event } = await supabaseAdmin.from('competition_events').select('*').eq('id', eventId).single();
     const { data: profile } = await supabaseAdmin.from('profiles').select('wallet_balance').eq('id', userId).single();
