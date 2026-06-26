@@ -11,13 +11,15 @@ import {
     User,
     Search,
     Inbox,
-    Headphones
+    Paperclip,
+    X
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { sendSupportMessage, markSupportRead } from '@/app/welcome/actions';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 export default function AgentLiveChat() {
     const [conversations, setConversations] = useState<any[]>([]);
@@ -27,7 +29,11 @@ export default function AgentLiveChat() {
     const [loading, setLoading] = useState(true);
     const [messageText, setMessageText] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    
     const scrollRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const supabase = createClient();
 
@@ -90,19 +96,38 @@ export default function AgentLiveChat() {
         }
     }, [messages]);
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedImage(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const clearImage = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         const finalAgentId = agentId;
-        if (!finalAgentId || !activeConversation || !messageText.trim() || isSending) return;
+        if (!finalAgentId || !activeConversation || (!messageText.trim() && !selectedImage) || isSending) return;
 
         setIsSending(true);
         const textToSend = messageText;
-        setMessageText(''); // Optimistic UI clear
+        const imageToSend = selectedImage;
+        
+        setMessageText('');
+        clearImage();
 
-        const res = await sendSupportMessage(activeConversation.id, finalAgentId, 'admin', textToSend);
+        const res = await sendSupportMessage(activeConversation.id, finalAgentId, 'admin', textToSend, imageToSend || undefined);
         
         if (res.error) {
-            setMessageText(textToSend); // Restore on error
+            setMessageText(textToSend);
+            setSelectedImage(imageToSend);
+            if (imageToSend) setImagePreview(URL.createObjectURL(imageToSend));
             toast({ title: "Failed to send message", description: res.error, variant: "destructive" });
         }
         setIsSending(false);
@@ -178,7 +203,12 @@ export default function AgentLiveChat() {
                                 {messages.map(m => (
                                     <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
                                         <div className={cn("max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed shadow-lg", m.sender_role === 'admin' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none")}>
-                                            {m.message}
+                                            {m.image_url && (
+                                                <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
+                                                    <Image src={m.image_url} alt="Agent Attachment" width={250} height={250} className="object-cover" />
+                                                </div>
+                                            )}
+                                            <p className="whitespace-pre-wrap">{m.message}</p>
                                             <p className="mt-2 text-[9px] opacity-30 font-bold text-right">
                                                 {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
@@ -188,8 +218,22 @@ export default function AgentLiveChat() {
                             </div>
                         </ScrollArea>
 
+                        {imagePreview && (
+                            <div className="px-5 py-3 bg-black/60 border-t border-white/10 flex items-center gap-4">
+                                <div className="relative h-16 w-16 rounded-lg overflow-hidden border border-white/20">
+                                    <Image src={imagePreview} alt="Preview" layout="fill" className="object-cover" />
+                                    <button onClick={clearImage} className="absolute top-0.5 right-0.5 bg-red-500 rounded-full p-0.5"><X className="h-3 w-3 text-white"/></button>
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Agent image attachment ready</p>
+                            </div>
+                        )}
+
                         <div className="p-5 bg-slate-900/80 border-t border-white/5 backdrop-blur-xl">
                             <form onSubmit={handleSendMessage} className="flex gap-4 max-w-4xl mx-auto">
+                                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
+                                <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} className="h-12 w-12 text-gray-500 hover:text-white rounded-xl bg-black/40 border border-white/10">
+                                    <Paperclip className="h-5 w-5" />
+                                </Button>
                                 <Input 
                                     autoComplete="off" 
                                     placeholder="Type a message..." 
@@ -198,7 +242,7 @@ export default function AgentLiveChat() {
                                     disabled={isSending}
                                     className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl px-5" 
                                 />
-                                <Button type="submit" size="icon" disabled={!messageText.trim() || isSending} className="h-12 w-12 rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 bg-primary">
+                                <Button type="submit" size="icon" disabled={(!messageText.trim() && !selectedImage) || isSending} className="h-12 w-12 rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 bg-primary">
                                     {isSending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5 text-white" />}
                                 </Button>
                             </form>

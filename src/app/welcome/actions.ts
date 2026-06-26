@@ -1,8 +1,30 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+
+/**
+ * Helper to upload images for support chat
+ */
+async function uploadSupportImage(file: File, conversationId: string) {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `support-${conversationId}-${Date.now()}.${fileExt}`;
+  
+  const { data, error } = await supabaseAdmin.storage
+    .from('support-attachments')
+    .upload(fileName, file);
+
+  if (error) {
+    console.error('Error uploading support image:', error);
+    throw new Error('Failed to upload image.');
+  }
+
+  const { data: urlData } = supabaseAdmin.storage
+    .from('support-attachments')
+    .getPublicUrl(data.path);
+    
+  return urlData.publicUrl;
+}
 
 /**
  * Handles manual account purchase requests (Direct UPI/QR)
@@ -87,7 +109,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     .update({ wallet_balance: newBalance })
     .eq('id', userId);
   
-  if (balanceError) return { error: 'Balance deduction failed.' };
+  if (balanceError) return { error: balanceError.message };
 
   // 3. Create Transaction Record
   await supabaseAdmin.from('wallet_transactions').insert({
@@ -145,9 +167,18 @@ export async function createSupportConversation(userId: string, subject: string,
     return { data: conversation };
 }
 
-export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string) {
-    if (!convId || !senderId || !message.trim()) {
+export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string, imageFile?: File) {
+    if (!convId || !senderId || (!message.trim() && !imageFile)) {
         return { error: 'Invalid message data.' };
+    }
+
+    let imageUrl: string | undefined;
+    if (imageFile) {
+        try {
+            imageUrl = await uploadSupportImage(imageFile, convId);
+        } catch (e: any) {
+            return { error: e.message };
+        }
     }
 
     const { error } = await supabaseAdmin
@@ -156,7 +187,8 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
             conversation_id: convId,
             sender_id: senderId,
             sender_role: role,
-            message: message.trim()
+            message: message.trim(),
+            image_url: imageUrl
         });
     
     if (!error) {
@@ -230,13 +262,4 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     if (error) return { error: error.message };
     revalidatePath('/welcome');
     return { success: true };
-}
-
-export async function getCompetitionEvents() {
-    const { data } = await supabaseAdmin
-        .from('competition_events')
-        .select('*')
-        .eq('is_active', true)
-        .order('start_date', { ascending: true });
-    return data || [];
 }
