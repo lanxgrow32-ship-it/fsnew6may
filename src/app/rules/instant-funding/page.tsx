@@ -50,25 +50,10 @@ const StatItem = ({ title, value, subtext }: { title: string, value: string, sub
 );
 
 export default async function InstantFundingRulesPage() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const backUrl = user ? "/welcome" : "/pricing";
-    const backLabel = user ? "Back to Dashboard" : "Back to Plans";
-
     return (
         <div className="dark-theme">
-            <div className="bg-background min-h-screen text-foreground">
-                <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-                    <div className="container mx-auto flex h-16 items-center justify-center px-4">
-                        <Button asChild variant="outline" className="rounded-full">
-                            <Link href={backUrl}>
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                {backLabel}
-                            </Link>
-                        </Button>
-                    </div>
-                </header>
-                <main className="container mx-auto p-4 md:p-8">
+            <div className="bg-background min-h-screen text-foreground pb-20">
+                <main className="container mx-auto p-4 md:p-8 pt-12">
                     <div className="text-center mb-12">
                         <h1 className="text-4xl font-extrabold tracking-tight">Instant Funding Rules</h1>
                     </div>
@@ -213,7 +198,7 @@ export default async function InstantFundingRulesPage() {
                             <CardContent>
                                 <DetailedRule title="Profit Split" tag="80% Trader / 20% Firm" description="You retain 80% of all profits generated on your instant funded account. FundedStock receives 20%. There is no cap on total earnings — consistent, compliant trading is rewarded in full." />
                                 <DetailedRule title="First Payout Eligibility" tag="4 profitable trading days" description="Before your first payout can be requested, you must have completed a minimum of 4 profitable trading days. A profitable day is defined as a day where your net closed P&L is positive after all charges. Breakeven or loss days do not count toward this requirement." tagVariant="secondary" />
-                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="After the first payout, subsequent payouts are available every 14 days. Each payout request is subject to a performance review to confirm full compliance with all trading rules during that period. Processing takes 3–5 business days from approval. Minimum payout amount is ₹2,000." />
+                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="After the first payout, subsequent payouts are available every 14 days. Each payout request is subject to a performance review to confirm full compliance with all trading rules during that period. Processing takes 3–5 business days from approval. Minimum payout amount is ₹2,00,000." />
                                 <DetailedRule title="Payout Rejection & Suspension" tag="On rule non-compliance" description="Any payout request may be rejected if a compliance review identifies rule violations during the payout period — including breaches of drawdown limits, position rules, or trading restrictions. Repeated violations may result in full account suspension. Suspended accounts are not eligible for payout or reinstatement." tagVariant="destructive" />
                                 <DetailedRule title="Evaluation Fee Refund" tag="Not applicable" description="The Instant Funding plan does not include an evaluation fee refund since there is no evaluation phase. The one-time fee paid at account activation is a platform access and risk allocation fee and is non-refundable under all circumstances." tagVariant="secondary" />
                             </CardContent>

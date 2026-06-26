@@ -76,76 +76,6 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
 );
 
 export default async function PassThenPayPage() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const backUrl = user ? "/welcome" : "/pricing";
-    const backLabel = user ? "Back to Dashboard" : "Back to Plans";
-
-    const comparisonData = [
-      {
-        feature: 'What you pay to start',
-        old: '₹5,999 – ₹49,999 upfront',
-        new: 'Just ₹199 – ₹499',
-      },
-      {
-        feature: 'If you fail on Day 1',
-        old: 'Full fee gone. No refund.',
-        new: 'Only ₹199–₹499 lost',
-      },
-      {
-        feature: 'Number of evaluation phases',
-        old: '2 phases — Phase 1 + Phase 2',
-        new: 'Just 1 phase. Done.',
-      },
-      {
-        feature: 'Profit target',
-        old: '8%–10% across 2 phases',
-        new: 'Only 6%. Just once.',
-      },
-      {
-        feature: 'Time limit',
-        old: '30–90 days deadline',
-        new: 'No time limit',
-      },
-      {
-        feature: 'When you pay full fee',
-        old: 'Before you trade anything',
-        new: 'Only after you pass',
-      },
-      {
-        feature: 'Retry cost if you fail',
-        old: 'Pay full fee again',
-        new: 'Just ₹199 to try again',
-      },
-      {
-        feature: 'Reward share',
-        old: '70%–80%',
-        new: '80% always',
-      },
-    ];
-    
-    const RuleCard = ({ title, icon, children, titleColor }: { title: string, icon: React.ReactNode, children: React.ReactNode, titleColor?: string }) => (
-        <Card className="bg-card/50">
-            <CardHeader>
-                <CardTitle className={cn("flex items-center gap-2", titleColor)}>
-                    {icon}
-                    {title}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-                {children}
-            </CardContent>
-        </Card>
-    );
-
-    const RuleItem = ({ label, value }: { label: string, value: string }) => (
-        <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">{label}</span>
-            <span className="font-bold text-foreground">{value}</span>
-        </div>
-    );
-
-
     return (
         <div className="dark">
             <main className="bg-background text-foreground min-h-screen relative overflow-hidden">
@@ -154,10 +84,9 @@ export default async function PassThenPayPage() {
 
                 <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border">
                     <div className="container mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-20">
-                        <Link href={backUrl} className="flex items-center gap-2 group">
-                            <ArrowLeft className="h-4 w-4 text-gray-500 group-hover:text-primary transition-colors" />
-                            <FundedStockLogo className="h-8 w-auto text-primary" />
-                            <span className="font-bold text-lg text-white">{backLabel}</span>
+                        <Link href="/" className="flex items-center gap-2 group">
+                            <FundedStockLogo className="h-8 w-auto text-primary group-hover:scale-110 transition-transform" />
+                            <span className="font-bold text-lg text-white">FundedStock</span>
                         </Link>
                         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-muted-foreground">
                             <a href="#how-it-works" className="hover:text-foreground">How it works</a>
@@ -206,49 +135,6 @@ export default async function PassThenPayPage() {
                         </div>
                     </section>
 
-                     <section className="py-24 sm:py-32">
-                        <div className="text-center mb-16 max-w-3xl mx-auto">
-                            <Badge variant="outline" className="mb-4 border-primary/50 text-primary">WHY PASSTHENPAY</Badge>
-                            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Old way vs PassThenPay</h2>
-                            <p className="mt-4 text-lg text-muted-foreground">See exactly what changes — and why it matters for you.</p>
-                        </div>
-                        <Card className="max-w-4xl mx-auto bg-card/50 overflow-hidden">
-                            <div className="hidden md:grid grid-cols-[1.5fr,1fr,1fr] items-center gap-4 p-4 bg-muted/30">
-                                <div></div>
-                                <div className="font-bold text-destructive flex items-center gap-2">
-                                    <X className="w-5 h-5" /> Old
-                                </div>
-                                <div className="font-bold text-green-400 flex items-center gap-2">
-                                    <Check className="w-5 h-5" /> New
-                                </div>
-                            </div>
-                            <div className="divide-y divide-border/50">
-                                {comparisonData.map((item, index) => (
-                                    <div key={index} className="p-4">
-                                        <p className="font-medium text-foreground mb-3 md:hidden">{item.feature}</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-[1.5fr,1fr,1fr] md:items-center gap-y-2 md:gap-4">
-                                            <p className="font-medium text-foreground hidden md:block">{item.feature}</p>
-                                            <div className="md:border-l md:border-destructive/20 md:pl-4">
-                                                <p className="md:hidden font-bold text-destructive flex items-center gap-2 text-sm mb-1"><X className="w-4 h-4"/> Old</p>
-                                                <div className="flex items-center gap-2 text-destructive">
-                                                     <X className="w-4 h-4 shrink-0 hidden md:block" />
-                                                    <span>{item.old}</span>
-                                                </div>
-                                            </div>
-                                            <div className="md:border-l md:border-green-400/20 md:pl-4">
-                                                <p className="md:hidden font-bold text-green-400 flex items-center gap-2 text-sm mb-1"><Check className="w-4 h-4"/> New</p>
-                                                <div className="flex items-center gap-2 font-semibold text-green-400">
-                                                     <Check className="w-4 h-4 shrink-0 hidden md:block" />
-                                                    <span>{item.new}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-                    </section>
-
                     <section id="plans" className="py-24 sm:py-32">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Choose your account size</h2>
@@ -263,41 +149,6 @@ export default async function PassThenPayPage() {
                         <p className="text-center text-xs text-muted-foreground mt-8">*Registration fee is non-refundable. Activation fee charged only after successful evaluation. All trading is 100% simulated. Performance Rewards are professional fees, not investment returns.</p>
                     </section>
                     
-                    <section id="rules" className="py-24 sm:py-32 max-w-5xl mx-auto">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Evaluation Rules</h2>
-                            <p className="mt-4 text-lg text-muted-foreground">Simple rules. No confusion. Everything you need to know before you start.</p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                           <RuleCard title="What you need to achieve" icon={<BarChart className="w-5 h-5"/>} titleColor="text-green-400">
-                               <RuleItem label="Profit target" value="6% only" />
-                               <RuleItem label="Min. trading days" value="5 days" />
-                               <RuleItem label="Time limit" value="None" />
-                               <RuleItem label="Number of phases" value="Just 1" />
-                               <RuleItem label="Reward share" value="80% yours" />
-                               <RuleItem label="Reward cycle" value="Every 14 days" />
-                           </RuleCard>
-                           <RuleCard title="Risk limits to stay within" icon={<AlertTriangle className="w-5 h-5"/>} titleColor="text-destructive">
-                                <RuleItem label="Max daily loss" value="4% per day" />
-                                <RuleItem label="Max overall drawdown" value="8% from start" />
-                                <RuleItem label="Capital per trade" value="Max 80%" />
-                                <RuleItem label="Overnight positions" value="Not allowed" />
-                                <RuleItem label="News trading ±5 min" value="Banned" />
-                                <RuleItem label="Copy / algo trading" value="Strictly banned" />
-                           </RuleCard>
-                           <RuleCard title="What you can trade" icon={<CheckCircle className="w-5 h-5"/>} titleColor="text-primary">
-                                <RuleItem label="Equity stocks" value="Allowed" />
-                                <RuleItem label="Index options" value="Allowed" />
-                                <RuleItem label="Stock options" value="Allowed" />
-                                <RuleItem label="Futures" value="Allowed" />
-                                <RuleItem label="Option selling" value="Allowed" />
-                                <RuleItem label="Lot size restrictions" value="None" />
-                           </RuleCard>
-                        </div>
-                         <p className="text-xs text-muted-foreground mt-8 text-center">📢 News Alert System: You will receive an SMS + email notification 30 minutes before every major market event. Trades placed ±5 minutes around these events will be automatically voided.</p>
-                    </section>
-
-
                     <section id="faq" className="py-24 sm:py-32 max-w-3xl mx-auto">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Still have questions?</h2>
@@ -318,7 +169,7 @@ export default async function PassThenPayPage() {
                             />
                             <FaqItem 
                                 question="How and when will I get Performance Rewards?" 
-                                answer="You can request a payout every 14 days — provided you have traded for a minimum of 5 days in that cycle and have accumulated a minimum reward of ₹2,000. Payment comes directly to your UPI or bank account within 3–5 business days. Your registration fee is refunded on your 3rd successful payout."
+                                answer="You can request a payout every 14 days — provided you have traded for a minimum of 5 days in that cycle and have accumulated a minimum reward of ₹2,00,000. Payment comes directly to your UPI or bank account within 3–5 business days. Your registration fee is refunded on your 3rd successful payout."
                             />
                             <FaqItem 
                                 question="What is the difference between PassThenPay and the 2-Step evaluation?" 

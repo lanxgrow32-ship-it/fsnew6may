@@ -36,25 +36,10 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
 
 
 export default async function TwoStepRulesPage() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const backUrl = user ? "/welcome" : "/pricing";
-    const backLabel = user ? "Back to Dashboard" : "Back to Plans";
-
     return (
         <div className="dark-theme">
-            <div className="bg-background min-h-screen text-foreground">
-                <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-                    <div className="container mx-auto flex h-16 items-center justify-center px-4">
-                        <Button asChild variant="outline" className="rounded-full">
-                            <Link href={backUrl}>
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                {backLabel}
-                            </Link>
-                        </Button>
-                    </div>
-                </header>
-                <main className="container mx-auto p-4 md:p-8">
+            <div className="bg-background min-h-screen text-foreground pb-20">
+                <main className="container mx-auto p-4 md:p-8 pt-12">
                     <div className="text-center mb-12">
                         <h1 className="text-4xl font-extrabold tracking-tight">Two-Step Evaluation Rules</h1>
                     </div>
@@ -163,8 +148,8 @@ export default async function TwoStepRulesPage() {
                             </CardHeader>
                             <CardContent>
                                 <DetailedRule title="Profit Split" tag="80% Trader / 20% Firm" description="You keep 80% of all profits generated. There are no caps on total earnings." />
-                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="Payouts are available every 14 days, provided you have traded on a minimum of 5 days within that cycle. Minimum payout is ₹2,000." />
-                                <DetailedRule title="Evaluation Fee Refund" tag="100% on 3rd Payout" description="Your full evaluation fee is refunded automatically upon your 3rd successful payout of ₹2,000+." />
+                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="Payouts are available every 14 days, provided you have traded on a minimum of 5 days within that cycle. Minimum payout is ₹2,00,000." />
+                                <DetailedRule title="Evaluation Fee Refund" tag="100% on 3rd Payout" description="Your full evaluation fee is refunded automatically upon your 3rd successful payout of ₹2,00,000+." />
                                 <DetailedRule title="Stop Loss — Mandatory" tag="Required on every trade" description="Every position on the live account must have a stop loss set at entry. This is strictly enforced once you go live." tagVariant="destructive" />
                                 <DetailedRule title="Max Daily Loss (Funded)" tag="5% of account" description="The 5% daily loss limit carries into your funded account. Breaching this triggers automatic suspension." tagVariant="destructive" />
                                 <DetailedRule title="Max Overall Drawdown (Funded)" tag="10% of account" description="The overall drawdown limit is 10% from the starting balance. Breaching this results in immediate termination." tagVariant="destructive" />
@@ -198,7 +183,7 @@ export default async function TwoStepRulesPage() {
                                     />
                                     <FaqItem
                                         question="When do I get my fee back?"
-                                        answer="Your full evaluation fee is refunded alongside your 3rd successful payout of at least ₹2,000."
+                                        answer="Your full evaluation fee is refunded alongside your 3rd successful payout of at least ₹2,00,000."
                                     />
                                 </Accordion>
                             </CardContent>

@@ -36,25 +36,10 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
 
 
 export default async function OneStepRulesPage() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const backUrl = user ? "/welcome" : "/pricing";
-    const backLabel = user ? "Back to Dashboard" : "Back to Plans";
-
     return (
         <div className="dark-theme">
-            <div className="bg-background min-h-screen text-foreground">
-                <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-                    <div className="container mx-auto flex h-16 items-center justify-center px-4">
-                        <Button asChild variant="outline" className="rounded-full">
-                            <Link href={backUrl}>
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                {backLabel}
-                            </Link>
-                        </Button>
-                    </div>
-                </header>
-                <main className="container mx-auto p-4 md:p-8">
+            <div className="bg-background min-h-screen text-foreground pb-20">
+                <main className="container mx-auto p-4 md:p-8 pt-12">
                      <div className="text-center mb-12">
                         <h1 className="text-4xl font-extrabold tracking-tight">One-Step Evaluation Rules</h1>
                     </div>
@@ -152,7 +137,7 @@ export default async function OneStepRulesPage() {
                             </CardHeader>
                             <CardContent>
                                 <DetailedRule title="Profit Split" tag="80% Trader / 20% Firm" description="You keep 80% of all profits on your funded account. FundedStock retains 20% as its share." />
-                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="Payout requests are available every 14 days, provided you have traded on at least 5 days within that cycle. Minimum payout amount is ₹2,000." />
+                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="Payout requests are available every 14 days, provided you have traded on at least 5 days within that cycle. Minimum payout amount is ₹2,00,000." />
                                 <DetailedRule title="Evaluation Fee Refund" tag="100% on 3rd Payout" description="Your full evaluation fee is automatically refunded on your 3rd successful payout — provided each payout meets the 5 trading day minimum and ₹2,000 threshold." />
                                 <DetailedRule title="Stop Loss — Mandatory" tag="Required on every trade" description="Every position on the live funded account must have a stop loss set at the time of entry. Positions without a stop loss will be flagged and may be force-closed." tagVariant="destructive" />
                                 <DetailedRule title="Max Daily Loss (Funded)" tag="5% of account" description="The 5% daily loss limit carries into the funded account. Breaching this triggers an automatic account suspension." tagVariant="destructive" />
