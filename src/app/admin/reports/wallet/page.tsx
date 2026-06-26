@@ -103,14 +103,14 @@ export default function WalletReportsPage() {
                                 <CardContent>
                                     <Table>
                                         <TableHeader>
-                                            <TableRow><TableHead>Date</TableHead><TableHead>User ID</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Amount</TableHead></TableRow>
+                                            <TableRow><TableHead>Date</TableHead><TableHead>Trader</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Amount</TableHead></TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {data.recentActivity.map((tx: any) => (
                                                 <TableRow key={tx.id}>
                                                     <TableCell className="text-xs">{new Date(tx.created_at).toLocaleDateString()}</TableCell>
-                                                    <TableCell className="font-mono text-[10px]">{tx.user_id}</TableCell>
-                                                    <TableCell><Badge variant="outline" className="capitalize">{tx.type}</Badge></TableCell>
+                                                    <TableCell className="text-xs font-bold text-white">{tx.profiles?.full_name || 'System'}</TableCell>
+                                                    <TableCell><Badge variant="outline" className="capitalize text-[10px] font-bold">{tx.type}</Badge></TableCell>
                                                     <TableCell className={cn("text-right font-bold", tx.amount > 0 ? "text-green-500" : "text-foreground")}>₹{Math.abs(tx.amount).toLocaleString()}</TableCell>
                                                 </TableRow>
                                             ))}

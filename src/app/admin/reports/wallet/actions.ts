@@ -8,9 +8,10 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
  * Separates deposits, bonuses, and spending.
  */
 export async function getWalletReportData() {
+    // Join with profiles to get the user's name for the ledger
     const { data: txs, error } = await supabaseAdmin
         .from('wallet_transactions')
-        .select('*')
+        .select('*, profiles(full_name)')
         .eq('status', 'completed')
         .order('created_at', { ascending: false });
     
