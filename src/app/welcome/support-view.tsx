@@ -16,7 +16,7 @@ import {
     ArrowRight,
     Headphones
 } from 'lucide-react';
-import { createSupportConversation, sendSupportMessage } from './actions';
+import { createSupportConversation, sendSupportMessage, markSupportRead } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -51,10 +51,16 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
     useEffect(() => {
         if (activeConversation) {
             fetchMessages(activeConversation.id);
+            // Clear unread count for user when chat is opened
+            markSupportRead(activeConversation.id, 'user');
+
             const channel = supabase
                 .channel(`conv_${activeConversation.id}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `conversation_id=eq.${activeConversation.id}` }, 
-                () => fetchMessages(activeConversation.id))
+                () => {
+                    fetchMessages(activeConversation.id);
+                    markSupportRead(activeConversation.id, 'user');
+                })
                 .subscribe();
             return () => { supabase.removeChannel(channel); };
         }
@@ -159,7 +165,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                         <h4 className="text-[10px] font-bold text-gray-600 mb-4 uppercase tracking-widest">Active Interactions</h4>
                         <div className="grid gap-3">
                             {conversations.map(c => (
-                                <button key={c.id} onClick={() => { setActiveConversation(c); setView('chat'); }} className="w-full text-left bg-black/20 border border-white/5 rounded-2xl p-4 flex items-center justify-between hover:border-white/20 transition-all">
+                                <button key={c.id} onClick={() => { setActiveConversation(c); setView('chat'); }} className="w-full text-left bg-black/20 border border-white/5 rounded-2xl p-4 flex items-center justify-between hover:border-white/20 transition-all relative">
                                     <div className="flex items-center gap-3">
                                         <div className="h-9 w-9 rounded-full bg-white/5 flex items-center justify-center">
                                             {c.subject === 'LIVE_CHAT' ? <MessageSquare className="w-4 h-4 text-primary" /> : <LifeBuoy className="w-4 h-4 text-purple-400" />}
@@ -169,7 +175,14 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                             <p className="text-[10px] text-gray-500">{new Date(c.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
-                                    <Badge variant="outline" className={cn("text-[9px] font-bold px-2.5 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
+                                    <div className="flex items-center gap-3">
+                                        {c.unread_count_user > 0 && (
+                                            <Badge className="bg-red-500 text-white font-bold h-5 min-w-5 flex items-center justify-center rounded-full text-[10px]">
+                                                {c.unread_count_user}
+                                            </Badge>
+                                        )}
+                                        <Badge variant="outline" className={cn("text-[9px] font-bold px-2.5 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
+                                    </div>
                                 </button>
                             ))}
                         </div>

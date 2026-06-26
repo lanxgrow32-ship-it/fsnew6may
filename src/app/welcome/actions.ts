@@ -93,7 +93,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 export async function createSupportConversation(userId: string, subject: string, firstMessage?: string) {
     const { data: conversation, error } = await supabaseAdmin
         .from('support_conversations')
-        .insert({ user_id: userId, subject })
+        .insert({ user_id: userId, subject, unread_count_admin: 1 })
         .select()
         .single();
     
@@ -128,14 +128,42 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
         });
     
     if (!error) {
+        // Fetch current unread counts to increment correctly
+        const { data: conv } = await supabaseAdmin
+            .from('support_conversations')
+            .select('unread_count_user, unread_count_admin')
+            .eq('id', convId)
+            .single();
+
+        const updateData: any = { 
+            last_message_at: new Date().toISOString() 
+        };
+
+        if (role === 'admin') {
+            updateData.unread_count_user = (conv?.unread_count_user || 0) + 1;
+        } else {
+            updateData.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
+        }
+
         await supabaseAdmin.from('support_conversations')
-            .update({ last_message_at: new Date().toISOString() })
+            .update(updateData)
             .eq('id', convId);
     }
     
     revalidatePath('/welcome');
     revalidatePath('/support-agent/chat');
     return { error: error?.message };
+}
+
+export async function markSupportRead(convId: string, role: 'admin' | 'user') {
+    const field = role === 'admin' ? 'unread_count_admin' : 'unread_count_user';
+    await supabaseAdmin.from('support_conversations')
+        .update({ [field]: 0 })
+        .eq('id', convId);
+    
+    revalidatePath('/welcome');
+    revalidatePath('/support-agent/chat');
+    return { success: true };
 }
 
 /**

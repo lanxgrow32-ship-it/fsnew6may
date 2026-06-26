@@ -63,13 +63,16 @@ export function WelcomeClient({
     const [activeTab, setActiveTab] = useState('hub');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // Calculate total unread messages for the notification badge
+    const totalUnread = supportConversations.reduce((sum, conv) => sum + (conv.unread_count_user || 0), 0);
+
     const navItems = [
         { id: 'hub', label: "Portfolio", mobileLabel: "Portfolio", icon: LayoutDashboard },
         { id: 'marketplace', label: "Get Funded", mobileLabel: "Get Funded", icon: ShoppingCart },
         { id: 'competition', label: "Competition", mobileLabel: "Competition", icon: Trophy },
         { id: 'wallet', label: "Wallet", mobileLabel: "Wallet", icon: Wallet },
         { id: 'transactions', label: "History", mobileLabel: "History", icon: History },
-        { id: 'support', label: "Support", mobileLabel: "Support", icon: LifeBuoy },
+        { id: 'support', label: "Support", mobileLabel: "Support", icon: LifeBuoy, hasBadge: totalUnread > 0 },
         { id: 'kyc', label: "KYC", mobileLabel: "KYC", icon: FileCheck },
     ];
 
@@ -93,13 +96,18 @@ export function WelcomeClient({
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={cn(
-                                        "px-4 py-1.5 text-[12px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0",
+                                        "px-4 py-1.5 text-[12px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0 flex items-center gap-2",
                                         activeTab === item.id
                                         ? "bg-white/10 text-white border border-white/10 shadow-sm"
                                         : "text-gray-400 hover:text-white"
                                     )}
                                 >
                                     {item.label}
+                                    {item.hasBadge && (
+                                        <span className="w-4 h-4 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full animate-pulse">
+                                            {totalUnread > 9 ? '9+' : totalUnread}
+                                        </span>
+                                    )}
                                 </button>
                             ))}
                         </nav>
@@ -119,8 +127,11 @@ export function WelcomeClient({
                         
                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                             <SheetTrigger asChild>
-                                <button className="h-9 w-9 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 lg:hidden transition-colors shadow-lg">
+                                <button className="h-9 w-9 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 lg:hidden transition-colors shadow-lg relative">
                                     <Menu className="h-4 w-4 text-gray-300" />
+                                    {totalUnread > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-950" />
+                                    )}
                                 </button>
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col font-poppins">
@@ -145,7 +156,7 @@ export function WelcomeClient({
                                                     setIsSidebarOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "w-full px-5 py-4 text-sm font-bold transition-all flex items-center gap-4 rounded-2xl",
+                                                    "w-full px-5 py-4 text-sm font-bold transition-all flex items-center gap-4 rounded-2xl relative",
                                                     activeTab === item.id
                                                     ? "bg-primary text-white border border-white shadow-xl shadow-primary/20"
                                                     : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -153,6 +164,11 @@ export function WelcomeClient({
                                             >
                                                 <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
                                                 {item.mobileLabel}
+                                                {item.hasBadge && (
+                                                    <span className="absolute right-5 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
+                                                        {totalUnread}
+                                                    </span>
+                                                )}
                                             </button>
                                         ))}
                                     </div>

@@ -14,9 +14,10 @@ import {
     Headphones
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { sendSupportMessage } from '@/app/welcome/actions';
+import { sendSupportMessage, markSupportRead } from '@/app/welcome/actions';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AgentLiveChat() {
     const [conversations, setConversations] = useState<any[]>([]);
@@ -27,6 +28,7 @@ export default function AgentLiveChat() {
     const [messageText, setMessageText] = useState('');
     const [isSending, setIsSending] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const { toast } = useToast();
     const supabase = createClient();
 
     const fetchConversations = async () => {
@@ -67,10 +69,16 @@ export default function AgentLiveChat() {
     useEffect(() => {
         if (activeConversation) {
             fetchMessages(activeConversation.id);
+            // Clear unread count for admin when chat is opened
+            markSupportRead(activeConversation.id, 'admin');
+
             const sub = supabase
                 .channel(`agent_conv_${activeConversation.id}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `conversation_id=eq.${activeConversation.id}` }, 
-                () => fetchMessages(activeConversation.id))
+                () => {
+                    fetchMessages(activeConversation.id);
+                    markSupportRead(activeConversation.id, 'admin');
+                })
                 .subscribe();
             return () => { supabase.removeChannel(sub); };
         }
@@ -84,16 +92,18 @@ export default function AgentLiveChat() {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!agentId || !activeConversation || !messageText.trim() || isSending) return;
+        const finalAgentId = agentId;
+        if (!finalAgentId || !activeConversation || !messageText.trim() || isSending) return;
 
         setIsSending(true);
         const textToSend = messageText;
-        setMessageText(''); // Clear input immediately for UX
+        setMessageText(''); // Optimistic UI clear
 
-        const res = await sendSupportMessage(activeConversation.id, agentId, 'admin', textToSend);
+        const res = await sendSupportMessage(activeConversation.id, finalAgentId, 'admin', textToSend);
         
         if (res.error) {
-            setMessageText(textToSend); // Restore if failed
+            setMessageText(textToSend); // Restore on error
+            toast({ title: "Failed to send message", description: res.error, variant: "destructive" });
         }
         setIsSending(false);
     };
@@ -115,15 +125,22 @@ export default function AgentLiveChat() {
                                 key={c.id} 
                                 onClick={() => setActiveConversation(c)}
                                 className={cn(
-                                    "w-full p-4 border-b border-white/5 text-left transition-all hover:bg-white/5",
+                                    "w-full p-4 border-b border-white/5 text-left transition-all hover:bg-white/5 flex items-center justify-between group",
                                     activeConversation?.id === c.id && "bg-primary/10 border-r-2 border-r-primary"
                                 )}
                             >
-                                <div className="flex justify-between items-start mb-1.5">
-                                    <p className="text-sm font-bold truncate max-w-[140px] text-white">{c.profiles?.full_name || 'New Trader'}</p>
-                                    <Badge variant="outline" className={cn("text-[10px] font-bold px-2 py-0 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold truncate max-w-[140px] text-white group-hover:text-primary transition-colors">{c.profiles?.full_name || 'New Trader'}</p>
+                                    <p className="text-[11px] text-gray-500 font-medium truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Message' : c.subject}</p>
                                 </div>
-                                <p className="text-[11px] text-gray-500 font-medium truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Message' : c.subject}</p>
+                                <div className="flex flex-col items-end gap-1.5">
+                                    {c.unread_count_admin > 0 && (
+                                        <Badge className="bg-primary text-white font-bold h-5 min-w-5 flex items-center justify-center rounded-full text-[10px]">
+                                            {c.unread_count_admin}
+                                        </Badge>
+                                    )}
+                                    <Badge variant="outline" className={cn("text-[9px] font-bold px-2 py-0 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
+                                </div>
                             </button>
                         ))
                     )}
@@ -156,7 +173,7 @@ export default function AgentLiveChat() {
                         <ScrollArea ref={scrollRef} className="flex-grow p-6">
                             <div className="space-y-6 max-w-3xl mx-auto">
                                 <div className="text-center py-4 border-b border-white/5 mb-8">
-                                    <p className="text-[10px] text-gray-700 font-bold">Connected to trader</p>
+                                    <p className="text-[10px] text-gray-700 font-bold uppercase">Live connection established</p>
                                 </div>
                                 {messages.map(m => (
                                     <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
@@ -181,8 +198,8 @@ export default function AgentLiveChat() {
                                     disabled={isSending}
                                     className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl px-5" 
                                 />
-                                <Button type="submit" size="icon" disabled={!messageText.trim() || isSending} className="h-12 w-12 rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-                                    {isSending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
+                                <Button type="submit" size="icon" disabled={!messageText.trim() || isSending} className="h-12 w-12 rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 bg-primary">
+                                    {isSending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5 text-white" />}
                                 </Button>
                             </form>
                         </div>
