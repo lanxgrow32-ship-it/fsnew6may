@@ -56,8 +56,7 @@ export async function updateProfile(formData: FormData) {
   const { error } = await supabaseAdmin.from('profiles').update(updateData).eq('id', id);
   if (error) return { error: error.message };
 
-  // SYNC WITH STOCKMINT IF CLASSIFICATION CHANGED
-  // We sync every active account associated with this trader using the /update endpoint
+  // SYNC WITH STOCKMINT (v2.6): Promotion / Phase Change
   if (account_classification !== wasClassified) {
       const { data: accounts } = await supabaseAdmin
         .from('user_accounts')
@@ -69,7 +68,7 @@ export async function updateProfile(formData: FormData) {
       
       if (apiKey && accounts && accounts.length > 0) {
           try {
-              // Loop through and update every account StockMint knows about via POST /api/users/update
+              // Notify StockMint of the manual phase override via POST /api/users/update
               await Promise.all(accounts.map(async (acc) => {
                   if (acc.trading_username) {
                       await fetch('https://stockmint.io/api/users/update', {

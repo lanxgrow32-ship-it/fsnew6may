@@ -77,6 +77,21 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
+                        <Link href="/profile">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/kyc">
+                            <FileCheck className="mr-2 h-4 w-4" />
+                            <span>KYC</span>
+                        </Link>
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
                  <form action={signOut}>
                     <DropdownMenuItem asChild><button type="submit" className="w-full"><LogOut className="mr-2 h-4 w-4" /><span>Log out</span></button></DropdownMenuItem>
                 </form>
@@ -137,17 +152,17 @@ export default async function AccountDashboardPage({ params }: { params: Promise
             });
             if (res.ok) {
                 const json = await res.json();
-                if (json.success) {
+                if (json.success && json.data) {
                     stats = json.data;
                     
-                    // BIDIRECTIONAL SYNC: Update database if StockMint classification has changed
+                    // SOURCE OF TRUTH SYNC (v2.6): Update database if StockMint classification has changed
                     if (stats.accountClassification && stats.accountClassification !== account.account_classification) {
                         await supabaseAdmin
                             .from('user_accounts')
                             .update({ account_classification: stats.accountClassification })
                             .eq('id', id);
                         
-                        // Also update the main profile if it matches the current account being viewed
+                        // Also sync the main profile if this is the user's primary/last used account
                         await supabaseAdmin
                             .from('profiles')
                             .update({ account_classification: stats.accountClassification })
