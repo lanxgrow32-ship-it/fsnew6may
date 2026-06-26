@@ -110,37 +110,37 @@ export function ArenaView({
     if (checkoutStep === 'method') {
         return (
             <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
-                <Button variant="ghost" onClick={() => setCheckoutStep('selection')} className="text-gray-500 hover:text-white font-black uppercase text-[10px] tracking-widest p-0 h-auto mb-2">
+                <Button variant="ghost" onClick={() => setCheckoutStep('selection')} className="text-gray-500 hover:text-white font-bold uppercase text-[10px] tracking-widest p-0 h-auto mb-2">
                     <ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Plans
                 </Button>
                 <div className="text-center space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tight">Select Payment Method</h2>
-                    <p className="text-gray-400 text-lg font-medium">Choose how you want to pay for {selectedPlan.title}.</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Select Payment Method</h2>
+                    <p className="text-gray-400 text-base font-medium">Choose how you want to pay for {selectedPlan.title}.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-                    <GlassCard className="p-6 flex flex-col items-center text-center space-y-5 hover:border-primary transition-all group">
-                        <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                            <Wallet className="w-6 h-6" />
+                    <GlassCard className="p-6 flex flex-col items-center text-center space-y-4 hover:border-primary transition-all group">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <Wallet className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                            <h3 className="text-lg font-bold text-white">Wallet Balance</h3>
-                            <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">Available: ₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                            <h3 className="text-base font-bold text-white">Wallet Balance</h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Available: ₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                         </div>
-                        <Button onClick={handleWalletPurchase} disabled={isActionPending} className="w-full h-11 font-black rounded-xl uppercase tracking-widest text-xs">
+                        <Button onClick={handleWalletPurchase} disabled={isActionPending} className="w-full h-10 font-bold rounded-xl uppercase tracking-widest text-xs">
                             {isActionPending ? <Loader2 className="animate-spin h-4 w-4" /> : 'Pay via Wallet'}
                         </Button>
                     </GlassCard>
 
-                    <GlassCard className="p-6 flex flex-col items-center text-center space-y-5 hover:border-primary transition-all group">
-                        <div className="h-14 w-14 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                            <CreditCard className="w-6 h-6" />
+                    <GlassCard className="p-6 flex flex-col items-center text-center space-y-4 hover:border-primary transition-all group">
+                        <div className="h-12 w-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                            <CreditCard className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                            <h3 className="text-lg font-bold text-white">Direct Payment</h3>
-                            <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">UPI / Automatic</p>
+                            <h3 className="text-base font-bold text-white">Direct Payment</h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">UPI / Automatic</p>
                         </div>
-                        <Button onClick={() => setCheckoutStep('direct-pay')} variant="outline" className="w-full h-11 font-black border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-xl uppercase tracking-widest text-xs">
+                        <Button onClick={() => setCheckoutStep('direct-pay')} variant="outline" className="w-full h-10 font-bold border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-xl uppercase tracking-widest text-xs">
                             Pay Directly
                         </Button>
                     </GlassCard>
@@ -152,41 +152,41 @@ export function ArenaView({
     if (checkoutStep === 'direct-pay') {
         return (
             <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
-                <Button variant="ghost" onClick={() => setCheckoutStep('method')} className="text-gray-500 hover:text-white font-black uppercase text-[10px] tracking-widest p-0 h-auto mb-2">
+                <Button variant="ghost" onClick={() => setCheckoutStep('method')} className="text-gray-500 hover:text-white font-bold uppercase text-[10px] tracking-widest p-0 h-auto mb-2">
                     <ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back
                 </Button>
                 <div className="text-center space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tight">Direct Purchase</h2>
-                    <p className="text-gray-400 text-lg font-medium">Scan QR to pay ₹{selectedPlan.price} and enter UTR.</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Direct Purchase</h2>
+                    <p className="text-gray-400 text-base font-medium">Scan QR to pay ₹{selectedPlan.price} and enter UTR.</p>
                 </div>
 
                 <GlassCard className="p-6 border-primary/20 bg-primary/5">
                     <div className="grid md:grid-cols-2 gap-8 items-center">
                         <div className="flex flex-col items-center gap-4">
-                            <div className="bg-white p-3 rounded-2xl shadow-2xl">
+                            <div className="bg-white p-2 rounded-2xl shadow-2xl">
                                 {paymentSettings?.qr_code_url ? (
-                                    <Image src={paymentSettings.qr_code_url} alt="Payment QR" width={160} height={160} />
+                                    <Image src={paymentSettings.qr_code_url} alt="Payment QR" width={140} height={140} />
                                 ) : (
-                                    <div className="w-[160px] h-[160px] flex items-center justify-center text-slate-950 font-black text-xs">QR LOADING</div>
+                                    <div className="w-[140px] h-[140px] flex items-center justify-center text-slate-950 font-bold text-xs">QR LOADING</div>
                                 )}
                             </div>
                             <div className="text-center">
-                                <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-1">Transfer ID</p>
+                                <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">Transfer ID</p>
                                 <p className="font-mono text-xs font-bold text-white">{paymentSettings?.upi_id || 'pay@fundedstock'}</p>
                             </div>
                         </div>
-                        <form onSubmit={handleDirectSubmit} className="space-y-6">
+                        <form onSubmit={handleDirectSubmit} className="space-y-5">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Transaction ID (UTR)</Label>
+                                <Label className="text-[9px] font-bold uppercase tracking-widest text-gray-500">Transaction ID (UTR)</Label>
                                 <Input 
                                     placeholder="Enter 12-digit ID" 
                                     value={utr} 
                                     onChange={(e) => setUtr(e.target.value)} 
                                     required 
-                                    className="bg-black/40 border-white/10 h-11 text-white text-sm" 
+                                    className="bg-black/40 border-white/10 h-10 text-white text-xs" 
                                 />
                             </div>
-                            <Button type="submit" className="w-full h-12 font-black rounded-xl uppercase tracking-widest text-xs shadow-xl shadow-primary/20">
+                            <Button type="submit" className="w-full h-11 font-bold rounded-xl uppercase tracking-widest text-xs shadow-xl shadow-primary/20">
                                 Confirm & Activate
                             </Button>
                         </form>
@@ -201,34 +201,34 @@ export function ArenaView({
             <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-xl font-black">₹{plan.size}</CardTitle>
-                        <CardDescription className="text-sm font-medium text-gray-400 mt-1">{category}</CardDescription>
+                        <CardTitle className="text-lg font-bold">₹{plan.size}</CardTitle>
+                        <CardDescription className="text-xs font-medium text-gray-400 mt-1">{category}</CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-black uppercase tracking-tighter">80% Share</Badge>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[9px] font-bold uppercase tracking-tighter px-1.5">80% Share</Badge>
                 </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
-                <div className="space-y-2 text-sm border-t border-white/5 pt-4">
+                <div className="space-y-2 text-xs border-t border-white/5 pt-4">
                     <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
                         <span>Target: {category === 'Instant' ? '0%' : category.includes('PTP') ? '6%' : '10%'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
                         <span>Drawdown: 10%</span>
                     </div>
                 </div>
                 <div className="pt-4 border-t border-white/5">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">Capital Fee</p>
-                    <p className="text-2xl font-black text-primary mt-0.5">₹{plan.price}</p>
+                    <p className="text-[9px] font-medium text-gray-500 uppercase tracking-widest">Capital Fee</p>
+                    <p className="text-xl font-bold text-primary mt-0.5">₹{plan.price}</p>
                 </div>
             </CardContent>
             <CardFooter>
                 <Button 
                     onClick={() => { setSelectedPlan(plan); setCheckoutStep('method'); }} 
-                    className="w-full font-black h-12 uppercase tracking-widest rounded-xl"
+                    className="w-full font-bold h-10 uppercase tracking-widest rounded-xl text-xs"
                 >
-                    Activate Now
+                    Activate
                 </Button>
             </CardFooter>
         </Card>
@@ -237,28 +237,28 @@ export function ArenaView({
     return (
         <div className="space-y-12 animate-in fade-in duration-500">
             <div className="space-y-2">
-                <h2 className="text-3xl font-black text-white tracking-tight">Get Funded</h2>
-                <p className="text-gray-400 text-lg mt-1 font-medium">Select your path to instant capital and professional scaling.</p>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Get Funded</h2>
+                <p className="text-gray-400 text-base mt-1 font-medium">Select your path to instant capital and professional scaling.</p>
             </div>
 
             <Tabs defaultValue="instant" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-12">
-                    <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-sm">Instant</TabsTrigger>
-                    <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-sm">1-Step</TabsTrigger>
-                    <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-sm">2-Step</TabsTrigger>
-                    <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-sm">PTP</TabsTrigger>
+                    <TabsTrigger value="instant" className="py-2 rounded-xl font-bold text-xs">Instant</TabsTrigger>
+                    <TabsTrigger value="oneStep" className="py-2 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
+                    <TabsTrigger value="twoStep" className="py-2 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
+                    <TabsTrigger value="ptp" className="py-2 rounded-xl font-bold text-xs">PTP</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
+                <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in zoom-in-95">
                     {plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />)}
                 </TabsContent>
-                <TabsContent value="oneStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
+                <TabsContent value="oneStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in zoom-in-95">
                     {plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step" />)}
                 </TabsContent>
-                <TabsContent value="twoStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
+                <TabsContent value="twoStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in zoom-in-95">
                     {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}
                 </TabsContent>
-                <TabsContent value="ptp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in zoom-in-95">
+                <TabsContent value="ptp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 animate-in fade-in zoom-in-95">
                     {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
                 </TabsContent>
             </Tabs>

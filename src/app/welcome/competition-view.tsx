@@ -75,31 +75,31 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         return (
             <div className="space-y-8 animate-in fade-in zoom-in-95">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" onClick={() => setView('hub')} className="text-gray-500 hover:text-white"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
-                    <h2 className="text-3xl font-black text-white tracking-tight">Competition Browser</h2>
+                    <Button variant="ghost" onClick={() => setView('hub')} className="text-gray-500 hover:text-white font-bold uppercase text-[10px] tracking-widest"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Competition Browser</h2>
                 </div>
 
-                <div className="grid gap-6">
+                <div className="grid gap-5">
                     {isLoadingEvents ? <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : (
                         events.map(event => (
-                            <GlassCard key={event.id} className={cn("p-6 flex flex-col md:flex-row items-center justify-between gap-6", event.status === 'ongoing' && "border-primary/30 bg-primary/5")}>
+                            <GlassCard key={event.id} className={cn("p-5 flex flex-col md:flex-row items-center justify-between gap-6", event.status === 'ongoing' && "border-primary/30 bg-primary/5")}>
                                 <div className="space-y-1 text-center md:text-left">
                                     <div className="flex items-center gap-3 justify-center md:justify-start">
-                                        <h3 className="text-xl font-bold text-white">{event.week_label}</h3>
-                                        {event.status === 'ongoing' && <Badge className="bg-red-500 animate-pulse text-[8px] font-black uppercase">LIVE NOW</Badge>}
-                                        {event.is_free && <Badge className="bg-green-600 text-[8px] font-black uppercase">FREE</Badge>}
+                                        <h3 className="text-lg font-bold text-white">{event.week_label}</h3>
+                                        {event.status === 'ongoing' && <Badge className="bg-red-500 animate-pulse text-[8px] font-bold uppercase">LIVE</Badge>}
+                                        {event.is_free && <Badge className="bg-green-600 text-[8px] font-bold uppercase">FREE</Badge>}
                                     </div>
-                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                                         {new Date(event.start_date).toLocaleDateString()} — {new Date(event.end_date).toLocaleDateString()}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-8">
                                     <div className="text-center md:text-right">
-                                        <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Entrance Fee</p>
-                                        <p className="text-2xl font-black text-primary">{event.is_free ? 'FREE' : `₹${event.entry_fee}`}</p>
+                                        <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Entry Fee</p>
+                                        <p className="text-xl font-bold text-primary">{event.is_free ? 'FREE' : `₹${event.entry_fee}`}</p>
                                     </div>
-                                    <Button onClick={() => handleJoin(event)} disabled={isPurchasing !== null} className="rounded-xl px-8 font-black uppercase tracking-widest h-12">
-                                        {isPurchasing === event.id ? <Loader2 className="animate-spin h-4 w-4"/> : 'Join Competition'}
+                                    <Button onClick={() => handleJoin(event)} disabled={isPurchasing !== null} className="rounded-xl px-6 font-bold uppercase tracking-widest h-11 text-xs">
+                                        {isPurchasing === event.id ? <Loader2 className="animate-spin h-4 w-4"/> : 'Join Arena'}
                                     </Button>
                                 </div>
                             </GlassCard>
@@ -114,15 +114,15 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         return (
             <div className="space-y-8 animate-in fade-in">
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tight">Competition Arena</h2>
-                    <p className="text-gray-400 text-lg mt-1 font-medium">Battle with other traders for massive funded rewards.</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Competition Arena</h2>
+                    <p className="text-gray-400 text-base mt-1 font-medium">Battle with other traders for massive funded rewards.</p>
                 </div>
-                <GlassCard className="text-center p-20 border-dashed border-white/5">
-                    <Trophy className="h-16 w-16 text-gray-700 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-white">No active entries</h3>
+                <GlassCard className="text-center p-16 border-dashed border-white/5">
+                    <Trophy className="h-14 w-14 text-gray-800 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-white">No active entries</h3>
                     <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8 text-sm">Join the next competition to prove your consistency and earn instant funding.</p>
-                    <Button onClick={handleBrowse} size="lg" className="px-10 h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20">
-                        Browse Active Competitions <ArrowRight className="ml-2 w-4 h-4"/>
+                    <Button onClick={handleBrowse} size="lg" className="px-8 h-12 rounded-xl font-bold uppercase tracking-widest shadow-xl shadow-primary/20 text-xs">
+                        Browse Competitions <ArrowRight className="ml-2 w-4 h-4"/>
                     </Button>
                 </GlassCard>
             </div>
@@ -133,68 +133,68 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tight">Active Competition</h2>
-                    <p className="text-gray-400 text-lg mt-1 font-medium">Tracking your performance for the current competition week.</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Active Competition</h2>
+                    <p className="text-gray-400 text-base mt-1 font-medium">Tracking your performance for the current competition week.</p>
                 </div>
-                <Button onClick={handleBrowse} variant="outline" className="bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 rounded-full font-bold uppercase text-[10px] tracking-widest">
-                    <PlusCircle className="mr-2 w-4 h-4 text-primary"/> Join Next Competition
+                <Button onClick={handleBrowse} variant="outline" className="bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 rounded-full font-bold uppercase text-[9px] tracking-widest h-9">
+                    <PlusCircle className="mr-2 w-3.5 h-3.5 text-primary"/> Join Next Week
                 </Button>
             </div>
 
             <GlassCard className="border-primary/20 bg-primary/5">
-                <CardHeader className="border-b border-white/5 pb-6">
+                <CardHeader className="border-b border-white/5 pb-5">
                     <div className="flex justify-between items-start">
                         <div>
-                            <CardTitle className="text-3xl font-black text-white">{activeReg.competition_events.week_label}</CardTitle>
-                            <CardDescription className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-2">
-                                Starts: {new Date(activeReg.competition_events.start_date).toLocaleDateString()} · Ends: {new Date(activeReg.competition_events.end_date).toLocaleDateString()}
+                            <CardTitle className="text-2xl font-bold text-white">{activeReg.competition_events.week_label}</CardTitle>
+                            <CardDescription className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1.5">
+                                PERIOD: {new Date(activeReg.competition_events.start_date).toLocaleDateString()} — {new Date(activeReg.competition_events.end_date).toLocaleDateString()}
                             </CardDescription>
                         </div>
-                        <Badge className="bg-primary text-white font-black px-4 py-1 rounded-full text-[10px] tracking-widest">SECURED ENTRY</Badge>
+                        <Badge className="bg-primary text-white font-bold px-3 py-0.5 rounded-full text-[9px] tracking-widest uppercase">SECURED ENTRY</Badge>
                     </div>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-6">
                     <div className="grid md:grid-cols-2 gap-8 items-center">
-                         <div className="space-y-6">
+                         <div className="space-y-5">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                                    <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Current Balance</p>
-                                    <p className="text-2xl font-black text-primary mt-1">₹{Number(activeReg.current_balance).toLocaleString('en-IN')}</p>
+                                    <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Current Balance</p>
+                                    <p className="text-xl font-bold text-primary mt-1">₹{Number(activeReg.current_balance).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                                    <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Rank</p>
-                                    <p className="text-2xl font-black text-white mt-1">#--</p>
+                                    <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Rank</p>
+                                    <p className="text-xl font-bold text-white mt-1">#--</p>
                                 </div>
                             </div>
-                            <div className="p-6 bg-black/40 rounded-2xl border border-white/10 space-y-4">
+                            <div className="p-5 bg-black/40 rounded-2xl border border-white/10 space-y-4">
                                 <div className="space-y-1">
-                                    <Label className="text-[9px] text-gray-600 uppercase font-black tracking-widest">Trading ID</Label>
+                                    <Label className="text-[9px] text-gray-600 uppercase font-bold tracking-widest">Trading ID</Label>
                                     <div className="flex items-center justify-between">
-                                        <p className="font-mono font-bold text-white">{activeReg.stockmint_username || 'AWAITING SETUP'}</p>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400" onClick={() => { navigator.clipboard.writeText(activeReg.stockmint_username || ''); toast({title: "Copied"}); }}><Copy className="w-4 h-4"/></Button>
+                                        <p className="font-mono font-bold text-white text-xs">{activeReg.stockmint_username || 'AWAITING SETUP'}</p>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400" onClick={() => { navigator.clipboard.writeText(activeReg.stockmint_username || ''); toast({title: "Copied"}); }}><Copy className="w-3.5 h-3.5"/></Button>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[9px] text-gray-600 uppercase font-black tracking-widest">Master Password</Label>
+                                    <Label className="text-[9px] text-gray-600 uppercase font-bold tracking-widest">Master Password</Label>
                                     <div className="flex items-center justify-between">
-                                        <p className="font-mono font-bold text-white">{visiblePasswords[activeReg.id] ? activeReg.stockmint_password : '••••••••••'}</p>
+                                        <p className="font-mono font-bold text-white text-xs">{visiblePasswords[activeReg.id] ? activeReg.stockmint_password : '••••••••••'}</p>
                                         <div className="flex gap-1">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400" onClick={() => setVisiblePasswords(p => ({...p, [activeReg.id]: !p[activeReg.id]}))}>{visiblePasswords[activeReg.id] ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400" onClick={() => { navigator.clipboard.writeText(activeReg.stockmint_password || ''); toast({title: "Copied"}); }}><Copy className="w-4 h-4"/></Button>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400" onClick={() => setVisiblePasswords(p => ({...p, [activeReg.id]: !p[activeReg.id]}))}>{visiblePasswords[activeReg.id] ? <EyeOff className="w-3.5 h-3.5"/> : <Eye className="w-3.5 h-3.5"/>}</Button>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400" onClick={() => { navigator.clipboard.writeText(activeReg.stockmint_password || ''); toast({title: "Copied"}); }}><Copy className="w-3.5 h-3.5"/></Button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                          </div>
-                         <div className="text-center space-y-6">
-                            <div className="mx-auto h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_30px_rgba(139,44,245,0.2)]">
-                                <Zap className="h-10 w-10 text-primary animate-pulse" />
+                         <div className="text-center space-y-5">
+                            <div className="mx-auto h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_30px_rgba(139,44,245,0.2)]">
+                                <Zap className="h-8 w-8 text-primary animate-pulse" />
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-xl font-black text-white">Software Ready.</h3>
-                                <p className="text-xs text-gray-400 max-w-[250px] mx-auto">Launch the StockMint terminal and login using the credentials on the left.</p>
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-bold text-white">Software Ready.</h3>
+                                <p className="text-[10px] text-gray-400 max-w-[200px] mx-auto font-medium">Launch the StockMint terminal and login using the credentials on the left.</p>
                             </div>
-                            <Button asChild size="lg" className="w-full h-14 text-lg font-black tracking-widest rounded-2xl shadow-xl shadow-primary/20">
+                            <Button asChild size="lg" className="w-full h-12 text-sm font-bold tracking-widest rounded-xl shadow-xl shadow-primary/20 uppercase">
                                 <a href="https://stockmint.io/login" target="_blank">LAUNCH TERMINAL <ExternalLink className="ml-2 h-4 w-4"/></a>
                             </Button>
                          </div>

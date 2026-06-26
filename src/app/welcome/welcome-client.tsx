@@ -41,7 +41,7 @@ const Logo = () => (
                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
         </div>
-        <span className="font-poppins font-black text-lg tracking-tighter text-white hidden lg:block uppercase">FundedStock</span>
+        <span className="font-poppins font-bold text-base tracking-tight text-white hidden lg:block uppercase">FundedStock</span>
     </div>
 );
 
@@ -107,8 +107,8 @@ export function WelcomeClient({
 
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Wallet Balance</span>
-                            <span className="text-primary font-black text-xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Wallet Balance</span>
+                            <span className="text-primary font-bold text-lg tracking-tight">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
                         <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center">
@@ -132,7 +132,7 @@ export function WelcomeClient({
                                                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
                                         </div>
-                                        <span className="text-white font-black text-lg tracking-tight uppercase">FundedStock</span>
+                                        <span className="text-white font-bold text-lg tracking-tight uppercase">FundedStock</span>
                                     </div>
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto">
@@ -211,9 +211,9 @@ export function WelcomeClient({
 
                     <TabsContent value="kyc" className="animate-in fade-in duration-300">
                         <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
-                            <h2 className="text-3xl font-black text-white tracking-tight">KYC Verification</h2>
-                            <p className="text-gray-400 text-lg font-medium">Complete your identity verification protocol to activate your funded status.</p>
-                            <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-black text-lg shadow-xl shadow-primary/20">
+                            <h2 className="text-2xl font-bold text-white tracking-tight">KYC Verification</h2>
+                            <p className="text-gray-400 text-base font-medium">Complete your identity verification protocol to activate your funded status.</p>
+                            <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-bold text-lg shadow-xl shadow-primary/20">
                                 <Link href="/kyc">Start Verification Process</Link>
                             </Button>
                         </div>
