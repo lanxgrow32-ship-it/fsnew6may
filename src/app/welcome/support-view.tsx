@@ -12,10 +12,7 @@ import {
     LifeBuoy, 
     Send, 
     Loader2, 
-    Clock, 
     User,
-    CheckCircle,
-    Paperclip,
     ArrowRight,
     Headphones
 } from 'lucide-react';
@@ -23,7 +20,6 @@ import { createSupportConversation, sendSupportMessage } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
@@ -117,7 +113,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
             <div className="space-y-8 animate-in fade-in zoom-in-95">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Support Hub</h2>
-                    <p className="text-gray-400 text-lg mt-1 font-medium">How can we assist your trading journey today?</p>
+                    <p className="text-gray-400 text-base mt-1 font-medium">How can we assist your trading journey today?</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8 pt-8">
@@ -177,7 +173,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
     if (view === 'ticket-form') {
         return (
             <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                <Button variant="ghost" onClick={() => setView('options')} className="text-gray-500 hover:text-white font-bold"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
+                <Button variant="ghost" onClick={() => setView('options')} className="text-gray-500 hover:text-white font-bold p-0 h-auto"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
                 <GlassCard>
                     <form onSubmit={handleNewTicket}>
                         <CardHeader>

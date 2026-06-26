@@ -19,6 +19,7 @@ export async function approveTopUp(transactionId: string) {
     const totalToAdd = amount + bonus;
 
     // 2. Update Transaction with completion and bonus data
+    // NOTE: This requires the 'bonus_amount' column added via SQL
     const { error: updateTxError } = await supabaseAdmin
         .from('wallet_transactions')
         .update({ 

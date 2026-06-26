@@ -28,7 +28,7 @@ type Transaction = {
     description: string;
     gateway_transaction_id: string | null;
     created_at: string;
-    bonus_amount?: number; // Added to support the split view logic
+    bonus_amount?: number;
 };
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
@@ -40,22 +40,22 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
 export function TransactionsView({ transactions }: { transactions: Transaction[] }) {
     const [filter, setFilter] = useState('all');
 
-    // Logic to expand transactions that have bonuses into two separate visual items
+    // Logic to expand transactions that have bonuses into two separate visual line items
     const displayTransactions = useMemo(() => {
         const expanded: any[] = [];
         
         transactions.forEach(tx => {
-            // First, add the main transaction
+            // First, add the main transaction (Deposit or Purchase)
             expanded.push({ ...tx, isBonusEntry: false });
             
-            // If it's a deposit with a bonus, create a virtual bonus entry
-            if (tx.type === 'deposit' && tx.bonus_amount && tx.bonus_amount > 0) {
+            // If it's a completed deposit with a bonus, create the virtual bonus entry immediately after
+            if (tx.status === 'completed' && tx.type === 'deposit' && tx.bonus_amount && tx.bonus_amount > 0) {
                 expanded.push({
                     ...tx,
                     id: `${tx.id}-bonus`,
                     amount: tx.bonus_amount,
                     type: 'bonus',
-                    description: 'Credit Bonus',
+                    description: 'Deposit Credit Bonus',
                     isBonusEntry: true
                 });
             }
