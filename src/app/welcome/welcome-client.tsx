@@ -107,7 +107,7 @@ export function WelcomeClient({
 
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-[10px] font-semibold text-gray-500 mb-0.5">Wallet Balance</span>
+                            <span className="text-[9px] font-bold text-gray-600 mb-0.5 uppercase tracking-wider">Balance</span>
                             <span className="text-primary font-bold text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
@@ -212,9 +212,9 @@ export function WelcomeClient({
                     <TabsContent value="kyc" className="animate-in fade-in duration-300">
                         <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
                             <h2 className="text-2xl font-bold text-white tracking-tight">KYC Verification</h2>
-                            <p className="text-gray-400 text-base font-medium">Complete your identity verification protocol to activate your funded status.</p>
+                            <p className="text-gray-400 text-sm font-medium">Complete your identity verification protocol to activate your funded status.</p>
                             <Button asChild size="lg" className="mt-8 rounded-2xl px-12 h-14 font-bold text-lg shadow-xl shadow-primary/20">
-                                <Link href="/kyc">Start Verification Process</Link>
+                                <Link href="/kyc">Start Protocol Process</Link>
                             </Button>
                         </div>
                     </TabsContent>
