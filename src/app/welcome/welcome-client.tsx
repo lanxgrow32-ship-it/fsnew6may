@@ -28,7 +28,8 @@ import {
     Settings,
     Bell,
     LifeBuoy,
-    Plus
+    Plus,
+    History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -43,6 +44,7 @@ import {
 import { AccountsHub } from './accounts-hub';
 import { ArenaView } from './arena-view';
 import { WalletView } from './wallet-view';
+import { TransactionsView } from './transactions-view';
 import { CompetitionView } from './competition-view';
 import { SupportView } from './support-view';
 import KycPage from '@/app/kyc/page';
@@ -80,6 +82,7 @@ export function WelcomeClient({
         { id: 'hub', label: "Account Hub", icon: LayoutDashboard },
         { id: 'get-funded', label: "Get Funded", icon: ShoppingCart },
         { id: 'wallet', label: "Wallet", icon: Wallet },
+        { id: 'transactions', label: "Transactions", icon: History },
         { id: 'competition', label: "Tournaments", icon: Trophy },
         { id: 'support', label: "Support", icon: LifeBuoy },
         { id: 'kyc', label: "KYC Verification", icon: FileCheck },
@@ -128,13 +131,6 @@ export function WelcomeClient({
                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Wallet Balance</span>
                             <div className="flex items-center gap-2">
                                 <span className="text-primary font-black text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
-                                <button 
-                                    onClick={() => setActiveTab('wallet')}
-                                    className="p-1 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors"
-                                    title="Add Funds"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                </button>
                             </div>
                         </div>
                         
@@ -164,15 +160,6 @@ export function WelcomeClient({
                                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Wallet Balance</p>
                                         <div className="flex items-center justify-between mt-2">
                                             <p className="text-primary font-black text-3xl">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
-                                            <button 
-                                                onClick={() => {
-                                                    setActiveTab('wallet');
-                                                    setIsSidebarOpen(false);
-                                                }}
-                                                className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20"
-                                            >
-                                                <Plus className="w-5 h-5" />
-                                            </button>
                                         </div>
                                     </div>
                                     <div className="space-y-1">
@@ -226,7 +213,11 @@ export function WelcomeClient({
                     </TabsContent>
 
                     <TabsContent value="wallet" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <WalletView profile={profile} transactions={walletTransactions} paymentSettings={paymentSettings} />
+                        <WalletView profile={profile} paymentSettings={paymentSettings} />
+                    </TabsContent>
+
+                    <TabsContent value="transactions" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <TransactionsView transactions={walletTransactions} />
                     </TabsContent>
 
                     <TabsContent value="competition" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
