@@ -7,6 +7,15 @@ import { revalidatePath } from 'next/cache';
 /**
  * Helper to determine starting classification and balance
  */
+function getAutoClassification(planName: string): string {
+    const name = planName.toLowerCase();
+    if (name.includes('instant')) return 'instant_live';
+    if (name.includes('1-step')) return 'one_step_phase_1';
+    if (name.includes('2-step')) return 'two_step_phase_1';
+    if (name.includes('ptp')) return 'one_step_phase_1';
+    return 'evaluation';
+}
+
 function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
     const name = planName.toLowerCase();
@@ -26,7 +35,6 @@ function getBalanceFromPlanName(planName: string): number {
 
 /**
  * Helper to upload images for support chat
- * Hardened for robust multi-device support
  */
 async function uploadSupportImage(file: File, conversationId: string) {
   try {
@@ -59,7 +67,7 @@ async function uploadSupportImage(file: File, conversationId: string) {
 }
 
 /**
- * Handles manual account purchase requests (Direct UPI/QR)
+ * Handles manual account purchase requests
  */
 export async function requestManualAccount(userId: string, planName: string, amount: number, utr: string) {
   if (!userId || !planName || !amount || !utr) {
@@ -75,7 +83,8 @@ export async function requestManualAccount(userId: string, planName: string, amo
       is_approved: false,
       final_amount_paid: amount,
       transaction_id: utr,
-      account_model: planName.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal'
+      account_model: planName.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal',
+      account_classification: getAutoClassification(planName)
     });
 
   if (error) {
@@ -116,12 +125,10 @@ export async function topUpWallet(userId: string, amount: number, utr: string) {
 
 /**
  * Handles internal account purchases using wallet balance
- * Includes INSTANT StockMint account creation logic
  */
 export async function purchaseWithWallet(userId: string, plan: any) {
   if (!userId || !plan) return { error: 'Missing details.' };
 
-  // 1. Fetch Current Balance & Profile
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('*')
@@ -132,19 +139,12 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   
   const price = parseFloat(plan.price.replace(/,/g, ''));
   if (profile.wallet_balance < price) {
-      return { error: 'Insufficient wallet balance. Please top up your wallet.' };
+      return { error: 'Insufficient wallet balance.' };
   }
 
-  // 2. Deduct Balance
   const newBalance = profile.wallet_balance - price;
-  const { error: balanceError } = await supabaseAdmin
-    .from('profiles')
-    .update({ wallet_balance: newBalance })
-    .eq('id', userId);
-  
-  if (balanceError) return { error: balanceError.message };
+  await supabaseAdmin.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
 
-  // 3. Create Transaction Record
   await supabaseAdmin.from('wallet_transactions').insert({
     user_id: userId,
     amount: -price,
@@ -153,29 +153,27 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     description: `Purchase of ${plan.title}`
   });
 
-  // 4. Create User Account Record
   const isPTP = plan.title.toLowerCase().includes('ptp');
+  const classification = getAutoClassification(plan.title);
+
   const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
     user_id: userId,
     plan_name: plan.title,
     status: 'pending',
     is_approved: true,
     account_model: isPTP ? 'passthrupay' : 'normal',
+    account_classification: classification,
     final_amount_paid: price,
     transaction_id: 'WALLET_PURCHASE'
   }).select().single();
 
-  if (accountError || !account) {
-      return { error: 'Failed to create account record.' };
-  }
+  if (accountError || !account) return { error: 'Failed to create account.' };
 
-  // 5. AUTOMATION: Trigger StockMint Account Creation
   const stockmintApiKey = process.env.STOCKMINT_API_KEY;
   const initialBalance = getBalanceFromPlanName(plan.title);
 
   if (stockmintApiKey && initialBalance > 0) {
       try {
-          // Multi-account versioning suffix logic
           const { count } = await supabaseAdmin.from('user_accounts')
             .select('id', { count: 'exact' })
             .eq('user_id', userId)
@@ -189,7 +187,8 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               fullName: profile.full_name,
               email: stockmintUsername,
               password: stockmintUsername,
-              initialBalance
+              initialBalance,
+              accountClassification: classification
           };
           if (isPTP) payload.accountModel = 'passthenpay';
 
@@ -208,7 +207,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               }).eq('id', account.id);
           }
       } catch (e) {
-          console.error('StockMint Wallet Purchase API Error:', e);
+          console.error('StockMint API Error:', e);
       }
   }
 

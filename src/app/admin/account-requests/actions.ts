@@ -1,8 +1,17 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { format } from 'date-fns';
+
+function getAutoClassification(planName: string): string {
+    const name = planName.toLowerCase();
+    if (name.includes('instant')) return 'instant_live';
+    if (name.includes('1-step')) return 'one_step_phase_1';
+    if (name.includes('2-step')) return 'two_step_phase_1';
+    if (name.includes('ptp')) return 'one_step_phase_1';
+    return 'evaluation';
+}
 
 function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
@@ -33,17 +42,22 @@ export async function approveAccount(accountId: string) {
     const profile = account.profiles;
     const isPTP = account.account_model === 'passthrupay';
     const isKycDone = profile.kyc_status === 'verified';
+    const classification = getAutoClassification(account.plan_name);
 
     // 1. Mark as approved
     const { error: approveError } = await supabaseAdmin
         .from('user_accounts')
-        .update({ is_approved: true, status: isKycDone ? 'active' : 'pending' })
+        .update({ 
+            is_approved: true, 
+            status: isKycDone || isPTP ? 'active' : 'pending',
+            account_classification: classification
+        })
         .eq('id', accountId);
     
     if (approveError) return { error: approveError.message };
 
-    // 2. If KYC is verified, create StockMint account immediately
-    if (isKycDone) {
+    // 2. If KYC is verified (or PTP), create StockMint account immediately
+    if (isKycDone || isPTP) {
         const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', profile.id).eq('credentials_provided', true);
         const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
         const baseEmail = profile.email.split('@')[0];
@@ -58,7 +72,8 @@ export async function approveAccount(accountId: string) {
                     fullName: profile.full_name,
                     email: stockmintUsername,
                     password: stockmintUsername,
-                    initialBalance
+                    initialBalance,
+                    accountClassification: classification
                 };
                 if (isPTP) payload.accountModel = 'passthenpay';
 
@@ -68,7 +83,6 @@ export async function approveAccount(accountId: string) {
                     body: JSON.stringify(payload),
                 });
 
-                // Update account row with credentials
                 await supabaseAdmin.from('user_accounts').update({
                     credentials_provided: true,
                     trading_username: stockmintUsername,
