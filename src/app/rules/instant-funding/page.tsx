@@ -1,10 +1,10 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Check, IndianRupee, Shield, Globe, Ban, FileText, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { createClient } from '@/lib/supabase/server';
 
 const RuleItem = ({ children }: { children: React.ReactNode }) => (
     <div className="flex items-start gap-3">
@@ -49,16 +49,21 @@ const StatItem = ({ title, value, subtext }: { title: string, value: string, sub
     </div>
 );
 
-export default function InstantFundingRulesPage() {
+export default async function InstantFundingRulesPage() {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const backUrl = session ? "/welcome" : "/pricing";
+    const backLabel = session ? "Back to Dashboard" : "Back to Plans";
+
     return (
         <div className="dark-theme">
             <div className="bg-background min-h-screen text-foreground">
                 <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                     <div className="container mx-auto flex h-16 items-center justify-center px-4">
-                        <Button asChild variant="outline">
-                            <Link href="/pricing">
+                        <Button asChild variant="outline" className="rounded-full">
+                            <Link href={backUrl}>
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Plans
+                                {backLabel}
                             </Link>
                         </Button>
                     </div>

@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ArrowLeft, Check, Target, Clock, Globe, Shield, FileText, HelpCircle, IndianRupee } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
+import { createClient } from '@/lib/supabase/server';
 
 const RuleItem = ({ title, value }: { title: React.ReactNode, value: React.ReactNode }) => (
     <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
@@ -34,16 +35,21 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
 );
 
 
-export default function OneStepRulesPage() {
+export default async function OneStepRulesPage() {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const backUrl = session ? "/welcome" : "/pricing";
+    const backLabel = session ? "Back to Dashboard" : "Back to Plans";
+
     return (
         <div className="dark-theme">
             <div className="bg-background min-h-screen text-foreground">
                 <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                     <div className="container mx-auto flex h-16 items-center justify-center px-4">
-                        <Button asChild variant="outline">
-                            <Link href="/pricing">
+                        <Button asChild variant="outline" className="rounded-full">
+                            <Link href={backUrl}>
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Plans
+                                {backLabel}
                             </Link>
                         </Button>
                     </div>

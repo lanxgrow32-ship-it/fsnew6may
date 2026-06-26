@@ -1,12 +1,12 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { ArrowRight, Check, Target, Wallet, BarChart, Trophy, Ban, X, ShieldQuestion, BadgePercent, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowRight, Check, Target, Wallet, BarChart, Trophy, Ban, X, ShieldQuestion, BadgePercent, Clock, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { createClient } from '@/lib/supabase/server';
 
 const Feature = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
     <div className="text-center">
@@ -75,7 +75,12 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
     </AccordionItem>
 );
 
-export default function PassThenPayPage() {
+export default async function PassThenPayPage() {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const backUrl = session ? "/welcome" : "/";
+    const backLabel = session ? "Back to Dashboard" : "Back to Home";
+
     const comparisonData = [
       {
         feature: 'What you pay to start',
@@ -149,9 +154,10 @@ export default function PassThenPayPage() {
 
                 <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border">
                     <div className="container mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-20">
-                        <Link href="/" className="flex items-center gap-2">
+                        <Link href={backUrl} className="flex items-center gap-2 group">
+                            <ArrowLeft className="h-4 w-4 text-gray-500 group-hover:text-primary transition-colors" />
                             <FundedStockLogo className="h-8 w-auto text-primary" />
-                            <span className="font-bold text-lg">FundedStock</span>
+                            <span className="font-bold text-lg text-white">{backLabel}</span>
                         </Link>
                         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-muted-foreground">
                             <a href="#how-it-works" className="hover:text-foreground">How it works</a>

@@ -15,7 +15,9 @@ import {
     ArrowRight,
     Copy,
     Send,
-    ChevronLeft
+    ChevronLeft,
+    HelpCircle,
+    Info
 } from 'lucide-react';
 import { purchaseWithWallet } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +25,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 const plans = {
     instant: [
@@ -260,6 +263,17 @@ export function ArenaView({
         </Card>
     );
 
+    const RulesPill = ({ href, label }: { href: string, label?: string }) => (
+        <div className="flex justify-center mb-8">
+            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
+                <Link href={href}>
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    {label || "View Rules"}
+                </Link>
+            </Button>
+        </div>
+    );
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="space-y-1">
@@ -275,17 +289,29 @@ export function ArenaView({
                     <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-xs">PTP</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in zoom-in-95">
-                    {plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />)}
+                <TabsContent value="instant" className="animate-in fade-in zoom-in-95">
+                    <RulesPill href="/rules/instant-funding" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />)}
+                    </div>
                 </TabsContent>
-                <TabsContent value="oneStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in zoom-in-95">
-                    {plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step" />)}
+                <TabsContent value="oneStep" className="animate-in fade-in zoom-in-95">
+                    <RulesPill href="/rules/one-step" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step" />)}
+                    </div>
                 </TabsContent>
-                <TabsContent value="twoStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in zoom-in-95">
-                    {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}
+                <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
+                    <RulesPill href="/rules/two-step-evaluation" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}
+                    </div>
                 </TabsContent>
-                <TabsContent value="ptp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 animate-in fade-in zoom-in-95">
-                    {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
+                <TabsContent value="ptp" className="animate-in fade-in zoom-in-95">
+                    <RulesPill href="/pass-then-pay" label="About PassThenPay" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>

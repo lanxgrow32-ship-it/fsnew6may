@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ArrowLeft, Ban, Check, Globe, Target, Clock, Shield, AlertTriangle, FileText, HelpCircle, IndianRupee } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/server';
 
 const RuleItem = ({ title, value }: { title: React.ReactNode, value: React.ReactNode }) => (
     <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
@@ -34,16 +35,21 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
 );
 
 
-export default function TwoStepRulesPage() {
+export default async function TwoStepRulesPage() {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const backUrl = session ? "/welcome" : "/pricing";
+    const backLabel = session ? "Back to Dashboard" : "Back to Plans";
+
     return (
         <div className="dark-theme">
             <div className="bg-background min-h-screen text-foreground">
                 <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                     <div className="container mx-auto flex h-16 items-center justify-center px-4">
-                        <Button asChild variant="outline">
-                            <Link href="/pricing">
+                        <Button asChild variant="outline" className="rounded-full">
+                            <Link href={backUrl}>
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Plans
+                                {backLabel}
                             </Link>
                         </Button>
                     </div>
@@ -133,7 +139,7 @@ export default function TwoStepRulesPage() {
                                 <DetailedRule title="Maximum Capital Per Trade" tag="80% of account" description="No single open position may utilize more than 80% of your total account capital. Deploying 100% in one trade is an immediate violation." tagVariant="destructive" />
                                 <DetailedRule title="Minimum Holding Time" tag="45 seconds per trade" description="Each trade must be held for a minimum of 45 seconds from entry to exit. High-frequency scalping strategies that open and close positions in seconds are a violation." tagVariant="destructive" />
                                 <DetailedRule title="Overnight & Weekend Holding" tag="Not Allowed" description="All positions must be squared off before market close (3:30 PM IST) each day. Positions left open will be auto-closed and flagged as a violation." tagVariant="destructive" />
-                                <DetailedRule title="News Trading Restriction" tag="±5 min window banned" description="Trading is prohibited 5 minutes before and 5 minutes after major scheduled events. You will receive an SMS/email alert 30 minutes before." tagVariant="destructive" />
+                                <DetailedRule title="News Trading Restriction" tag="±5 min window banned" description="Trading is prohibited 5 minutes before and 5 minutes after major scheduled events. You will receive an automated alert 30 minutes before." tagVariant="destructive" />
                             </CardContent>
                         </Card>
 
