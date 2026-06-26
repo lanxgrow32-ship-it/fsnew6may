@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -198,21 +199,21 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Initial Capital</p>
-                                <p className="text-sm md:text-base font-bold text-white mt-1 truncate">₹{initialBalance.toLocaleString('en-IN')}</p>
+                                <p className="text-xs md:text-base font-bold text-white mt-1 truncate">₹{initialBalance.toLocaleString('en-IN')}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Engine Model</p>
-                                <p className="text-sm md:text-base font-bold text-white mt-1 truncate capitalize">{account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
+                                <p className="text-xs md:text-base font-bold text-white mt-1 truncate capitalize">{account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Live Status</p>
-                                <p className="text-sm md:text-base font-bold text-primary mt-1 truncate capitalize">
+                                <p className="text-[11px] md:text-base font-bold text-primary mt-1 truncate capitalize whitespace-nowrap">
                                     {currentClassification === 'passthenpay' ? 'PassThenPay' : currentClassification.replace(/_/g, ' ')}
                                 </p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Account Hub</p>
-                                <p className={cn("text-sm md:text-base font-bold mt-1 truncate capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
+                                <p className={cn("text-xs md:text-base font-bold mt-1 truncate capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>
                     </GlassCard>
