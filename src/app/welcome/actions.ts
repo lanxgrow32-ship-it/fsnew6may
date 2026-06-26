@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -212,7 +211,8 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
             .single();
 
         const updateData: any = { 
-            last_message_at: new Date().toISOString() 
+            last_message_at: new Date().toISOString(),
+            last_message_preview: message.trim() || (imageUrl ? '📷 Photo' : '')
         };
 
         if (role === 'admin') {

@@ -144,7 +144,7 @@ export default function AgentLiveChat() {
                     </div>
                 </div>
                 <ScrollArea className="flex-grow">
-                    {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto opacity-20"/></div> : (
+                    {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto opacity-20"/></div> : (
                         conversations.map(c => (
                             <button 
                                 key={c.id} 
@@ -156,11 +156,13 @@ export default function AgentLiveChat() {
                             >
                                 <div className="min-w-0">
                                     <p className="text-sm font-bold truncate max-w-[140px] text-white group-hover:text-primary transition-colors">{c.profiles?.full_name || 'New Trader'}</p>
-                                    <p className="text-[11px] text-gray-500 font-medium truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Message' : c.subject}</p>
+                                    <p className="text-[11px] text-gray-500 font-medium truncate italic mt-0.5">
+                                        {c.last_message_preview || 'No messages yet...'}
+                                    </p>
                                 </div>
-                                <div className="flex flex-col items-end gap-1.5">
+                                <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
                                     {c.unread_count_admin > 0 && (
-                                        <Badge className="bg-primary text-white font-bold h-5 min-w-5 flex items-center justify-center rounded-full text-[10px]">
+                                        <Badge className="bg-primary text-white font-bold h-5 min-w-5 flex items-center justify-center rounded-full text-[10px] animate-pulse">
                                             {c.unread_count_admin}
                                         </Badge>
                                     )}
@@ -198,7 +200,7 @@ export default function AgentLiveChat() {
                         <ScrollArea ref={scrollRef} className="flex-grow p-6">
                             <div className="space-y-6 max-w-3xl mx-auto">
                                 <div className="text-center py-4 border-b border-white/5 mb-8">
-                                    <p className="text-[10px] text-gray-700 font-bold uppercase">Live connection established</p>
+                                    <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Protocol connection established</p>
                                 </div>
                                 {messages.map(m => (
                                     <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
@@ -209,7 +211,7 @@ export default function AgentLiveChat() {
                                                 </div>
                                             )}
                                             <p className="whitespace-pre-wrap">{m.message}</p>
-                                            <p className="mt-2 text-[9px] opacity-30 font-bold text-right">
+                                            <p className="mt-2 text-[9px] opacity-30 font-bold text-right uppercase tracking-tighter">
                                                 {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         </div>
@@ -219,12 +221,12 @@ export default function AgentLiveChat() {
                         </ScrollArea>
 
                         {imagePreview && (
-                            <div className="px-5 py-3 bg-black/60 border-t border-white/10 flex items-center gap-4">
+                            <div className="px-5 py-3 bg-black/60 border-t border-white/10 flex items-center gap-4 animate-in slide-in-from-bottom-2">
                                 <div className="relative h-16 w-16 rounded-lg overflow-hidden border border-white/20">
                                     <Image src={imagePreview} alt="Preview" layout="fill" className="object-cover" />
                                     <button onClick={clearImage} className="absolute top-0.5 right-0.5 bg-red-500 rounded-full p-0.5"><X className="h-3 w-3 text-white"/></button>
                                 </div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Agent image attachment ready</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Image attachment ready</p>
                             </div>
                         )}
 
@@ -236,11 +238,11 @@ export default function AgentLiveChat() {
                                 </Button>
                                 <Input 
                                     autoComplete="off" 
-                                    placeholder="Type a message..." 
+                                    placeholder="Type a response..." 
                                     value={messageText}
                                     onChange={(e) => setMessageText(e.target.value)}
                                     disabled={isSending}
-                                    className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl px-5" 
+                                    className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl px-5 focus:ring-primary/50" 
                                 />
                                 <Button type="submit" size="icon" disabled={(!messageText.trim() && !selectedImage) || isSending} className="h-12 w-12 rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 bg-primary">
                                     {isSending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5 text-white" />}
