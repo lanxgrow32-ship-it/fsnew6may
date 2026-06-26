@@ -115,35 +115,35 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
     if (view === 'options') {
         return (
             <div className="space-y-8 animate-in fade-in zoom-in-95">
-                <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tight">Support Hub</h2>
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Support Hub</h2>
                     <p className="text-gray-400 text-lg mt-1 font-medium">How can we assist your trading journey today?</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8 pt-8">
-                    <GlassCard className="p-10 flex flex-col items-center text-center space-y-6 hover:border-primary transition-all group">
-                        <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                            <Headphones className="w-10 h-10" />
+                    <GlassCard className="p-8 flex flex-col items-center text-center space-y-6 hover:border-primary transition-all group">
+                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <Headphones className="w-8 h-8" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-2xl font-black text-white">Live Assistance</h3>
+                            <h3 className="text-xl font-bold text-white">Live Assistance</h3>
                             <p className="text-gray-400 text-sm font-medium max-w-xs">Direct encrypted line to our senior support desk.</p>
                         </div>
-                        <Button onClick={handleStartChat} disabled={isPending} size="lg" className="w-full h-14 text-lg font-black rounded-2xl uppercase tracking-widest shadow-xl shadow-primary/20">
+                        <Button onClick={handleStartChat} disabled={isPending} size="lg" className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20">
                             {isPending ? <Loader2 className="animate-spin mr-2" /> : <MessageSquare className="mr-2" />}
-                            Initiate Protocol
+                            Start Chat
                         </Button>
                     </GlassCard>
 
-                    <GlassCard className="p-10 flex flex-col items-center text-center space-y-6 hover:border-primary transition-all group">
-                        <div className="h-20 w-20 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                            <LifeBuoy className="w-10 h-10" />
+                    <GlassCard className="p-8 flex flex-col items-center text-center space-y-6 hover:border-primary transition-all group">
+                        <div className="h-16 w-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                            <LifeBuoy className="w-8 h-8" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-2xl font-black text-white">Raise a Ticket</h3>
+                            <h3 className="text-xl font-bold text-white">Raise a Ticket</h3>
                             <p className="text-gray-400 text-sm font-medium max-w-xs">Formal request for technical or account escalations.</p>
                         </div>
-                        <Button onClick={() => setView('ticket-form')} variant="outline" size="lg" className="w-full h-14 text-lg font-black border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-2xl uppercase tracking-widest">
+                        <Button onClick={() => setView('ticket-form')} variant="outline" size="lg" className="w-full h-12 font-bold border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-xl">
                             New Support Ticket
                         </Button>
                     </GlassCard>
@@ -151,7 +151,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
 
                 {conversations.length > 0 && (
                     <div className="pt-12">
-                        <h4 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">Active Interactions</h4>
+                        <h4 className="text-xs font-bold text-gray-500 mb-6 uppercase tracking-wider">Active Interactions</h4>
                         <div className="grid gap-4">
                             {conversations.map(c => (
                                 <button key={c.id} onClick={() => { setActiveConversation(c); setView('chat'); }} className="w-full text-left bg-black/20 border border-white/5 rounded-2xl p-4 flex items-center justify-between hover:border-white/20 transition-all">
@@ -164,7 +164,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                             <p className="text-xs text-gray-500 mt-1">{new Date(c.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
-                                    <Badge variant="outline" className={cn("text-[9px] uppercase font-black tracking-widest px-3", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
+                                    <Badge variant="outline" className={cn("text-[10px] font-bold px-3", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
                                 </button>
                             ))}
                         </div>
@@ -177,25 +177,25 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
     if (view === 'ticket-form') {
         return (
             <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                <Button variant="ghost" onClick={() => setView('options')} className="text-gray-500 hover:text-white font-bold uppercase text-[10px] tracking-widest"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
+                <Button variant="ghost" onClick={() => setView('options')} className="text-gray-500 hover:text-white font-bold"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
                 <GlassCard>
                     <form onSubmit={handleNewTicket}>
                         <CardHeader>
-                            <CardTitle className="text-2xl font-black text-white">Create Support Ticket</CardTitle>
+                            <CardTitle className="text-2xl font-bold text-white">Create Support Ticket</CardTitle>
                             <CardDescription className="font-medium">Detail your request below for official escalation.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-500">Protocol Subject</Label>
+                                <Label className="text-xs font-bold text-gray-500">Subject</Label>
                                 <Input name="subject" placeholder="e.g. KYC Verification Hold" required className="bg-black/20 border-white/10 h-12 text-white" />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-500">Detailed Description</Label>
+                                <Label className="text-xs font-bold text-gray-500">Detailed Description</Label>
                                 <Textarea name="message" rows={5} placeholder="Provide full context for our team..." required className="bg-black/20 border-white/10 text-white" />
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button type="submit" disabled={isPending} className="w-full h-12 font-black rounded-xl uppercase tracking-widest shadow-lg shadow-primary/20">
+                            <Button type="submit" disabled={isPending} className="w-full h-12 font-bold rounded-xl shadow-lg shadow-primary/20">
                                 {isPending ? <Loader2 className="animate-spin mr-2" /> : <LifeBuoy className="mr-2 h-4 w-4" />}
                                 Submit Protocol
                             </Button>
@@ -214,11 +214,11 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                         <ArrowRight className="rotate-180" />
                     </Button>
                     <div>
-                        <h3 className="font-black text-white text-lg leading-none">{activeConversation.subject === 'LIVE_CHAT' ? 'Direct Terminal Chat' : activeConversation.subject}</h3>
-                        <p className="text-[10px] text-gray-600 uppercase tracking-[0.2em] mt-2 font-black">Active Encrypted Session</p>
+                        <h3 className="font-bold text-white text-lg leading-none">{activeConversation.subject === 'LIVE_CHAT' ? 'Direct Terminal Chat' : activeConversation.subject}</h3>
+                        <p className="text-[10px] text-gray-600 font-bold mt-2">Active Encrypted Session</p>
                     </div>
                 </div>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/20 font-black text-[9px] tracking-widest px-3">AGENT CONNECTED</Badge>
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/20 font-bold text-[10px] px-3">Agent Connected</Badge>
             </div>
 
             <GlassCard className="flex-grow flex flex-col p-0">
@@ -226,7 +226,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                     <div className="space-y-6">
                         <div className="text-center py-8">
                              <LifeBuoy className="h-10 w-10 text-gray-800 mx-auto mb-2" />
-                             <p className="text-[9px] text-gray-700 uppercase font-black tracking-[0.4em]">Protocol Session Initiated</p>
+                             <p className="text-[10px] text-gray-700 font-bold">Protocol Session Initiated</p>
                         </div>
                         {messages.map((m) => (
                             <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'user' ? "flex-row-reverse" : "flex-row")}>
@@ -235,7 +235,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                 </div>
                                 <div className={cn("max-w-[75%] p-4 rounded-2xl text-sm leading-relaxed", m.sender_role === 'user' ? "bg-primary text-white rounded-br-none" : "bg-black/40 border border-white/5 text-gray-300 rounded-bl-none")}>
                                     {m.message}
-                                    <div className="mt-2 text-[8px] opacity-40 uppercase tracking-widest font-black">
+                                    <div className="mt-2 text-[9px] opacity-40 font-bold">
                                         {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 </div>

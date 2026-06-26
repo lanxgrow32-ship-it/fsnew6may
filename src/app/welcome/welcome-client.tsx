@@ -41,7 +41,7 @@ const Logo = () => (
                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
         </div>
-        <span className="font-poppins font-bold text-base tracking-tight text-white hidden lg:block uppercase">FundedStock</span>
+        <span className="font-poppins font-bold text-base tracking-tight text-white hidden lg:block">FundedStock</span>
     </div>
 );
 
@@ -107,8 +107,8 @@ export function WelcomeClient({
 
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Wallet Balance</span>
-                            <span className="text-primary font-bold text-lg tracking-tight">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                            <span className="text-[10px] font-semibold text-gray-500 mb-0.5">Wallet Balance</span>
+                            <span className="text-primary font-bold text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
                         <div className="relative h-10 w-10 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center">
@@ -132,7 +132,7 @@ export function WelcomeClient({
                                                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
                                         </div>
-                                        <span className="text-white font-bold text-lg tracking-tight uppercase">FundedStock</span>
+                                        <span className="text-white font-bold text-lg tracking-tight">FundedStock</span>
                                     </div>
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto">
