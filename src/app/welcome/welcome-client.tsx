@@ -89,7 +89,7 @@ export function WelcomeClient({
     ];
 
     return (
-        <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
+        <div className="dark min-h-screen bg-slate-950 text-gray-200 relative overflow-hidden pb-20">
             {/* Background Decorative Elements */}
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
@@ -108,19 +108,19 @@ export function WelcomeClient({
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={cn(
-                                        "px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2",
+                                        "px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2",
                                         activeTab === item.id
                                         ? "bg-primary rounded-full text-white shadow-md"
                                         : "text-gray-400 hover:text-white"
                                     )}
                                 >
-                                    <item.icon className="w-3.5 h-3.5" />
+                                    <item.icon className="w-4 h-4" />
                                     {item.label}
                                 </button>
                             ))}
                             <form action={signOut} className="inline-block border-l border-white/10 ml-2 pl-1">
-                                <button type="submit" className="px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors flex items-center gap-2">
-                                    <LogOut className="w-3.5 h-3.5" />
+                                <button type="submit" className="px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 transition-colors flex items-center gap-2">
+                                    <LogOut className="w-4 h-4" />
                                     Logout
                                 </button>
                             </form>
@@ -128,9 +128,9 @@ export function WelcomeClient({
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Wallet Balance</span>
+                            <span className="text-xs font-medium text-gray-500">Wallet Balance</span>
                             <div className="flex items-center gap-2">
-                                <span className="text-primary font-black text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                                <span className="text-primary font-bold text-lg">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                         
@@ -145,7 +145,7 @@ export function WelcomeClient({
                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                             <SheetTrigger asChild>
                                 <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
-                                    <Menu className="h-5 w-5 text-gray-300" />
+                                    <Menu className="h-6 w-6 text-gray-300" />
                                 </button>
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col">
@@ -157,9 +157,9 @@ export function WelcomeClient({
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-4 gap-2 overflow-y-auto">
                                     <div className="px-4 py-6 mb-6 sm:hidden bg-black/40 rounded-2xl border border-white/10">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Wallet Balance</p>
+                                        <p className="text-xs font-medium text-gray-500">Wallet Balance</p>
                                         <div className="flex items-center justify-between mt-2">
-                                            <p className="text-primary font-black text-3xl">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                                            <p className="text-primary font-bold text-3xl">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
                                         </div>
                                     </div>
                                     <div className="space-y-1">
@@ -171,13 +171,13 @@ export function WelcomeClient({
                                                     setIsSidebarOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "w-full px-4 py-4 text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-3 rounded-xl",
+                                                    "w-full px-4 py-4 text-sm font-medium transition-all flex items-center gap-3 rounded-xl",
                                                     activeTab === item.id
                                                     ? "bg-primary text-white shadow-lg shadow-primary/10"
                                                     : "text-gray-400 hover:text-white hover:bg-white/5"
                                                 )}
                                             >
-                                                <item.icon className="w-4 h-4" />
+                                                <item.icon className="w-5 h-5" />
                                                 {item.label}
                                             </button>
                                         ))}
@@ -188,9 +188,9 @@ export function WelcomeClient({
                                             <form action={signOut}>
                                                 <button 
                                                     type="submit"
-                                                    className="w-full px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-all rounded-xl flex items-center gap-3 group"
+                                                    className="w-full px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all rounded-xl flex items-center gap-3 group"
                                                 >
-                                                    <LogOut className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                                                    <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
                                                     Logout
                                                 </button>
                                             </form>

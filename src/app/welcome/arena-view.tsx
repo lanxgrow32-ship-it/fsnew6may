@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -61,7 +60,7 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
         if (profile.wallet_balance < price) {
             toast({ 
                 title: "Insufficient Balance", 
-                description: `You need ₹${(price - profile.wallet_balance).toLocaleString('en-IN')} more.`,
+                description: `You need ₹${(price - profile.wallet_balance).toLocaleString('en-IN')} more in your wallet.`,
                 variant: "destructive"
             });
             onSwitchToWallet();
@@ -73,7 +72,7 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
         if (res.error) {
             toast({ title: "Purchase Failed", description: res.error, variant: "destructive" });
         } else {
-            toast({ title: "Account Secured!", description: "Account created successfully." });
+            toast({ title: "Plan Purchased", description: "Your new account has been created." });
         }
         setIsPurchasing(null);
     };
@@ -84,34 +83,34 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle className="text-xl font-bold">₹{plan.size}</CardTitle>
-                        <CardDescription className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-500 mt-1">{category}</CardDescription>
+                        <CardDescription className="text-sm font-medium text-gray-500 mt-1">{category}</CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[9px] font-black uppercase">80% SHARE</Badge>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-xs">80% Share</Badge>
                 </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
-                <div className="space-y-2 text-xs border-t border-white/5 pt-4">
+                <div className="space-y-2 text-sm border-t border-white/5 pt-4">
                     <div className="flex items-center gap-2 text-muted-foreground">
-                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <CheckCircle className="h-4 w-4 text-green-500" />
                         <span>Target: {category === 'Instant' ? '0%' : category.includes('PTP') ? '6%' : '10%'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
-                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <CheckCircle className="h-4 w-4 text-green-500" />
                         <span>Drawdown: 10%</span>
                     </div>
                 </div>
                 <div className="pt-4 border-t border-white/5">
-                    <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Protocol Access</p>
-                    <p className="text-2xl font-black text-primary mt-0.5">₹{plan.price}</p>
+                    <p className="text-xs font-medium text-gray-500">Price</p>
+                    <p className="text-2xl font-bold text-primary mt-0.5">₹{plan.price}</p>
                 </div>
             </CardContent>
             <CardFooter>
                 <Button 
                     onClick={() => handlePurchase(plan)} 
                     disabled={isPurchasing !== null}
-                    className="w-full font-black uppercase tracking-widest text-[10px] h-11"
+                    className="w-full font-bold h-11"
                 >
-                    {isPurchasing === plan.title ? <Loader2 className="animate-spin h-4 w-4" /> : 'Buy Protocol'}
+                    {isPurchasing === plan.title ? <Loader2 className="animate-spin h-4 w-4" /> : 'Buy Now'}
                 </Button>
             </CardFooter>
         </Card>
@@ -120,16 +119,16 @@ export function ArenaView({ profile, onSwitchToWallet }: { profile: any, onSwitc
     return (
         <div className="space-y-12">
             <div className="text-center space-y-2">
-                <h2 className="text-3xl font-black text-white tracking-tighter uppercase tracking-[0.05em]">Get Funded</h2>
-                <p className="text-gray-500 text-sm max-w-2xl mx-auto uppercase tracking-widest font-bold">Secure a capital protocol using your wallet liquidity.</p>
+                <h2 className="text-3xl font-bold text-white tracking-tight">Get Funded</h2>
+                <p className="text-gray-400 text-lg max-w-2xl mx-auto">Select a path to start earning performance rewards.</p>
             </div>
 
             <Tabs defaultValue="instant" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-12">
-                    <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest">Instant</TabsTrigger>
-                    <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest">1-Step</TabsTrigger>
-                    <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest">2-Step</TabsTrigger>
-                    <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest">PTP</TabsTrigger>
+                    <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-sm">Instant</TabsTrigger>
+                    <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-sm">1-Step</TabsTrigger>
+                    <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-sm">2-Step</TabsTrigger>
+                    <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-sm">PTP</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95">
