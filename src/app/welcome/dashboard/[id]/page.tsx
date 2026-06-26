@@ -160,6 +160,7 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                 if (json.success && json.data) {
                     stats = json.data;
                     
+                    // Silent Sync: Update if classification changed on StockMint
                     if (stats.accountClassification && stats.accountClassification !== account.account_classification) {
                         await supabaseAdmin.from('user_accounts').update({ account_classification: stats.accountClassification }).eq('id', id);
                         await supabaseAdmin.from('profiles').update({ account_classification: stats.accountClassification }).eq('id', session.user.id);
@@ -208,7 +209,7 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Live Status</p>
-                                <p className="text-[11px] md:text-sm font-bold text-primary mt-1 truncate capitalize whitespace-nowrap">
+                                <p className="text-[11px] md:text-sm font-bold text-primary mt-1 truncate capitalize whitespace-nowrap overflow-hidden">
                                     {currentClassification === 'passthenpay' ? 'PassThenPay' : currentClassification.replace(/_/g, ' ')}
                                 </p>
                             </div>
