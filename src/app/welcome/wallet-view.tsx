@@ -54,9 +54,9 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
 
     return (
         <div className="space-y-12 max-w-4xl mx-auto animate-in fade-in duration-500">
-            <div className="text-center space-y-4 mb-8">
-                <h2 className="text-3xl font-black text-white tracking-tight">Wallet Deposit</h2>
-                <p className="text-gray-400 text-lg font-medium">Add funds to your wallet to purchase new plans.</p>
+            <div className="space-y-2">
+                <h2 className="text-3xl font-black text-white tracking-tight">Wallet</h2>
+                <p className="text-gray-400 text-lg mt-1 font-medium">Add funds to your wallet to purchase new plans and join competitions.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

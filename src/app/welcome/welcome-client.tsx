@@ -63,13 +63,12 @@ export function WelcomeClient({
     const [activeTab, setActiveTab] = useState('hub');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Optimized labels for the desktop navigation and mobile drawer
     const navItems = [
-        { id: 'hub', label: "Portfolio", mobileLabel: "Account Hub", icon: LayoutDashboard },
-        { id: 'marketplace', label: "Marketplace", mobileLabel: "Marketplace", icon: ShoppingCart },
-        { id: 'competition', label: "Competition", mobileLabel: "Battles", icon: Trophy },
+        { id: 'hub', label: "Portfolio", mobileLabel: "Portfolio", icon: LayoutDashboard },
+        { id: 'marketplace', label: "Get Funded", mobileLabel: "Get Funded", icon: ShoppingCart },
+        { id: 'competition', label: "Competition", mobileLabel: "Competition", icon: Trophy },
         { id: 'wallet', label: "Wallet", mobileLabel: "Wallet", icon: Wallet },
-        { id: 'transactions', label: "History", mobileLabel: "Transactions", icon: History },
+        { id: 'transactions', label: "History", mobileLabel: "History", icon: History },
         { id: 'support', label: "Support", mobileLabel: "Support", icon: LifeBuoy },
         { id: 'kyc', label: "KYC", mobileLabel: "KYC", icon: FileCheck },
     ];
@@ -177,7 +176,6 @@ export function WelcomeClient({
                     </div>
                 </header>
 
-                {/* Main Content Areas */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsContent value="hub" className="animate-in fade-in duration-300">
                         <AccountsHub accounts={accounts} profile={profile} onSwitchToGetFunded={() => setActiveTab('marketplace')} />
@@ -186,6 +184,7 @@ export function WelcomeClient({
                     <TabsContent value="marketplace" className="animate-in fade-in duration-300">
                         <ArenaView 
                             profile={profile} 
+                            paymentSettings={paymentSettings}
                             onSwitchToWallet={() => setActiveTab('wallet')} 
                         />
                     </TabsContent>

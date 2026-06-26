@@ -54,7 +54,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
 
     const handleJoin = async (event: any) => {
         if (!event.is_free && profile.wallet_balance < event.entry_fee) {
-            toast({ title: "Insufficient Cash", description: "Top up your wallet to join this tournament.", variant: "destructive" });
+            toast({ title: "Insufficient Cash", description: "Top up your wallet to join this competition.", variant: "destructive" });
             onSwitchToWallet();
             return;
         }
@@ -63,7 +63,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         const res = await purchaseTournamentEntry(profile.id, event.id);
         if (res.error) toast({ title: "Failed", description: res.error, variant: "destructive" });
         else {
-            toast({ title: "Welcome to the Arena!", description: "You are registered for this week." });
+            toast({ title: "Welcome to the Arena!", description: "You are registered for this competition." });
             window.location.reload();
         }
         setIsPurchasing(null);
@@ -76,7 +76,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
             <div className="space-y-8 animate-in fade-in zoom-in-95">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" onClick={() => setView('hub')} className="text-gray-500 hover:text-white"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Hub</Button>
-                    <h2 className="text-3xl font-black text-white tracking-tight">Tournament Browser</h2>
+                    <h2 className="text-3xl font-black text-white tracking-tight">Competition Browser</h2>
                 </div>
 
                 <div className="grid gap-6">
@@ -99,7 +99,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
                                         <p className="text-2xl font-black text-primary">{event.is_free ? 'FREE' : `₹${event.entry_fee}`}</p>
                                     </div>
                                     <Button onClick={() => handleJoin(event)} disabled={isPurchasing !== null} className="rounded-xl px-8 font-black uppercase tracking-widest h-12">
-                                        {isPurchasing === event.id ? <Loader2 className="animate-spin h-4 w-4"/> : 'Join Week'}
+                                        {isPurchasing === event.id ? <Loader2 className="animate-spin h-4 w-4"/> : 'Join Competition'}
                                     </Button>
                                 </div>
                             </GlassCard>
@@ -114,15 +114,15 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         return (
             <div className="space-y-8 animate-in fade-in">
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tight">Tournaments</h2>
+                    <h2 className="text-3xl font-black text-white tracking-tight">Competition Arena</h2>
                     <p className="text-gray-400 text-lg mt-1 font-medium">Battle with other traders for massive funded rewards.</p>
                 </div>
                 <GlassCard className="text-center p-20 border-dashed border-white/5">
                     <Trophy className="h-16 w-16 text-gray-700 mx-auto mb-4" />
                     <h3 className="text-2xl font-bold text-white">No active entries</h3>
-                    <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8 text-sm">Join the next weekly tournament to prove your consistency and earn instant funding.</p>
+                    <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8 text-sm">Join the next competition to prove your consistency and earn instant funding.</p>
                     <Button onClick={handleBrowse} size="lg" className="px-10 h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20">
-                        Browse Active Tournaments <ArrowRight className="ml-2 w-4 h-4"/>
+                        Browse Active Competitions <ArrowRight className="ml-2 w-4 h-4"/>
                     </Button>
                 </GlassCard>
             </div>
@@ -133,11 +133,11 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tight">Active Tournament</h2>
-                    <p className="text-gray-400 text-lg mt-1 font-medium">Tracking your performance for the current tournament week.</p>
+                    <h2 className="text-3xl font-black text-white tracking-tight">Active Competition</h2>
+                    <p className="text-gray-400 text-lg mt-1 font-medium">Tracking your performance for the current competition week.</p>
                 </div>
                 <Button onClick={handleBrowse} variant="outline" className="bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 rounded-full font-bold uppercase text-[10px] tracking-widest">
-                    <PlusCircle className="mr-2 w-4 h-4 text-primary"/> Join Next Week
+                    <PlusCircle className="mr-2 w-4 h-4 text-primary"/> Join Next Competition
                 </Button>
             </div>
 

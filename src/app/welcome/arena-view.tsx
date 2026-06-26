@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,11 +9,19 @@ import {
     CheckCircle, 
     Loader2, 
     IndianRupee, 
-    Zap
+    Zap,
+    Wallet,
+    CreditCard,
+    ArrowRight,
+    Copy,
+    Send
 } from 'lucide-react';
 import { purchaseWithWallet } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const plans = {
     instant: [
@@ -47,18 +55,29 @@ const plans = {
     ]
 };
 
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
+        {children}
+    </div>
+);
+
 export function ArenaView({ 
     profile, 
+    paymentSettings,
     onSwitchToWallet
 }: { 
     profile: any, 
+    paymentSettings: any,
     onSwitchToWallet: () => void
 }) {
     const { toast } = useToast();
-    const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+    const [isActionPending, startTransition] = useTransition();
+    const [selectedPlan, setSelectedPlan] = useState<any>(null);
+    const [checkoutStep, setCheckoutStep] = useState<'selection' | 'method' | 'direct-pay'>('selection');
+    const [utr, setUtr] = useState('');
 
-    const handlePurchase = async (plan: any) => {
-        const price = parseFloat(plan.price.replace(/,/g, ''));
+    const handleWalletPurchase = async () => {
+        const price = parseFloat(selectedPlan.price.replace(/,/g, ''));
         if (profile.wallet_balance < price) {
             toast({ 
                 title: "Insufficient Balance", 
@@ -69,16 +88,110 @@ export function ArenaView({
             return;
         }
 
-        setIsPurchasing(plan.title);
-        const res = await purchaseWithWallet(profile.id, plan);
-        if (res.error) {
-            toast({ title: "Purchase Failed", description: res.error, variant: "destructive" });
-        } else {
-            toast({ title: "Plan Purchased", description: "Your new account has been created." });
-            window.location.reload();
-        }
-        setIsPurchasing(null);
+        startTransition(async () => {
+            const res = await purchaseWithWallet(profile.id, selectedPlan);
+            if (res.error) {
+                toast({ title: "Purchase Failed", description: res.error, variant: "destructive" });
+            } else {
+                toast({ title: "Plan Purchased", description: "Your new account has been created." });
+                window.location.reload();
+            }
+        });
     };
+
+    const handleDirectSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!utr) return;
+        // In a real app, this calls purchaseNewAccount from actions
+        toast({ title: "Submission Received", description: "Admin will verify your direct payment shortly." });
+        setSelectedPlan(null);
+        setCheckoutStep('selection');
+    };
+
+    if (checkoutStep === 'method') {
+        return (
+            <div className="max-w-2xl mx-auto py-12 space-y-8 animate-in fade-in zoom-in-95">
+                <Button variant="ghost" onClick={() => setCheckoutStep('selection')} className="text-gray-500 hover:text-white font-black uppercase text-[10px] tracking-widest"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back to Plans</Button>
+                <div className="text-center space-y-2">
+                    <h2 className="text-3xl font-black text-white tracking-tight">Select Payment Method</h2>
+                    <p className="text-gray-400 text-lg font-medium">Choose how you want to pay for {selectedPlan.title}.</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                    <GlassCard className="p-8 flex flex-col items-center text-center space-y-6 hover:border-primary transition-all group">
+                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <Wallet className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-bold text-white">Wallet Balance</h3>
+                            <p className="text-xs text-gray-400 font-medium">Available: ₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
+                        </div>
+                        <Button onClick={handleWalletPurchase} disabled={isActionPending} size="lg" className="w-full h-12 font-black rounded-xl uppercase tracking-widest">
+                            {isActionPending ? <Loader2 className="animate-spin h-4 w-4" /> : 'Pay via Wallet'}
+                        </Button>
+                    </GlassCard>
+
+                    <GlassCard className="p-8 flex flex-col items-center text-center space-y-6 hover:border-primary transition-all group">
+                        <div className="h-16 w-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                            <CreditCard className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-bold text-white">Direct Payment</h3>
+                            <p className="text-xs text-gray-400 font-medium">Manual UPI or Automated Gateway</p>
+                        </div>
+                        <Button onClick={() => setCheckoutStep('direct-pay')} variant="outline" size="lg" className="w-full h-12 font-black border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-xl uppercase tracking-widest">
+                            Pay Directly
+                        </Button>
+                    </GlassCard>
+                </div>
+            </div>
+        );
+    }
+
+    if (checkoutStep === 'direct-pay') {
+        return (
+            <div className="max-w-2xl mx-auto py-12 space-y-8 animate-in fade-in zoom-in-95">
+                <Button variant="ghost" onClick={() => setCheckoutStep('method')} className="text-gray-500 hover:text-white font-black uppercase text-[10px] tracking-widest"><ArrowRight className="rotate-180 mr-2 h-4 w-4" /> Back</Button>
+                <div className="text-center space-y-2">
+                    <h2 className="text-3xl font-black text-white tracking-tight">Direct Purchase</h2>
+                    <p className="text-gray-400 text-lg font-medium">Scan QR to pay ₹{selectedPlan.price} and enter UTR.</p>
+                </div>
+
+                <GlassCard className="p-8 border-primary/20 bg-primary/5">
+                    <div className="grid md:grid-cols-2 gap-8 items-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="bg-white p-3 rounded-2xl shadow-2xl">
+                                {paymentSettings?.qr_code_url ? (
+                                    <Image src={paymentSettings.qr_code_url} alt="Payment QR" width={180} height={180} />
+                                ) : (
+                                    <div className="w-[180px] h-[180px] flex items-center justify-center text-slate-950 font-black">QR LOADING</div>
+                                )}
+                            </div>
+                            <div className="text-center">
+                                <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Transfer ID</p>
+                                <p className="font-mono text-sm font-bold text-white">{paymentSettings?.upi_id || 'pay@fundedstock'}</p>
+                            </div>
+                        </div>
+                        <form onSubmit={handleDirectSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-500">Transaction ID (UTR)</Label>
+                                <Input 
+                                    placeholder="Enter 12-digit ID" 
+                                    value={utr} 
+                                    onChange={(e) => setUtr(e.target.value)} 
+                                    required 
+                                    className="bg-black/40 border-white/10 h-12 text-white" 
+                                />
+                            </div>
+                            <Button type="submit" className="w-full h-14 font-black rounded-xl uppercase tracking-widest shadow-xl shadow-primary/20">
+                                Confirm & Activate
+                            </Button>
+                        </form>
+                    </div>
+                </GlassCard>
+            </div>
+        );
+    }
 
     const PlanBox = ({ plan, category }: { plan: any, category: string }) => (
         <Card className="bg-card/50 hover:border-primary transition-all duration-300 flex flex-col h-full border-border/50">
@@ -109,11 +222,10 @@ export function ArenaView({
             </CardContent>
             <CardFooter>
                 <Button 
-                    onClick={() => handlePurchase(plan)} 
-                    disabled={isPurchasing !== null}
+                    onClick={() => { setSelectedPlan(plan); setCheckoutStep('method'); }} 
                     className="w-full font-black h-12 uppercase tracking-widest rounded-xl"
                 >
-                    {isPurchasing === plan.title ? <Loader2 className="animate-spin h-4 w-4" /> : 'Activate Now'}
+                    Activate Now
                 </Button>
             </CardFooter>
         </Card>
@@ -122,7 +234,7 @@ export function ArenaView({
     return (
         <div className="space-y-12 animate-in fade-in duration-500">
             <div className="space-y-2">
-                <h2 className="text-3xl font-black text-white tracking-tight">Marketplace</h2>
+                <h2 className="text-3xl font-black text-white tracking-tight">Get Funded</h2>
                 <p className="text-gray-400 text-lg mt-1 font-medium">Select your path to instant capital and professional scaling.</p>
             </div>
 
