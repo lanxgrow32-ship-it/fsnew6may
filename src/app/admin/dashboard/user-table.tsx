@@ -87,7 +87,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'users.csv';
+        link.download = 'traders-export.csv';
         link.click();
     }
 
@@ -96,11 +96,11 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+                    <Input placeholder="Search trader by name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-11" />
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Select value={filters.classification} onValueChange={(v) => setFilters(f => ({...f, classification: v}))}>
-                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Account Type" /></SelectTrigger>
+                        <SelectTrigger className="w-[180px] h-11"><SelectValue placeholder="Account Type" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Account Types</SelectItem>
                             <SelectItem value="instant">Instant Live</SelectItem>
@@ -110,7 +110,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                         </SelectContent>
                     </Select>
                     <Select value={filters.kyc} onValueChange={(v) => setFilters(f => ({...f, kyc: v}))}>
-                        <SelectTrigger className="w-[150px]"><SelectValue placeholder="KYC Status" /></SelectTrigger>
+                        <SelectTrigger className="w-[150px] h-11"><SelectValue placeholder="KYC Status" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Any KYC</SelectItem>
                             <SelectItem value="verified">Verified</SelectItem>
@@ -118,38 +118,42 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                             <SelectItem value="submitted">Review Required</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" onClick={handleDownloadCSV}><Download className="h-4 w-4 mr-2"/>CSV</Button>
+                    <Button variant="outline" onClick={handleDownloadCSV} className="h-11"><Download className="h-4 w-4 mr-2"/>CSV</Button>
                 </div>
             </div>
 
             {selectedUserIds.length > 0 && (
                 <div className="bg-muted p-2 rounded-lg flex items-center justify-between animate-in slide-in-from-top-2">
-                    <span className="text-sm font-bold ml-2">{selectedUserIds.length} users selected</span>
+                    <span className="text-sm font-bold ml-2">{selectedUserIds.length} traders selected</span>
                     <AlertDialog>
                         <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="h-4 w-4 mr-2"/>Delete Selected</Button></AlertDialogTrigger>
                         <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Confirm Bulk Deletion</AlertDialogTitle><AlertDialogDescription>This will permanently delete {selectedUserIds.length} users and all their accounts.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogHeader><AlertDialogTitle>Confirm Bulk Deletion</AlertDialogTitle><AlertDialogDescription>This will permanently delete {selectedUserIds.length} traders and all their account history.</AlertDialogDescription></AlertDialogHeader>
                             <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleBulkDelete}>Delete All</AlertDialogAction></AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
                 </div>
             )}
 
-            <div className="border rounded-xl bg-card overflow-hidden">
+            <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow>
                             <TableHead className="w-12"><Checkbox checked={selectedUserIds.length === filteredProfiles.length && filteredProfiles.length > 0} onCheckedChange={(v) => setSelectedUserIds(v ? filteredProfiles.map(p => p.id) : [])} /></TableHead>
                             <TableHead>Trader</TableHead>
                             <TableHead>Contact</TableHead>
-                            <TableHead>KYC</TableHead>
-                            <TableHead>Primary Type</TableHead>
-                            <TableHead className="text-right">Joined</TableHead>
+                            <TableHead>KYC Status</TableHead>
+                            <TableHead>Primary Level</TableHead>
+                            <TableHead className="text-right">Registration</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {filteredProfiles.length > 0 ? filteredProfiles.map((p) => (
-                            <TableRow key={p.id} onClick={() => router.push(`/admin/profile/${p.id}`)} className="cursor-pointer hover:bg-muted/30 transition-colors group">
+                            <TableRow 
+                                key={p.id} 
+                                onClick={() => router.push(`/admin/profile/${p.id}`)} 
+                                className="cursor-pointer hover:bg-muted/30 transition-colors group h-16"
+                            >
                                 <TableCell onClick={(e) => e.stopPropagation()}>
                                     <Checkbox checked={selectedUserIds.includes(p.id)} onCheckedChange={(checked) => setSelectedUserIds(prev => checked ? [...prev, p.id] : prev.filter(id => id !== p.id))} />
                                 </TableCell>
@@ -157,7 +161,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                                     <div className="flex items-center gap-3">
                                         <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">{p.full_name?.[0]}</div>
                                         <div className="min-w-0">
-                                            <p className="font-bold truncate text-sm">{p.full_name}</p>
+                                            <p className="font-bold truncate text-sm text-foreground">{p.full_name}</p>
                                             <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                                         </div>
                                     </div>
@@ -174,7 +178,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                                 <TableCell className="text-right text-xs text-muted-foreground">{format(new Date(p.created_at), 'dd MMM yyyy')}</TableCell>
                             </TableRow>
                         )) : (
-                            <TableRow><TableCell colSpan={6} className="h-40 text-center text-muted-foreground">No traders found matching filters.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} className="h-40 text-center text-muted-foreground">No traders match your current search and filter criteria.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>

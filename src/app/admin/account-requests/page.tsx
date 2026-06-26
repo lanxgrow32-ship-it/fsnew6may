@@ -44,7 +44,7 @@ export default function AccountRequestsPage() {
             const res = await approveAccount(id);
             if (res.error) toast({ title: "Error", description: res.error, variant: "destructive" });
             else {
-                toast({ title: "Account Approved" });
+                toast({ title: "Account Activated" });
                 fetchRequests();
             }
         });
@@ -55,7 +55,7 @@ export default function AccountRequestsPage() {
             const res = await deleteAccountRequest(id);
             if (res.error) toast({ title: "Error", description: res.error, variant: "destructive" });
             else {
-                toast({ title: "Request Deleted" });
+                toast({ title: "Request Removed" });
                 fetchRequests();
             }
         });
@@ -81,6 +81,7 @@ export default function AccountRequestsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports/pay-later" tooltip="PTP Reports"><LineChart />PTP Reports</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports/wallet" tooltip="Wallet Reports"><Wallet />Wallet Reports</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
@@ -91,14 +92,14 @@ export default function AccountRequestsPage() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Account Purchase Requests</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Manual Payment Activation Hub</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Manual Payment Verification Queue</CardTitle>
-                            <CardDescription>Review and activate accounts for manual UPI/Direct purchases.</CardDescription>
+                            <CardTitle>Activation Queue</CardTitle>
+                            <CardDescription>Review and activate accounts for all manual UPI and Direct purchases.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {loading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div> : (
@@ -106,8 +107,8 @@ export default function AccountRequestsPage() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Date</TableHead>
-                                            <TableHead>User</TableHead>
-                                            <TableHead>Plan</TableHead>
+                                            <TableHead>Trader</TableHead>
+                                            <TableHead>Plan Choice</TableHead>
                                             <TableHead>UTR / Reference</TableHead>
                                             <TableHead>Amount</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
@@ -128,7 +129,7 @@ export default function AccountRequestsPage() {
                                                 <TableCell className="font-bold text-sm">₹{Number(req.final_amount_paid).toLocaleString('en-IN')}</TableCell>
                                                 <TableCell className="text-right space-x-2">
                                                     <Button size="sm" onClick={() => handleApprove(req.id)} className="bg-green-600 hover:bg-green-700 font-bold" disabled={isPending}>
-                                                        {isPending ? <Loader2 className="w-3 h-3 animate-spin"/> : <Check className="w-3 h-3 mr-1"/>} Approve
+                                                        {isPending ? <Loader2 className="w-3 h-3 animate-spin"/> : <Check className="w-3 h-3 mr-1"/>} Activate
                                                     </Button>
                                                     <Button size="sm" variant="ghost" onClick={() => handleDelete(req.id)} className="text-red-600 hover:bg-red-50" disabled={isPending}>
                                                         <X className="w-4 h-4"/>
@@ -136,7 +137,7 @@ export default function AccountRequestsPage() {
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
-                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">No pending purchase requests at this time.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">All manual payments have been verified.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
