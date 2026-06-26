@@ -1,19 +1,22 @@
+
 'use client';
 
-import { useState, useActionState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useActionState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Users } from 'lucide-react';
 import { signup } from './actions';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { createClient } from '@/lib/supabase/client';
 
 export function SignupForm() {
+  const searchParams = useSearchParams();
+  const refCodeParam = searchParams.get('ref');
   const [state, formAction, isPending] = useActionState(signup, { error: null });
 
   const handleGoogleSignup = async () => {
@@ -47,7 +50,7 @@ export function SignupForm() {
                     <FundedStockLogo className="h-10 w-10 text-primary" />
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight text-white">Join FundedStock</h1>
-                <p className="text-gray-500 text-sm">Create your trader portal account</p>
+                <p className="text-gray-500 text-sm font-medium">Create your trader portal account</p>
             </div>
 
             <Card className="bg-white/5 backdrop-blur-2xl border-white/10 rounded-3xl shadow-2xl overflow-hidden">
@@ -86,20 +89,34 @@ export function SignupForm() {
                         )}
                         <div className="space-y-2">
                             <Label htmlFor="full_name" className="text-gray-300">Full Name</Label>
-                            <Input id="full_name" name="full_name" required placeholder="John Doe" className="bg-black/20 border-white/10 text-white" />
+                            <Input id="full_name" name="full_name" required placeholder="John Doe" className="bg-black/20 border-white/10 text-white h-12" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="mobile_number" className="text-gray-300">Mobile Number</Label>
-                            <Input id="mobile_number" name="mobile_number" required placeholder="10-digit number" className="bg-black/20 border-white/10 text-white" />
+                            <Input id="mobile_number" name="mobile_number" required placeholder="10-digit number" className="bg-black/20 border-white/10 text-white h-12" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="email" className="text-gray-300">Email Address</Label>
-                            <Input id="email" name="email" type="email" required placeholder="name@example.com" className="bg-black/20 border-white/10 text-white" />
+                            <Input id="email" name="email" type="email" required placeholder="name@example.com" className="bg-black/20 border-white/10 text-white h-12" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="password" title="password" className="text-gray-300">Choose Password</Label>
-                            <Input id="password" name="password" type="password" required className="bg-black/20 border-white/10 text-white" />
+                            <Input id="password" name="password" type="password" required className="bg-black/20 border-white/10 text-white h-12" />
                         </div>
+                        
+                        <div className="space-y-2 pt-2 border-t border-white/5 mt-4">
+                            <Label htmlFor="referred_by" className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-2">
+                                <Users className="h-3 w-3" /> Referral Code (Optional)
+                            </Label>
+                            <Input 
+                                id="referred_by" 
+                                name="referred_by" 
+                                defaultValue={refCodeParam || ''} 
+                                placeholder="Enter code" 
+                                className="bg-black/20 border-white/10 text-white font-mono h-11 uppercase" 
+                            />
+                        </div>
+
                         <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 rounded-xl mt-4" disabled={isPending}>
                             {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...</> : 'CREATE ACCOUNT'}
                         </Button>

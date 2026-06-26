@@ -37,6 +37,22 @@ function getBalanceFromPlanName(planName: string): number {
 }
 
 /**
+ * Validates a coupon code and returns discount info
+ */
+export async function validateCoupon(code: string) {
+    if (!code) return { error: 'Please enter a code.' };
+    
+    const { data: coupon, error } = await supabaseAdmin
+        .from('coupons')
+        .select('*')
+        .eq('code', code.toUpperCase())
+        .single();
+    
+    if (error || !coupon) return { error: 'Invalid or expired coupon code.' };
+    return { success: true, discount_value: coupon.discount_value };
+}
+
+/**
  * Helper to upload images for support chat
  */
 async function uploadSupportImage(file: File, conversationId: string) {

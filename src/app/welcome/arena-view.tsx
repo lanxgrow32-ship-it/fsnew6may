@@ -19,9 +19,11 @@ import {
     ChevronLeft,
     HelpCircle,
     Info,
-    Timer
+    Timer,
+    Ticket,
+    Check
 } from 'lucide-react';
-import { purchaseWithWallet, requestManualAccount } from './actions';
+import { purchaseWithWallet, requestManualAccount, validateCoupon } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -81,17 +83,40 @@ export function ArenaView({
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
     const [checkoutStep, setCheckoutStep] = useState<'selection' | 'method' | 'direct-pay'>('selection');
     const [utr, setUtr] = useState('');
+    const [couponCode, setCouponCode] = useState('');
+    const [discount, setDiscount] = useState(0);
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [checkoutStep]);
 
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) return;
+        setIsValidatingCoupon(true);
+        const res = await validateCoupon(couponCode);
+        if (res.error) {
+            toast({ title: "Invalid Code", description: res.error, variant: "destructive" });
+            setDiscount(0);
+        } else {
+            setDiscount(res.discount_value || 0);
+            toast({ title: "Coupon Applied!", description: `${res.discount_value}% discount added.` });
+        }
+        setIsValidatingCoupon(false);
+    }
+
+    const calculateFinalPrice = () => {
+        const base = parseFloat(selectedPlan.price.replace(/,/g, ''));
+        if (discount > 0) return base * (1 - discount / 100);
+        return base;
+    }
+
     const handleWalletPurchase = async () => {
-        const price = parseFloat(selectedPlan.price.replace(/,/g, ''));
-        if (profile.wallet_balance < price) {
+        const finalPrice = calculateFinalPrice();
+        if (profile.wallet_balance < finalPrice) {
             toast({ 
                 title: "Insufficient Balance", 
-                description: `You need ₹${(price - profile.wallet_balance).toLocaleString('en-IN')} more in your wallet.`,
+                description: `You need ₹${(finalPrice - profile.wallet_balance).toLocaleString('en-IN')} more in your wallet.`,
                 variant: "destructive"
             });
             onSwitchToWallet();
@@ -99,7 +124,7 @@ export function ArenaView({
         }
 
         startTransition(async () => {
-            const res = await purchaseWithWallet(profile.id, selectedPlan);
+            const res = await purchaseWithWallet(profile.id, { ...selectedPlan, price: finalPrice.toString() });
             if (res.error) {
                 toast({ title: "Purchase Failed", description: res.error, variant: "destructive" });
             } else {
@@ -112,11 +137,10 @@ export function ArenaView({
     const handleDirectSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!utr) return;
-
-        const price = parseFloat(selectedPlan.price.replace(/,/g, ''));
+        const finalPrice = calculateFinalPrice();
         
         startTransition(async () => {
-            const res = await requestManualAccount(profile.id, selectedPlan.title, price, utr);
+            const res = await requestManualAccount(profile.id, selectedPlan.title, finalPrice, utr);
             if (res.error) {
                 toast({ title: "Submission Failed", description: res.error, variant: "destructive" });
             } else {
@@ -129,47 +153,100 @@ export function ArenaView({
     };
 
     if (checkoutStep === 'method') {
+        const isPTP = selectedPlan.title.toLowerCase().includes('ptp');
         return (
             <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
-                <button onClick={() => setCheckoutStep('selection')} className="flex items-center text-gray-500 hover:text-white font-bold p-0 h-auto transition-colors">
+                <button onClick={() => { setSelectedPlan(null); setCheckoutStep('selection'); setDiscount(0); setCouponCode(''); }} className="flex items-center text-gray-500 hover:text-white font-bold p-0 h-auto transition-colors">
                     <ChevronLeft className="mr-1 h-4 w-4" /> Back to Plans
                 </button>
                 
-                <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Payment Method</h2>
-                    <p className="text-gray-400 text-sm font-medium">Select your activation protocol for the {selectedPlan.title}.</p>
-                </div>
+                <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+                    <div className="space-y-4 flex-1">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-bold text-white tracking-tight">Payment Method</h2>
+                            <p className="text-gray-400 text-sm font-medium">Select your activation protocol for the {selectedPlan.title}.</p>
+                        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button 
-                        onClick={handleWalletPurchase} 
-                        disabled={isActionPending}
-                        className="group relative flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50 shadow-2xl"
-                    >
-                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(139,44,245,0.1)]">
-                            <Wallet className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-base font-bold text-white">Pay via Wallet</p>
-                            <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
-                                <Timer className="w-3 h-3" /> Express activation — ready in seconds
-                            </p>
-                        </div>
-                        {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
-                    </button>
+                        {!isPTP && (
+                            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-4">
+                                <Label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                    <Ticket className="h-3 w-3" /> Have a Promo Code?
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        placeholder="Enter code" 
+                                        value={couponCode} 
+                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                        disabled={discount > 0}
+                                        className="bg-black/20 border-white/10 text-white h-11 font-mono uppercase" 
+                                    />
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={handleApplyCoupon} 
+                                        disabled={!couponCode || discount > 0 || isValidatingCoupon}
+                                        className="bg-white/10 border-white/10 h-11 px-6 font-bold"
+                                    >
+                                        {isValidatingCoupon ? <Loader2 className="animate-spin h-4 w-4"/> : discount > 0 ? <Check className="h-4 w-4 text-green-400"/> : 'Apply'}
+                                    </Button>
+                                </div>
+                                {discount > 0 && <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest">✓ PROMO APPLIED: {discount}% OFF</p>}
+                            </div>
+                        )}
 
-                    <button 
-                        onClick={() => setCheckoutStep('direct-pay')}
-                        className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
-                    >
-                        <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                            <CreditCard className="w-6 h-6" />
+                        <div className="grid grid-cols-1 gap-4">
+                            <button 
+                                onClick={handleWalletPurchase} 
+                                disabled={isActionPending}
+                                className="group relative flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50 shadow-2xl"
+                            >
+                                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(139,44,245,0.1)]">
+                                    <Wallet className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-base font-bold text-white">Express Wallet Activation</p>
+                                    <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
+                                        <Timer className="w-3 h-3" /> Ready in seconds
+                                    </p>
+                                </div>
+                                {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
+                            </button>
+
+                            <button 
+                                onClick={() => setCheckoutStep('direct-pay')}
+                                className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
+                            >
+                                <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                    <CreditCard className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-base font-bold text-white">Standard Direct Payment</p>
+                                    <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Verifies in ~30 mins</p>
+                                </div>
+                            </button>
                         </div>
-                        <div className="flex-1">
-                            <p className="text-base font-bold text-white">Direct Payment</p>
-                            <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Standard verification — verifies in ~30 mins</p>
-                        </div>
-                    </button>
+                    </div>
+
+                    <div className="w-full md:w-80 space-y-6">
+                        <GlassCard className="p-6 border-primary/20">
+                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Summary</h3>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-400">{selectedPlan.title}</span>
+                                    <span className="font-bold text-white">₹{selectedPlan.price}</span>
+                                </div>
+                                {discount > 0 && (
+                                    <div className="flex justify-between items-center text-sm text-green-400 font-bold">
+                                        <span>Promo Discount</span>
+                                        <span>- ₹{(parseFloat(selectedPlan.price.replace(/,/g, '')) * (discount/100)).toLocaleString('en-IN')}</span>
+                                    </div>
+                                )}
+                                <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                                    <span className="text-base font-bold text-white">Total</span>
+                                    <span className="text-2xl font-black text-primary">₹{calculateFinalPrice().toLocaleString('en-IN')}</span>
+                                </div>
+                            </div>
+                        </GlassCard>
+                    </div>
                 </div>
             </div>
         );
@@ -179,6 +256,7 @@ export function ArenaView({
         const isPTP = selectedPlan.title.toLowerCase().includes('ptp');
         const upiId = isPTP ? paymentSettings?.pay_later_upi_id : paymentSettings?.upi_id;
         const qrUrl = isPTP ? paymentSettings?.pay_later_qr_code_url : paymentSettings?.qr_code_url;
+        const finalPrice = calculateFinalPrice();
 
         return (
             <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
@@ -196,7 +274,7 @@ export function ArenaView({
                         <div className="p-8 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[280px] shrink-0 flex flex-col items-center justify-center gap-6 text-center">
                             <div className="space-y-1">
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Pay Exactly</p>
-                                <p className="text-3xl font-bold text-primary tracking-tight">₹{selectedPlan.price}</p>
+                                <p className="text-3xl font-bold text-primary tracking-tight">₹{finalPrice.toLocaleString('en-IN')}</p>
                             </div>
 
                             <div className="bg-white p-2 rounded-xl shadow-2xl">
@@ -208,7 +286,7 @@ export function ArenaView({
                             </div>
                             
                             <div className="space-y-1">
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">UPI Address</p>
+                                <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">UPI Address</p>
                                 <div className="flex items-center gap-2 justify-center">
                                     <p className="font-mono text-[10px] font-bold text-white truncate max-w-[140px]">{upiId || 'pay@fundedstock'}</p>
                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-600 hover:text-white" onClick={() => { navigator.clipboard.writeText(upiId || ''); toast({title: "Copied"}); }}><Copy className="w-3.5 h-3.5"/></Button>
