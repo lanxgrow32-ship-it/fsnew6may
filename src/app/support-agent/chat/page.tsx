@@ -22,8 +22,10 @@ export default function AgentLiveChat() {
     const [conversations, setConversations] = useState<any[]>([]);
     const [activeConversation, setActiveConversation] = useState<any>(null);
     const [messages, setMessages] = useState<any[]>([]);
-    const [agentProfile, setAgentProfile] = useState<any>(null);
+    const [agentId, setAgentId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [messageText, setMessageText] = useState('');
+    const [isSending, setIsSending] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const supabase = createClient();
 
@@ -49,8 +51,7 @@ export default function AgentLiveChat() {
         const init = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-                setAgentProfile(profile);
+                setAgentId(user.id);
             }
             fetchConversations();
         };
@@ -81,16 +82,20 @@ export default function AgentLiveChat() {
         }
     }, [messages]);
 
-    const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!agentProfile || !activeConversation) return;
+        if (!agentId || !activeConversation || !messageText.trim() || isSending) return;
 
-        const form = e.currentTarget;
-        const msg = new FormData(form).get('message') as string;
-        if (!msg.trim()) return;
-        form.reset();
+        setIsSending(true);
+        const textToSend = messageText;
+        setMessageText(''); // Clear input immediately for UX
+
+        const res = await sendSupportMessage(activeConversation.id, agentId, 'admin', textToSend);
         
-        await sendSupportMessage(activeConversation.id, agentProfile.id, 'admin', msg);
+        if (res.error) {
+            setMessageText(textToSend); // Restore if failed
+        }
+        setIsSending(false);
     };
 
     return (
@@ -115,7 +120,7 @@ export default function AgentLiveChat() {
                                 )}
                             >
                                 <div className="flex justify-between items-start mb-1.5">
-                                    <p className="text-sm font-bold truncate max-w-[140px] text-white">{c.profiles?.full_name}</p>
+                                    <p className="text-sm font-bold truncate max-w-[140px] text-white">{c.profiles?.full_name || 'New Trader'}</p>
                                     <Badge variant="outline" className={cn("text-[10px] font-bold px-2 py-0 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
                                 </div>
                                 <p className="text-[11px] text-gray-500 font-medium truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Message' : c.subject}</p>
@@ -141,7 +146,7 @@ export default function AgentLiveChat() {
                                     <User className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white text-base leading-none">{activeConversation.profiles?.full_name}</h3>
+                                    <h3 className="font-bold text-white text-base leading-none">{activeConversation.profiles?.full_name || 'Trader'}</h3>
                                     <p className="text-[11px] text-gray-500 font-medium mt-1.5">{activeConversation.profiles?.email}</p>
                                 </div>
                             </div>
@@ -168,9 +173,16 @@ export default function AgentLiveChat() {
 
                         <div className="p-5 bg-slate-900/80 border-t border-white/5 backdrop-blur-xl">
                             <form onSubmit={handleSendMessage} className="flex gap-4 max-w-4xl mx-auto">
-                                <Input name="message" autoComplete="off" placeholder="Type a message..." className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl px-5" />
-                                <Button type="submit" size="icon" className="h-12 w-12 rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-                                    <Send className="h-5 w-5" />
+                                <Input 
+                                    autoComplete="off" 
+                                    placeholder="Type a message..." 
+                                    value={messageText}
+                                    onChange={(e) => setMessageText(e.target.value)}
+                                    disabled={isSending}
+                                    className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl px-5" 
+                                />
+                                <Button type="submit" size="icon" disabled={!messageText.trim() || isSending} className="h-12 w-12 rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                                    {isSending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
                                 </Button>
                             </form>
                         </div>

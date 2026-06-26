@@ -109,23 +109,32 @@ export async function createSupportConversation(userId: string, subject: string,
     }
 
     revalidatePath('/welcome');
+    revalidatePath('/support-agent/chat');
     return { data: conversation };
 }
 
 export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string) {
+    if (!convId || !senderId || !message.trim()) {
+        return { error: 'Invalid message data.' };
+    }
+
     const { error } = await supabaseAdmin
         .from('support_messages')
         .insert({
             conversation_id: convId,
             sender_id: senderId,
             sender_role: role,
-            message: message
+            message: message.trim()
         });
     
     if (!error) {
-        await supabaseAdmin.from('support_conversations').update({ last_message_at: new Date().toISOString() }).eq('id', convId);
+        await supabaseAdmin.from('support_conversations')
+            .update({ last_message_at: new Date().toISOString() })
+            .eq('id', convId);
     }
     
+    revalidatePath('/welcome');
+    revalidatePath('/support-agent/chat');
     return { error: error?.message };
 }
 

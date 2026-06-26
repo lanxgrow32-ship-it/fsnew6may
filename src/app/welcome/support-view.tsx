@@ -33,6 +33,8 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
     const [activeConversation, setActiveConversation] = useState<any>(null);
     const [messages, setMessages] = useState<any[]>([]);
     const [isPending, startTransition] = useTransition();
+    const [messageText, setMessageText] = useState('');
+    const [isSending, setIsSending] = useState(false);
     const { toast } = useToast();
     const scrollRef = useRef<HTMLDivElement>(null);
     const supabase = createClient();
@@ -98,14 +100,21 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
         });
     };
 
-    const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        const form = e.currentTarget;
-        const message = new FormData(form).get('message') as string;
-        if (!message.trim()) return;
+        if (!activeConversation || !messageText.trim() || isSending) return;
 
-        form.reset();
-        await sendSupportMessage(activeConversation.id, profile.id, 'user', message);
+        setIsSending(true);
+        const textToSend = messageText;
+        setMessageText('');
+
+        const res = await sendSupportMessage(activeConversation.id, profile.id, 'user', textToSend);
+        
+        if (res.error) {
+            setMessageText(textToSend);
+            toast({ title: "Failed to send", description: res.error, variant: "destructive" });
+        }
+        setIsSending(false);
     };
 
     if (view === 'options') {
@@ -221,7 +230,9 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                 <ScrollArea ref={scrollRef} className="flex-grow p-5 h-[350px]">
                     <div className="space-y-5">
                         <div className="text-center py-6 border-b border-white/5 mb-4">
-                             <LifeBuoy className="h-8 w-8 text-gray-800 mx-auto mb-2" />
+                             <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-2">
+                                <LifeBuoy className="h-4 w-4 text-gray-600" />
+                             </div>
                              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Secure session active</p>
                         </div>
                         {messages.map((m) => (
@@ -242,9 +253,16 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
 
                 <div className="p-4 bg-black/40 border-t border-white/5 backdrop-blur-md">
                     <form onSubmit={handleSendMessage} className="flex gap-3">
-                        <Input name="message" autoComplete="off" placeholder="Type a message..." className="flex-grow bg-black/40 border-white/10 h-11 text-xs text-white rounded-xl px-4" />
-                        <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary text-white shadow-lg transition-all hover:scale-105 active:scale-95">
-                            <Send className="h-4 w-4" />
+                        <Input 
+                            autoComplete="off" 
+                            placeholder="Type a message..." 
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            disabled={isSending}
+                            className="flex-grow bg-black/40 border-white/10 h-11 text-xs text-white rounded-xl px-4" 
+                        />
+                        <Button type="submit" size="icon" disabled={!messageText.trim() || isSending} className="h-11 w-11 rounded-xl bg-primary text-white shadow-lg transition-all hover:scale-105 active:scale-95">
+                            {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
                         </Button>
                     </form>
                 </div>
