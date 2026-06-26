@@ -48,6 +48,10 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: s
     </Card>
 );
 
+const Separator = ({ className }: { className?: string }) => (
+    <div className={cn("h-px w-full", className)} />
+);
+
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -78,7 +82,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     const fetchData = async () => {
       const [pRes, aRes, cRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', id).single(),
-        supabase.from('user_accounts').select('*').eq('user_id', id),
+        supabase.from('user_accounts').select('*').eq('user_id', id).order('created_at', { ascending: false }),
         supabase.from('competition_registrations').select('*').eq('user_id', id)
       ]);
       if (pRes.data) setProfile(pRes.data);
@@ -96,7 +100,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     formData.append('id', id);
     const res = await updateProfile(formData);
     if (res.error) toast({ title: "Error", description: res.error, variant: "destructive" });
-    else toast({ title: "Profile Updated" });
+    else toast({ title: "Profile Updated", description: "Changes synchronized with StockMint." });
     setIsSaving(false);
   };
 
@@ -138,38 +142,41 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                     <div className="space-y-1">
                                         <Label className="text-xs text-gray-500 font-bold uppercase">Identity Proof</Label>
                                         <div className="flex gap-4">
-                                            {profile.selfie_url && <Image src={profile.selfie_url} alt="Aadhaar" width={120} height={80} className="rounded-lg border border-white/10 object-cover" />}
-                                            {profile.selfie_with_aadhaar_url && <Image src={profile.selfie_with_aadhaar_url} alt="Selfie" width={120} height={80} className="rounded-lg border border-white/10 object-cover" />}
+                                            {profile.selfie_url && <div className="relative w-24 h-16 rounded-lg overflow-hidden border border-white/10"><Image src={profile.selfie_url} alt="Aadhaar" layout="fill" className="object-cover" /></div>}
+                                            {profile.selfie_with_aadhaar_url && <div className="relative w-24 h-16 rounded-lg overflow-hidden border border-white/10"><Image src={profile.selfie_with_aadhaar_url} alt="Selfie" layout="fill" className="object-cover" /></div>}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="pt-6 border-t border-white/5 grid grid-cols-2 gap-4">
+                                <div className="pt-6 border-t border-white/5 grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label className="text-white">Manual KYC Status</Label>
+                                        <Label className="text-white text-xs font-bold uppercase">Manual KYC Status</Label>
                                         <Select name="kyc_status" defaultValue={profile.kyc_status}>
-                                            <SelectTrigger className="bg-black/40 border-white/10 text-white"><SelectValue/></SelectTrigger>
+                                            <SelectTrigger className="bg-black/40 border-white/10 text-white h-11"><SelectValue/></SelectTrigger>
                                             <SelectContent><SelectItem value="pending">Pending</SelectItem><SelectItem value="submitted">Review Required</SelectItem><SelectItem value="verified">Verified</SelectItem><SelectItem value="rejected">Rejected</SelectItem></SelectContent>
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-white">Primary Classification</Label>
+                                        <Label className="text-white text-xs font-bold uppercase">Classification promotion</Label>
                                         <Select name="account_classification" defaultValue={profile.account_classification || 'evaluation'}>
-                                            <SelectTrigger className="bg-black/40 border-white/10 text-white"><SelectValue/></SelectTrigger>
+                                            <SelectTrigger className="bg-black/40 border-white/10 text-white h-11"><SelectValue/></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="evaluation">Evaluation</SelectItem>
-                                                <SelectItem value="instant_live">Instant Live</SelectItem>
-                                                <SelectItem value="one_step_phase_1">1-Step Phase 1</SelectItem>
-                                                <SelectItem value="two_step_phase_1">2-Step Phase 1</SelectItem>
-                                                <SelectItem value="live">Live/Funded</SelectItem>
+                                                <SelectItem value="evaluation">Registered User</SelectItem>
+                                                <SelectItem value="instant_live" className="text-green-500 font-bold">Instant (Live)</SelectItem>
+                                                <SelectItem value="one_step_phase_1">1-Step (Phase 1)</SelectItem>
+                                                <SelectItem value="one_step_live" className="text-green-500 font-bold">1-Step (Live)</SelectItem>
+                                                <SelectItem value="two_step_phase_1">2-Step (Phase 1)</SelectItem>
+                                                <SelectItem value="two_step_phase_2">2-Step (Phase 2)</SelectItem>
+                                                <SelectItem value="two_step_live" className="text-green-500 font-bold">2-Step (Live)</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tight">Syncs instantly with StockMint on save</p>
                                     </div>
                                 </div>
                             </CardContent>
                             <CardFooter className="justify-end">
                                 <Button type="submit" disabled={isSaving} className="font-bold h-11 px-8 shadow-xl shadow-primary/20">
                                     {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : null}
-                                    Save Core Profile
+                                    Update & Sync Profile
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -183,15 +190,18 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                 <div className="space-y-3">
                                     {accounts.length > 0 ? accounts.map(acc => (
                                         <div key={acc.id} className="p-5 bg-black/20 rounded-2xl border border-white/5 flex items-center justify-between group hover:bg-black/30 transition-all">
-                                            <div>
-                                                <p className="font-bold text-white text-base">{acc.plan_name}</p>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-3">
+                                                    <p className="font-bold text-white text-base truncate">{acc.plan_name}</p>
+                                                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black uppercase">{acc.account_classification?.replace(/_/g, ' ')}</Badge>
+                                                </div>
                                                 <p className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
                                                     <span className="opacity-50">ID: {acc.id.substring(0,8)}</span>
                                                     <span className="w-1 h-1 rounded-full bg-white/10" />
-                                                    <span className="text-primary">{acc.account_classification?.replace(/_/g, ' ')}</span>
+                                                    <span className="text-muted-foreground">{acc.trading_username || 'Awaiting Hub'}</span>
                                                 </p>
                                             </div>
-                                            <Badge variant="outline" className={cn("capitalize h-7 px-3 border-none font-bold", acc.status === 'active' ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400")}>{acc.status}</Badge>
+                                            <Badge variant="outline" className={cn("capitalize h-7 px-3 border-none font-bold ml-4", acc.status === 'active' ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400")}>{acc.status}</Badge>
                                         </div>
                                     )) : <div className="py-20 text-center text-gray-600 font-bold italic border-2 border-dashed border-white/5 rounded-3xl">No trading history available.</div>}
                                 </div>
@@ -243,7 +253,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                         {isRecoveryPending ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <Mail className="mr-2 h-4 w-4" />}
                                         Send Recovery Email
                                     </Button>
-                                    <p className="text-[9px] text-gray-600 mt-2 px-1">Sends RETRY15 discount & breach report to trader.</p>
+                                    <p className="text-[9px] text-gray-600 mt-2 px-1 text-center">Sends RETRY15 discount & breach report to trader.</p>
                                 </form>
                             </div>
 
@@ -281,7 +291,3 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     </div>
   );
 }
-
-const Separator = ({ className }: { className?: string }) => (
-    <div className={cn("h-px w-full", className)} />
-);

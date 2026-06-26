@@ -1,9 +1,7 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { format } from 'date-fns';
 
 async function uploadBreachProof(file: File, userId: string) {
   const fileExt = file.name.split('.').pop();
@@ -22,49 +20,21 @@ async function uploadBreachProof(file: File, userId: string) {
   return urlData.publicUrl;
 }
 
-async function uploadKycDocument(file: File, userId: string, type: 'aadhaar' | 'selfie-with-aadhaar') {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${userId}-${type}-${Date.now()}.${fileExt}`;
-  const { data, error } = await supabaseAdmin.storage.from('kyc-documents').upload(fileName, file, {
-      cacheControl: '3600',
-      upsert: true,
-  });
-
-  if (error) {
-    console.error(`Error uploading ${type} image:`, error);
-    throw new Error(`Failed to upload ${type} image.`);
-  }
-
-  const { data: urlData } = supabaseAdmin.storage.from('kyc-documents').getPublicUrl(data.path);
-  return urlData.publicUrl;
-}
-
-function getAccountSizeText(planName: string): string {
-    if (!planName) return 'N/A';
-    const lowerPlanName = planName.toLowerCase();
-    if (lowerPlanName.includes('1l')) return '1,00,000';
-    if (lowerPlanName.includes('2l')) return '2,00,000';
-    if (lowerPlanName.includes('5l')) return '5,00,000';
-    if (lowerPlanName.includes('10l')) return '10,00,000';
-    if (lowerPlanName.includes('25l')) return '25,00,000';
-    if (lowerPlanName.includes('50l')) return '50,00,000';
-    return 'N/A';
-}
-
 export async function updateProfile(formData: FormData) {
   const id = formData.get('id') as string;
   const fullName = formData.get('full_name') as string;
   const is_approved = formData.get('is_approved') === 'on';
-  const trading_username = formData.get('trading_username') as string;
-  const trading_password = formData.get('trading_password') as string;
   const kyc_status = formData.get('kyc_status') as string;
   const is_breached = formData.get('is_breached') === 'on';
   const breach_reason = formData.get('breach_reason') as string;
   const breach_image = formData.get('breach_image') as File;
   const account_classification = formData.get('account_classification') as string;
 
-  const { data: before } = await supabaseAdmin.from('profiles').select('*').eq('id', id).single();
-  const wasClassified = before?.account_classification;
+  // Fetch current state to check if classification changed
+  const { data: before, error: fetchError } = await supabaseAdmin.from('profiles').select('*').eq('id', id).single();
+  if (fetchError || !before) return { error: 'User profile not found.' };
+
+  const wasClassified = before.account_classification;
 
   const updateData: any = {
     full_name: fullName,
@@ -72,8 +42,6 @@ export async function updateProfile(formData: FormData) {
     kyc_status,
     is_breached,
     breach_reason,
-    trading_username,
-    trading_password,
     account_classification,
   };
 
@@ -83,20 +51,39 @@ export async function updateProfile(formData: FormData) {
       }
   } catch (e: any) { return { error: e.message }; }
 
+  // Update profile
   const { error } = await supabaseAdmin.from('profiles').update(updateData).eq('id', id);
   if (error) return { error: error.message };
 
-  // Sync classification change with StockMint
-  if (account_classification !== wasClassified && trading_username) {
+  // SYNC WITH STOCKMINT IF CLASSIFICATION CHANGED
+  // We sync every active account associated with this trader
+  if (account_classification !== wasClassified) {
+      const { data: accounts } = await supabaseAdmin
+        .from('user_accounts')
+        .select('trading_username')
+        .eq('user_id', id)
+        .eq('credentials_provided', true);
+
       const apiKey = process.env.STOCKMINT_API_KEY;
-      if (apiKey) {
+      
+      if (apiKey && accounts && accounts.length > 0) {
           try {
-              await fetch('https://stockmint.io/api/users/update', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-                  body: JSON.stringify({ email: trading_username, accountClassification: account_classification }),
-              });
-          } catch (e) { console.error('StockMint Update Error:', e); }
+              // Loop through and update every account StockMint knows about
+              await Promise.all(accounts.map(async (acc) => {
+                  if (acc.trading_username) {
+                      await fetch('https://stockmint.io/api/users/update', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+                          body: JSON.stringify({ 
+                              email: acc.trading_username, 
+                              accountClassification: account_classification 
+                          }),
+                      });
+                  }
+              }));
+          } catch (e) {
+              console.error('StockMint Manual Sync Error:', e);
+          }
       }
   }
 
@@ -127,7 +114,13 @@ export async function sendBreachRecoveryEmail(prevState: any, formData: FormData
     await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ first_name: profile.full_name, email: profile.email, discount_code: 'RETRY15', discount_percent: 15, expiry_days: 3 }),
+      body: JSON.stringify({ 
+          first_name: profile.full_name, 
+          email: profile.email, 
+          discount_code: 'RETRY15', 
+          discount_percent: 15, 
+          expiry_days: 3 
+      }),
     });
     return { success: 'Recovery email sent.' };
   } catch (e: any) { return { error: e.message }; }

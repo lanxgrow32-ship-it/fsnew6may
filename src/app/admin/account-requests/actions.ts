@@ -1,9 +1,11 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
+/**
+ * Maps plan names to their starting phase classification
+ */
 function getAutoClassification(planName: string): string {
     const name = planName.toLowerCase();
     if (name.includes('instant')) return 'instant_live';
@@ -44,7 +46,7 @@ export async function approveAccount(accountId: string) {
     const isKycDone = profile.kyc_status === 'verified';
     const classification = getAutoClassification(account.plan_name);
 
-    // 1. Mark as approved
+    // 1. Mark as approved with initial classification
     const { error: approveError } = await supabaseAdmin
         .from('user_accounts')
         .update({ 
@@ -60,8 +62,7 @@ export async function approveAccount(accountId: string) {
     if (isKycDone || isPTP) {
         const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', profile.id).eq('credentials_provided', true);
         const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
-        const baseEmail = profile.email.split('@')[0];
-        const domain = profile.email.split('@')[1];
+        const [baseEmail, domain] = profile.email.split('@');
         const stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`;
         const initialBalance = getBalanceFromPlanName(account.plan_name);
 
