@@ -7,10 +7,28 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter,
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Home, Wallet, LogOut, Loader2, IndianRupee, TrendingUp, ShoppingCart, Gift, UserCheck, Swords, Users, Newspaper, Banknote, LineChart, Ticket } from 'lucide-react';
+import { 
+    Home, 
+    Wallet, 
+    LogOut, 
+    Loader2, 
+    IndianRupee, 
+    TrendingUp, 
+    ShoppingCart, 
+    Gift, 
+    UserCheck, 
+    Swords, 
+    Users, 
+    Newspaper, 
+    Banknote, 
+    LineChart, 
+    Ticket 
+} from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: string, icon: any, color: string }) => (
     <Card className="bg-card">
@@ -27,8 +45,6 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: s
         </CardContent>
     </Card>
 );
-
-import { cn } from '@/lib/utils';
 
 export default function WalletReportsPage() {
     const [data, setData] = useState<any>(null);
@@ -57,8 +73,10 @@ export default function WalletReportsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Sales Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports/pay-later" tooltip="PTP Reports"><LineChart />PTP Reports</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports/wallet" isActive tooltip="Wallet Reports"><Wallet />Wallet Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
                 <SidebarFooter className="border-t p-2">
@@ -67,7 +85,7 @@ export default function WalletReportsPage() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Wallet Internal Reports</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Wallet Internal Reports</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40 space-y-8">

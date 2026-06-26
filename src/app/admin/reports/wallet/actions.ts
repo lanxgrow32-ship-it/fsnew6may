@@ -3,11 +3,16 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
+/**
+ * Fetches internal wallet metrics for auditing.
+ * Separates deposits, bonuses, and spending.
+ */
 export async function getWalletReportData() {
     const { data: txs, error } = await supabaseAdmin
         .from('wallet_transactions')
         .select('*')
-        .eq('status', 'completed');
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
     
     if (error) return null;
 
@@ -20,6 +25,7 @@ export async function getWalletReportData() {
             totalDeposited += parseFloat(t.amount);
             if (t.bonus_amount) totalBonuses += parseFloat(t.bonus_amount);
         } else if (t.type === 'purchase') {
+            // Purchases are negative amounts in the DB
             totalSpent += Math.abs(parseFloat(t.amount));
         }
     });

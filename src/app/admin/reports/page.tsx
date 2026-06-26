@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense, useTransition } from 'react';
@@ -11,16 +12,12 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
 } from 'recharts';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-
 
 import { getSalesData, SalesData } from './actions';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -31,14 +28,28 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download, Swords, Users, RefreshCw, Newspaper, UserCheck } from 'lucide-react';
+import { 
+    Home, 
+    Ticket, 
+    Wallet, 
+    LogOut, 
+    Banknote, 
+    LineChart as LineChartIcon, 
+    Calendar as CalendarIcon, 
+    Loader2, 
+    Download, 
+    Swords, 
+    Users, 
+    RefreshCw, 
+    Newspaper, 
+    UserCheck 
+} from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientOnly } from '@/components/ui/client-only';
-
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -87,13 +98,11 @@ const PlanBreakdownTable = ({ plans }: { plans: { name: string, revenue: number,
     </div>
 );
 
-
 function SalesDashboard({ initialData, masterView }: { initialData: SalesData, masterView: boolean }) {
     const [data, setData] = useState(initialData);
     const [isFetching, startTransition] = useTransition();
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [date, setDate] = useState<DateRange | undefined>({ from: undefined, to: undefined });
-    const isMobile = useIsMobile();
     
     const chartConfig = {
       revenue: { label: "Revenue", color: "hsl(var(--primary))" },
@@ -109,7 +118,6 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
     const pieChartData = data.planCategoryBreakdown.filter(d => d.value > 0).map(d => ({
         ...d, fill: `var(--color-${d.name})`
     }));
-
 
     const fetchAndSetData = async (from?: Date, to?: Date) => {
         startTransition(async () => {
@@ -163,8 +171,8 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
          <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Analytics Hub</h2>
-                    <p className="text-sm text-muted-foreground">Detailed revenue and sales performance reports.</p>
+                    <h2 className="text-2xl font-bold tracking-tight">Sales Analytics</h2>
+                    <p className="text-sm text-muted-foreground">Excludes internal wallet movements for revenue accuracy.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2">
                     <Popover>
@@ -182,7 +190,6 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                         <Button onClick={() => handleDatePreset(0)} variant="ghost" size="sm">Today</Button>
                         <Button onClick={() => handleDatePreset(6)} variant="ghost" size="sm">7D</Button>
                         <Button onClick={() => handleDatePreset(29)} variant="ghost" size="sm">30D</Button>
-                        <Button onClick={() => handleDatePreset(null)} variant="ghost" size="sm">All</Button>
                     </div>
                     <Button onClick={() => fetchAndSetData(date?.from, date?.to)} variant="outline" size="sm" disabled={isFetching}><RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />Refresh</Button>
                     <Button onClick={downloadPdfReport} variant="outline" size="sm" disabled={isFetching || isGeneratingReport}>{isGeneratingReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}PDF</Button>
@@ -207,11 +214,9 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                                         <RechartsLineChart data={data.salesByDate}>
                                             <CartesianGrid vertical={false} />
                                             <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(new Date(value), "MMM d")} />
-                                            <YAxis yAxisId="left" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
-                                            <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tickMargin={8} />
+                                            <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
                                             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                            <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                                            <Line yAxisId="right" type="monotone" dataKey="sales" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} />
+                                            <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                                         </RechartsLineChart>
                                     </ChartContainer>
                                 </ClientOnly>
@@ -236,11 +241,11 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
 
                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card>
-                             <CardHeader><CardTitle>Top 5 Selling Plans</CardTitle></CardHeader>
+                             <CardHeader><CardTitle>Top Selling Plans</CardTitle></CardHeader>
                              <CardContent><PlanBreakdownTable plans={data.topPlans} /></CardContent>
                         </Card>
                          <Card>
-                            <CardHeader><CardTitle>Full Plan Performance</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>All Plan Performance</CardTitle></CardHeader>
                             <CardContent><PlanBreakdownTable plans={data.allPlansBreakdown} /></CardContent>
                         </Card>
                      </div>
@@ -272,13 +277,15 @@ function ReportsPageInner() {
                     <SidebarMenu>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
-                         <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports" isActive tooltip="Reports"><LineChartIcon />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports" isActive tooltip="Sales Reports"><LineChartIcon />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports/pay-later" tooltip="PTP Reports"><LineChartIcon />PTP Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports/wallet" tooltip="Wallet Reports"><Wallet />Wallet Reports</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
@@ -288,7 +295,7 @@ function ReportsPageInner() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Sales Reports</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Financial Reports</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">

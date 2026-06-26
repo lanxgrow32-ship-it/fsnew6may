@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense, useTransition } from 'react';
@@ -11,13 +12,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-
 
 import { getPayLaterSalesData, SalesData } from './actions';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -27,12 +24,26 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download, Swords, Users, RefreshCw, Newspaper, UserCheck } from 'lucide-react';
+import { 
+    Home, 
+    Ticket, 
+    Wallet, 
+    LogOut, 
+    Banknote, 
+    LineChart as LineChartIcon, 
+    Calendar as CalendarIcon, 
+    Loader2, 
+    Download, 
+    Swords, 
+    Users, 
+    RefreshCw, 
+    Newspaper, 
+    UserCheck 
+} from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientOnly } from '@/components/ui/client-only';
 
 function SalesDashboard({ initialData, masterView }: { initialData: SalesData, masterView: boolean }) {
@@ -56,8 +67,8 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
          <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Pay Later Analytics</h2>
-                    <p className="text-sm text-muted-foreground">Detailed revenue reports for PassThenPay users.</p>
+                    <h2 className="text-2xl font-bold tracking-tight">PassThenPay Analytics</h2>
+                    <p className="text-sm text-muted-foreground">Revenue specifically from the PTP performance model.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <Popover>
@@ -78,12 +89,12 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
             {isFetching ? <div className="p-20 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto"/></div> : (
                 <div className="grid gap-6">
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-                        <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Net Revenue</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold">₹{data.totalNetRevenue.toLocaleString('en-IN')}</div></CardContent></Card>
-                        <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Sales Count</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold">{data.totalSalesCount}</div></CardContent></Card>
+                        <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Net Revenue (PTP)</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold">₹{data.totalNetRevenue.toLocaleString('en-IN')}</div></CardContent></Card>
+                        <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total PTP Sales</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold">{data.totalSalesCount}</div></CardContent></Card>
                     </div>
                     
                     <Card>
-                         <CardHeader><CardTitle>Revenue Trend</CardTitle></CardHeader>
+                         <CardHeader><CardTitle>Revenue Trend — PassThenPay</CardTitle></CardHeader>
                         <CardContent>
                             <ClientOnly fallback={<Skeleton className="h-72" />}>
                                 <ChartContainer config={chartConfig} className="h-72">
@@ -126,13 +137,15 @@ function PayLaterReportsPageInner() {
                     <SidebarMenu>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
-                         <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports" isActive tooltip="Reports"><LineChartIcon />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Sales Reports"><LineChartIcon />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports/pay-later" isActive tooltip="PTP Reports"><LineChartIcon />PTP Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports/wallet" tooltip="Wallet Reports"><Wallet />Wallet Reports</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
@@ -142,7 +155,7 @@ function PayLaterReportsPageInner() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Pay Later Sales Reports</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">PTP Revenue Analysis</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
