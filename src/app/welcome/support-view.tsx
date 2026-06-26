@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect, useRef } from 'react';
@@ -20,7 +19,6 @@ import { createSupportConversation, sendSupportMessage, markSupportRead } from '
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
@@ -40,13 +38,15 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     
     const { toast } = useToast();
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const supabase = createClient();
 
-    // Auto-scroll logic
+    // Isolated container auto-scroll logic
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
     };
 
     // Automatically open the most recent active live chat if it exists
@@ -84,7 +84,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
         }
     }, [activeConversation]);
 
-    // Triggers scroll whenever messages update
+    // Triggers isolated scroll whenever messages update
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
@@ -139,8 +139,8 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
             if (imageToSend) setImagePreview(URL.createObjectURL(imageToSend));
             toast({ title: "Failed to send", description: res.error, variant: "destructive" });
         } else {
-            // Force a scroll immediately after sending
-            setTimeout(scrollToBottom, 100);
+            // Force isolated scroll immediately after sending
+            setTimeout(scrollToBottom, 50);
         }
         setIsSending(false);
     };
@@ -203,7 +203,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
 
     return (
         <div className="max-w-4xl mx-auto h-[65vh] flex flex-col animate-in fade-in slide-in-from-bottom-4 font-poppins">
-            <div className="flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center justify-between mb-4 px-2 shrink-0">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => setView('options')} className="text-gray-500 hover:text-white">
                         <ArrowRight className="rotate-180 h-5 w-5" />
@@ -215,8 +215,11 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                 <Badge className="bg-green-500/10 text-green-400 border-green-500/20 font-bold text-[9px] px-2.5">Agent Live</Badge>
             </div>
 
-            <GlassCard className="flex-grow flex flex-col p-0 border-white/10 shadow-2xl">
-                <ScrollArea className="flex-1 p-6">
+            <GlassCard className="flex-grow flex flex-col p-0 border-white/10 shadow-2xl relative overflow-hidden">
+                <div 
+                    ref={scrollRef} 
+                    className="flex-1 p-6 overflow-y-auto scroll-smooth"
+                >
                     <div className="space-y-6">
                         <div className="text-center py-8 border-b border-white/5 mb-6">
                              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-[0.3em]">Secure connection established</p>
@@ -226,7 +229,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                 <div className={cn("h-7 w-7 rounded-full border border-white/10 flex items-center justify-center shrink-0", m.sender_role === 'user' ? "bg-primary/20 text-primary" : "bg-white/10 text-white")}>
                                     {m.sender_role === 'user' ? <User className="h-3.5 w-3.5" /> : <Headphones className="h-3.5 w-3.5" />}
                                 </div>
-                                <div className={cn("max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed", m.sender_role === 'user' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none shadow-lg")}>
+                                <div className={cn("max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed shadow-lg", m.sender_role === 'user' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none")}>
                                     {m.image_url && (
                                         <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
                                             <Image src={m.image_url} alt="Support Attachment" width={250} height={250} className="object-cover" />
@@ -239,13 +242,11 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                 </div>
                             </div>
                         ))}
-                        {/* Invisible anchor for auto-scrolling */}
-                        <div ref={messagesEndRef} />
                     </div>
-                </ScrollArea>
+                </div>
 
                 {imagePreview && (
-                    <div className="px-5 py-3 bg-black/60 border-t border-white/10 flex items-center gap-4">
+                    <div className="px-5 py-3 bg-black/60 border-t border-white/10 flex items-center gap-4 shrink-0">
                         <div className="relative h-16 w-16 rounded-lg overflow-hidden border border-white/20">
                             <Image src={imagePreview} alt="Preview" layout="fill" className="object-cover" />
                             <button onClick={clearImage} className="absolute top-0.5 right-0.5 bg-red-500 rounded-full p-0.5"><X className="h-3 w-3 text-white"/></button>
@@ -254,7 +255,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                     </div>
                 )}
 
-                <div className="p-5 bg-slate-900/90 border-t border-white/5 backdrop-blur-xl">
+                <div className="p-5 bg-slate-900/90 border-t border-white/5 backdrop-blur-xl shrink-0">
                     <form onSubmit={handleSendMessage} className="flex gap-4">
                         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
                         <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} className="h-12 w-12 text-gray-500 hover:text-white rounded-xl bg-black/40 border border-white/10">

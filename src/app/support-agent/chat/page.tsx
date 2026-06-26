@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -33,14 +32,16 @@ export default function AgentLiveChat() {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const supabase = createClient();
 
-    // Auto-scroll logic
+    // Isolated container auto-scroll logic
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
     };
 
     const fetchConversations = async () => {
@@ -96,7 +97,7 @@ export default function AgentLiveChat() {
         }
     }, [activeConversation]);
 
-    // Triggers scroll whenever messages update
+    // Triggers isolated scroll whenever messages update
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
@@ -135,8 +136,8 @@ export default function AgentLiveChat() {
             if (imageToSend) setImagePreview(URL.createObjectURL(imageToSend));
             toast({ title: "Failed to send message", description: res.error, variant: "destructive" });
         } else {
-            // Force scroll after sending
-            setTimeout(scrollToBottom, 100);
+            // Force isolated scroll after sending
+            setTimeout(scrollToBottom, 50);
         }
         setIsSending(false);
     };
@@ -183,7 +184,7 @@ export default function AgentLiveChat() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-grow flex flex-col relative bg-slate-950">
+            <div className="flex-grow flex flex-col relative bg-slate-950 overflow-hidden">
                 {!activeConversation ? (
                     <div className="flex-grow flex flex-col items-center justify-center text-center p-12">
                         <Inbox className="h-16 w-16 text-gray-900 mb-6" />
@@ -192,7 +193,7 @@ export default function AgentLiveChat() {
                     </div>
                 ) : (
                     <>
-                        <header className="p-5 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex items-center justify-between">
+                        <header className="p-5 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-4">
                                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                                     <User className="h-5 w-5" />
@@ -205,7 +206,10 @@ export default function AgentLiveChat() {
                             <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-xs font-bold h-8 px-4 rounded-lg">Close Chat</Button>
                         </header>
 
-                        <ScrollArea className="flex-grow p-6">
+                        <div 
+                            ref={scrollRef}
+                            className="flex-grow p-6 overflow-y-auto bg-slate-950 scroll-smooth"
+                        >
                             <div className="space-y-6 max-w-3xl mx-auto">
                                 <div className="text-center py-4 border-b border-white/5 mb-8">
                                     <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Protocol connection established</p>
@@ -219,19 +223,17 @@ export default function AgentLiveChat() {
                                                 </div>
                                             )}
                                             <p className="whitespace-pre-wrap">{m.message}</p>
-                                            <p className="mt-2 text-[9px] opacity-30 font-bold text-right uppercase tracking-tighter">
+                                            <p className="mt-2 text-[8px] opacity-30 font-bold text-right uppercase tracking-tighter">
                                                 {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         </div>
                                     </div>
                                 ))}
-                                {/* Invisible anchor for auto-scrolling */}
-                                <div ref={messagesEndRef} />
                             </div>
-                        </ScrollArea>
+                        </div>
 
                         {imagePreview && (
-                            <div className="px-5 py-3 bg-black/60 border-t border-white/10 flex items-center gap-4 animate-in slide-in-from-bottom-2">
+                            <div className="px-5 py-3 bg-black/60 border-t border-white/10 flex items-center gap-4 animate-in slide-in-from-bottom-2 shrink-0">
                                 <div className="relative h-16 w-16 rounded-lg overflow-hidden border border-white/20">
                                     <Image src={imagePreview} alt="Preview" layout="fill" className="object-cover" />
                                     <button onClick={clearImage} className="absolute top-0.5 right-0.5 bg-red-500 rounded-full p-0.5"><X className="h-3 w-3 text-white"/></button>
@@ -240,7 +242,7 @@ export default function AgentLiveChat() {
                             </div>
                         )}
 
-                        <div className="p-5 bg-slate-900/80 border-t border-white/5 backdrop-blur-xl">
+                        <div className="p-5 bg-slate-900/80 border-t border-white/5 backdrop-blur-xl shrink-0">
                             <form onSubmit={handleSendMessage} className="flex gap-4 max-w-4xl mx-auto">
                                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
                                 <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} className="h-12 w-12 text-gray-500 hover:text-white rounded-xl bg-black/40 border border-white/10">
