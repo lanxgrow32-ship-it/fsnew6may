@@ -8,7 +8,6 @@ import {
     Gift, 
     History,
     RefreshCw,
-    ChevronDown,
     Filter
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +28,7 @@ type Transaction = {
     description: string;
     gateway_transaction_id: string | null;
     created_at: string;
+    bonus_amount?: number; // Added to support the split view logic
 };
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
@@ -40,9 +40,29 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
 export function TransactionsView({ transactions }: { transactions: Transaction[] }) {
     const [filter, setFilter] = useState('all');
 
-    const filteredTransactions = useMemo(() => {
-        if (filter === 'all') return transactions;
-        return transactions.filter(tx => tx.type === filter);
+    // Logic to expand transactions that have bonuses into two separate visual items
+    const displayTransactions = useMemo(() => {
+        const expanded: any[] = [];
+        
+        transactions.forEach(tx => {
+            // First, add the main transaction
+            expanded.push({ ...tx, isBonusEntry: false });
+            
+            // If it's a deposit with a bonus, create a virtual bonus entry
+            if (tx.type === 'deposit' && tx.bonus_amount && tx.bonus_amount > 0) {
+                expanded.push({
+                    ...tx,
+                    id: `${tx.id}-bonus`,
+                    amount: tx.bonus_amount,
+                    type: 'bonus',
+                    description: 'Credit Bonus',
+                    isBonusEntry: true
+                });
+            }
+        });
+
+        if (filter === 'all') return expanded;
+        return expanded.filter(tx => tx.type === filter);
     }, [transactions, filter]);
 
     const getIcon = (type: string) => {
@@ -63,24 +83,28 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
         }
     };
 
-    const TransactionItem = ({ tx }: { tx: Transaction }) => (
-        <div className="group flex items-center justify-between p-4 bg-black/20 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-            <div className="flex items-center gap-4">
+    const TransactionItem = ({ tx }: { tx: any }) => (
+        <div className="group flex items-center justify-between p-5 bg-black/20 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors w-full overflow-hidden">
+            <div className="flex items-center gap-4 min-w-0 flex-1">
                 <div className={cn("p-2.5 rounded-xl shrink-0 transition-transform group-hover:scale-105", getIconColor(tx.type))}>
                     {getIcon(tx.type)}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-white truncate">{tx.description || 'Transaction'}</p>
                     <div className="flex items-center gap-2 mt-1">
                         <p className="text-[10px] text-gray-500 font-bold">{new Date(tx.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</p>
-                        <span className="w-1 h-1 rounded-full bg-white/10" />
-                        <p className="text-[10px] text-gray-500 font-mono font-bold truncate max-w-[80px]">
-                            {tx.gateway_transaction_id || tx.id.substring(0, 8)}
-                        </p>
+                        {!tx.isBonusEntry && (
+                            <>
+                                <span className="w-1 h-1 rounded-full bg-white/10" />
+                                <p className="text-[10px] text-gray-500 font-mono font-bold truncate max-w-[100px]">
+                                    {tx.gateway_transaction_id || tx.id.substring(0, 8)}
+                                </p>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
-            <div className="text-right shrink-0 ml-4">
+            <div className="text-right shrink-0 ml-4 flex flex-col items-end">
                 <p className={cn("text-base font-bold", tx.amount > 0 ? "text-green-400" : "text-white")}>
                     {tx.amount > 0 ? '+' : ''}₹{Math.abs(tx.amount).toLocaleString('en-IN')}
                 </p>
@@ -106,19 +130,19 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
                     <p className="text-gray-400 mt-1 text-base font-medium">Review your account's financial audit trail.</p>
                 </div>
 
-                <div className="w-full md:w-48">
+                <div className="w-full md:w-56">
                     <Select value={filter} onValueChange={setFilter}>
-                        <SelectTrigger className="w-full h-11 bg-black/40 border-white/10 rounded-xl text-xs font-bold text-white focus:ring-primary/50">
+                        <SelectTrigger className="w-full h-12 bg-black/40 border-white/10 rounded-xl text-sm font-bold text-white focus:ring-primary/50">
                             <div className="flex items-center gap-2">
-                                <Filter className="w-3.5 h-3.5 text-gray-500" />
-                                <SelectValue placeholder="Filter Type" />
+                                <Filter className="w-4 h-4 text-gray-500" />
+                                <SelectValue placeholder="All Transactions" />
                             </div>
                         </SelectTrigger>
                         <SelectContent className="bg-slate-900 border-white/10 text-white rounded-xl">
-                            <SelectItem value="all" className="text-xs font-bold">All Transactions</SelectItem>
-                            <SelectItem value="purchase" className="text-xs font-bold">Purchases</SelectItem>
-                            <SelectItem value="deposit" className="text-xs font-bold">Deposits</SelectItem>
-                            <SelectItem value="bonus" className="text-xs font-bold">Bonuses</SelectItem>
+                            <SelectItem value="all" className="text-sm font-bold">All Transactions</SelectItem>
+                            <SelectItem value="purchase" className="text-sm font-bold">Purchases</SelectItem>
+                            <SelectItem value="deposit" className="text-sm font-bold">Deposits</SelectItem>
+                            <SelectItem value="bonus" className="text-sm font-bold">Bonuses</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -126,8 +150,8 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
 
             <GlassCard>
                 <div className="flex flex-col">
-                    {filteredTransactions.length > 0 ? (
-                        filteredTransactions.map((tx) => (
+                    {displayTransactions.length > 0 ? (
+                        displayTransactions.map((tx) => (
                             <TransactionItem key={tx.id} tx={tx} />
                         ))
                     ) : (
