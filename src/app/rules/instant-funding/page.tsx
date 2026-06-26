@@ -51,9 +51,9 @@ const StatItem = ({ title, value, subtext }: { title: string, value: string, sub
 
 export default async function InstantFundingRulesPage() {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    const backUrl = session ? "/welcome" : "/pricing";
-    const backLabel = session ? "Back to Dashboard" : "Back to Plans";
+    const { data: { user } } = await supabase.auth.getUser();
+    const backUrl = user ? "/welcome" : "/pricing";
+    const backLabel = user ? "Back to Dashboard" : "Back to Plans";
 
     return (
         <div className="dark-theme">
@@ -148,7 +148,6 @@ export default async function InstantFundingRulesPage() {
 
                         <Separator className="my-12" />
 
-                        {/* --- New Detailed Rules --- */}
                         <div className="text-center pt-8">
                             <h2 className="text-3xl font-bold tracking-tight">FundedStock — Instant Funding</h2>
                             <p className="text-muted-foreground mt-2">Indian Markets (NSE/BSE) · No Evaluation · Start Trading in 15 Minutes</p>

@@ -77,9 +77,9 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
 
 export default async function PassThenPayPage() {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    const backUrl = session ? "/welcome" : "/";
-    const backLabel = session ? "Back to Dashboard" : "Back to Home";
+    const { data: { user } } = await supabase.auth.getUser();
+    const backUrl = user ? "/welcome" : "/pricing";
+    const backLabel = user ? "Back to Dashboard" : "Back to Plans";
 
     const comparisonData = [
       {

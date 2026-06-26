@@ -37,9 +37,9 @@ const FaqItem = ({ question, answer }: { question: string, answer: string }) => 
 
 export default async function TwoStepRulesPage() {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    const backUrl = session ? "/welcome" : "/pricing";
-    const backLabel = session ? "Back to Dashboard" : "Back to Plans";
+    const { data: { user } } = await supabase.auth.getUser();
+    const backUrl = user ? "/welcome" : "/pricing";
+    const backLabel = user ? "Back to Dashboard" : "Back to Plans";
 
     return (
         <div className="dark-theme">
@@ -109,7 +109,6 @@ export default async function TwoStepRulesPage() {
                         
                         <Separator className="my-12" />
 
-                        {/* --- Detailed Rules --- */}
                         <div className="text-center pt-8">
                             <h2 className="text-3xl font-bold tracking-tight">Detailed Breakdown & Live Account Rules</h2>
                             <p className="text-muted-foreground mt-2">Stocks & F&O · Indian Markets (NSE/BSE) · SEBI-regulated exchange leverage</p>
