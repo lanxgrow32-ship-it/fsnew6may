@@ -1,9 +1,25 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
+
+/**
+ * Validates a referral code against the database.
+ * Used for real-time feedback on the signup page.
+ */
+export async function checkReferralCode(code: string) {
+    if (!code) return { error: 'Empty code' };
+    
+    const { data: referrer, error } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name')
+        .eq('referral_code', code.toUpperCase())
+        .single();
+    
+    if (error || !referrer) return { error: 'Referral code not found.' };
+    return { success: true, name: referrer.full_name };
+}
 
 export async function signup(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
@@ -35,7 +51,7 @@ export async function signup(prevState: any, formData: FormData) {
   }
 
   if (user) {
-      // 2. Handle Referral
+      // 2. Handle Referral Link
       let referrerId = null;
       if (referredByCode) {
           const { data: referrer } = await supabaseAdmin
@@ -47,8 +63,7 @@ export async function signup(prevState: any, formData: FormData) {
           if (referrer) referrerId = referrer.id;
       }
 
-      // 3. Update Profile (Immediate Approval for Dashboard Access)
-      // Generate unique referral code for new user
+      // 3. Initialize Professional Profile
       let namePart = fullName.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4) || 'USER';
       const referralCode = `${namePart}-${user.id.substring(0, 4).toUpperCase()}`;
 
@@ -59,15 +74,18 @@ export async function signup(prevState: any, formData: FormData) {
             mobile_number: mobileNumber,
             referral_code: referralCode,
             is_approved: true, 
-            referred_by: referrerId
+            referred_by: referrerId,
+            wallet_balance: 0,
+            referral_balance: 0,
+            kyc_status: 'pending',
+            account_type: 'standard'
         })
         .eq('id', user.id);
       
       if (profileError) {
-          return { error: 'Failed to initialize profile. Please contact support.' };
+          return { error: 'Profile sync failed. Please log in manually.' };
       }
 
-      // Auto login redirect
       redirect('/welcome');
   }
 
