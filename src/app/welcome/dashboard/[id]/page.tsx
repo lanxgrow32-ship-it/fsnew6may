@@ -162,6 +162,7 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                     
                     if (stats.accountClassification && stats.accountClassification !== account.account_classification) {
                         await supabaseAdmin.from('user_accounts').update({ account_classification: stats.accountClassification }).eq('id', id);
+                        await supabaseAdmin.from('profiles').update({ account_classification: stats.accountClassification }).eq('id', session.user.id);
                     }
                 }
             }
@@ -183,7 +184,7 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                     <Button variant="outline" size="icon" asChild className="bg-black/20 border-white/10 hover:bg-white/20"><Link href="/welcome"><Grid3x3 className="w-4 h-4"/></Link></Button>
                     <div>
                         <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">{account.plan_name}</h1>
-                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Live Metrics & Hub Access</p>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Live Metrics & Hub Access</p>
                     </div>
                 </div>
 
@@ -199,21 +200,21 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Initial Capital</p>
-                                <p className="text-xs md:text-base font-bold text-white mt-1 truncate">₹{initialBalance.toLocaleString('en-IN')}</p>
+                                <p className="text-xs md:text-sm font-bold text-white mt-1 truncate">₹{initialBalance.toLocaleString('en-IN')}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Engine Model</p>
-                                <p className="text-xs md:text-base font-bold text-white mt-1 truncate capitalize">{account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
+                                <p className="text-xs md:text-sm font-bold text-white mt-1 truncate capitalize">{account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Live Status</p>
-                                <p className="text-[11px] md:text-base font-bold text-primary mt-1 truncate capitalize whitespace-nowrap">
+                                <p className="text-[11px] md:text-sm font-bold text-primary mt-1 truncate capitalize whitespace-nowrap">
                                     {currentClassification === 'passthenpay' ? 'PassThenPay' : currentClassification.replace(/_/g, ' ')}
                                 </p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Account Hub</p>
-                                <p className={cn("text-xs md:text-base font-bold mt-1 truncate capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
+                                <p className={cn("text-xs md:text-sm font-bold mt-1 truncate capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>
                     </GlassCard>

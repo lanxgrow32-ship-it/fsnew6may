@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache';
  */
 function getAutoClassification(planName: string): string {
     const name = planName.toLowerCase();
-    // Strict PTP Check
+    // Strict PTP Check - Exclusive 'passthenpay' classification
     if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
         return 'passthenpay';
     }
@@ -77,6 +77,8 @@ export async function requestManualAccount(userId: string, planName: string, amo
     return { error: 'Invalid request details.' };
   }
 
+  const classification = getAutoClassification(planName);
+
   const { error } = await supabaseAdmin
     .from('user_accounts')
     .insert({
@@ -87,7 +89,7 @@ export async function requestManualAccount(userId: string, planName: string, amo
       final_amount_paid: amount,
       transaction_id: utr,
       account_model: planName.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal',
-      account_classification: getAutoClassification(planName)
+      account_classification: classification
     });
 
   if (error) {

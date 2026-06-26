@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use, useActionState } from 'react';
@@ -194,7 +195,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-3">
                                                     <p className="font-bold text-white text-base truncate">{acc.plan_name}</p>
-                                                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black uppercase">{acc.account_classification?.replace(/_/g, ' ')}</Badge>
+                                                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black uppercase whitespace-nowrap">
+                                                        {acc.account_classification?.replace(/_/g, ' ') || 'Evaluation'}
+                                                    </Badge>
                                                 </div>
                                                 <p className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
                                                     <span className="opacity-50">ID: {acc.id.substring(0,8)}</span>
