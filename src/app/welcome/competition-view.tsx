@@ -119,7 +119,7 @@ export function CompetitionView({ registrations, profile, onSwitchToWallet }: { 
                 </div>
                 <GlassCard className="text-center p-16 border-dashed border-white/5">
                     <Trophy className="h-12 w-12 text-gray-800 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-white">No active protocols</h3>
+                    <h3 className="text-xl font-bold text-white">No active accounts</h3>
                     <p className="text-gray-400 max-w-sm mx-auto mt-2 mb-8 text-sm font-medium">Join the next competition to prove your consistency and earn instant funding.</p>
                     <Button onClick={handleBrowse} size="lg" className="px-8 h-12 rounded-xl font-bold shadow-xl shadow-primary/20 text-sm">
                         Browse Competitions <ArrowRight className="ml-2 h-4 w-4"/>

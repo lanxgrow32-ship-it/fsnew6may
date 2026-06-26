@@ -186,7 +186,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                 <ScrollArea ref={scrollRef} className="flex-grow p-6">
                     <div className="space-y-6">
                         <div className="text-center py-8 border-b border-white/5 mb-6">
-                             <p className="text-[10px] text-gray-700 font-bold uppercase tracking-[0.3em]">Encrypted support session established</p>
+                             <p className="text-[10px] text-gray-700 font-bold uppercase tracking-[0.3em]">Secure connection established</p>
                         </div>
                         {messages.map((m) => (
                             <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'user' ? "flex-row-reverse" : "flex-row")}>

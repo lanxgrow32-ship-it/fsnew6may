@@ -23,7 +23,9 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
 const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: boolean }) => {
     const paymentApproved = account.is_approved;
     const isBreached = account.status === 'breached';
-    const isWaitingKyc = paymentApproved && !kycVerified && !isBreached;
+    // PTP accounts do not require KYC according to user instructions
+    const isPtp = account.account_model === 'passthrupay';
+    const isWaitingKyc = paymentApproved && !kycVerified && !isBreached && !isPtp;
     const isWaitingApproval = !paymentApproved;
 
     return (
@@ -77,7 +79,7 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                 ) : (
                     <Button asChild className={cn("w-full h-10 bg-primary hover:bg-primary/90 text-white shadow-lg text-xs font-bold", isBreached && "bg-slate-800 hover:bg-slate-700")}>
                         <Link href={`/welcome/dashboard/${account.id}`}>
-                            {isBreached ? "Audit History" : "Terminal Hub"} <ArrowRight className="ml-2 w-4 h-4"/>
+                            {isBreached ? "Audit History" : "Account Dashboard"} <ArrowRight className="ml-2 w-4 h-4"/>
                         </Link>
                     </Button>
                 )}
@@ -88,6 +90,7 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
 
 export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accounts: any[], profile: any, onSwitchToGetFunded: () => void }) {
     const kycVerified = profile.kyc_status === 'verified';
+    const hasAccounts = accounts.length > 0;
 
     return (
         <section className="space-y-6">
@@ -96,7 +99,7 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                     <h2 className="text-2xl font-bold text-white tracking-tight">Your Portfolio</h2>
                     <p className="text-gray-400 text-base font-medium">Manage multiple accounts and track your performance.</p>
                 </div>
-                 {!kycVerified && (
+                 {!kycVerified && hasAccounts && (
                     <div className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-3 py-1.5 rounded-full border border-amber-400/20 text-xs font-bold">
                         <ShieldAlert className="w-4 h-4"/> Action Required: KYC
                     </div>
@@ -104,12 +107,14 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-4">
-                {accounts.length > 0 ? (
+                {hasAccounts ? (
                     accounts.map((acc: any) => <AccountCard key={acc.id} account={acc} kycVerified={kycVerified} />)
                 ) : (
-                    <GlassCard className="col-span-full p-16 text-center border-dashed">
-                        <PlusCircle className="h-12 w-12 text-gray-800 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-white">No active protocols</h3>
+                    <GlassCard className="col-span-full p-16 text-center border-dashed border-white/10">
+                        <div className="mx-auto h-16 w-16 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                            <PlusCircle className="h-8 w-8 text-gray-800" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">No active accounts</h3>
                         <p className="text-gray-400 max-w-xs mx-auto mt-2 mb-8 text-sm font-medium">Choose a funding plan to start your journey into the markets.</p>
                         <Button onClick={onSwitchToGetFunded} size="lg" className="bg-primary text-white font-bold rounded-xl px-10 h-12 text-sm shadow-xl shadow-primary/20">
                             Get Funded <ArrowRight className="ml-2 h-4 w-4"/>
