@@ -1,26 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
-import { MessageSquare, LifeBuoy, Users, Clock } from 'lucide-react';
+import { MessageSquare, Users, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SupportAgentDashboard() {
-    const [stats, setStats] = useState({ openChats: 0, openTickets: 0, totalUsers: 0 });
+    const [stats, setStats] = useState({ openChats: 0, totalUsers: 0 });
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
 
     useEffect(() => {
         const fetchStats = async () => {
-            const [chatRes, ticketRes, profileRes] = await Promise.all([
+            const [chatRes, profileRes] = await Promise.all([
                 supabase.from('support_conversations').select('id', { count: 'exact' }).eq('status', 'open'),
-                supabase.from('tickets').select('id', { count: 'exact' }).eq('status', 'Open'),
                 supabase.from('profiles').select('id', { count: 'exact' })
             ]);
             setStats({
                 openChats: chatRes.count || 0,
-                openTickets: ticketRes.count || 0,
                 totalUsers: profileRes.count || 0
             });
             setLoading(false);
@@ -52,18 +50,17 @@ export default function SupportAgentDashboard() {
                 <p className="text-gray-400 text-sm font-medium">Monitor active support sessions and platform health.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
                 <StatCard title="Active Live Chats" value={stats.openChats} icon={MessageSquare} color="text-primary" />
-                <StatCard title="Open Support Tickets" value={stats.openTickets} icon={LifeBuoy} color="text-purple-400" />
                 <StatCard title="Total Traders" value={stats.totalUsers} icon={Users} color="text-blue-400" />
             </div>
             
-            <div className="pt-12 text-center">
+            <div className="pt-20 text-center">
                 <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 mx-auto mb-6 shadow-[0_0_50px_rgba(139,44,245,0.1)]">
                     <Users className="h-10 w-10" />
                 </div>
                 <h3 className="text-xl font-bold text-white">Support system active.</h3>
-                <p className="text-gray-500 text-sm max-w-xs mx-auto mt-2">Ready to assist traders. Select a module from the sidebar to begin.</p>
+                <p className="text-gray-500 text-sm max-w-xs mx-auto mt-2">Ready to assist traders. Select Live Chat from the sidebar to begin.</p>
             </div>
         </main>
     );

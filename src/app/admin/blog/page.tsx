@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Swords, Users, Newspaper, PlusCircle, UserCheck } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, LineChart, Swords, Users, Newspaper, PlusCircle, UserCheck } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +37,6 @@ export default async function AdminBlogPage() {
             <SidebarMenuItem><SidebarMenuButton href="/admin/blog" isActive tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/tickets" tooltip="Support"><MessageSquare />Support</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
           </SidebarMenu>

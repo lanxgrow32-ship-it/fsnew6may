@@ -5,10 +5,9 @@ import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
     Loader2, Check, X, Home, Ticket, Wallet, LogOut, Banknote, 
-    MessageSquare, LineChart, Swords, Users, Newspaper, UserCheck 
+    LineChart, Swords, Users, Newspaper, UserCheck 
 } from 'lucide-react';
 import { 
     Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, 
@@ -47,10 +46,9 @@ export default function WalletRequestsPage() {
     const handleApprove = (id: string) => {
         startTransition(async () => {
             const res = await approveTopUp(id);
-            if (res.error) {
-                toast({ title: "Error", description: res.error, variant: "destructive" });
-            } else {
-                toast({ title: "Deposit Approved", description: "Balance and bonus credited to user." });
+            if (res.error) toast({ title: "Error", description: res.error, variant: "destructive" });
+            else {
+                toast({ title: "Deposit Approved", description: "Balance and bonus credited." });
                 fetchRequests();
             }
         });
@@ -59,9 +57,8 @@ export default function WalletRequestsPage() {
     const handleReject = (id: string) => {
         startTransition(async () => {
             const res = await rejectTopUp(id);
-            if (res.error) {
-                toast({ title: "Error", description: res.error, variant: "destructive" });
-            } else {
+            if (res.error) toast({ title: "Error", description: res.error, variant: "destructive" });
+            else {
                 toast({ title: "Request Rejected" });
                 fetchRequests();
             }
@@ -87,7 +84,6 @@ export default function WalletRequestsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" isActive tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem><SidebarMenuButton href="/admin/tickets" tooltip="Support"><MessageSquare />Support</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
@@ -98,24 +94,24 @@ export default function WalletRequestsPage() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Wallet Top-up Requests</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Wallet Requests</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                     <Card>
                         <CardHeader>
                             <CardTitle>Pending Deposits</CardTitle>
-                            <CardDescription>Verify UPI transactions and credit user wallets with the 5% bonus.</CardDescription>
+                            <CardDescription>Verify transactions and credit user wallets with the 5% bonus.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {loading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin"/></div> : (
+                            {loading ? <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto"/></div> : (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Date</TableHead>
                                             <TableHead>User</TableHead>
                                             <TableHead>Amount</TableHead>
-                                            <TableHead>UTR / Reference</TableHead>
+                                            <TableHead>UTR</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>

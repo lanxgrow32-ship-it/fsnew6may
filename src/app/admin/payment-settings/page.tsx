@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, MessageSquare, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2 } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2 } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -62,26 +62,12 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
         }
     }, [state, toast]);
     
-    const handleUpiFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setUpiQrPreview(URL.createObjectURL(file));
-        }
-    }
-    
-    const handlePayLaterUpiFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setPayLaterUpiQrPreview(URL.createObjectURL(file));
-        }
-    }
-
     return (
         <form ref={formRef} action={formAction} className="space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle>Active Payment Strategy</CardTitle>
-                    <CardDescription>Choose between fully automated switching or manual verification.</CardDescription>
+                    <CardDescription>Choose between automated or manual verification.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
                      <RadioGroup 
@@ -110,143 +96,41 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
 
                     {activeGateway === 'automated' && (
                         <div className="space-y-4 pt-4 border-t border-dashed animate-in fade-in slide-in-from-top-2">
-                            <Label className="text-sm font-bold flex items-center gap-2">
-                                <Settings2 className="w-4 h-4 text-primary" />
-                                Automated Routing Sub-Mode
-                            </Label>
-                            <RadioGroup 
-                                name="automated_mode"
-                                value={automatedMode}
-                                onValueChange={(value: any) => setAutomatedMode(value)}
-                                className="grid grid-cols-1 sm:grid-cols-3 gap-2"
-                            >
-                                <div>
-                                    <RadioGroupItem value="both" id="mode-both" className="sr-only" />
-                                    <Label htmlFor="mode-both" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'both' && "bg-primary text-primary-foreground border-primary")}>
-                                        <Repeat className="w-3 h-3" /> 50/50 Alternating
-                                    </Label>
-                                </div>
-                                <div>
-                                    <RadioGroupItem value="lgpay" id="mode-lg" className="sr-only" />
-                                    <Label htmlFor="mode-lg" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'lgpay' && "bg-primary text-primary-foreground border-primary")}>
-                                        <Wifi className="w-3 h-3" /> LGPay Only
-                                    </Label>
-                                </div>
-                                <div>
-                                    <RadioGroupItem value="watchpay" id="mode-wp" className="sr-only" />
-                                    <Label htmlFor="mode-wp" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'watchpay' && "bg-primary text-primary-foreground border-primary")}>
-                                        <ShieldCheck className="w-3 h-3" /> WatchPay Only
-                                    </Label>
-                                </div>
+                            <Label className="text-sm font-bold flex items-center gap-2"><Settings2 className="w-4 h-4 text-primary" /> Automated Routing</Label>
+                            <RadioGroup name="automated_mode" value={automatedMode} onValueChange={(value: any) => setAutomatedMode(value)} className="grid grid-cols-3 gap-2">
+                                <div><RadioGroupItem value="both" id="mode-both" className="sr-only" /><Label htmlFor="mode-both" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'both' && "bg-primary text-primary-foreground border-primary")}>50/50 Split</Label></div>
+                                <div><RadioGroupItem value="lgpay" id="mode-lg" className="sr-only" /><Label htmlFor="mode-lg" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'lgpay' && "bg-primary text-primary-foreground border-primary")}>LGPay Only</Label></div>
+                                <div><RadioGroupItem value="watchpay" id="mode-wp" className="sr-only" /><Label htmlFor="mode-wp" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'watchpay' && "bg-primary text-primary-foreground border-primary")}>WatchPay Only</Label></div>
                             </RadioGroup>
-                            <p className="text-[10px] text-muted-foreground italic">
-                                {automatedMode === 'both' ? "System will automatically switch between LGPay and WatchPay for every new signup." : 
-                                 automatedMode === 'lgpay' ? "All automated traffic will be forced to LGPay." : 
-                                 "All automated traffic will be forced to WatchPay."}
-                            </p>
                         </div>
                     )}
                 </CardContent>
             </Card>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>WatchPay Credentials</CardTitle>
-                    <CardDescription>Used when "Automated" or "WatchPay Only" mode is active.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="watchpay_merchant_id">Merchant ID</Label>
-                        <Input id="watchpay_merchant_id" name="watchpay_merchant_id" defaultValue={currentSettings?.watchpay_merchant_id || ''} placeholder="e.g. 100555095" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="watchpay_api_key">Pay-in API Key</Label>
-                        <Input id="watchpay_api_key" name="watchpay_api_key" defaultValue={currentSettings?.watchpay_api_key || ''} placeholder="e.g. f6acc6de5a2d76a6b752..." />
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Standard Manual Payment Details</CardTitle>
-                    <CardDescription>Update the manual UPI payment option for all regular plans.</CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle>Manual Payment Details</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
                      <div className="space-y-2">
-                        <Label htmlFor="upi_id">UPI ID</Label>
-                        <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi-id@okhdfcbank" />
+                        <Label htmlFor="upi_id">Standard UPI ID</Label>
+                        <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi@okhdfc" />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="qr_code">UPI QR Code Image</Label>
-                        <Input id="qr_code" name="qr_code" type="file" accept="image/*" onChange={handleUpiFileChange} />
-                        <p className="text-xs text-muted-foreground">Upload a new image to replace the current one.</p>
+                     <div className="space-y-2">
+                        <Label htmlFor="pay_later_upi_id">Pay Later UPI ID</Label>
+                        <Input id="pay_later_upi_id" name="pay_later_upi_id" defaultValue={currentSettings?.pay_later_upi_id || ''} placeholder="pay-later@oksbi" />
                     </div>
-                    {upiQrPreview && (
-                        <div>
-                            <Label>Current UPI QR Code Preview</Label>
-                            <div className="mt-2 rounded-md border p-4 w-fit bg-white">
-                                <Image src={upiQrPreview} alt="UPI QR Code Preview" width={150} height={150} className="object-contain" />
-                            </div>
-                        </div>
-                    )}
                 </CardContent>
             </Card>
             
              <Card>
-                <CardHeader>
-                    <CardTitle>Pay Later Manual Payment Details</CardTitle>
-                    <CardDescription>Update the manual UPI payment option shown only to "PassThenPay" users.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                     <div className="space-y-2">
-                        <Label htmlFor="pay_later_upi_id">Pay Later UPI ID</Label>
-                        <Input id="pay_later_upi_id" name="pay_later_upi_id" defaultValue={currentSettings?.pay_later_upi_id || ''} placeholder="pay-later-upi@oksbi" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="pay_later_qr_code">Pay Later UPI QR Code Image</Label>
-                        <Input id="pay_later_qr_code" name="pay_later_qr_code" type="file" accept="image/*" onChange={handlePayLaterUpiFileChange} />
-                        <p className="text-xs text-muted-foreground">Upload a new image to replace the current one for Pay Later users.</p>
-                    </div>
-                    {payLaterUpiQrPreview && (
-                        <div>
-                            <Label>Pay Later QR Code Preview</Label>
-                            <div className="mt-2 rounded-md border p-4 w-fit bg-white">
-                                <Image src={payLaterUpiQrPreview} alt="Pay Later UPI QR Code Preview" width={150} height={150} className="object-contain" />
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Referral Program Settings</CardTitle>
-                    <CardDescription>Set the commission percentage for successful referrals.</CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle>Referral Commission</CardTitle></CardHeader>
                 <CardContent>
-                     <div className="space-y-2">
-                        <Label htmlFor="referral_commission_percentage">Referral Commission (%)</Label>
-                        <div className="relative">
-                            <Input 
-                                id="referral_commission_percentage" 
-                                name="referral_commission_percentage" 
-                                type="number"
-                                defaultValue={currentSettings?.referral_commission_percentage ?? 10}
-                                placeholder="e.g. 10" 
-                                required 
-                                min="0"
-                                max="100"
-                                step="0.1"
-                                className="pl-8"
-                            />
-                            <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="referral_commission_percentage">Commission (%)</Label>
+                        <Input id="referral_commission_percentage" name="referral_commission_percentage" type="number" defaultValue={currentSettings?.referral_commission_percentage ?? 10} min="0" max="100" step="0.1" />
                     </div>
                 </CardContent>
             </Card>
-             <div className="flex justify-end">
-                <SubmitButton />
-            </div>
+            <div className="flex justify-end"><SubmitButton /></div>
         </form>
     );
 }
@@ -259,32 +143,11 @@ export default function PaymentSettingsPage() {
 
     useEffect(() => {
         const fetchSettings = async () => {
-            setIsLoading(true);
-            const { data, error } = await supabase
-                .from('payment_details')
-                .select('*')
-                .eq('id', 1)
-                .single();
-            
-            if (data) {
-                setSettings(data as PaymentDetails);
-            }
+            const { data } = await supabase.from('payment_details').select('*').eq('id', 1).single();
+            if (data) setSettings(data as PaymentDetails);
             setIsLoading(false);
         };
         fetchSettings();
-        
-        const channel = supabase
-            .channel('realtime payment_details')
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'payment_details', filter: 'id=eq.1' }, 
-            (payload) => {
-                setSettings(payload.new as PaymentDetails);
-            })
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-
     }, [supabase]);
 
     return (
@@ -304,10 +167,9 @@ export default function PaymentSettingsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
-                         <SidebarMenuItem><SidebarMenuButton href="/admin/tickets" tooltip="Support"><MessageSquare />Support</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports"><LineChart />Pay Later Reports</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" isActive tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
@@ -322,15 +184,7 @@ export default function PaymentSettingsPage() {
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                     <div className="max-w-2xl mx-auto">
-                        {isLoading ? (
-                            <Card>
-                                <CardHeader><Skeleton className="h-7 w-48" /><Skeleton className="h-4 w-full mt-2" /></CardHeader>
-                                <CardContent className="space-y-6"><div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-10 w-full" /></div><div className="space-y-2"><Skeleton className="h-5 w-32" /><Skeleton className="h-10 w-full" /></div></CardContent>
-                                <CardFooter><Skeleton className="h-10 w-32" /></CardFooter>
-                            </Card>
-                        ) : (
-                           <PaymentSettingsForm currentSettings={settings} />
-                        )}
+                        {isLoading ? <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : <PaymentSettingsForm currentSettings={settings} />}
                     </div>
                 </main>
             </SidebarInset>

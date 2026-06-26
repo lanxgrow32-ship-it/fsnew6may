@@ -3,9 +3,8 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, Si
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Swords, Users, Newspaper, UserCheck, Plus, History } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, History } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EventManager } from './event-manager';
 import { RegistrationManager } from './registration-manager';
@@ -36,8 +35,8 @@ export default async function AdminCompetitionPage() {
             <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/tickets"><MessageSquare />Support</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
           </SidebarMenu>

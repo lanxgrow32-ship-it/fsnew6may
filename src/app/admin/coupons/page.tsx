@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { createCoupon, deleteCoupon } from './actions';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart, Swords, Users, Newspaper, UserCheck } from 'lucide-react';
+import { Loader2, Trash2, Home, Ticket, Wallet, LogOut, Banknote, LineChart, Swords, Users, Newspaper, UserCheck } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -128,24 +128,6 @@ function ActiveCouponsList({ coupons, onCouponDelete }: { coupons: Coupon[], onC
       )
     }
 
-    // Mobile Card View
-    const MobileCouponCard = ({ coupon }: { coupon: Coupon }) => (
-        <Card className="mb-4">
-            <CardContent className="p-4 flex justify-between items-center">
-                <div className="space-y-1">
-                    <p className="font-bold text-lg">{coupon.code}</p>
-                    <p className="text-muted-foreground">{coupon.discount_value}% Discount</p>
-                    <p className="text-xs text-muted-foreground">
-                        Created: {new Date(coupon.created_at).toLocaleDateString()}
-                    </p>
-                </div>
-                <div>
-                     <DeleteButton coupon={coupon} isPending={isPending} />
-                </div>
-            </CardContent>
-        </Card>
-    );
-
     return (
         <Card>
             <CardHeader>
@@ -156,38 +138,28 @@ function ActiveCouponsList({ coupons, onCouponDelete }: { coupons: Coupon[], onC
                 {!coupons || coupons.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">No active coupons found.</p>
                 ) : (
-                    <>
-                        {/* Mobile View */}
-                        <div className="md:hidden">
-                            {coupons.map((coupon) => <MobileCouponCard key={coupon.id} coupon={coupon} />)}
-                        </div>
-
-                        {/* Desktop View */}
-                        <div className="hidden md:block">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Code</TableHead>
-                                        <TableHead>Discount</TableHead>
-                                        <TableHead>Created</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {coupons.map((coupon) => (
-                                        <TableRow key={coupon.id}>
-                                            <TableCell className="font-medium">{coupon.code}</TableCell>
-                                            <TableCell>{coupon.discount_value}%</TableCell>
-                                            <TableCell>{new Date(coupon.created_at).toLocaleDateString()}</TableCell>
-                                            <TableCell className="text-right">
-                                               <DeleteButton coupon={coupon} isPending={isPending} />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Code</TableHead>
+                                <TableHead>Discount</TableHead>
+                                <TableHead>Created</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {coupons.map((coupon) => (
+                                <TableRow key={coupon.id}>
+                                    <TableCell className="font-medium">{coupon.code}</TableCell>
+                                    <TableCell>{coupon.discount_value}%</TableCell>
+                                    <TableCell>{new Date(coupon.created_at).toLocaleDateString()}</TableCell>
+                                    <TableCell className="text-right">
+                                        <DeleteButton coupon={coupon} isPending={isPending} />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 )}
             </CardContent>
         </Card>
@@ -231,17 +203,6 @@ export default function CouponsPage() {
 
     useEffect(() => {
         fetchCoupons();
-
-        const channel = supabase
-            .channel('realtime coupons')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'coupons' }, (payload) => {
-                fetchCoupons();
-            })
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
     }, []);
     
     const handleCouponDelete = (deletedCouponId: number) => {
@@ -265,8 +226,8 @@ export default function CouponsPage() {
                     <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" isActive tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
+                    <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
-                    <SidebarMenuItem><SidebarMenuButton href="/admin/tickets" tooltip="Support"><MessageSquare />Support</SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
                     <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                 </SidebarMenu>
@@ -275,12 +236,7 @@ export default function CouponsPage() {
                     <SidebarMenu>
                         <SidebarMenuItem>
                            <form action={signOut} className="w-full">
-                                <SidebarMenuButton tooltip="Logout" asChild>
-                                    <button type="submit" className="w-full">
-                                        <LogOut />
-                                        Logout
-                                    </button>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton tooltip="Logout" asChild><button type="submit" className="w-full"><LogOut />Logout</button></SidebarMenuButton>
                             </form>
                         </SidebarMenuItem>
                     </SidebarMenu>

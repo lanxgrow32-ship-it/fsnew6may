@@ -11,7 +11,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -32,7 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, MessageSquare, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download, Swords, Users, RefreshCw, TrendingUp, TrendingDown, IndianRupee, Newspaper, UserCheck } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, LineChart as LineChartIcon, Calendar as CalendarIcon, Loader2, Download, Swords, Users, RefreshCw, Newspaper, UserCheck } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -45,14 +44,14 @@ interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
-const StatCard = ({ title, value, description, prefix = '₹', suffix = '' }: { title: string, value: number, description?: string, prefix?: string, suffix?: string }) => (
+const StatCard = ({ title, value, description, prefix = '₹' }: { title: string, value: number, description?: string, prefix?: string }) => (
     <Card>
         <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent>
             <div className="text-3xl font-bold">
-                {prefix}{value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}{suffix}
+                {prefix}{value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </div>
             {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
         </CardContent>
@@ -135,40 +134,10 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
         const doc = new jsPDF('p', 'mm', 'a4') as jsPDFWithAutoTable;
         let yPos = 20;
 
-        // --- Header ---
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
         doc.text('Sales Executive Summary', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-        yPos += 10;
-        const dateString = date?.from ? `${format(date.from, 'LLL dd, y')} - ${date.to ? format(date.to, 'LLL dd, y') : 'Present'}` : 'All Time';
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Date Range: ${dateString}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
         yPos += 15;
-
-        // --- KPIs ---
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Key Performance Indicators', 14, yPos);
-        yPos += 8;
-
-        const kpiData = [
-            `Net Revenue: ${data.totalNetRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
-            `Total Sales: ${data.totalSalesCount}`,
-            `ARPU: ${data.arpu.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
-            `Total Discounts: ${data.totalDiscounts.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`,
-        ];
-
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        kpiData.forEach(line => { doc.text(line, 14, yPos); yPos += 7; });
-        yPos += 5;
-
-        // --- Top Plans Table ---
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Top Performing Plans', 14, yPos);
-        yPos += 8;
 
         const topPlansBody = data.topPlans.map(plan => [
             plan.name,
@@ -182,51 +151,13 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                 head: [['Plan Name', 'Sales Count', 'Revenue']],
                 body: topPlansBody,
                 theme: 'striped',
-                headStyles: { fillColor: [40, 40, 40] },
-                didDrawPage: (data: any) => { yPos = data.cursor.y; }
-            });
-            yPos = (doc as any).lastAutoTable.finalY + 10;
-        }
-
-        // --- Recent Sales Log ---
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Recent Sales Log', 14, yPos);
-        yPos += 8;
-        
-        const recentSalesBody = data.recentSales.map(sale => [
-            format(new Date(sale.date), 'dd/MM/yy'),
-            sale.name || 'N/A',
-            sale.plan,
-            sale.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })
-        ]);
-
-        if (recentSalesBody.length > 0) {
-            doc.autoTable({
-                startY: yPos,
-                head: [['Date', 'User Name', 'Plan', 'Amount']],
-                body: recentSalesBody,
-                theme: 'grid',
-                headStyles: { fillColor: [40, 40, 40] },
+                headStyles: { fillColor: [40, 40, 40] }
             });
         }
         
         doc.save('Executive_Sales_Report.pdf');
         setIsGeneratingReport(false);
     };
-
-    const DashboardSkeleton = () => (
-        <div className="space-y-6 animate-pulse">
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <Skeleton className="h-80 lg:col-span-3" />
-                <Skeleton className="h-80 lg:col-span-2" />
-            </div>
-            <Skeleton className="h-96" />
-        </div>
-    );
 
     return (
          <div className="space-y-6">
@@ -258,30 +189,28 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                 </div>
             </div>
 
-            {isFetching ? <DashboardSkeleton /> : (
+            {isFetching ? <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : (
                 <>
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <StatCard title="Gross Revenue" value={data.totalGrossRevenue} description="Before discounts" />
                         <StatCard title="Net Revenue" value={data.totalNetRevenue} description={`from ${data.totalSalesCount} sales`} />
                         <StatCard title="Total Discounts" value={data.totalDiscounts} description="Coupons & Referrals"/>
-                        <StatCard title="Average Revenue / User" value={data.arpu} description="ARPU" />
+                        <StatCard title="ARPU" value={data.arpu} description="Average Revenue / User" />
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         <Card className="lg:col-span-3">
-                             <CardHeader>
-                                <CardTitle>Revenue vs. Sales Trend</CardTitle>
-                            </CardHeader>
+                             <CardHeader><CardTitle>Revenue vs. Sales Trend</CardTitle></CardHeader>
                             <CardContent>
                                 <ClientOnly fallback={<Skeleton className="h-72" />}>
                                     <ChartContainer config={chartConfig} className="h-72">
-                                        <RechartsLineChart data={data.salesByDate} margin={{ top: 5, right: 10, left: isMobile ? -30 : -10, bottom: 5 }}>
+                                        <RechartsLineChart data={data.salesByDate}>
                                             <CartesianGrid vertical={false} />
                                             <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(new Date(value), "MMM d")} />
                                             <YAxis yAxisId="left" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
                                             <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tickMargin={8} />
                                             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                            <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} border-primary dot={false} />
+                                            <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                                             <Line yAxisId="right" type="monotone" dataKey="sales" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} />
                                         </RechartsLineChart>
                                     </ChartContainer>
@@ -289,9 +218,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                             </CardContent>
                         </Card>
                          <Card className="lg:col-span-2">
-                             <CardHeader>
-                                <CardTitle>Revenue by Category</CardTitle>
-                            </CardHeader>
+                             <CardHeader><CardTitle>Revenue by Category</CardTitle></CardHeader>
                             <CardContent className="flex items-center justify-center">
                                 <ClientOnly fallback={<Skeleton className="h-72" />}>
                                     <ChartContainer config={pieChartConfig} className="h-72 w-full">
@@ -312,102 +239,24 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                              <CardHeader><CardTitle>Top 5 Selling Plans</CardTitle></CardHeader>
                              <CardContent><PlanBreakdownTable plans={data.topPlans} /></CardContent>
                         </Card>
-                        <Card>
-                            <CardHeader><CardTitle>Peak Activity by Day</CardTitle></CardHeader>
-                            <CardContent>
-                               <ClientOnly fallback={<Skeleton className="h-64" />}>
-                                    <ChartContainer config={{}} className="h-64">
-                                        <BarChart data={data.salesByDayOfWeek} margin={{ top: 5, right: 10, left: isMobile ? -30 : -10, bottom: 5 }}>
-                                            <CartesianGrid vertical={false} />
-                                            <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
-                                            <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
-                                            <ChartTooltip content={<ChartTooltipContent hideIndicator />} />
-                                            <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={4} />
-                                        </BarChart>
-                                    </ChartContainer>
-                                </ClientOnly>
-                            </CardContent>
+                         <Card>
+                            <CardHeader><CardTitle>Full Plan Performance</CardTitle></CardHeader>
+                            <CardContent><PlanBreakdownTable plans={data.allPlansBreakdown} /></CardContent>
                         </Card>
                      </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card>
-                             <CardHeader><CardTitle>Full Plan Performance</CardTitle></CardHeader>
-                             <CardContent><PlanBreakdownTable plans={data.allPlansBreakdown} /></CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader><CardTitle>Peak Activity by Hour</CardTitle></CardHeader>
-                            <CardContent>
-                               <ClientOnly fallback={<Skeleton className="h-64" />}>
-                                    <ChartContainer config={{}} className="h-64">
-                                        <BarChart data={data.salesByHour} margin={{ top: 5, right: 10, left: isMobile ? -30 : -10, bottom: 5 }}>
-                                            <CartesianGrid vertical={false} />
-                                            <XAxis dataKey="hour" tickLine={false} axisLine={false} tickMargin={8} />
-                                            <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
-                                            <ChartTooltip content={<ChartTooltipContent hideIndicator />} />
-                                            <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={4} />
-                                        </BarChart>
-                                    </ChartContainer>
-                                </ClientOnly>
-                            </CardContent>
-                        </Card>
-                     </div>
-                     
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Recent Sales Log</CardTitle>
-                            <CardDescription>A log of the last 25 sales transactions in the selected period.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>User</TableHead>
-                                        <TableHead>Plan</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {data.recentSales.length > 0 ? data.recentSales.map((sale) => (
-                                        <TableRow key={sale.id}>
-                                            <TableCell>
-                                                <div className="font-medium">{sale.name}</div>
-                                                <div className="text-xs text-muted-foreground">{sale.email}</div>
-                                            </TableCell>
-                                            <TableCell>{sale.plan}</TableCell>
-                                            <TableCell>{format(new Date(sale.date), 'PPp')}</TableCell>
-                                            <TableCell className="text-right font-semibold">₹{sale.amount.toLocaleString('en-IN')}</TableCell>
-                                        </TableRow>
-                                    )) : (
-                                        <TableRow><TableCell colSpan={4} className="h-24 text-center">No recent sales found.</TableCell></TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                     </Card>
                 </>
             )}
         </div>
     );
 }
 
-function ReportsPageContent() {
+export default function ReportsPage() {
     const searchParams = useSearchParams();
     const masterView = searchParams.get('master_view') === 'true';
     const [initialData, setInitialData] = useState<SalesData | null>(null);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        getSalesData(undefined, undefined, masterView)
-            .then(data => {
-                if (data) setInitialData(data);
-                else setError('Could not fetch sales data.');
-            })
-            .catch(err => {
-                 console.error("Error fetching initial sales data:", err);
-                 setError('Failed to load sales data.');
-            });
+        getSalesData(undefined, undefined, masterView).then(setInitialData);
     }, [masterView]);
 
     return (
@@ -421,89 +270,33 @@ function ReportsPageContent() {
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarMenu>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton>
-                        </SidebarMenuItem>
-                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users">
-                            <Users />
-                            Pay Later Users
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton href="/admin/blog" tooltip="Blog">
-                            <Newspaper />
-                            Blog
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
+                         <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton>
-                        </SidebarMenuItem>
-                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/tickets" tooltip="Support"><MessageSquare />Support</SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/reports" isActive tooltip="Reports"><LineChartIcon />Reports</SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports">
-                            <LineChartIcon />
-                            Pay Later Reports
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton>
-                        </SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports" isActive tooltip="Reports"><LineChartIcon />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
                 <SidebarFooter className="border-t p-2">
-                    <SidebarMenu>
-                        <SidebarMenuItem>
-                            <form action={signOut} className="w-full">
-                                <SidebarMenuButton tooltip="Logout" asChild>
-                                    <button type="submit" className="w-full">
-                                        <LogOut />
-                                        Logout
-                                    </button>
-                                </SidebarMenuButton>
-                            </form>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
+                    <SidebarMenu><SidebarMenuItem><form action={signOut} className="w-full"><SidebarMenuButton tooltip="Logout" asChild><button type="submit" className="w-full"><LogOut />Logout</button></SidebarMenuButton></form></SidebarMenuItem></SidebarMenu>
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4">
-                        <SidebarTrigger className="md:hidden" />
-                        <h1 className="text-xl font-semibold">Sales Reports</h1>
-                    </div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Sales Reports</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
                    <div className="max-w-7xl mx-auto">
-                        {error && <Card className="flex items-center justify-center h-96"><CardContent className="text-center"><CardTitle className="text-destructive">An Error Occurred</CardTitle><CardDescription>{error}</CardDescription></CardContent></Card>}
                         {initialData ? <SalesDashboard initialData={initialData} masterView={masterView} /> : <div className="flex items-center justify-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
                    </div>
                 </main>
             </SidebarInset>
         </SidebarProvider>
     );
-}
-
-export default function ReportsPage() {
-    return (
-        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-            <ReportsPageContent />
-        </Suspense>
-    )
 }

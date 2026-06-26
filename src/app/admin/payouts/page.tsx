@@ -9,10 +9,10 @@ import { updatePayoutStatus } from './actions';
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Banknote, Loader2, Check, X, Copy, MessageSquare, LineChart, Swords, Users, Newspaper, UserCheck } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Banknote, Loader2, Check, X, Copy, LineChart, Swords, Users, Newspaper, UserCheck } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -144,9 +144,6 @@ function PayoutsTable({ requests, onStatusChange }: { requests: PayoutRequest[],
                                     <AlertDialogContent className="w-fit">
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>User Payout QR Code</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Scan this code to process the payout for {req.profiles?.full_name}.
-                                            </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <div className="flex justify-center p-4">
                                             <Image src={req.profiles.payout_qr_code_url} alt="Payout QR Code" width={300} height={300} />
@@ -186,67 +183,23 @@ export default function PayoutsPage() {
             .select('*, profiles:user_id(full_name, email, payout_qr_code_url)')
             .order('created_at', { ascending: false });
         
-        if (error) {
-            console.error(error);
-        }
-
-        if (data) {
-            setRequests(data as PayoutRequest[]);
-        }
+        if (data) setRequests(data as PayoutRequest[]);
         setIsLoading(false);
     };
 
     useEffect(() => {
         fetchRequests();
-
-        const channel = supabase
-            .channel('realtime payouts')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'payout_requests' }, 
-                (payload) => { fetchRequests(); }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
     }, []);
 
     const handleStatusChange = (id: number, status: 'completed' | 'rejected' | 'pending') => {
         setRequests(prev => prev.map(req => req.id === id ? { ...req, status } : req));
-        fetchRequests(); // Re-fetch to ensure data is sorted correctly by new status
+        fetchRequests();
     };
 
     const pendingRequests = requests.filter(r => r.status === 'pending');
     const completedRequests = requests.filter(r => r.status === 'completed');
     const rejectedRequests = requests.filter(r => r.status === 'rejected');
     
-    const SkeletonTable = () => (
-         <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead><Skeleton className="h-5 w-16" /></TableHead>
-                    <TableHead><Skeleton className="h-5 w-32" /></TableHead>
-                    <TableHead><Skeleton className="h-5 w-20" /></TableHead>
-                    <TableHead><Skeleton className="h-5 w-40" /></TableHead>
-                    <TableHead><Skeleton className="h-5 w-16" /></TableHead>
-                    <TableHead className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {[...Array(3)].map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                        <TableCell><Skeleton className="h-9 w-24 ml-auto" /></TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    );
-
     return (
         <SidebarProvider>
             <Sidebar>
@@ -258,91 +211,29 @@ export default function PayoutsPage() {
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarMenu>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard">
-                                <Home />
-                                Dashboard
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
-                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/competition" tooltip="Competition">
-                                <Swords />
-                                Competition
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users">
-                            <Users />
-                            Pay Later Users
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/coupons" tooltip="Coupons">
-                                <Ticket />
-                                Coupons
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton href="/admin/blog" tooltip="Blog">
-                            <Newspaper />
-                            Blog
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/payouts" isActive tooltip="Payouts">
-                                <Banknote />
-                                Payouts
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/tickets" tooltip="Support">
-                                <MessageSquare />
-                                Support
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/reports" tooltip="Reports">
-                                <LineChart />
-                                Reports
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports">
-                            <LineChart />
-                            Pay Later Reports
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings">
-                                <Wallet />
-                                Payment Settings
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" isActive tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
                 <SidebarFooter className="border-t p-2">
                     <SidebarMenu>
                         <SidebarMenuItem>
-                            <form action={signOut} className="w-full">
-                                <SidebarMenuButton tooltip="Logout" asChild>
-                                    <button type="submit" className="w-full">
-                                        <LogOut />
-                                        Logout
-                                    </button>
-                                </SidebarMenuButton>
-                            </form>
+                            <form action={signOut} className="w-full"><SidebarMenuButton tooltip="Logout" asChild><button type="submit" className="w-full"><LogOut />Logout</button></SidebarMenuButton></form>
                         </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4">
-                        <SidebarTrigger className="md:hidden" />
-                        <h1 className="text-xl font-semibold">Payout Requests</h1>
-                    </div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Payout Requests</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
@@ -356,13 +247,13 @@ export default function PayoutsPage() {
                                 </TabsList>
                                 <div className="p-4">
                                 <TabsContent value="pending">
-                                    {isLoading ? <SkeletonTable /> : <PayoutsTable requests={pendingRequests} onStatusChange={handleStatusChange} />}
+                                    {isLoading ? <div className="p-8 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto"/></div> : <PayoutsTable requests={pendingRequests} onStatusChange={handleStatusChange} />}
                                 </TabsContent>
                                 <TabsContent value="completed">
-                                    {isLoading ? <SkeletonTable /> : <PayoutsTable requests={completedRequests} onStatusChange={handleStatusChange} />}
+                                    {isLoading ? <div className="p-8 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto"/></div> : <PayoutsTable requests={completedRequests} onStatusChange={handleStatusChange} />}
                                 </TabsContent>
                                 <TabsContent value="rejected">
-                                    {isLoading ? <SkeletonTable /> : <PayoutsTable requests={rejectedRequests} onStatusChange={handleStatusChange} />}
+                                    {isLoading ? <div className="p-8 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto"/></div> : <PayoutsTable requests={rejectedRequests} onStatusChange={handleStatusChange} />}
                                 </TabsContent>
                                 </div>
                            </Tabs>
