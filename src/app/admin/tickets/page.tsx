@@ -18,57 +18,59 @@ export const dynamic = 'force-dynamic';
 
 function TicketsTable({ tickets }: { tickets: any[] }) {
     return (
-        <Table>
-            <TableHeader>
-                <TableRow className="border-white/5">
-                    <TableHead className="text-[10px] font-bold uppercase text-gray-500">Trader</TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase text-gray-500">Subject</TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase text-gray-500">Updated</TableHead>
-                    <TableHead className="text-right text-[10px] font-bold uppercase text-gray-500">Status</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {tickets.length > 0 ? tickets.map((t) => (
-                    <TableRow key={t.id} className="border-white/5 hover:bg-white/[0.02] transition-colors group">
-                        <TableCell>
-                            <Link href={`/admin/tickets/${t.id}`} className="block py-1">
-                                <div className="font-bold text-white text-sm">{t.profiles?.full_name || 'New Trader'}</div>
-                                <div className="text-[10px] text-gray-500 font-medium">{t.profiles?.email}</div>
-                            </Link>
-                        </TableCell>
-                        <TableCell>
-                            <Link href={`/admin/tickets/${t.id}`} className="block font-medium text-gray-300 hover:text-primary transition-colors">
-                                {t.subject}
-                            </Link>
-                        </TableCell>
-                         <TableCell>
-                            <Link href={`/admin/tickets/${t.id}`} className="block text-xs text-gray-500">
-                                {formatDistanceToNow(new Date(t.last_message_at), { addSuffix: true })}
-                            </Link>
-                         </TableCell>
-                        <TableCell className="text-right">
-                           <Link href={`/admin/tickets/${t.id}`} className="flex items-center justify-end gap-3">
-                                {t.unread_count_admin > 0 && (
-                                    <Badge className="bg-primary text-white text-[10px] h-5 min-w-5 flex items-center justify-center rounded-full">
-                                        {t.unread_count_admin}
+        <div className="overflow-x-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow className="border-white/5">
+                        <TableHead className="text-xs font-bold text-gray-500">Trader</TableHead>
+                        <TableHead className="text-xs font-bold text-gray-500">Subject</TableHead>
+                        <TableHead className="text-xs font-bold text-gray-500">Last Activity</TableHead>
+                        <TableHead className="text-right text-xs font-bold text-gray-500">Status</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {tickets.length > 0 ? tickets.map((t) => (
+                        <TableRow key={t.id} className="border-white/5 hover:bg-white/[0.02] transition-colors group">
+                            <TableCell>
+                                <Link href={`/admin/tickets/${t.id}`} className="block py-1">
+                                    <div className="font-bold text-white text-sm">{t.profiles?.full_name || 'New Trader'}</div>
+                                    <div className="text-[10px] text-gray-500 font-medium">{t.profiles?.email}</div>
+                                </Link>
+                            </TableCell>
+                            <TableCell>
+                                <Link href={`/admin/tickets/${t.id}`} className="block font-medium text-gray-300 hover:text-primary transition-colors">
+                                    {t.subject}
+                                </Link>
+                            </TableCell>
+                             <TableCell>
+                                <Link href={`/admin/tickets/${t.id}`} className="block text-xs text-gray-500">
+                                    {formatDistanceToNow(new Date(t.last_message_at), { addSuffix: true })}
+                                </Link>
+                             </TableCell>
+                            <TableCell className="text-right">
+                               <Link href={`/admin/tickets/${t.id}`} className="flex items-center justify-end gap-3">
+                                    {t.unread_count_admin > 0 && (
+                                        <Badge className="bg-primary text-white text-[10px] h-5 min-w-5 flex items-center justify-center rounded-full">
+                                            {t.unread_count_admin}
+                                        </Badge>
+                                    )}
+                                    <Badge variant="outline" className={cn("capitalize text-[9px] font-bold border-none", t.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>
+                                        {t.status}
                                     </Badge>
-                                )}
-                                <Badge variant="outline" className={cn("capitalize text-[9px] font-bold border-none", t.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>
-                                    {t.status}
-                                </Badge>
-                            </Link>
-                        </TableCell>
-                    </TableRow>
-                )) : (
-                    <TableRow>
-                        <TableCell colSpan={4} className="h-60 text-center">
-                            <Inbox className="h-10 w-10 text-gray-900 mx-auto mb-4" />
-                            <p className="text-gray-600 font-medium italic">No tickets found.</p>
-                        </TableCell>
-                    </TableRow>
-                )}
-            </TableBody>
-        </Table>
+                                </Link>
+                            </TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={4} className="h-60 text-center">
+                                <Inbox className="h-10 w-10 text-gray-900 mx-auto mb-4" />
+                                <p className="text-gray-600 font-medium italic">No tickets found.</p>
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </div>
     )
 }
 
@@ -112,7 +114,7 @@ export default async function AdminTicketsPage() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold tracking-tight">Support Desk</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold tracking-tight">Support Desk</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
