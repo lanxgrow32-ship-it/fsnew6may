@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, MessageSquare, ShieldAlert, LineChart, Swords, Users, Newspaper } from 'lucide-react';
+import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, MessageSquare, ShieldAlert, LineChart, Swords, Users, Newspaper, UserCheck } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -164,6 +164,12 @@ export default function PayLaterDashboardClient({ initialProfiles, masterView }:
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests">
+                    <UserCheck />
+                    Account Requests
+                </SidebarMenuButton>
+            </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton href="/admin/competition" tooltip="Competition">
                     <Swords />
@@ -195,23 +201,11 @@ export default function PayLaterDashboardClient({ initialProfiles, masterView }:
                     Payouts
                 </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton href="/admin/tickets" tooltip="Support">
-                    <MessageSquare />
-                    Support
-                </SidebarMenuButton>
-            </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton href="/admin/reports" tooltip="Reports">
                     <LineChart />
                     Reports
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/reports/pay-later" tooltip="Pay Later Reports">
-                <LineChart />
-                Pay Later Reports
-              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings">

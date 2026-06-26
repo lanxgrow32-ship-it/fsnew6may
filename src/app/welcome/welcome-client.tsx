@@ -15,7 +15,7 @@ import {
     LogOut, 
     Menu,
     History,
-    LifeBuoy
+    MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -72,7 +72,7 @@ export function WelcomeClient({
         { id: 'competition', label: "Competition", mobileLabel: "Competition", icon: Trophy },
         { id: 'wallet', label: "Wallet", mobileLabel: "Wallet", icon: Wallet },
         { id: 'transactions', label: "History", mobileLabel: "History", icon: History },
-        { id: 'support', label: "Support", mobileLabel: "Support", icon: LifeBuoy, hasBadge: totalUnread > 0 },
+        { id: 'support', label: "Live Chat", mobileLabel: "Live Chat", icon: MessageSquare, hasBadge: totalUnread > 0 },
         { id: 'kyc', label: "KYC", mobileLabel: "KYC", icon: FileCheck },
     ];
 

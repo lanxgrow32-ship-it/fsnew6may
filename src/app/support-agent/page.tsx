@@ -37,7 +37,7 @@ export default function SupportAgentDashboard() {
             <CardContent>
                 <div className="text-2xl font-bold text-white">{loading ? <Skeleton className="h-9 w-16 bg-white/5"/> : value}</div>
                 <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-gray-500">
-                    <Clock className="w-3 h-3" /> Real-time sync
+                    <Clock className="w-3 h-3" /> Real-time update
                 </div>
             </CardContent>
         </Card>
