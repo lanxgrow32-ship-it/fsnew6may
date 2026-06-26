@@ -1,7 +1,28 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+
+/**
+ * Helper to determine starting classification and balance
+ */
+function getBalanceFromPlanName(planName: string): number {
+    if (!planName) return 0;
+    const name = planName.toLowerCase();
+    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
+    if (match) {
+        let amount = parseFloat(match[1].replace(/,/g, ''));
+        const unit = match[2];
+        if (unit === 'k') amount *= 1000;
+        else if (unit === 'l' || unit === 'lakh') amount *= 100000;
+        else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
+        return amount;
+    }
+    const plainNumberMatch = name.match(/^[\d,.]+/);
+    if (plainNumberMatch) return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+    return 0;
+}
 
 /**
  * Helper to upload images for support chat
@@ -14,7 +35,6 @@ async function uploadSupportImage(file: File, conversationId: string) {
     const fileExt = file.name.split('.').pop();
     const fileName = `support-${conversationId}-${Date.now()}.${fileExt}`;
     
-    // Upload to 'support-attachments' bucket (Must be created in Supabase Dashboard)
     const { data, error } = await supabaseAdmin.storage
       .from('support-attachments')
       .upload(fileName, buffer, {
@@ -96,14 +116,15 @@ export async function topUpWallet(userId: string, amount: number, utr: string) {
 
 /**
  * Handles internal account purchases using wallet balance
+ * Includes INSTANT StockMint account creation logic
  */
 export async function purchaseWithWallet(userId: string, plan: any) {
   if (!userId || !plan) return { error: 'Missing details.' };
 
-  // 1. Fetch Current Balance
+  // 1. Fetch Current Balance & Profile
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('wallet_balance')
+    .select('*')
     .eq('id', userId)
     .single();
   
@@ -132,21 +153,63 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     description: `Purchase of ${plan.title}`
   });
 
-  // 4. Create User Account
-  const { error: accountError } = await supabaseAdmin.from('user_accounts').insert({
+  // 4. Create User Account Record
+  const isPTP = plan.title.toLowerCase().includes('ptp');
+  const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
     user_id: userId,
     plan_name: plan.title,
     status: 'pending',
-    is_approved: true, // Internal purchases are pre-verified
-    account_model: plan.title.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal',
+    is_approved: true,
+    account_model: isPTP ? 'passthrupay' : 'normal',
     final_amount_paid: price,
     transaction_id: 'WALLET_PURCHASE'
-  });
+  }).select().single();
 
-  if (accountError) {
-      // Refund on failure
-      await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance }).eq('id', userId);
+  if (accountError || !account) {
       return { error: 'Failed to create account record.' };
+  }
+
+  // 5. AUTOMATION: Trigger StockMint Account Creation
+  const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+  const initialBalance = getBalanceFromPlanName(plan.title);
+
+  if (stockmintApiKey && initialBalance > 0) {
+      try {
+          // Multi-account versioning suffix logic
+          const { count } = await supabaseAdmin.from('user_accounts')
+            .select('id', { count: 'exact' })
+            .eq('user_id', userId)
+            .eq('credentials_provided', true);
+
+          const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
+          const [base, domain] = profile.email.split('@');
+          const stockmintUsername = `${base}${versionSuffix}@${domain}`;
+
+          const payload: any = { 
+              fullName: profile.full_name,
+              email: stockmintUsername,
+              password: stockmintUsername,
+              initialBalance
+          };
+          if (isPTP) payload.accountModel = 'passthenpay';
+
+          const res = await fetch('https://stockmint.io/api/users/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
+              body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+              await supabaseAdmin.from('user_accounts').update({
+                  credentials_provided: true,
+                  trading_username: stockmintUsername,
+                  trading_password: stockmintUsername,
+                  status: 'active'
+              }).eq('id', account.id);
+          }
+      } catch (e) {
+          console.error('StockMint Wallet Purchase API Error:', e);
+      }
   }
 
   revalidatePath('/welcome');
