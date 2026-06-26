@@ -31,7 +31,6 @@ import { AccountsHub } from './accounts-hub';
 import { ArenaView } from './arena-view';
 import { WalletView } from './wallet-view';
 import { TransactionsView } from './transactions-view';
-import { CompetitionView } from './competition-view';
 import { SupportView } from './support-view';
 
 const Logo = () => (
@@ -63,15 +62,14 @@ export function WelcomeClient({
     const [activeTab, setActiveTab] = useState('hub');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Shorter labels for a more compact dashboard
+    // Optimized labels based on your refinement
     const navItems = [
         { id: 'hub', label: "Portfolio", mobileLabel: "Account Hub", icon: LayoutDashboard },
-        { id: 'get-funded', label: "Arena", mobileLabel: "Get Funded", icon: ShoppingCart },
+        { id: 'marketplace', label: "Marketplace", mobileLabel: "Marketplace", icon: ShoppingCart },
         { id: 'wallet', label: "Wallet", mobileLabel: "Wallet", icon: Wallet },
         { id: 'transactions', label: "History", mobileLabel: "Transactions", icon: History },
-        { id: 'competition', label: "Battles", mobileLabel: "Tournaments", icon: Trophy },
-        { id: 'support', label: "Help", mobileLabel: "Support", icon: LifeBuoy },
-        { id: 'kyc', label: "Verify", mobileLabel: "KYC", icon: FileCheck },
+        { id: 'support', label: "Support", mobileLabel: "Support", icon: LifeBuoy },
+        { id: 'kyc', label: "KYC", mobileLabel: "KYC", icon: FileCheck },
     ];
 
     return (
@@ -113,7 +111,7 @@ export function WelcomeClient({
 
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Wallet</span>
+                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Wallet Balance</span>
                             <span className="text-primary font-black text-xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
@@ -133,7 +131,7 @@ export function WelcomeClient({
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col font-poppins">
                                 <SheetHeader className="p-6 border-b border-white/5">
-                                    <SheetTitle className="sr-only">Navigation Protocol</SheetTitle>
+                                    <SheetTitle className="sr-only">Navigation Drawer</SheetTitle>
                                     <div className="flex items-center gap-3 text-left">
                                         <div className="bg-primary h-8 w-8 flex items-center justify-center rounded-lg">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -144,11 +142,6 @@ export function WelcomeClient({
                                     </div>
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto">
-                                    <div className="px-6 py-8 mb-6 bg-black/60 rounded-3xl border border-white/5 text-center shadow-2xl">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-2">BALANCE</p>
-                                        <p className="text-primary font-black text-4xl tracking-tighter">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</p>
-                                    </div>
-
                                     <div className="space-y-2">
                                         {navItems.map((item) => (
                                             <button
@@ -192,11 +185,15 @@ export function WelcomeClient({
                 {/* Main Content Areas */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsContent value="hub" className="animate-in fade-in duration-300">
-                        <AccountsHub accounts={accounts} profile={profile} onSwitchToGetFunded={() => setActiveTab('get-funded')} />
+                        <AccountsHub accounts={accounts} profile={profile} onSwitchToGetFunded={() => setActiveTab('marketplace')} />
                     </TabsContent>
 
-                    <TabsContent value="get-funded" className="animate-in fade-in duration-300">
-                        <ArenaView profile={profile} onSwitchToWallet={() => setActiveTab('wallet')} />
+                    <TabsContent value="marketplace" className="animate-in fade-in duration-300">
+                        <ArenaView 
+                            profile={profile} 
+                            onSwitchToWallet={() => setActiveTab('wallet')} 
+                            registrations={competitions}
+                        />
                     </TabsContent>
 
                     <TabsContent value="wallet" className="animate-in fade-in duration-300">
@@ -205,10 +202,6 @@ export function WelcomeClient({
 
                     <TabsContent value="transactions" className="animate-in fade-in duration-300">
                         <TransactionsView transactions={walletTransactions} />
-                    </TabsContent>
-
-                    <TabsContent value="competition" className="animate-in fade-in duration-300">
-                        <CompetitionView registrations={competitions} profile={profile} onSwitchToWallet={() => setActiveTab('wallet')} />
                     </TabsContent>
 
                     <TabsContent value="support" className="animate-in fade-in duration-300">
