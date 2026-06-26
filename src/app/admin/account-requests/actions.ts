@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -74,22 +75,24 @@ export async function approveAccount(accountId: string) {
                     email: stockmintUsername,
                     password: stockmintUsername,
                     initialBalance,
-                    accountClassification: classification
+                    accountClassification: classification,
+                    accountModel: isPTP ? 'passthenpay' : 'normal'
                 };
-                if (isPTP) payload.accountModel = 'passthenpay';
 
-                await fetch('https://stockmint.io/api/users/create', {
+                const res = await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
                     body: JSON.stringify(payload),
                 });
 
-                await supabaseAdmin.from('user_accounts').update({
-                    credentials_provided: true,
-                    trading_username: stockmintUsername,
-                    trading_password: stockmintUsername,
-                    status: 'active'
-                }).eq('id', accountId);
+                if (res.ok) {
+                    await supabaseAdmin.from('user_accounts').update({
+                        credentials_provided: true,
+                        trading_username: stockmintUsername,
+                        trading_password: stockmintUsername,
+                        status: 'active'
+                    }).eq('id', accountId);
+                }
 
             } catch (e) { console.error('StockMint API failed:', e); }
         }

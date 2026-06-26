@@ -188,9 +188,9 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               email: stockmintUsername,
               password: stockmintUsername,
               initialBalance,
-              accountClassification: classification
+              accountClassification: classification,
+              accountModel: isPTP ? 'passthenpay' : 'normal'
           };
-          if (isPTP) payload.accountModel = 'passthenpay';
 
           const res = await fetch('https://stockmint.io/api/users/create', {
               method: 'POST',

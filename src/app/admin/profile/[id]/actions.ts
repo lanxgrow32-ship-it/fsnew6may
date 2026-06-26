@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -56,7 +57,7 @@ export async function updateProfile(formData: FormData) {
   if (error) return { error: error.message };
 
   // SYNC WITH STOCKMINT IF CLASSIFICATION CHANGED
-  // We sync every active account associated with this trader
+  // We sync every active account associated with this trader using the /update endpoint
   if (account_classification !== wasClassified) {
       const { data: accounts } = await supabaseAdmin
         .from('user_accounts')
