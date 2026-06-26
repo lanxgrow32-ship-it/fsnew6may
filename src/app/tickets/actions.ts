@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -113,11 +114,19 @@ export async function addReply(conversationId: string, formData: FormData) {
 
     if (msgError) return { error: msgError.message };
 
-    // Update unread count for admin
-    await supabaseAdmin.rpc('increment_support_unread', { 
-        conv_id: conversationId, 
-        role_to_increment: 'admin' 
-    });
+    // Fetch current unread counts to increment correctly
+    const { data: conv } = await supabaseAdmin
+        .from('support_conversations')
+        .select('unread_count_admin')
+        .eq('id', conversationId)
+        .single();
+
+    await supabaseAdmin.from('support_conversations')
+        .update({ 
+            unread_count_admin: (conv?.unread_count_admin || 0) + 1,
+            last_message_at: new Date().toISOString() 
+        })
+        .eq('id', conversationId);
 
     revalidatePath(`/tickets/${conversationId}`);
     revalidatePath('/support-agent/tickets');
