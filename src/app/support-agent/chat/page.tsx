@@ -12,7 +12,8 @@ import {
     User,
     Search,
     Inbox,
-    Headphones
+    Headphones,
+    ChevronLeft
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { sendSupportMessage } from '@/app/welcome/actions';
@@ -23,6 +24,7 @@ export default function AgentLiveChat() {
     const [conversations, setConversations] = useState<any[]>([]);
     const [activeConversation, setActiveConversation] = useState<any>(null);
     const [messages, setMessages] = useState<any[]>([]);
+    const [agentProfile, setAgentProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
     const supabase = createClient();
@@ -46,7 +48,16 @@ export default function AgentLiveChat() {
     };
 
     useEffect(() => {
-        fetchConversations();
+        const init = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+                setAgentProfile(profile);
+            }
+            fetchConversations();
+        };
+        init();
+
         const sub = supabase
             .channel('global_agent_support')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations)
@@ -74,11 +85,14 @@ export default function AgentLiveChat() {
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (!agentProfile || !activeConversation) return;
+
         const form = e.currentTarget;
         const msg = new FormData(form).get('message') as string;
         if (!msg.trim()) return;
         form.reset();
-        await sendSupportMessage(activeConversation.id, 'AGENT_SYSTEM', 'admin', msg);
+        
+        await sendSupportMessage(activeConversation.id, agentProfile.id, 'admin', msg);
     };
 
     return (
@@ -88,7 +102,7 @@ export default function AgentLiveChat() {
                 <div className="p-6 border-b border-white/5">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-600" />
-                        <Input placeholder="Search chats..." className="pl-9 bg-black/40 border-white/10 h-10 text-[10px] font-bold uppercase tracking-widest" />
+                        <Input placeholder="Search chats..." className="pl-9 bg-black/40 border-white/10 h-10 text-xs font-semibold" />
                     </div>
                 </div>
                 <ScrollArea className="flex-grow">
@@ -103,10 +117,10 @@ export default function AgentLiveChat() {
                                 )}
                             >
                                 <div className="flex justify-between items-start mb-1.5">
-                                    <p className="text-xs font-bold truncate max-w-[140px] text-white">{c.profiles?.full_name}</p>
-                                    <Badge variant="outline" className={cn("text-[8px] h-4 px-1.5 font-bold uppercase tracking-wider", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
+                                    <p className="text-sm font-bold truncate max-w-[140px] text-white">{c.profiles?.full_name}</p>
+                                    <Badge variant="outline" className={cn("text-[10px] font-bold px-2 py-0", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status === 'open' ? 'Active' : 'Closed'}</Badge>
                                 </div>
-                                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Message' : c.subject}</p>
+                                <p className="text-[11px] text-gray-500 font-medium truncate">{c.subject === 'LIVE_CHAT' ? 'Direct Message' : c.subject}</p>
                             </button>
                         ))
                     )}
@@ -130,22 +144,22 @@ export default function AgentLiveChat() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-white text-base leading-none">{activeConversation.profiles?.full_name}</h3>
-                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1.5">{activeConversation.profiles?.email}</p>
+                                    <p className="text-[11px] text-gray-500 font-medium mt-1.5">{activeConversation.profiles?.email}</p>
                                 </div>
                             </div>
-                            <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-[9px] font-bold uppercase tracking-widest h-8 px-4">Close Chat</Button>
+                            <Button variant="outline" size="sm" className="bg-black/20 border-white/10 text-xs font-bold h-8 px-4">Close Chat</Button>
                         </header>
 
                         <ScrollArea ref={scrollRef} className="flex-grow p-6">
                             <div className="space-y-6 max-w-3xl mx-auto">
                                 <div className="text-center py-4 border-b border-white/5 mb-8">
-                                    <p className="text-[9px] text-gray-800 font-bold uppercase tracking-[0.4em]">Connected to trader</p>
+                                    <p className="text-[10px] text-gray-700 font-bold">Connected to trader</p>
                                 </div>
                                 {messages.map(m => (
                                     <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
                                         <div className={cn("max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed shadow-lg", m.sender_role === 'admin' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none")}>
                                             {m.message}
-                                            <p className="mt-2 text-[8px] opacity-30 font-bold text-right uppercase">
+                                            <p className="mt-2 text-[9px] opacity-30 font-bold text-right">
                                                 {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         </div>
