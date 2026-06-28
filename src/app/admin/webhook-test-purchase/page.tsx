@@ -46,7 +46,7 @@ export default function WebhookTestPagePurchase() {
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Step 3: Purchase Intelligent Trigger</CardTitle>
           <CardDescription className="text-gray-400">
-            Send test data to configure your Router (Needs KYC vs. Has Credentials).
+            Click to teach Make.com how to route purchases based on KYC status.
           </CardDescription>
         </CardHeader>
         <CardContent>

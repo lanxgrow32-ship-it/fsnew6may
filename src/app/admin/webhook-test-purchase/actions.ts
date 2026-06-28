@@ -19,7 +19,7 @@ export async function sendPurchaseTestWebhook(prevState: WebhookTestState, formD
     plan_name: '5 Lakh Instant Funding',
     username: 'alex-trader@fundedstock.io',
     password: 'secure-password-123',
-    needsKyc: true // Toggle this for testing different paths in Make
+    needsKyc: true // This is what the Router will look at
   };
 
   try {
