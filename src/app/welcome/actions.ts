@@ -126,23 +126,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
           if (res.ok) {
               await supabaseAdmin.from('user_accounts').update({ credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active' }).eq('id', account.id);
-              
-              // Email Trigger: Purchase (Needs KYC or Credentials)
-              const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
-              if (webhookUrl) {
-                  fetch(webhookUrl, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                          email: profile.email,
-                          full_name: profile.full_name,
-                          plan_name: plan.title,
-                          username: stockmintUsername,
-                          password: stockmintUsername,
-                          needsKyc: profile.kyc_status !== 'verified' && !isPTP
-                      })
-                  }).catch(e => console.error(e));
-              }
           }
       } catch (e) { console.error('StockMint API Error:', e); }
   }
@@ -212,24 +195,6 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
 
     const { error } = await supabaseAdmin.from('competition_registrations').insert({ user_id: userId, event_id: eventId, transaction_id: event.is_free ? 'FREE_JOIN' : 'WALLET_JOIN', is_approved: true, stockmint_username: stockmintUsername, stockmint_password: stockmintPassword });
     if (error) return { error: error.message };
-
-    // Email Trigger: Competition Join
-    const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
-    if (webhookUrl) {
-        fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: profile.email,
-                full_name: profile.full_name,
-                plan_name: `Tournament: ${event.week_label}`,
-                username: stockmintUsername,
-                password: stockmintPassword,
-                isCompetition: true
-            })
-        }).catch(e => console.error(e));
-    }
-
     revalidatePath('/welcome');
     return { success: true };
 }
