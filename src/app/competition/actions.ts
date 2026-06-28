@@ -28,14 +28,18 @@ export async function registerForTournament(formData: FormData) {
   if (!event.is_free && !utr) return { error: 'Transaction ID is required.' };
 
   const supabase = createClient();
-  const { data: existingUser } = await supabaseAdmin.from('profiles').select('id').eq('email', email).single();
+  const { data: existingUser } = await supabaseAdmin.from('profiles').select('id, full_name, email').eq('email', email).single();
   
   let userId: string;
+  let userEmail = email;
+  let userFullName = fullName;
 
   if (existingUser) {
     const { data: existingReg } = await supabaseAdmin.from('competition_registrations').select('id').eq('user_id', existingUser.id).eq('event_id', eventId).single();
     if (existingReg) return { error: 'Already registered for this week.' };
     userId = existingUser.id;
+    userEmail = existingUser.email;
+    userFullName = existingUser.full_name || fullName;
   } else {
     const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -55,7 +59,7 @@ export async function registerForTournament(formData: FormData) {
   if (event.is_free) {
       isApproved = true;
       const weekSuffix = event.week_label.replace(/\s+/g, '-').toLowerCase();
-      stockmintUsername = `${email.split('@')[0]}-${weekSuffix}@${email.split('@')[1]}`;
+      stockmintUsername = `${userEmail.split('@')[0]}-${weekSuffix}@${userEmail.split('@')[1]}`;
       stockmintPassword = stockmintUsername;
 
       const stockmintApiKey = process.env.STOCKMINT_API_KEY;
@@ -65,7 +69,7 @@ export async function registerForTournament(formData: FormData) {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
                   body: JSON.stringify({ 
-                      fullName,
+                      fullName: userFullName,
                       email: stockmintUsername,
                       password: stockmintUsername,
                       initialBalance: 100000,
@@ -74,6 +78,23 @@ export async function registerForTournament(formData: FormData) {
                   }),
               });
           } catch (e) { console.error('StockMint failed:', e); }
+      }
+
+      // TRIGGER V3: Credentials for free entry
+      const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
+      if (purchaseWebhook) {
+          fetch(purchaseWebhook, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  email: userEmail,
+                  full_name: userFullName,
+                  plan_name: `Tournament: ${event.week_label}`,
+                  username: stockmintUsername,
+                  password: stockmintUsername,
+                  needsKyc: false
+              })
+          }).catch(e => console.error(e));
       }
   }
 

@@ -64,7 +64,7 @@ export async function approveRegistration(regId: string) {
         
         if (stockmintApiKey) {
             try {
-                const response = await fetch('https://stockmint.io/api/users/create', {
+                await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
                     body: JSON.stringify({ 
@@ -76,9 +76,6 @@ export async function approveRegistration(regId: string) {
                         accountModel: 'normal'
                     }),
                 });
-                if (!response.ok) {
-                    console.error('StockMint API failed with status:', response.status);
-                }
             } catch (e) { 
                 console.error('StockMint API Connection Error:', e);
             }
@@ -92,6 +89,23 @@ export async function approveRegistration(regId: string) {
         }).eq('id', regId);
 
         if (updateError) throw updateError;
+
+        // TRIGGER V3: Intelligent Purchase Handler (Competition Approval)
+        const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
+        if (purchaseWebhook) {
+            fetch(purchaseWebhook, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: reg.profiles.email,
+                    full_name: reg.profiles.full_name,
+                    plan_name: `Tournament: ${reg.competition_events.week_label}`,
+                    username: stockmintUsername,
+                    password: stockmintUsername,
+                    needsKyc: false
+                })
+            }).catch(e => console.error(e));
+        }
 
         revalidatePath('/admin/competition');
         revalidatePath('/welcome');
@@ -113,18 +127,10 @@ export async function deleteEvent(id: string) {
     }
 }
 
-/**
- * ARCHIVE LOGIC:
- * 1. Fetches final balances from StockMint for all approved users of a week.
- * 2. Identifies Top 3 and saves them to competition_winners.
- * 3. Marks event as archived.
- * NOTE: Participant data remains for reporting.
- */
 export async function archiveWeekResults(eventId: string) {
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
 
     try {
-        // 1. Get all approved regs
         const { data: regs, error: regsError } = await supabaseAdmin
             .from('competition_registrations')
             .select('user_id, stockmint_username, profiles(full_name, email)')
@@ -133,7 +139,6 @@ export async function archiveWeekResults(eventId: string) {
         
         if (regsError || !regs) throw new Error("Could not find participants.");
 
-        // 2. Fetch final stats for all using stats endpoint
         const results = await Promise.all(regs.map(async (reg) => {
             let balance = 100000;
             if (reg.stockmint_username && stockmintApiKey) {
@@ -152,11 +157,9 @@ export async function archiveWeekResults(eventId: string) {
             };
         }));
 
-        // 3. Sort and pick winners
         const sorted = results.sort((a, b) => b.balance - a.balance);
         const winners = sorted.slice(0, 3);
 
-        // 4. Save Winners permanently
         const winnerInserts = winners.map((w, index) => ({
             event_id: eventId,
             rank: index + 1,
@@ -168,7 +171,6 @@ export async function archiveWeekResults(eventId: string) {
         const { error: winError } = await supabaseAdmin.from('competition_winners').insert(winnerInserts);
         if (winError) throw winError;
 
-        // 5. Mark as archived
         await supabaseAdmin.from('competition_events').update({ is_archived: true }).eq('id', eventId);
 
         revalidatePath('/admin/competition');
