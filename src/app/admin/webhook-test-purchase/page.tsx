@@ -41,10 +41,10 @@ export default function WebhookTestPagePurchase() {
   }, [state, toast]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-4 font-poppins">
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-4 font-poppins text-white">
       <Card className="w-full max-w-md bg-white/5 border-white/10 text-white shadow-2xl">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Step 3: Purchase Intelligent Trigger</CardTitle>
+          <CardTitle className="text-2xl font-bold">Step 3: Purchase Intelligence</CardTitle>
           <CardDescription className="text-gray-400">
             Click to teach Make.com how to route purchases based on KYC status.
           </CardDescription>

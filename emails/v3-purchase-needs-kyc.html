@@ -3,45 +3,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plan Secured — FundedStock</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; color: #1e293b; width: 100% !important;">
-    <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#f8fafc">
-        <tr>
-            <td align="center" style="padding: 40px 20px;">
-                <table width="600" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                    <!-- Header -->
-                    <tr>
-                        <td style="padding: 40px; background-color: #1e293b; text-align: center;">
-                            <div style="background-color: #f59e0b; color: #ffffff; padding: 4px 12px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;">Step 1 Complete: Plan Secured</div>
-                            <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff;">Evaluation Active: {{plan_name}}</h1>
-                        </td>
-                    </tr>
-                    <!-- Body -->
-                    <tr>
-                        <td style="padding: 40px; line-height: 1.6;">
-                            <p style="font-size: 16px; margin-bottom: 24px;">Hi {{full_name}},</p>
-                            <p style="font-size: 15px; color: #475569; margin-bottom: 24px;">Congratulations on securing your <b>{{plan_name}}</b>. Your account has been initialized on our terminal, but your credentials remain <b>locked</b> for security reasons.</p>
-                            
-                            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 24px; margin-bottom: 32px; text-align: center;">
-                                <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #92400e; font-weight: 700; text-transform: uppercase;">Unlock Your Credentials</h3>
-                                <p style="font-size: 14px; color: #b45309; margin-bottom: 20px;">Complete your KYC verification now to reveal your trading login and password.</p>
-                                <a href="https://app.fundedstock.io/kyc" style="display: inline-block; background-color: #1e293b; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Complete KYC Verification</a>
-                            </div>
-
-                            <p style="font-size: 14px; color: #64748b; margin: 0;">Once verified, your credentials will be visible instantly in your Trader Hub.</p>
-                        </td>
-                    </tr>
-                    <!-- Footer -->
-                    <tr>
-                        <td style="padding: 24px 40px; background-color: #f1f5f9; text-align: center;">
-                            <p style="margin: 0; font-size: 12px; color: #94a3b8; font-weight: 500;">© 2024 FundedStock · Professional Trading Solutions</p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+<body style="font-family: sans-serif; background-color: #f8fafc; padding: 40px; color: #1e293b;">
+    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
+        <div style="background: #1e293b; padding: 30px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px;">Evaluation Active: {{plan_name}}</h1>
+        </div>
+        <div style="padding: 40px;">
+            <p>Hi {{full_name}},</p>
+            <p>Congratulations on securing your plan. Your trading account has been initialized, but your credentials remain <b>locked</b> for security reasons.</p>
+            <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
+                <h3 style="color: #92400e; margin-top: 0;">Unlock Your Credentials</h3>
+                <p style="font-size: 14px;">Complete your KYC verification now to reveal your login details.</p>
+                <a href="https://app.fundedstock.io/kyc" style="display: inline-block; background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Complete KYC Now</a>
+            </div>
+            <p style="font-size: 14px; color: #64748b;">Once verified, your credentials will appear in your Trader Hub instantly.</p>
+        </div>
+    </div>
 </body>
 </html>
