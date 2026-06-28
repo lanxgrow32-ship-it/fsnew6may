@@ -4,7 +4,7 @@ import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sendBreachRecoveryTestWebhook } from './actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -12,8 +12,8 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+    <Button type="submit" className="w-full h-12 font-bold bg-primary text-white rounded-xl shadow-lg" disabled={pending}>
+      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldAlert className="mr-2 h-4 w-4" />}
       Send Breach Recovery Test Signal
     </Button>
   );
@@ -27,30 +27,23 @@ export default function WebhookTestPageBreachRecovery() {
     if (state.success) {
       toast({
         title: 'Signal Sent!',
-        description: 'Check your Make.com scenario to see if the data was received.',
-      });
-    }
-    if (state.error) {
-      toast({
-        title: 'Error',
-        description: state.error,
-        variant: 'destructive',
+        description: 'Check Make.com to verify the recovery payload.',
       });
     }
   }, [state, toast]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-md">
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-4 font-poppins">
+      <Card className="w-full max-w-md bg-white/5 border-white/10 text-white shadow-2xl">
         <CardHeader>
-          <CardTitle>Breach Recovery - Webhook Test</CardTitle>
-          <CardDescription>
-            Click the button to send a test payload to your Make.com webhook for the breach recovery email.
+          <CardTitle className="text-2xl font-bold tracking-tight">Step 4: Breach Recovery</CardTitle>
+          <CardDescription className="text-gray-400">
+            Simulate a breach recovery trigger to teach Make.com the discount payload.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={formAction}>
-            {state.error && <Alert variant="destructive" className="mb-4"><AlertTitle>Error</AlertTitle><AlertDescription>{state.error}</AlertDescription></Alert>}
+            {state.error && <Alert variant="destructive" className="mb-4 bg-red-500/10 border-red-500/20"><AlertTitle>Error</AlertTitle><AlertDescription>{state.error}</AlertDescription></Alert>}
             <SubmitButton />
           </form>
         </CardContent>

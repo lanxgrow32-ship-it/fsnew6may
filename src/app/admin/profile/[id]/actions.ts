@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -108,7 +107,7 @@ export async function sendBreachRecoveryEmail(prevState: any, formData: FormData
   if (!profile) return { error: 'User not found.' };
 
   const webhookUrl = process.env.MAKE_BREACH_RECOVERY_WEBHOOK_URL;
-  if (!webhookUrl) return { error: 'Webhook not configured.' };
+  if (!webhookUrl) return { error: 'Recovery Webhook not configured.' };
 
   try {
     await fetch(webhookUrl, {
@@ -122,6 +121,6 @@ export async function sendBreachRecoveryEmail(prevState: any, formData: FormData
           expiry_days: 3 
       }),
     });
-    return { success: 'Recovery email sent.' };
+    return { success: 'Recovery protocol sent successfully.' };
   } catch (e: any) { return { error: e.message }; }
 }

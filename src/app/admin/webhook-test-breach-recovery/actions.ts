@@ -13,8 +13,8 @@ export async function sendBreachRecoveryTestWebhook(prevState: WebhookTestState,
   }
 
   const payload = {
-    first_name: 'Test User',
-    email: 'test.user@example.com',
+    first_name: 'Test Trader',
+    email: 'trader.recovery@example.com',
     discount_code: 'RETRY15',
     discount_percent: 15,
     expiry_days: 3
