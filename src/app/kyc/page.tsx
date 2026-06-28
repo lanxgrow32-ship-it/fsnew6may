@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut, ShieldAlert, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,11 +23,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 type Profile = {
+    id: string;
     pan_number: string | null;
     is_pan_verified: boolean;
-    selfie_url: string | null; // Will now store Aadhaar image
-    selfie_with_aadhaar_url: string | null; // The new selfie with aadhaar
-    is_aadhaar_verified: boolean; // Will represent if Aadhaar image is submitted
+    selfie_url: string | null; 
+    selfie_with_aadhaar_url: string | null; 
+    is_aadhaar_verified: boolean; 
     traded_before: boolean;
     trading_experience: string | null;
     comments: string | null;
@@ -38,9 +39,9 @@ type Profile = {
     full_name: string | null;
     email: string | null;
     address: string | null;
+    kyc_status: string;
 };
 
-// New Premium Layout Components
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
         {children}
@@ -87,10 +88,6 @@ function UserNav({ profile }: { profile: any}) {
                         <FileCheck className="mr-2 h-4 w-4" />
                         <span>KYC</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/tickets')}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        <span>Support</span>
-                    </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                  <form action={signOut}>
@@ -110,9 +107,9 @@ const navItems = [
     { href: "/welcome", label: "Account Overview" },
     { href: "/guide", label: "Trading Guide" },
     { href: "/referrals", label: "Referrals" },
-    { href: "/tickets", label: "Support" },
+    { href: "/welcome?tab=support", label: "Live Chat" },
     { href: "/mentor", label: "AI Mentor" },
-    { href: "/pricing", label: "Purchase New Plan" },
+    { href: "/welcome?tab=marketplace", label: "Get Funded" },
 ];
 
 const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
@@ -137,15 +134,6 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
       </nav>
     </div>
     <div className="flex items-center gap-2">
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Search className="h-5 w-5 text-gray-300" />
-      </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Settings className="h-5 w-5 text-gray-300" />
-      </button>
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-        <Bell className="h-5 w-5 text-gray-300" />
-      </button>
       <UserNav profile={profile} />
       <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
         <Menu className="h-5 w-5 text-gray-300" />
@@ -289,7 +277,7 @@ function KycFlow({initialProfile}: {initialProfile: Profile}) {
   }
   
   return (
-    <div className="w-full max-w-3xl space-y-8">
+    <div className="w-full max-w-3xl mx-auto space-y-8">
         <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" className="h-8 w-8 bg-black/20 border-white/10 hover:bg-white/10" asChild>
                 <Link href="/welcome">
@@ -298,7 +286,7 @@ function KycFlow({initialProfile}: {initialProfile: Profile}) {
             </Button>
             <div>
                 <h1 className="text-2xl font-bold text-white">KYC Verification</h1>
-                <p className="text-gray-400">Please fill out the form below to complete your verification.</p>
+                <p className="text-gray-400">Complete your verification to access full trading credentials.</p>
             </div>
         </div>
 
@@ -519,10 +507,41 @@ function Step4_Agreements({ onSave, onBack, error, profile }: { onSave: (formDat
     );
 }
 
+function PurchaseGate() {
+    return (
+        <div className="max-w-2xl mx-auto py-20 text-center space-y-8 animate-in fade-in zoom-in-95">
+            <div className="h-24 w-24 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 mx-auto shadow-2xl border border-amber-500/20 shadow-amber-500/10">
+                <ShieldAlert className="h-12 w-12" />
+            </div>
+            <div className="space-y-3">
+                <h2 className="text-3xl font-bold text-white tracking-tight">Active Plan Required</h2>
+                <p className="text-gray-400 text-lg font-medium max-w-md mx-auto">
+                    To maintain protocol integrity, KYC verification is only available to active traders.
+                </p>
+                <p className="text-gray-500 text-sm max-w-sm mx-auto pt-2">
+                    Please purchase an Instant Funding, 1-Step, or 2-Step evaluation to unlock your identity verification module.
+                </p>
+            </div>
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button asChild size="lg" className="rounded-2xl px-10 h-14 font-bold text-base shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                    <Link href="/welcome?tab=marketplace">
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        Explore Funding Plans
+                    </Link>
+                </Button>
+                <Button variant="ghost" asChild className="text-gray-400 hover:text-white font-bold h-14">
+                    <Link href="/welcome">Return to Dashboard</Link>
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 
 export default function KycPage() {
     const supabase = createClient();
     const [profile, setProfile] = useState<Profile | null>(null);
+    const [hasAccount, setHasAccount] = useState<boolean | null>(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
     const router = useRouter();
 
@@ -533,12 +552,20 @@ export default function KycPage() {
                 router.push('/login');
                 return;
             }
-            const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (error) {
-                // handle error
-            } else {
-                setProfile(data as Profile);
+
+            // Fetch profile and check for any existing accounts/registrations
+            const [pRes, accountsRes, compRes] = await Promise.all([
+                supabase.from('profiles').select('*').eq('id', user.id).single(),
+                supabase.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+                supabase.from('competition_registrations').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
+            ]);
+
+            if (pRes.data) {
+                setProfile(pRes.data as Profile);
             }
+            
+            const totalActivity = (accountsRes.count || 0) + (compRes.count || 0);
+            setHasAccount(totalActivity > 0);
             setIsPageLoading(false);
         };
         fetchProfile();
@@ -559,7 +586,13 @@ export default function KycPage() {
                             <Loader2 className="h-8 w-8 animate-spin" />
                         </div>
                     ) : (
-                        <KycFlow initialProfile={profile} />
+                        <>
+                            {hasAccount ? (
+                                <KycFlow initialProfile={profile} />
+                            ) : (
+                                <PurchaseGate />
+                            )}
+                        </>
                     )}
                 </Suspense>
             </main>
