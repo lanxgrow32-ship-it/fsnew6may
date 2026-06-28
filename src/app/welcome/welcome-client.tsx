@@ -17,7 +17,9 @@ import {
     Menu,
     History,
     MessageSquare,
-    User
+    User,
+    ShieldCheck,
+    CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
