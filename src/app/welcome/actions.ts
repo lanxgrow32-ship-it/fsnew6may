@@ -9,7 +9,6 @@ import { revalidatePath } from 'next/cache';
  */
 function getAutoClassification(planName: string): string {
     const name = planName.toLowerCase();
-    // Strict PTP Check - Exclusive 'passthenpay' classification
     if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
         return 'passthenpay';
     }
@@ -36,156 +35,72 @@ function getBalanceFromPlanName(planName: string): number {
     return 0;
 }
 
-/**
- * Validates a coupon code and returns discount info
- */
 export async function validateCoupon(code: string) {
     if (!code) return { error: 'Please enter a code.' };
-    
-    const { data: coupon, error } = await supabaseAdmin
-        .from('coupons')
-        .select('*')
-        .eq('code', code.toUpperCase())
-        .single();
-    
+    const { data: coupon, error } = await supabaseAdmin.from('coupons').select('*').eq('code', code.toUpperCase()).single();
     if (error || !coupon) return { error: 'Invalid or expired coupon code.' };
     return { success: true, discount_value: coupon.discount_value };
 }
 
-/**
- * Helper to upload images for support chat
- */
 async function uploadSupportImage(file: File, conversationId: string) {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const fileExt = file.name.split('.').pop();
     const fileName = `support-${conversationId}-${Date.now()}.${fileExt}`;
-    
-    const { data, error } = await supabaseAdmin.storage
-      .from('support-attachments')
-      .upload(fileName, buffer, {
-          contentType: file.type,
-          upsert: true
-      });
-
-    if (error) {
-      console.error('Supabase Storage Error:', error);
-      throw new Error('Storage server rejected the file.');
-    }
-
-    const { data: urlData } = supabaseAdmin.storage
-      .from('support-attachments')
-      .getPublicUrl(data.path);
-      
+    const { data, error } = await supabaseAdmin.storage.from('support-attachments').upload(fileName, buffer, { contentType: file.type, upsert: true });
+    if (error) throw new Error('Storage rejection.');
+    const { data: urlData } = supabaseAdmin.storage.from('support-attachments').getPublicUrl(data.path);
     return urlData.publicUrl;
-  } catch (e: any) {
-      console.error('Internal Upload Error:', e);
-      throw new Error('Failed to upload image.');
-  }
+  } catch (e: any) { throw new Error('Failed to upload image.'); }
 }
 
-/**
- * Handles manual account purchase requests
- */
 export async function requestManualAccount(userId: string, planName: string, amount: number, utr: string) {
-  if (!userId || !planName || !amount || !utr) {
-    return { error: 'Invalid request details.' };
-  }
-
+  if (!userId || !planName || !amount || !utr) return { error: 'Invalid request details.' };
   const classification = getAutoClassification(planName);
-
-  const { error } = await supabaseAdmin
-    .from('user_accounts')
-    .insert({
-      user_id: userId,
-      plan_name: planName,
-      status: 'pending',
-      is_approved: false,
-      final_amount_paid: amount,
-      transaction_id: utr,
-      account_model: planName.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal',
+  const { error } = await supabaseAdmin.from('user_accounts').insert({
+      user_id: userId, plan_name: planName, status: 'pending', is_approved: false, final_amount_paid: amount,
+      transaction_id: utr, account_model: planName.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal',
       account_classification: classification
-    });
-
-  if (error) {
-    console.error("Manual Request Error:", error);
-    return { error: error.message };
-  }
-
+  });
+  if (error) return { error: error.message };
   revalidatePath('/welcome');
   revalidatePath('/admin/account-requests');
   return { success: true };
 }
 
-/**
- * Handles wallet top-up requests
- */
 export async function topUpWallet(userId: string, amount: number, utr: string) {
-  if (!userId || isNaN(amount) || amount <= 0 || !utr) {
-    return { error: 'Invalid top-up details.' };
+  if (!userId || isNaN(amount) || amount < 10000 || !utr) {
+    return { error: 'Minimum wallet deposit is ₹10,000.' };
   }
-
-  const { error } = await supabaseAdmin
-    .from('wallet_transactions')
-    .insert({
-      user_id: userId,
-      amount: amount,
-      type: 'deposit',
-      gateway_transaction_id: utr,
-      status: 'pending',
-      description: 'Wallet Top-up Request'
-    });
-
+  const { error } = await supabaseAdmin.from('wallet_transactions').insert({
+      user_id: userId, amount: amount, type: 'deposit', gateway_transaction_id: utr,
+      status: 'pending', description: 'Wallet Top-up Request'
+  });
   if (error) return { error: error.message };
-
   revalidatePath('/welcome');
   revalidatePath('/admin/wallet-requests');
   return { success: true };
 }
 
-/**
- * Handles internal account purchases using wallet balance
- */
 export async function purchaseWithWallet(userId: string, plan: any) {
   if (!userId || !plan) return { error: 'Missing details.' };
-
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-  
+  const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
   if (!profile) return { error: 'Profile not found.' };
   
   const price = parseFloat(plan.price.replace(/,/g, ''));
-  if (profile.wallet_balance < price) {
-      return { error: 'Insufficient wallet balance.' };
-  }
+  if (profile.wallet_balance < price) return { error: 'Insufficient wallet balance.' };
 
-  const newBalance = profile.wallet_balance - price;
-  await supabaseAdmin.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
-
-  await supabaseAdmin.from('wallet_transactions').insert({
-    user_id: userId,
-    amount: -price,
-    type: 'purchase',
-    status: 'completed',
-    description: `Purchase of ${plan.title}`
-  });
+  await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance - price }).eq('id', userId);
+  await supabaseAdmin.from('wallet_transactions').insert({ user_id: userId, amount: -price, type: 'purchase', status: 'completed', description: `Purchase of ${plan.title}` });
 
   const isPTP = plan.title.toLowerCase().includes('ptp');
   const classification = getAutoClassification(plan.title);
 
   const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
-    user_id: userId,
-    plan_name: plan.title,
-    status: 'pending',
-    is_approved: true,
-    account_model: isPTP ? 'passthrupay' : 'normal',
-    account_classification: classification,
-    final_amount_paid: price,
-    transaction_id: 'WALLET_PURCHASE'
+    user_id: userId, plan_name: plan.title, status: 'pending', is_approved: true,
+    account_model: isPTP ? 'passthrupay' : 'normal', account_classification: classification,
+    final_amount_paid: price, transaction_id: 'WALLET_PURCHASE'
   }).select().single();
 
   if (accountError || !account) return { error: 'Failed to create account.' };
@@ -195,11 +110,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
   if (stockmintApiKey && initialBalance > 0) {
       try {
-          const { count } = await supabaseAdmin.from('user_accounts')
-            .select('id', { count: 'exact' })
-            .eq('user_id', userId)
-            .eq('credentials_provided', true);
-
+          const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', userId).eq('credentials_provided', true);
           const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
           const [baseEmail, domain] = profile.email.split('@');
           const stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`;
@@ -208,22 +119,30 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
               body: JSON.stringify({ 
-                  fullName: profile.full_name,
-                  email: stockmintUsername,
-                  password: stockmintUsername,
-                  initialBalance,
-                  accountClassification: classification,
-                  accountModel: isPTP ? 'passthenpay' : 'normal'
+                  fullName: profile.full_name, email: stockmintUsername, password: stockmintUsername,
+                  initialBalance, accountClassification: classification, accountModel: isPTP ? 'passthenpay' : 'normal'
               }),
           });
 
           if (res.ok) {
-              await supabaseAdmin.from('user_accounts').update({
-                  credentials_provided: true,
-                  trading_username: stockmintUsername,
-                  trading_password: stockmintUsername,
-                  status: 'active'
-              }).eq('id', account.id);
+              await supabaseAdmin.from('user_accounts').update({ credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active' }).eq('id', account.id);
+              
+              // Email Trigger: Purchase (Needs KYC or Credentials)
+              const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
+              if (webhookUrl) {
+                  fetch(webhookUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                          email: profile.email,
+                          full_name: profile.full_name,
+                          plan_name: plan.title,
+                          username: stockmintUsername,
+                          password: stockmintUsername,
+                          needsKyc: profile.kyc_status !== 'verified' && !isPTP
+                      })
+                  }).catch(e => console.error(e));
+              }
           }
       } catch (e) { console.error('StockMint API Error:', e); }
   }
@@ -232,27 +151,10 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   return { success: true };
 }
 
-/**
- * Support Actions
- */
 export async function createSupportConversation(userId: string, subject: string, firstMessage?: string) {
-    const { data: conversation, error } = await supabaseAdmin
-        .from('support_conversations')
-        .insert({ user_id: userId, subject, unread_count_admin: 1 })
-        .select()
-        .single();
-    
+    const { data: conversation, error } = await supabaseAdmin.from('support_conversations').insert({ user_id: userId, subject, unread_count_admin: 1 }).select().single();
     if (error) return { error: error.message };
-
-    if (firstMessage) {
-        await supabaseAdmin.from('support_messages').insert({
-            conversation_id: conversation.id,
-            sender_id: userId,
-            sender_role: 'user',
-            message: firstMessage
-        });
-    }
-
+    if (firstMessage) await supabaseAdmin.from('support_messages').insert({ conversation_id: conversation.id, sender_id: userId, sender_role: 'user', message: firstMessage });
     revalidatePath('/welcome');
     revalidatePath('/support-agent/chat');
     return { data: conversation };
@@ -260,34 +162,18 @@ export async function createSupportConversation(userId: string, subject: string,
 
 export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string, imageFile?: File) {
     if (!convId || !senderId || (!message.trim() && !imageFile)) return { error: 'Invalid message.' };
-
     let imageUrl: string | undefined;
     if (imageFile) {
-        try {
-            imageUrl = await uploadSupportImage(imageFile, convId);
-        } catch (e: any) { return { error: e.message }; }
+        try { imageUrl = await uploadSupportImage(imageFile, convId); } catch (e: any) { return { error: e.message }; }
     }
-
-    const { error } = await supabaseAdmin.from('support_messages').insert({
-        conversation_id: convId,
-        sender_id: senderId,
-        sender_role: role,
-        message: message.trim(),
-        image_url: imageUrl
-    });
-    
+    const { error } = await supabaseAdmin.from('support_messages').insert({ conversation_id: convId, sender_id: senderId, sender_role: role, message: message.trim(), image_url: imageUrl });
     if (!error) {
         const { data: conv } = await supabaseAdmin.from('support_conversations').select('*').eq('id', convId).single();
-        const updateData: any = { 
-            last_message_at: new Date().toISOString(),
-            last_message_preview: message.trim() || (imageUrl ? '📷 Photo' : '')
-        };
+        const updateData: any = { last_message_at: new Date().toISOString(), last_message_preview: message.trim() || (imageUrl ? '📷 Photo' : '') };
         if (role === 'admin') updateData.unread_count_user = (conv?.unread_count_user || 0) + 1;
         else updateData.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
-
         await supabaseAdmin.from('support_conversations').update(updateData).eq('id', convId);
     }
-    
     revalidatePath('/welcome');
     return { error: error?.message };
 }
@@ -299,66 +185,56 @@ export async function markSupportRead(convId: string, role: 'admin' | 'user') {
     return { success: true };
 }
 
-/**
- * Competition Actions
- */
 export async function purchaseTournamentEntry(userId: string, eventId: string) {
     const { data: event } = await supabaseAdmin.from('competition_events').select('*').eq('id', eventId).single();
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
-
     if (!event || !profile) return { error: 'Data not found' };
 
-    // 1. Process Wallet Payment if not free
     if (!event.is_free) {
         if (profile.wallet_balance < event.entry_fee) return { error: 'Insufficient cash.' };
         await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance - event.entry_fee }).eq('id', userId);
         await supabaseAdmin.from('wallet_transactions').insert({ user_id: userId, amount: -event.entry_fee, type: 'purchase', status: 'completed', description: `Entry for ${event.week_label}` });
     }
 
-    // 2. Virtual Email for Competition
     const stockmintUsername = `${profile.email.split('@')[0]}-comp-${eventId.substring(0,4)}@${profile.email.split('@')[1]}`;
     const stockmintPassword = stockmintUsername;
-
-    // 3. Trigger StockMint API
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+
     if (stockmintApiKey) {
         try {
             await fetch('https://stockmint.io/api/users/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-                body: JSON.stringify({ 
-                    fullName: profile.full_name,
-                    email: stockmintUsername,
-                    password: stockmintPassword,
-                    initialBalance: 100000,
-                    accountClassification: 'evaluation',
-                    accountModel: 'normal'
-                }),
+                body: JSON.stringify({ fullName: profile.full_name, email: stockmintUsername, password: stockmintPassword, initialBalance: 100000, accountClassification: 'evaluation', accountModel: 'normal' }),
             });
-        } catch (e) { console.error('Competition StockMint API failed:', e); }
+        } catch (e) { console.error('Competition API failed:', e); }
     }
 
-    // 4. Save Registration
-    const { error } = await supabaseAdmin.from('competition_registrations').insert({
-        user_id: userId,
-        event_id: eventId,
-        transaction_id: event.is_free ? 'FREE_JOIN' : 'WALLET_JOIN',
-        is_approved: true,
-        stockmint_username: stockmintUsername,
-        stockmint_password: stockmintPassword
-    });
-
+    const { error } = await supabaseAdmin.from('competition_registrations').insert({ user_id: userId, event_id: eventId, transaction_id: event.is_free ? 'FREE_JOIN' : 'WALLET_JOIN', is_approved: true, stockmint_username: stockmintUsername, stockmint_password: stockmintPassword });
     if (error) return { error: error.message };
+
+    // Email Trigger: Competition Join
+    const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
+    if (webhookUrl) {
+        fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: profile.email,
+                full_name: profile.full_name,
+                plan_name: `Tournament: ${event.week_label}`,
+                username: stockmintUsername,
+                password: stockmintPassword,
+                isCompetition: true
+            })
+        }).catch(e => console.error(e));
+    }
+
     revalidatePath('/welcome');
     return { success: true };
 }
 
 export async function getCompetitionEvents() {
-    const { data } = await supabaseAdmin
-        .from('competition_events')
-        .select('*')
-        .eq('is_active', true)
-        .neq('status', 'completed')
-        .order('start_date', { ascending: true });
+    const { data } = await supabaseAdmin.from('competition_events').select('*').eq('is_active', true).neq('status', 'completed').order('start_date', { ascending: true });
     return data || [];
 }

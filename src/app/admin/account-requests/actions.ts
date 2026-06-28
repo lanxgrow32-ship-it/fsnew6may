@@ -4,12 +4,8 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
-/**
- * Maps plan names to their starting phase classification
- */
 function getAutoClassification(planName: string): string {
     const name = planName.toLowerCase();
-    // Strict PTP Check
     if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
         return 'passthenpay';
     }
@@ -31,18 +27,11 @@ function getBalanceFromPlanName(planName: string): number {
         else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
         return amount;
     }
-    const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
     return 0;
 }
 
 export async function approveAccount(accountId: string) {
-    const { data: account, error: fetchError } = await supabaseAdmin
-        .from('user_accounts')
-        .select('*, profiles(*)')
-        .eq('id', accountId)
-        .single();
-    
+    const { data: account, error: fetchError } = await supabaseAdmin.from('user_accounts').select('*, profiles(*)').eq('id', accountId).single();
     if (fetchError || !account) return { error: 'Account request not found.' };
 
     const profile = account.profiles;
@@ -50,19 +39,12 @@ export async function approveAccount(accountId: string) {
     const isKycDone = profile.kyc_status === 'verified';
     const classification = getAutoClassification(account.plan_name);
 
-    // 1. Mark as approved with initial classification
-    const { error: approveError } = await supabaseAdmin
-        .from('user_accounts')
-        .update({ 
-            is_approved: true, 
-            status: isKycDone || isPTP ? 'active' : 'pending',
-            account_classification: classification
-        })
-        .eq('id', accountId);
+    const { error: approveError } = await supabaseAdmin.from('user_accounts').update({ 
+        is_approved: true, status: isKycDone || isPTP ? 'active' : 'pending', account_classification: classification
+    }).eq('id', accountId);
     
     if (approveError) return { error: approveError.message };
 
-    // 2. If KYC is verified (or PTP), create StockMint account immediately
     if (isKycDone || isPTP) {
         const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', profile.id).eq('credentials_provided', true);
         const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
@@ -73,32 +55,39 @@ export async function approveAccount(accountId: string) {
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
         if (stockmintApiKey && initialBalance > 0) {
             try {
-                const payload: any = { 
-                    fullName: profile.full_name,
-                    email: stockmintUsername,
-                    password: stockmintUsername,
-                    initialBalance,
-                    accountClassification: classification,
-                    accountModel: isPTP ? 'passthenpay' : 'normal'
-                };
-
                 const res = await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify({ 
+                        fullName: profile.full_name, email: stockmintUsername, password: stockmintUsername,
+                        initialBalance, accountClassification: classification, accountModel: isPTP ? 'passthenpay' : 'normal'
+                    }),
                 });
 
                 if (res.ok) {
                     await supabaseAdmin.from('user_accounts').update({
-                        credentials_provided: true,
-                        trading_username: stockmintUsername,
-                        trading_password: stockmintUsername,
-                        status: 'active'
+                        credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active'
                     }).eq('id', accountId);
                 }
-
             } catch (e) { console.error('StockMint API failed:', e); }
         }
+    }
+
+    // Email Trigger: Activation (Needs KYC or Credentials)
+    const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
+    if (webhookUrl) {
+        fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: profile.email,
+                full_name: profile.full_name,
+                plan_name: account.plan_name,
+                username: profile.email,
+                password: profile.email,
+                needsKyc: !isKycDone && !isPTP
+            })
+        }).catch(e => console.error(e));
     }
 
     revalidatePath('/admin/account-requests');
@@ -106,15 +95,8 @@ export async function approveAccount(accountId: string) {
     return { success: true };
 }
 
-/**
- * Rejects an account request.
- */
 export async function deleteAccountRequest(accountId: string) {
-    const { error } = await supabaseAdmin
-        .from('user_accounts')
-        .update({ status: 'rejected' })
-        .eq('id', accountId);
-    
+    const { error } = await supabaseAdmin.from('user_accounts').update({ status: 'rejected' }).eq('id', accountId);
     if (error) return { error: error.message };
     revalidatePath('/admin/account-requests');
     return { success: true };

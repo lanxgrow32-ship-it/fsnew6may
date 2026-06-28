@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -12,7 +13,8 @@ import {
     Send, 
     Loader2, 
     Wallet,
-    Sparkles
+    Sparkles,
+    AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { topUpWallet } from './actions';
@@ -31,12 +33,15 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
     const [amount, setAmount] = useState('');
     const [utr, setUtr] = useState('');
 
+    const parsedAmount = parseFloat(amount) || 0;
+    const isBelowMin = parsedAmount > 0 && parsedAmount < 10000;
+
     const handleTopUp = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!amount || !utr) return;
+        if (!amount || !utr || isBelowMin) return;
 
         startTransition(async () => {
-            const res = await topUpWallet(profile.id, parseFloat(amount), utr);
+            const res = await topUpWallet(profile.id, parsedAmount, utr);
             if (res.error) {
                 toast({ title: "Request Failed", description: res.error, variant: "destructive" });
             } else {
@@ -85,7 +90,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                              <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest text-center">UPI Address</p>
                              <div className="p-3 bg-black/40 rounded-xl border border-white/10 flex items-center justify-between shadow-xl">
                                 <p className="font-mono text-white text-xs font-bold truncate max-w-[150px]">{paymentSettings?.upi_id || 'pay@fundedstock'}</p>
-                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-white" onClick={() => copyToClipboard(paymentSettings?.upi_id)}><Copy className="w-3.5 h-3.5"/></Button>
+                                <button type="button" onClick={() => copyToClipboard(paymentSettings?.upi_id)} className="text-primary hover:text-white transition-colors"><Copy className="w-4 h-4"/></button>
                             </div>
                         </div>
                     </div>
@@ -95,23 +100,18 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                     <form onSubmit={handleTopUp} className="h-full flex flex-col">
                         <CardHeader>
                             <CardTitle className="text-lg font-bold flex items-center gap-2 text-white"><Wallet className="w-5 h-5 text-primary"/> Load Wallet</CardTitle>
-                            <CardDescription className="text-gray-400 font-medium text-xs">Submit your reference to credit your wallet instantly.</CardDescription>
+                            <CardDescription className="text-gray-400 font-medium text-xs">Minimum ₹10,000 required for wallet deposits.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6 flex-grow">
-                            <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 shrink-0">
-                                    <Sparkles className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-white">Deposit Bonus Active</p>
-                                    <p className="text-[11px] text-gray-500 font-medium">Get 5% extra cash added to every successful top-up.</p>
-                                </div>
-                            </div>
-
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <Label className="text-[11px] font-bold text-gray-600 uppercase">Deposit Amount (₹)</Label>
-                                    <Input type="number" placeholder="e.g. 5000" value={amount} onChange={(e) => setAmount(e.target.value)} required className="bg-black/20 border-white/10 text-white h-12 text-base font-bold" />
+                                    <Label className={cn("text-[11px] font-bold uppercase", isBelowMin ? "text-red-400" : "text-gray-600")}>Deposit Amount (₹)</Label>
+                                    <Input type="number" placeholder="Min ₹10,000" value={amount} onChange={(e) => setAmount(e.target.value)} required className={cn("bg-black/20 border-white/10 text-white h-12 text-base font-bold", isBelowMin && "border-red-500/50")} />
+                                    {isBelowMin && (
+                                        <p className="text-[10px] font-bold text-red-400 flex items-center gap-1 uppercase tracking-tighter">
+                                            <AlertCircle className="w-3 h-3" /> Min ₹10,000 to qualify for instant status
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-[11px] font-bold text-gray-600 uppercase">UPI Reference (UTR)</Label>
@@ -120,7 +120,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                             </div>
                         </CardContent>
                         <CardFooter className="pt-0 pb-8">
-                            <Button type="submit" disabled={isPending || !amount || !utr} className="w-full h-12 font-bold bg-primary text-white rounded-xl shadow-xl shadow-primary/20 text-xs">
+                            <Button type="submit" disabled={isPending || !amount || !utr || isBelowMin} className="w-full h-12 font-bold bg-primary text-white rounded-xl shadow-xl shadow-primary/20 text-xs">
                                 {isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <Send className="mr-2 h-3.5 w-3.5" />}
                                 Confirm Deposit Request
                             </Button>
@@ -130,7 +130,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
             </div>
             
             <p className="text-center text-[10px] font-bold text-gray-800 uppercase tracking-[0.2em] mt-8">
-                Official Financial Gateway · Professional Performance Hub
+                Official Financial Gateway · Minimum 10K Wallet Protocol
             </p>
         </div>
     );
