@@ -3,82 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Activated - FundedStock</title>
+    <title>Identity Verified — FundedStock</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin: 0; padding: 0; background-color: #f3f4f6; width: 100% !important;">
-    <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#f3f4f6">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; color: #1e293b; width: 100% !important;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#f8fafc">
         <tr>
-            <td align="center">
-                <table class="container" width="600" border="0" align="center" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <td align="center" style="padding: 40px 20px;">
+                <table width="600" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                     <!-- Header -->
                     <tr>
-                        <td align="center" style="background-color: #166534; padding: 20px; border-radius: 8px 8px 0 0;">
-                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">FundedStock</h1>
+                        <td style="padding: 40px; background-color: #166534; text-align: center;">
+                            <div style="background-color: #22c55e; color: #ffffff; padding: 4px 12px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;">Identity Status: Confirmed</div>
+                            <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff;">KYC Verification Successful</h1>
                         </td>
                     </tr>
-                    <!-- Content -->
+                    <!-- Body -->
                     <tr>
-                        <td style="padding: 30px; text-align: left; color: #374151; line-height: 1.6;">
-                            <p style="font-size: 18px; margin-bottom: 20px;">Congratulations, {{1.user_name}}! 🎉</p>
-                            <p>Your KYC verification has been approved. Your FundedStock evaluation account is now fully active. Below are your account details — please save them securely.</p>
+                        <td style="padding: 40px; line-height: 1.6;">
+                            <p style="font-size: 16px; margin-bottom: 24px;">Hi {{full_name}},</p>
+                            <p style="font-size: 15px; color: #475569; margin-bottom: 24px;">We are pleased to inform you that your KYC documentation has been reviewed and approved. Your identity is now fully verified on the FundedStock platform.</p>
                             
-                            <!-- Account Details Box -->
-                            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: 1px solid #dcfce7; border-radius: 8px; margin-top: 25px; margin-bottom: 25px; background-color: #f0fdf4;">
-                                <tr>
-                                    <td style="padding: 15px 20px; border-bottom: 1px solid #dcfce7; font-weight: bold; color: #14532d;">YOUR ACCOUNT DETAILS</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 0 20px;">
-                                        <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                                            <tr style="border-bottom: 1px solid #dcfce7;">
-                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Trading Username</td>
-                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.trading_username}}</td>
-                                            </tr>
-                                            <tr style="border-bottom: 1px solid #dcfce7;">
-                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Trading Password</td>
-                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.trading_password}}</td>
-                                            </tr>
-                                            <tr style="border-bottom: 1px solid #dcfce7;">
-                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Plan</td>
-                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.plan_name}}</td>
-                                            </tr>
-                                            <tr style="border-bottom: 1px solid #dcfce7;">
-                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Account Size</td>
-                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">₹{{1.account_size}}</td>
-                                            </tr>
-                                            <tr style="border-bottom: 1px solid #dcfce7;">
-                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Daily Loss Limit</td>
-                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">5%</td>
-                                            </tr>
-                                            <tr style="border-bottom: 1px solid #dcfce7;">
-                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Overall Drawdown</td>
-                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">10%</td>
-                                            </tr>
-                                            <tr style="border-bottom: 1px solid #dcfce7;">
-                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Min Trading Days</td>
-                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">5 days</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 12px 0; font-size: 14px; color: #166534;">Activated On</td>
-                                                <td style="padding: 12px 0; font-size: 14px; font-weight: 500; color: #1f2937; text-align: right;">{{1.activation_date}}</td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <p>Log in to your dashboard to view real-time performance, track your progress, and manage your account.</p>
-
-                            <div style="text-align: center;">
-                                <a href="https://app.fundedstock.io/welcome" style="display: inline-block; background-color: #15803d; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px; margin-bottom: 20px;">Go to Dashboard</a>
+                            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+                                <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #166534; font-weight: 700; text-transform: uppercase;">Verification Benefits</h3>
+                                <ul style="margin: 0; padding: 0 0 0 20px; font-size: 14px; color: #166534;">
+                                    <li>Eligible for 80% Performance Reward disbursements.</li>
+                                    <li>Unlocks high-fidelity trading credentials for purchased plans.</li>
+                                    <li>Full access to specialized funding models (PTP, Instant, etc.).</li>
+                                </ul>
                             </div>
 
+                            <div style="text-align: center; margin-bottom: 32px;">
+                                <a href="https://app.fundedstock.io/welcome" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Return to Dashboard</a>
+                            </div>
+
+                            <p style="font-size: 14px; color: #64748b; margin: 0;">If you have already purchased a funding plan, your credentials will now be visible in your Trader Hub.</p>
                         </td>
                     </tr>
                     <!-- Footer -->
                     <tr>
-                        <td style="text-align: center; font-size: 12px; color: #9ca3af; padding: 20px;">
-                            <p>Questions? Contact us at <a href="mailto:support@fundedstock.in" style="color: #3b82f6;">support@fundedstock.in</a></p>
+                        <td style="padding: 24px 40px; background-color: #f1f5f9; text-align: center;">
+                            <p style="margin: 0; font-size: 12px; color: #94a3b8; font-weight: 500;">© 2024 FundedStock · Professional Trading Solutions</p>
                         </td>
                     </tr>
                 </table>

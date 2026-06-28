@@ -12,9 +12,9 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
+    <Button type="submit" className="w-full h-12 bg-primary text-white font-bold rounded-xl shadow-lg" disabled={pending}>
       {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-      Send Test Signal
+      Send KYC Success Test Signal
     </Button>
   );
 }
@@ -27,7 +27,7 @@ export default function WebhookTestPageKycApproved() {
     if (state.success) {
       toast({
         title: 'Signal Sent!',
-        description: 'Check your Make.com scenario to see if the data was received.',
+        description: 'Make.com should now show "Successfully determined".',
       });
     }
     if (state.error) {
@@ -40,17 +40,17 @@ export default function WebhookTestPageKycApproved() {
   }, [state, toast]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-md">
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-4 font-poppins">
+      <Card className="w-full max-w-md bg-white/5 border-white/10 text-white shadow-2xl">
         <CardHeader>
-          <CardTitle>KYC Approved - Webhook Test</CardTitle>
-          <CardDescription>
-            Click the button to send a test payload to your Make.com webhook to set up the data structure.
+          <CardTitle className="text-2xl font-bold">Step 2: KYC Confirmation</CardTitle>
+          <CardDescription className="text-gray-400">
+            Click to teach Make.com the KYC Success data structure.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={formAction}>
-            {state.error && <Alert variant="destructive" className="mb-4"><AlertTitle>Error</AlertTitle><AlertDescription>{state.error}</AlertDescription></Alert>}
+            {state.error && <Alert variant="destructive" className="mb-4 bg-red-500/10 border-red-500/20"><AlertTitle>Error</AlertTitle><AlertDescription>{state.error}</AlertDescription></Alert>}
             <SubmitButton />
           </form>
         </CardContent>

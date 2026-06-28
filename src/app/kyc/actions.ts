@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -97,14 +96,17 @@ export async function saveKycStep(step: number, formData: FormData) {
     if (updateError) return { error: updateError.message };
     
     if (isFinalStep && updatedProfile) {
-        // Email Trigger: Standalone KYC Verification
+        // TRIGGER V3: Standalone KYC Success
         const kycWebhook = process.env.MAKE_KYC_VERIFIED_WEBHOOK_URL;
         if (kycWebhook) {
             fetch(kycWebhook, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: updatedProfile.email, full_name: updatedProfile.full_name })
-            }).catch(e => console.error(e));
+                body: JSON.stringify({
+                    email: updatedProfile.email,
+                    full_name: updatedProfile.full_name
+                })
+            }).catch(e => console.error('KYC success webhook failed:', e));
         }
 
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
