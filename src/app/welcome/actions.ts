@@ -96,9 +96,10 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
   const isPTP = plan.title.toLowerCase().includes('ptp');
   const classification = getAutoClassification(plan.title);
+  const isKycVerified = profile.kyc_status === 'verified';
 
   const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
-    user_id: userId, plan_name: plan.title, status: 'pending', is_approved: true,
+    user_id: userId, plan_name: plan.title, status: isPTP || isKycVerified ? 'active' : 'pending', is_approved: true,
     account_model: isPTP ? 'passthrupay' : 'normal', account_classification: classification,
     final_amount_paid: price, transaction_id: 'WALLET_PURCHASE'
   }).select().single();
@@ -107,13 +108,14 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
   const stockmintApiKey = process.env.STOCKMINT_API_KEY;
   const initialBalance = getBalanceFromPlanName(plan.title);
+  let stockmintUsername = profile.email;
 
   if (stockmintApiKey && initialBalance > 0) {
       try {
           const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', userId).eq('credentials_provided', true);
           const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
           const [baseEmail, domain] = profile.email.split('@');
-          const stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`;
+          stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`;
 
           const res = await fetch('https://stockmint.io/api/users/create', {
               method: 'POST',
@@ -128,6 +130,23 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               await supabaseAdmin.from('user_accounts').update({ credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active' }).eq('id', account.id);
           }
       } catch (e) { console.error('StockMint API Error:', e); }
+  }
+
+  // TRIGGER V3: Intelligent Purchase Handler
+  const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
+  if (purchaseWebhook) {
+      fetch(purchaseWebhook, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              email: profile.email,
+              full_name: profile.full_name,
+              plan_name: plan.title,
+              username: stockmintUsername,
+              password: stockmintUsername,
+              needsKyc: !isKycVerified && !isPTP
+          })
+      }).catch(e => console.error(e));
   }
 
   revalidatePath('/welcome');
@@ -194,6 +213,26 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     }
 
     const { error } = await supabaseAdmin.from('competition_registrations').insert({ user_id: userId, event_id: eventId, transaction_id: event.is_free ? 'FREE_JOIN' : 'WALLET_JOIN', is_approved: true, stockmint_username: stockmintUsername, stockmint_password: stockmintPassword });
+    
+    if (!error) {
+         // TRIGGER V3: Intelligent Purchase Handler (Competition specialized path)
+         const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
+         if (purchaseWebhook) {
+             fetch(purchaseWebhook, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({
+                     email: profile.email,
+                     full_name: profile.full_name,
+                     plan_name: `Tournament: ${event.week_label}`,
+                     username: stockmintUsername,
+                     password: stockmintUsername,
+                     needsKyc: false // Competitions don't require KYC for credentials
+                 })
+             }).catch(e => console.error(e));
+         }
+    }
+    
     if (error) return { error: error.message };
     revalidatePath('/welcome');
     return { success: true };

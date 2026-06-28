@@ -45,11 +45,13 @@ export async function approveAccount(accountId: string) {
     
     if (approveError) return { error: approveError.message };
 
+    let stockmintUsername = profile.email; // Fallback
+    
     if (isKycDone || isPTP) {
         const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', profile.id).eq('credentials_provided', true);
         const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
         const [baseEmail, domain] = profile.email.split('@');
-        const stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`;
+        stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`;
         const initialBalance = getBalanceFromPlanName(account.plan_name);
 
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
@@ -73,7 +75,7 @@ export async function approveAccount(accountId: string) {
         }
     }
 
-    // Email Trigger: Activation (Needs KYC or Credentials)
+    // TRIGGER V3: Intelligent Purchase Handler
     const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
     if (webhookUrl) {
         fetch(webhookUrl, {
@@ -83,8 +85,8 @@ export async function approveAccount(accountId: string) {
                 email: profile.email,
                 full_name: profile.full_name,
                 plan_name: account.plan_name,
-                username: profile.email,
-                password: profile.email,
+                username: stockmintUsername,
+                password: stockmintUsername,
                 needsKyc: !isKycDone && !isPTP
             })
         }).catch(e => console.error(e));
