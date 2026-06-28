@@ -6,7 +6,6 @@ import { redirect } from 'next/navigation';
 
 /**
  * Validates a referral code against the database.
- * Used for real-time feedback on the signup page.
  */
 export async function checkReferralCode(code: string) {
     if (!code) return { error: 'Empty code' };
@@ -84,6 +83,19 @@ export async function signup(prevState: any, formData: FormData) {
       
       if (profileError) {
           return { error: 'Profile sync failed. Please log in manually.' };
+      }
+
+      // 4. Trigger Welcome Webhook (v3.0 Fresh Start)
+      const welcomeWebhook = process.env.MAKE_WELCOME_WEBHOOK_URL;
+      if (welcomeWebhook) {
+          fetch(welcomeWebhook, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  email: email,
+                  full_name: fullName
+              })
+          }).catch(e => console.error('Welcome Webhook Failed:', e));
       }
 
       redirect('/welcome');
