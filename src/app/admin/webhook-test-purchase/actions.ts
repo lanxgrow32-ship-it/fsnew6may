@@ -1,4 +1,3 @@
-
 'use server';
 
 interface WebhookTestState {
@@ -6,21 +5,21 @@ interface WebhookTestState {
   success?: boolean;
 }
 
-export async function sendPurchaseTestWebhook(prevState: WebhookTestState, formData: FormData): Promise<WebhookTestState> {
+export async function sendPurchaseTestWebhook(state: any, formData: FormData): Promise<WebhookTestState> {
   const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
+  const needsKyc = formData.get('needsKyc') === 'true';
 
   if (!webhookUrl) {
     return { error: 'The Purchase webhook URL is not configured in your .env file.' };
   }
 
-  // This is exactly what the "Intelligent Router" needs to see
   const payload = {
     email: 'trader.test@example.com',
     full_name: 'Alex Trader',
-    plan_name: '5 Lakh Instant Funding',
+    plan_name: '10 Lakh Standard Evaluation',
     username: 'alex-trader@fundedstock.io',
     password: 'secure-password-123',
-    needsKyc: true // This is the logic flag
+    needsKyc: needsKyc
   };
 
   try {
