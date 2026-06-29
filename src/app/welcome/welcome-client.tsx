@@ -19,7 +19,9 @@ import {
     MessageSquare,
     User,
     ShieldCheck,
-    CheckCircle
+    CheckCircle,
+    Users,
+    BookOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -113,6 +115,8 @@ function WelcomeContent({
         { id: 'marketplace', label: "Get Funded", icon: ShoppingCart },
         { id: 'competition', label: "Competition", icon: Trophy },
         { id: 'wallet', label: "Wallet", icon: Wallet },
+        { id: 'referrals', label: "Referrals", icon: Users, href: '/referrals' },
+        { id: 'guide', label: "Guide", icon: BookOpen, href: '/guide' },
         { id: 'transactions', label: "History", icon: History },
         { id: 'support', label: "Live Chat", icon: MessageSquare, hasBadge: totalUnread > 0 },
         { id: 'kyc', label: "KYC", icon: FileCheck },
@@ -127,25 +131,39 @@ function WelcomeContent({
                     <div className="flex items-center gap-6">
                         <Logo />
                         <nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">
-                            {navItems.map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => setActiveTab(item.id)}
-                                    className={cn(
-                                        "px-4 py-1.5 text-[12px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0 flex items-center gap-2",
-                                        activeTab === item.id
-                                        ? "bg-white/10 text-white border border-white/10 shadow-sm"
-                                        : "text-gray-400 hover:text-white"
-                                    )}
-                                >
-                                    {item.label}
-                                    {item.hasBadge && (
-                                        <span className="w-4 h-4 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full animate-pulse">
-                                            {totalUnread > 9 ? '9+' : totalUnread}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
+                            {navItems.map((item) => {
+                                const commonClasses = cn(
+                                    "px-4 py-1.5 text-[11px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0 flex items-center gap-2",
+                                    activeTab === item.id
+                                    ? "bg-white/10 text-white border border-white/10 shadow-sm"
+                                    : "text-gray-400 hover:text-white"
+                                );
+
+                                if (item.href) {
+                                    return (
+                                        <Link key={item.id} href={item.href} className={commonClasses}>
+                                            <item.icon className="w-3.5 h-3.5" />
+                                            {item.label}
+                                        </Link>
+                                    );
+                                }
+
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveTab(item.id)}
+                                        className={commonClasses}
+                                    >
+                                        <item.icon className="w-3.5 h-3.5" />
+                                        {item.label}
+                                        {item.hasBadge && (
+                                            <span className="w-3.5 h-3.5 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full animate-pulse">
+                                                {totalUnread > 9 ? '9+' : totalUnread}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </nav>
                     </div>
 
@@ -194,29 +212,42 @@ function WelcomeContent({
                                 </SheetHeader>
                                 <div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto">
                                     <div className="space-y-2">
-                                        {navItems.map((item) => (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => {
-                                                    setActiveTab(item.id);
-                                                    setIsSidebarOpen(false);
-                                                }}
-                                                className={cn(
-                                                    "w-full px-5 py-4 text-sm font-bold transition-all flex items-center gap-4 rounded-2xl relative",
-                                                    activeTab === item.id
-                                                    ? "bg-primary text-white border border-white shadow-xl shadow-primary/20"
-                                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                                )}
-                                            >
-                                                <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
-                                                {item.label}
-                                                {item.hasBadge && (
-                                                    <span className="absolute right-5 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
-                                                        {totalUnread}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        ))}
+                                        {navItems.map((item) => {
+                                            const commonClasses = cn(
+                                                "w-full px-5 py-4 text-sm font-bold transition-all flex items-center gap-4 rounded-2xl relative",
+                                                activeTab === item.id
+                                                ? "bg-primary text-white border border-white shadow-xl shadow-primary/20"
+                                                : "text-gray-400 hover:text-white hover:bg-white/5"
+                                            );
+
+                                            if (item.href) {
+                                                return (
+                                                    <Link key={item.id} href={item.href} className={commonClasses} onClick={() => setIsSidebarOpen(false)}>
+                                                        <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
+                                                        {item.label}
+                                                    </Link>
+                                                );
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => {
+                                                        setActiveTab(item.id);
+                                                        setIsSidebarOpen(false);
+                                                    }}
+                                                    className={commonClasses}
+                                                >
+                                                    <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
+                                                    {item.label}
+                                                    {item.hasBadge && (
+                                                        <span className="absolute right-5 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
+                                                            {totalUnread}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                     
                                     <div className="mt-auto pt-8 pb-8">
