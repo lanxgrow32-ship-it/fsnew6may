@@ -25,6 +25,7 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const commissionPercentage = formData.get('referral_commission_percentage') as string;
   const activeGateway = formData.get('active_gateway') as 'lgpay' | 'manual' | 'watchpay' | 'automated';
   const automatedMode = formData.get('automated_mode') as 'both' | 'lgpay' | 'watchpay';
+  const isPtpEnabled = formData.get('is_ptp_enabled') === 'on';
 
   // Pay Later settings
   const payLaterUpiId = formData.get('pay_later_upi_id') as string;
@@ -57,6 +58,7 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
     automated_gateway_mode: automatedMode,
     watchpay_merchant_id: watchPayMerchantId,
     watchpay_api_key: watchPayApiKey,
+    is_ptp_enabled: isPtpEnabled,
   };
 
   try {

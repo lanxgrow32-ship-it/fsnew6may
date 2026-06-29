@@ -15,10 +15,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2 } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2, PackageCheck } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 
 type PaymentDetails = {
     id: number;
@@ -31,6 +32,7 @@ type PaymentDetails = {
     pay_later_qr_code_url: string | null;
     watchpay_merchant_id: string | null;
     watchpay_api_key: string | null;
+    is_ptp_enabled: boolean;
 };
 
 function SubmitButton() {
@@ -46,8 +48,6 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     const { toast } = useToast();
     const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
     
-    const [upiQrPreview, setUpiQrPreview] = useState<string | null>(currentSettings?.qr_code_url || null);
-    const [payLaterUpiQrPreview, setPayLaterUpiQrPreview] = useState<string | null>(currentSettings?.pay_later_qr_code_url || null);
     const [activeGateway, setActiveGateway] = useState<'lgpay' | 'manual' | 'watchpay' | 'automated'>(currentSettings?.active_payment_gateway || 'manual');
     const [automatedMode, setAutomatedMode] = useState<'both' | 'lgpay' | 'watchpay'>(currentSettings?.automated_gateway_mode || 'both');
 
@@ -64,6 +64,25 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     
     return (
         <form ref={formRef} action={formAction} className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Marketplace Inventory</CardTitle>
+                    <CardDescription>Control which account models are visible to traders.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-white/5">
+                        <div className="space-y-0.5">
+                            <Label className="text-sm font-bold flex items-center gap-2">
+                                <PackageCheck className="w-4 h-4 text-primary" />
+                                PassThenPay Availability
+                            </Label>
+                            <p className="text-xs text-muted-foreground">If disabled, PTP plans will vanish from the marketplace.</p>
+                        </div>
+                        <Switch name="is_ptp_enabled" defaultChecked={currentSettings?.is_ptp_enabled ?? true} />
+                    </div>
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Active Payment Strategy</CardTitle>

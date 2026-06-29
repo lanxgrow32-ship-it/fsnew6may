@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -86,6 +85,8 @@ export function ArenaView({
     const [couponCode, setCouponCode] = useState('');
     const [discount, setDiscount] = useState(0);
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
+    const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
 
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -368,6 +369,8 @@ export function ArenaView({
         </div>
     );
 
+    const gridCols = isPtpActive ? "lg:grid-cols-4" : "lg:grid-cols-3";
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="space-y-1">
@@ -376,11 +379,11 @@ export function ArenaView({
             </div>
 
             <Tabs defaultValue="instant" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
+                <TabsList className={cn("grid w-full max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10", gridCols)}>
                     <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
                     <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
                     <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
-                    <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-xs">PTP</TabsTrigger>
+                    {isPtpActive && <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-xs">PTP</TabsTrigger>}
                 </TabsList>
 
                 <TabsContent value="instant" className="animate-in fade-in zoom-in-95">
@@ -401,12 +404,14 @@ export function ArenaView({
                         {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}
                     </div>
                 </TabsContent>
-                <TabsContent value="ptp" className="animate-in fade-in zoom-in-95">
-                    <RulesPill href="/pass-then-pay" label="About PassThenPay" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
-                    </div>
-                </TabsContent>
+                {isPtpActive && (
+                    <TabsContent value="ptp" className="animate-in fade-in zoom-in-95">
+                        <RulesPill href="/pass-then-pay" label="About PassThenPay" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                            {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
+                        </div>
+                    </TabsContent>
+                )}
             </Tabs>
         </div>
     );
