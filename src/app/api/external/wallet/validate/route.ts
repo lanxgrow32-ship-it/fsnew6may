@@ -1,0 +1,36 @@
+
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+
+/**
+ * API for fundedstock.shop to validate a user's Wallet ID
+ * GET /api/external/wallet/validate?wallet_id=12345678
+ */
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const walletId = searchParams.get('wallet_id');
+
+    if (!walletId) {
+        return NextResponse.json({ error: 'Wallet ID required' }, { status: 400 });
+    }
+
+    try {
+        const { data: profile, error } = await supabaseAdmin
+            .from('profiles')
+            .select('full_name, email')
+            .eq('wallet_id', walletId)
+            .single();
+
+        if (error || !profile) {
+            return NextResponse.json({ valid: false, message: 'Invalid Wallet ID' }, { status: 404 });
+        }
+
+        return NextResponse.json({
+            valid: true,
+            name: profile.full_name,
+            email: profile.email
+        });
+    } catch (e) {
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
