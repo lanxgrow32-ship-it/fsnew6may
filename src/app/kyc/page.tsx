@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useTransition, useEffect, Suspense, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -235,21 +236,26 @@ function KycFlow({initialProfile}: {initialProfile: Profile}) {
 
   const handleStepSave = async (formData: FormData) => {
       startTransition(async () => {
-          setError(null);
-          const result = await saveKycStep(currentStep, formData);
-          if (result.error) {
-              setError(result.error);
-          } else {
-              if (result.updatedProfile) {
-                  setProfile(result.updatedProfile as Profile);
-              }
-
-              if (currentStep === totalSteps) {
-                  toast({ title: 'KYC Verified!', description: 'Your KYC process is complete.' });
-                  router.push('/welcome');
+          try {
+              setError(null);
+              const result = await saveKycStep(currentStep, formData);
+              if (result.error) {
+                  setError(result.error);
               } else {
-                  setCurrentStep(prev => prev + 1);
+                  if (result.updatedProfile) {
+                      setProfile(result.updatedProfile as Profile);
+                  }
+
+                  if (currentStep === totalSteps) {
+                      toast({ title: 'KYC Verified!', description: 'Your KYC process is complete.' });
+                      router.push('/welcome');
+                  } else {
+                      setCurrentStep(prev => prev + 1);
+                  }
               }
+          } catch (e: any) {
+              console.error("KYC Save Error:", e);
+              setError("A network error occurred. The file might be too large. Please try again with a shorter video or smaller images.");
           }
       });
   };
@@ -449,6 +455,7 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
     const videoRef = useRef<HTMLVideoElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
 
     const startCamera = async () => {
         try {
@@ -474,21 +481,31 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
     const startRecording = () => {
         if (!streamRef.current) return;
         
-        const chunks: Blob[] = [];
-        const mediaRecorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+        chunksRef.current = [];
+        
+        // Detect supported MIME types for better browser compatibility
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') 
+            ? 'video/webm;codecs=vp8,opus' 
+            : MediaRecorder.isTypeSupported('video/mp4') 
+                ? 'video/mp4' 
+                : '';
+
+        const mediaRecorder = new MediaRecorder(streamRef.current, { mimeType });
         
         mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) chunks.push(e.data);
+            if (e.data && e.data.size > 0) {
+                chunksRef.current.push(e.data);
+            }
         };
         
         mediaRecorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'video/webm' });
+            const blob = new Blob(chunksRef.current, { type: mimeType || 'video/webm' });
             setVideoBlob(blob);
             setVideoUrl(URL.createObjectURL(blob));
         };
         
         mediaRecorderRef.current = mediaRecorder;
-        mediaRecorder.start();
+        mediaRecorder.start(1000); // Collect data in 1s chunks
         setRecording(true);
     };
 
@@ -554,7 +571,7 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
 
                     <div className="relative aspect-video rounded-xl bg-black overflow-hidden border border-white/5">
                         {videoUrl ? (
-                            <video src={videoUrl} controls className="w-full h-full object-cover" />
+                            <video src={videoUrl} controls autoPlay className="w-full h-full object-cover" />
                         ) : (
                             <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror" />
                         )}
