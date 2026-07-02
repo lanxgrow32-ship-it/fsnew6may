@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useTransition, useEffect, Suspense, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -255,7 +254,7 @@ function KycFlow({initialProfile}: {initialProfile: Profile}) {
               }
           } catch (e: any) {
               console.error("KYC Save Error:", e);
-              setError("A network error occurred. The file might be too large. Please try again with a shorter video or smaller images.");
+              setError("A network error occurred. Please ensure your video is clear and try again.");
           }
       });
   };
@@ -499,6 +498,11 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
 
         recorder.onstop = () => {
             const blob = new Blob(chunksRef.current, { type: mimeType });
+            // Safety check: ensure blob has content
+            if (blob.size < 100) {
+                toast({ title: "Recording Failed", description: "The video file was empty. Please try recording again.", variant: "destructive" });
+                return;
+            }
             setVideoBlob(blob);
             setPreviewUrl(URL.createObjectURL(blob));
         };
@@ -516,7 +520,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
             if (stream) {
                 stream.getTracks().forEach(track => {
                     track.stop();
-                    console.log("KYC Track Terminated:", track.label);
                 });
             }
             setStream(null);
@@ -525,21 +528,17 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
 
     const handleSave = () => {
         if (videoBlob) {
-            const reader = new FileReader();
-            reader.readAsDataURL(videoBlob);
-            reader.onloadend = () => {
-                const base64data = reader.result as string;
-                const formData = new FormData();
-                formData.append('video_kyc', base64data);
-                onSave(formData);
-            };
+            const formData = new FormData();
+            // Send as a binary file instead of base64 for 100% reliability
+            const ext = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
+            formData.append('video_kyc_file', videoBlob, `video_kyc.${ext}`);
+            onSave(formData);
         }
     };
 
     const retake = () => {
         setVideoBlob(null);
         setPreviewUrl(null);
-        // Resetting stream for a new start
         setStream(null);
     };
 

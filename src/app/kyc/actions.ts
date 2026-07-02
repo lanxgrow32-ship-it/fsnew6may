@@ -56,22 +56,40 @@ export async function verifyPan(panNumber: string) {
   } catch (error) { return { error: 'Server error.' }; }
 }
 
-async function uploadKycImage(base64: string, userId: string, type: 'aadhaar' | 'selfie-with-aadhaar' | 'video-kyc') {
-    const base64Data = base64.split(',')[1] || base64;
-    const buffer = Buffer.from(base64Data, 'base64');
+async function uploadKycMedia(data: string | File, userId: string, type: 'aadhaar' | 'selfie-with-aadhaar' | 'video-kyc') {
+    let buffer: Buffer;
+    let mime: string;
+    let ext: string;
+
+    if (data instanceof File) {
+        // Direct File handling (More reliable for large videos)
+        const arrayBuffer = await data.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
+        mime = data.type;
+        ext = data.name.split('.').pop() || (type === 'video-kyc' ? 'webm' : 'jpeg');
+    } else {
+        // Base64 fallback (For steps 1 and 2)
+        const base64Data = data.split(',')[1] || data;
+        buffer = Buffer.from(base64Data, 'base64');
+        mime = data.match(/^data:(.*);base64,/)?.[1] || (type === 'video-kyc' ? 'video/webm' : 'image/jpeg');
+        ext = type === 'video-kyc' ? (mime.split('/')[1] || 'webm') : 'jpeg';
+    }
     
-    // Determine bucket and file extension
+    // Determine bucket
     const bucket = type === 'video-kyc' ? 'kyc-videos' : 'kyc-documents';
-    const ext = type === 'video-kyc' ? 'webm' : 'jpeg';
-    const mime = type === 'video-kyc' ? 'video/webm' : 'image/jpeg';
-    
     const fileName = `${userId}-${type}-${Date.now()}.${ext}`;
-    const { data, error } = await supabaseAdmin.storage.from(bucket).upload(fileName, buffer, { contentType: mime });
+    
+    const { data: uploadRes, error } = await supabaseAdmin.storage.from(bucket).upload(fileName, buffer, { 
+        contentType: mime,
+        upsert: true
+    });
+
     if (error) {
         console.error(`Storage Error (${type}):`, error);
         throw new Error(`Failed to upload ${type} file.`);
     }
-    const { data: urlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(data.path);
+
+    const { data: urlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(uploadRes.path);
     return urlData.publicUrl;
 }
 
@@ -87,15 +105,19 @@ export async function saveKycStep(step: number, formData: FormData) {
     switch (step) {
       case 1:
         const aadhaarPhoto = formData.get('aadhaar_photo') as string;
-        if (aadhaarPhoto) profileUpdateData.selfie_url = await uploadKycImage(aadhaarPhoto, user.id, 'aadhaar');
+        if (aadhaarPhoto) profileUpdateData.selfie_url = await uploadKycMedia(aadhaarPhoto, user.id, 'aadhaar');
         break;
       case 2:
         const selfieWithAadhaarPhoto = formData.get('selfie_with_aadhaar_photo') as string;
-        if (selfieWithAadhaarPhoto) profileUpdateData.selfie_with_aadhaar_url = await uploadKycImage(selfieWithAadhaarPhoto, user.id, 'selfie-with-aadhaar');
+        if (selfieWithAadhaarPhoto) profileUpdateData.selfie_with_aadhaar_url = await uploadKycMedia(selfieWithAadhaarPhoto, user.id, 'selfie-with-aadhaar');
         break;
       case 3:
-        const videoKycBase64 = formData.get('video_kyc') as string;
-        if (videoKycBase64) profileUpdateData.video_kyc_url = await uploadKycImage(videoKycBase64, user.id, 'video-kyc');
+        const videoFile = formData.get('video_kyc_file') as File;
+        if (videoFile && videoFile.size > 0) {
+            profileUpdateData.video_kyc_url = await uploadKycMedia(videoFile, user.id, 'video-kyc');
+        } else {
+            return { error: 'Video file was empty. Please try recording again.' };
+        }
         break;
       case 4:
         profileUpdateData = { 
