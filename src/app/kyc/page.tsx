@@ -447,6 +447,7 @@ function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (
 }
 
 function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+    const { toast } = useToast();
     const [recording, setRecording] = useState(false);
     const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -467,6 +468,7 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
             setIsCameraActive(true);
         } catch (err) {
             console.error("Camera access error:", err);
+            toast({ title: "Camera Error", description: "Could not access camera. Please check permissions.", variant: "destructive" });
         }
     };
 
@@ -483,14 +485,21 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
         
         chunksRef.current = [];
         
-        // Detect supported MIME types for better browser compatibility
-        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') 
-            ? 'video/webm;codecs=vp8,opus' 
-            : MediaRecorder.isTypeSupported('video/mp4') 
-                ? 'video/mp4' 
-                : '';
+        // Find best supported MIME type
+        const types = [
+            "video/webm;codecs=vp8,opus",
+            "video/webm",
+            "video/mp4"
+        ];
+        let selectedType = "";
+        for (const type of types) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                selectedType = type;
+                break;
+            }
+        }
 
-        const mediaRecorder = new MediaRecorder(streamRef.current, { mimeType });
+        const mediaRecorder = new MediaRecorder(streamRef.current, { mimeType: selectedType });
         
         mediaRecorder.ondataavailable = (e) => {
             if (e.data && e.data.size > 0) {
@@ -499,21 +508,38 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
         };
         
         mediaRecorder.onstop = () => {
-            const blob = new Blob(chunksRef.current, { type: mimeType || 'video/webm' });
+            const blob = new Blob(chunksRef.current, { type: selectedType || 'video/webm' });
+            
+            // Check if recording actually captured data (Safety Gate)
+            if (blob.size < 1000) {
+                toast({ 
+                    title: "Recording Failed", 
+                    description: "No video data captured. Please ensure your camera is visible and try again.", 
+                    variant: "destructive" 
+                });
+                return;
+            }
+
             setVideoBlob(blob);
             setVideoUrl(URL.createObjectURL(blob));
         };
         
         mediaRecorderRef.current = mediaRecorder;
-        mediaRecorder.start(1000); // Collect data in 1s chunks
+        // Start with a timeslice to ensure data flows continuously
+        mediaRecorder.start(1000); 
         setRecording(true);
     };
 
     const stopRecording = () => {
         if (mediaRecorderRef.current && recording) {
+            // STOP RECORDER FIRST
             mediaRecorderRef.current.stop();
             setRecording(false);
-            stopCamera();
+            
+            // Give a tiny delay for finalization before killing camera
+            setTimeout(() => {
+                stopCamera();
+            }, 500);
         }
     };
 
