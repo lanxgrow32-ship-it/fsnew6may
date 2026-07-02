@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut, ShieldAlert, ShoppingCart, Video, Info, Copy } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut, ShieldAlert, ShoppingCart, Video, Info, Copy, X } from 'lucide-react';
 import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -310,7 +310,7 @@ function KycFlow({initialProfile}: {initialProfile: Profile}) {
             </CardHeader>
             <CardContent className="relative p-6">
                 {isActionPending && (
-                    <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center z-10 rounded-md">
+                    <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center z-50 rounded-md">
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 )}
@@ -447,100 +447,162 @@ function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (
 }
 
 function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
-    const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
     const { toast } = useToast();
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setVideoFile(file);
-            if (videoUrl) URL.revokeObjectURL(videoUrl);
-            setVideoUrl(URL.createObjectURL(file));
+    // The mandatory script
+    const script = `My name is ${profile.full_name || '[Name]'}. I confirm that I am completing this Video KYC for my FundedStock account using my own identity. I agree to the Terms & Conditions, KYC Policy, and Risk Disclosure. I authorize FundedStock to verify and store my KYC details, including my video, digital signature, IP address, and device information for security, compliance, and fraud prevention.`;
+
+    const startCamera = async () => {
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, 
+                audio: true 
+            });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+        } catch (err) {
+            console.error("Camera Error:", err);
+            toast({ title: "Permissions Denied", description: "Please allow camera and microphone access to proceed.", variant: "destructive" });
+        }
+    };
+
+    const startRecording = () => {
+        if (!stream) return;
+        
+        chunksRef.current = [];
+        
+        // Negotiate best supported MIME type (Safari fallback)
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') 
+            ? 'video/webm;codecs=vp8,opus' 
+            : 'video/mp4';
+            
+        const recorder = new MediaRecorder(stream, { mimeType });
+        mediaRecorderRef.current = recorder;
+
+        recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                chunksRef.current.push(e.data);
+            }
+        };
+
+        recorder.onstop = () => {
+            const blob = new Blob(chunksRef.current, { type: mimeType });
+            setVideoBlob(blob);
+            setPreviewUrl(URL.createObjectURL(blob));
+        };
+
+        recorder.start(1000); // 1s timeslice for robustness
+        setIsRecording(true);
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            // Don't stop the stream yet so the user can see the final frame
         }
     };
 
     const handleSave = () => {
-        if (videoFile) {
+        if (videoBlob) {
             const reader = new FileReader();
-            reader.readAsDataURL(videoFile);
+            reader.readAsDataURL(videoBlob);
             reader.onloadend = () => {
                 const base64data = reader.result as string;
                 const formData = new FormData();
                 formData.append('video_kyc', base64data);
                 onSave(formData);
-            };
-            reader.onerror = () => {
-                toast({ title: "Read Error", description: "Failed to process video file. It may be too large.", variant: "destructive" });
+                // Stop camera stream on successful save
+                stream?.getTracks().forEach(track => track.stop());
             };
         }
     };
 
-    const declarationText = `I, ${profile.full_name}, confirm this is my FundedStock account and I agree to all terms and conditions.`;
-
-    const copyScript = () => {
-        navigator.clipboard.writeText(declarationText);
-        toast({ title: "Script Copied", description: "Keep it ready to read during recording." });
+    const retake = () => {
+        setVideoBlob(null);
+        setPreviewUrl(null);
+        if (videoRef.current && stream) {
+            videoRef.current.srcObject = stream;
+        }
     };
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            stream?.getTracks().forEach(track => track.stop());
+        };
+    }, [stream]);
 
     return (
         <div className="space-y-6">
-            <h3 className="font-semibold text-lg text-white">Step 3 of 5: Video Declaration</h3>
-            {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Read this script clearly:</p>
-                    <Button variant="ghost" size="sm" onClick={copyScript} className="h-7 text-[9px] font-bold uppercase tracking-widest text-gray-400 hover:text-white">
-                        <Copy className="h-3 w-3 mr-1" /> Copy Text
-                    </Button>
+            <h3 className="font-semibold text-lg text-white">Step 3 of 5: Video Teleprompter</h3>
+            
+            {!stream && !previewUrl ? (
+                <div className="text-center py-20 space-y-6 animate-in fade-in">
+                    <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_50px_rgba(139,44,245,0.1)]">
+                        <Video className="h-10 w-10 text-primary" />
+                    </div>
+                    <div className="space-y-2">
+                        <h4 className="text-xl font-bold text-white">Live Identity Verification</h4>
+                        <p className="text-gray-400 text-sm max-w-xs mx-auto">Please allow camera access. You will read a mandatory script while recording.</p>
+                    </div>
+                    <Button onClick={startCamera} size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20 uppercase tracking-widest">Enable Protocol</Button>
                 </div>
-                <p className="text-xl md:text-2xl font-black text-white text-center leading-tight">
-                    "{declarationText}"
-                </p>
-                <div className="pt-4 border-t border-white/5 flex gap-3 items-start">
-                    <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                        <p className="text-[10px] text-amber-200 font-bold uppercase tracking-widest">Preparation Protocol:</p>
-                        <p className="text-[11px] text-gray-400 leading-relaxed">Please memorize this short sentence or take a screenshot. When you click the button below, your phone's camera app will open and hide this page.</p>
+            ) : (
+                <div className="space-y-4">
+                    <div className="relative aspect-video rounded-3xl bg-black overflow-hidden border border-white/10 shadow-2xl shadow-black/50">
+                        {previewUrl ? (
+                            <video src={previewUrl} controls className="w-full h-full object-cover" />
+                        ) : (
+                            <>
+                                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover grayscale-[0.5] contrast-[1.2]" />
+                                {/* Teleprompter Overlay */}
+                                <div className="absolute top-4 left-4 right-4 bg-slate-950/80 backdrop-blur-md border border-white/20 p-5 rounded-2xl animate-in slide-in-from-top-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Read aloud clearly:</p>
+                                    </div>
+                                    <p className="text-sm md:text-base font-bold text-white leading-relaxed">
+                                        {script}
+                                    </p>
+                                </div>
+                                {isRecording && (
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-widest animate-pulse">
+                                        <div className="w-2 h-2 rounded-full bg-white" /> Recording
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    <div className="flex justify-center gap-4">
+                        {!previewUrl ? (
+                            !isRecording ? (
+                                <Button onClick={startRecording} size="lg" className="rounded-full h-16 px-12 bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-[0.2em] shadow-2xl shadow-red-900/40">Start Recording</Button>
+                            ) : (
+                                <Button onClick={stopRecording} size="lg" className="rounded-full h-16 px-12 bg-white text-black font-black uppercase tracking-[0.2em] shadow-2xl">Stop Session</Button>
+                            )
+                        ) : (
+                            <Button variant="outline" onClick={retake} className="rounded-full h-12 px-8 border-white/10 bg-black/20 hover:bg-white/5 font-bold uppercase tracking-widest text-xs">
+                                <RefreshCw className="mr-2 h-4 w-4" /> Retake Video
+                            </Button>
+                        )}
                     </div>
                 </div>
-            </div>
-
-            <div className="space-y-4">
-                <div className="relative aspect-video rounded-2xl bg-black overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl">
-                    {videoUrl ? (
-                        <video src={videoUrl} controls className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="text-center p-8 space-y-4">
-                            <Video className="w-16 h-16 text-gray-800 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm text-gray-500 font-bold max-w-[200px] mx-auto uppercase tracking-tighter">No video recorded yet.</p>
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex flex-col items-center gap-4">
-                    <input 
-                        type="file" 
-                        accept="video/*" 
-                        capture="user" 
-                        id="native-video-capture" 
-                        className="hidden" 
-                        onChange={handleFileChange} 
-                    />
-                    <Button 
-                        onClick={() => document.getElementById('native-video-capture')?.click()} 
-                        className="bg-primary hover:bg-primary/90 text-white rounded-full h-14 px-10 shadow-xl shadow-primary/30 font-black text-sm uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
-                    >
-                        <Video className="mr-2 h-5 w-5" /> 
-                        {videoUrl ? 'Retake Video' : 'Launch Camera'}
-                    </Button>
-                </div>
-            </div>
+            )}
 
             <CardFooter className="flex justify-between gap-4 pt-6 px-0 pb-0">
-                <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10 rounded-xl h-12 font-bold px-8">Back</Button>
-                <Button onClick={handleSave} disabled={!videoFile} className="bg-purple-600 text-white hover:bg-purple-700 font-black rounded-xl h-12 px-10 shadow-xl shadow-purple-900/20 uppercase tracking-widest text-xs">Save & Continue</Button>
+                <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10">Back</Button>
+                <Button onClick={handleSave} disabled={!videoBlob} className="bg-purple-600 text-white hover:bg-purple-700 font-bold px-10 h-12 shadow-xl shadow-purple-900/20">Save & Continue</Button>
             </CardFooter>
         </div>
     );
