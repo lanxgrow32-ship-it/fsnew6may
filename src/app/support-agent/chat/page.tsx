@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useTransition } from 'react';
@@ -97,7 +96,7 @@ export default function AgentLiveChat() {
             fetchConversations();
         };
         init();
-        const sub = supabase.channel('agent_realtime_v4').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
+        const sub = supabase.channel('agent_realtime_v5').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
         return () => { supabase.removeChannel(sub); };
     }, []);
 
@@ -106,7 +105,7 @@ export default function AgentLiveChat() {
             fetchMessages(activeConversation.id);
             fetchUserDetails(activeConversation.user_id);
             markSupportRead(activeConversation.id, 'admin');
-            const sub = supabase.channel(`agent_conv_${activeConversation.id}`)
+            const sub = supabase.channel(`agent_conv_v5_${activeConversation.id}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `conversation_id=eq.${activeConversation.id}` }, 
                 () => { fetchMessages(activeConversation.id); markSupportRead(activeConversation.id, 'admin'); }).subscribe();
             return () => { supabase.removeChannel(sub); };
@@ -231,19 +230,21 @@ export default function AgentLiveChat() {
                                     />
                                 </div>
                                 <button onClick={() => handleSelectConversation(c)} className="flex-grow p-5 text-left flex items-center justify-between min-w-0">
-                                    <div className="min-w-0 pr-4">
-                                        <p className="text-sm font-black truncate text-white group-hover:text-primary transition-colors">{c.profiles?.full_name || 'New Trader'}</p>
+                                    <div className="min-w-0 pr-4 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-black truncate text-white group-hover:text-primary transition-colors">{c.profiles?.full_name || 'New Trader'}</p>
+                                            {c.unread_count_admin > 0 && (
+                                                <div className="bg-primary text-white h-4.5 min-w-[18px] px-1 flex items-center justify-center rounded-full text-[9px] font-black shadow-lg shadow-primary/20 animate-in zoom-in">
+                                                    {c.unread_count_admin}
+                                                </div>
+                                            )}
+                                        </div>
                                         <p className="text-[11px] text-gray-500 truncate mt-1 leading-relaxed">{c.last_message_preview || 'No messages...'}</p>
                                         <p className="text-[9px] text-gray-700 font-bold uppercase tracking-widest mt-2">
                                             {format(new Date(c.last_message_at), 'MMM dd · p')}
                                         </p>
                                     </div>
-                                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                                        {c.unread_count_admin > 0 && (
-                                            <Badge className="bg-primary text-white h-5 min-w-5 flex items-center justify-center rounded-full text-[10px] font-black">
-                                                {c.unread_count_admin}
-                                            </Badge>
-                                        )}
+                                    <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
                                         <Badge variant="outline" className={cn("text-[9px] font-black px-2 py-0.5 border-none uppercase tracking-tighter", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-600 bg-white/5")}>
                                             {c.status}
                                         </Badge>
