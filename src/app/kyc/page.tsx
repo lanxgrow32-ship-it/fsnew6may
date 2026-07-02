@@ -456,14 +456,11 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
     const chunksRef = useRef<Blob[]>([]);
     const { toast } = useToast();
 
-    // The mandatory script
     const script = `My name is ${profile.full_name || '[Name]'}. I confirm that I am completing this Video KYC for my FundedStock account using my own identity. I agree to the Terms & Conditions, KYC Policy, and Risk Disclosure. I authorize FundedStock to verify and store my KYC details, including my video, digital signature, IP address, and device information for security, compliance, and fraud prevention.`;
 
-    // Protocol: Ensure camera is explicitly connected to the DOM and playing
     useEffect(() => {
         if (videoRef.current && stream && !previewUrl) {
             videoRef.current.srcObject = stream;
-            // High-priority playback signal
             videoRef.current.play().catch(err => {
                 console.error("Manual Play Error:", err);
             });
@@ -487,8 +484,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
         if (!stream) return;
         
         chunksRef.current = [];
-        
-        // Negotiate best supported MIME type (Safari fallback)
         const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') 
             ? 'video/webm;codecs=vp8,opus' 
             : 'video/mp4';
@@ -508,7 +503,7 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
             setPreviewUrl(URL.createObjectURL(blob));
         };
 
-        recorder.start(1000); // 1s timeslice for robustness
+        recorder.start(1000); 
         setIsRecording(true);
     };
 
@@ -516,6 +511,15 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
+            
+            // Hard Stop: Terminate all tracks to power down camera and close session
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log("KYC Track Terminated:", track.label);
+                });
+            }
+            setStream(null);
         }
     };
 
@@ -528,7 +532,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                 const formData = new FormData();
                 formData.append('video_kyc', base64data);
                 onSave(formData);
-                stream?.getTracks().forEach(track => track.stop());
             };
         }
     };
@@ -536,12 +539,15 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
     const retake = () => {
         setVideoBlob(null);
         setPreviewUrl(null);
-        // Stream is already managed by the useEffect above
+        // Resetting stream for a new start
+        setStream(null);
     };
 
     useEffect(() => {
         return () => {
-            stream?.getTracks().forEach(track => track.stop());
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
         };
     }, [stream]);
 
@@ -574,7 +580,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                                     playsInline 
                                     className="w-full h-full object-cover" 
                                 />
-                                {/* Teleprompter Overlay - Increased transparency for visibility */}
                                 <div className="absolute top-4 left-4 right-4 bg-slate-950/70 backdrop-blur-sm border border-white/10 p-5 rounded-2xl animate-in slide-in-from-top-4">
                                     <div className="flex items-center gap-2 mb-2">
                                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
