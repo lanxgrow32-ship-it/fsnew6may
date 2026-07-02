@@ -1,6 +1,5 @@
-
 'use client';
-import { useState, useTransition, useEffect, Suspense } from 'react';
+import { useState, useTransition, useEffect, Suspense, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut, ShieldAlert, ShoppingCart } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut, ShieldAlert, ShoppingCart, Video, CircleStop, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +27,7 @@ type Profile = {
     is_pan_verified: boolean;
     selfie_url: string | null; 
     selfie_with_aadhaar_url: string | null; 
+    video_kyc_url: string | null;
     is_aadhaar_verified: boolean; 
     traded_before: boolean;
     trading_experience: string | null;
@@ -230,7 +230,7 @@ function KycFlow({initialProfile}: {initialProfile: Profile}) {
   const [error, setError] = useState<string | null>(null);
   const [isActionPending, startTransition] = useTransition();
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
 
   const handleStepSave = async (formData: FormData) => {
@@ -270,8 +270,9 @@ function KycFlow({initialProfile}: {initialProfile: Profile}) {
                             }}
                           />;
           case 2: return <Step2_SelfieWithAadhaar onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
-          case 3: return <Step3_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
-          case 4: return <Step4_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
+          case 3: return <Step3_VideoKyc onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
+          case 4: return <Step4_TradingBackground onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
+          case 5: return <Step5_Agreements onSave={handleStepSave} onBack={handleBack} profile={profile} error={error} />;
           default: return <p>Invalid Step</p>;
       }
   }
@@ -293,6 +294,13 @@ function KycFlow({initialProfile}: {initialProfile: Profile}) {
         <GlassCard>
             <CardHeader className="border-b-0">
                 <Progress value={progress} className="w-full" />
+                <div className="flex justify-between mt-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1">
+                    <span>Docs</span>
+                    <span>Selfie</span>
+                    <span>Video</span>
+                    <span>Trading</span>
+                    <span>Done</span>
+                </div>
             </CardHeader>
             <CardContent className="relative p-6">
                 {isActionPending && (
@@ -344,7 +352,7 @@ function Step1_DocumentVerification({ onSave, profile, error, startTransition, o
 
     return (
         <div className="space-y-8">
-            <h3 className="font-semibold text-lg text-white">Step 1 of 4: Document Verification</h3>
+            <h3 className="font-semibold text-lg text-white">Step 1 of 5: Document Verification</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             
             <GlassCard>
@@ -412,7 +420,7 @@ function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (
     
     return (
         <div className="space-y-8">
-            <h3 className="font-semibold text-lg text-white">Step 2 of 4: Selfie Verification</h3>
+            <h3 className="font-semibold text-lg text-white">Step 2 of 5: Selfie Verification</h3>
              {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
              <form onSubmit={handleSubmit}>
@@ -432,11 +440,182 @@ function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (
     );
 }
 
+function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+    const [recording, setRecording] = useState(false);
+    const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+    const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [isCameraActive, setIsCameraActive] = useState(false);
+    
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
 
-function Step3_TradingBackground({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+    const startCamera = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+            streamRef.current = stream;
+            setIsCameraActive(true);
+        } catch (err) {
+            console.error("Camera access error:", err);
+        }
+    };
+
+    const stopCamera = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+        setIsCameraActive(false);
+    };
+
+    const startRecording = () => {
+        if (!streamRef.current) return;
+        
+        const chunks: Blob[] = [];
+        const mediaRecorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+        
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunks.push(e.data);
+        };
+        
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            setVideoBlob(blob);
+            setVideoUrl(URL.createObjectURL(blob));
+        };
+        
+        mediaRecorderRef.current = mediaRecorder;
+        mediaRecorder.start();
+        setRecording(true);
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && recording) {
+            mediaRecorderRef.current.stop();
+            setRecording(false);
+            stopCamera();
+        }
+    };
+
+    const handleSave = async () => {
+        if (videoBlob) {
+            const reader = new FileReader();
+            reader.readAsDataURL(videoBlob);
+            reader.onloadend = () => {
+                const base64data = reader.result as string;
+                const formData = new FormData();
+                formData.append('video_kyc', base64data);
+                onSave(formData);
+            };
+        }
+    };
+
+    const retake = () => {
+        setVideoBlob(null);
+        setVideoUrl(null);
+        startCamera();
+    };
+
+    useEffect(() => {
+        startCamera();
+        return () => stopCamera();
+    }, []);
+
+    const declarationText = `My name is ${profile.full_name}. I confirm that I am completing this Video KYC for my FundedStock account using my own identity. I agree to the Terms & Conditions, KYC Policy, and Risk Disclosure. I authorize FundedStock to verify and store my KYC details, including my video, digital signature, IP address, and device information for security, compliance, and fraud prevention.`;
+
+    return (
+        <div className="space-y-6">
+            <h3 className="font-semibold text-lg text-white">Step 3 of 5: Video Declaration</h3>
+            {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+
+            <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle className="font-bold">KYC REJECTION WARNING</AlertTitle>
+                <AlertDescription className="text-xs">
+                    Unclear audio, hidden faces, or reading the incorrect text will lead to immediate KYC rejection. Ensure your room is well-lit and quiet.
+                </AlertDescription>
+            </Alert>
+
+            <div className="space-y-4">
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full p-3 bg-primary/20 backdrop-blur-md border-b border-white/5 z-20">
+                        <p className="text-[11px] font-bold text-white text-center leading-relaxed italic">
+                            Read this text aloud clearly:
+                        </p>
+                    </div>
+                    <div className="mt-8 mb-4 max-h-[120px] overflow-y-auto custom-scrollbar">
+                        <p className="text-sm font-medium text-gray-200 text-center leading-relaxed">
+                            {declarationText}
+                        </p>
+                    </div>
+
+                    <div className="relative aspect-video rounded-xl bg-black overflow-hidden border border-white/5">
+                        {videoUrl ? (
+                            <video src={videoUrl} controls className="w-full h-full object-cover" />
+                        ) : (
+                            <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror" />
+                        )}
+                        
+                        {recording && (
+                            <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full animate-pulse z-30">
+                                <div className="h-2 w-2 rounded-full bg-white" />
+                                <span className="text-[10px] font-bold text-white uppercase tracking-widest">Recording</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex justify-center gap-4">
+                    {!videoBlob ? (
+                        recording ? (
+                            <Button onClick={stopRecording} variant="destructive" className="rounded-full h-14 px-8 shadow-xl shadow-red-900/20">
+                                <CircleStop className="mr-2 h-5 w-5" /> Stop & Review
+                            </Button>
+                        ) : (
+                            <Button onClick={startRecording} disabled={!isCameraActive} className="bg-primary hover:bg-primary/90 text-white rounded-full h-14 px-10 shadow-xl shadow-primary/20 font-bold">
+                                <Video className="mr-2 h-5 w-5" /> Start Recording
+                            </Button>
+                        )
+                    ) : (
+                        <Button onClick={retake} variant="outline" className="rounded-full h-12 px-6 border-white/10 hover:bg-white/5">
+                            <RefreshCw className="mr-2 h-4 w-4" /> Retake Video
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <CardFooter className="flex justify-between gap-4 pt-6 px-0 pb-0">
+                <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10">Back</Button>
+                <Button onClick={handleSave} disabled={!videoBlob} className="bg-purple-600 text-white hover:bg-purple-700 font-bold">Save & Continue</Button>
+            </CardFooter>
+            
+            <style jsx>{`
+                .mirror {
+                    transform: rotateY(180deg);
+                }
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 10px;
+                }
+            `}</style>
+        </div>
+    );
+}
+
+
+function Step4_TradingBackground({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
     return (
         <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg text-white">Step 3 of 4: Trading Background</h3>
+            <h3 className="font-semibold text-lg text-white">Step 4 of 5: Trading Background</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="space-y-4">
                 <Label className="text-gray-300">Have you traded in a Prop Firm before? *</Label>
@@ -472,10 +651,10 @@ function Step3_TradingBackground({ onSave, onBack, error, profile }: { onSave: (
     );
 }
 
-function Step4_Agreements({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
+function Step5_Agreements({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
     return (
         <form action={onSave} className="space-y-6">
-            <h3 className="font-semibold text-lg text-white">Step 4 of 4: Agreements</h3>
+            <h3 className="font-semibold text-lg text-white">Step 5 of 5: Agreements</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="space-y-6 rounded-md border border-white/10 p-6 bg-black/20">
                 <div className="space-y-4">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use, useActionState } from 'react';
@@ -23,7 +22,8 @@ import {
     Zap,
     Mail,
     KeyRound,
-    ShieldCheck
+    ShieldCheck,
+    Video
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile, resetPassword, sendBreachRecoveryEmail } from './actions';
@@ -141,13 +141,26 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                         <Badge variant={profile.is_pan_verified ? "default" : "destructive"}>{profile.is_pan_verified ? 'Verified' : 'Unverified'}</Badge>
                                     </div>
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-gray-500 font-bold uppercase">Identity Proof</Label>
-                                        <div className="flex gap-4">
-                                            {profile.selfie_url && <div className="relative w-24 h-16 rounded-lg overflow-hidden border border-white/10"><Image src={profile.selfie_url} alt="Aadhaar" layout="fill" className="object-cover" /></div>}
-                                            {profile.selfie_with_aadhaar_url && <div className="relative w-24 h-16 rounded-lg overflow-hidden border border-white/10"><Image src={profile.selfie_with_aadhaar_url} alt="Selfie" layout="fill" className="object-cover" /></div>}
+                                        <Label className="text-xs text-gray-500 font-bold uppercase">Identity Proofs</Label>
+                                        <div className="flex gap-4 overflow-x-auto pb-2">
+                                            {profile.selfie_url && <div className="relative w-24 h-16 rounded-lg overflow-hidden border border-white/10 shrink-0"><Image src={profile.selfie_url} alt="Aadhaar" layout="fill" className="object-cover" /></div>}
+                                            {profile.selfie_with_aadhaar_url && <div className="relative w-24 h-16 rounded-lg overflow-hidden border border-white/10 shrink-0"><Image src={profile.selfie_with_aadhaar_url} alt="Selfie" layout="fill" className="object-cover" /></div>}
                                         </div>
                                     </div>
                                 </div>
+                                
+                                {profile.video_kyc_url && (
+                                    <div className="pt-6 border-t border-white/5 space-y-3">
+                                        <Label className="text-white text-xs font-bold uppercase flex items-center gap-2">
+                                            <Video className="w-3.5 h-3.5 text-primary" /> Video KYC Declaration
+                                        </Label>
+                                        <div className="aspect-video max-w-md rounded-2xl overflow-hidden border border-white/10 bg-black shadow-2xl">
+                                            <video src={profile.video_kyc_url} controls className="w-full h-full object-cover" />
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 font-medium">Verify the trader clearly states their name and agrees to the terms.</p>
+                                    </div>
+                                )}
+
                                 <div className="pt-6 border-t border-white/5 grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label className="text-white text-xs font-bold uppercase">Manual KYC Status</Label>

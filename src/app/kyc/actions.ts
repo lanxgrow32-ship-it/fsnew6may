@@ -54,13 +54,22 @@ export async function verifyPan(panNumber: string) {
   } catch (error) { return { error: 'Server error.' }; }
 }
 
-async function uploadKycImage(base64: string, userId: string, type: 'aadhaar' | 'selfie-with-aadhaar') {
+async function uploadKycImage(base64: string, userId: string, type: 'aadhaar' | 'selfie-with-aadhaar' | 'video-kyc') {
     const base64Data = base64.split(',')[1] || base64;
     const buffer = Buffer.from(base64Data, 'base64');
-    const fileName = `${userId}-${type}-${Date.now()}.jpeg`;
-    const { data, error } = await supabaseAdmin.storage.from('kyc-documents').upload(fileName, buffer, { contentType: 'image/jpeg' });
-    if (error) throw new Error(`Failed to upload ${type} image.`);
-    const { data: urlData } = supabaseAdmin.storage.from('kyc-documents').getPublicUrl(data.path);
+    
+    // Determine bucket and file extension
+    const bucket = type === 'video-kyc' ? 'kyc-videos' : 'kyc-documents';
+    const ext = type === 'video-kyc' ? 'webm' : 'jpeg';
+    const mime = type === 'video-kyc' ? 'video/webm' : 'image/jpeg';
+    
+    const fileName = `${userId}-${type}-${Date.now()}.${ext}`;
+    const { data, error } = await supabaseAdmin.storage.from(bucket).upload(fileName, buffer, { contentType: mime });
+    if (error) {
+        console.error(`Storage Error (${type}):`, error);
+        throw new Error(`Failed to upload ${type} file.`);
+    }
+    const { data: urlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(data.path);
     return urlData.publicUrl;
 }
 
@@ -83,9 +92,13 @@ export async function saveKycStep(step: number, formData: FormData) {
         if (selfieWithAadhaarPhoto) profileUpdateData.selfie_with_aadhaar_url = await uploadKycImage(selfieWithAadhaarPhoto, user.id, 'selfie-with-aadhaar');
         break;
       case 3:
-        profileUpdateData = { traded_before: formData.get('traded_before') === 'yes', trading_experience: formData.get('trading_experience') as string, trading_style: formData.getAll('trading_style') as string[] };
+        const videoKycBase64 = formData.get('video_kyc') as string;
+        if (videoKycBase64) profileUpdateData.video_kyc_url = await uploadKycImage(videoKycBase64, user.id, 'video-kyc');
         break;
       case 4:
+        profileUpdateData = { traded_before: formData.get('traded_before') === 'yes', trading_experience: formData.get('trading_experience') as string, trading_style: formData.getAll('trading_style') as string[] };
+        break;
+      case 5:
         isFinalStep = true;
         profileUpdateData = { drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes', risk_rules_understood: formData.get('risk_rules_understood') === 'yes', terms_accepted: formData.get('terms_accepted') === 'yes', kyc_status: 'verified' };
         break;
