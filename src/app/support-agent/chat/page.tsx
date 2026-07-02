@@ -22,7 +22,9 @@ import {
     Info,
     ExternalLink,
     ChevronLeft,
-    Trash2
+    Trash2,
+    CheckSquare,
+    Square
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { sendSupportMessage, markSupportRead, deleteSupportConversation } from '@/app/welcome/actions';
@@ -35,6 +37,7 @@ import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function AgentLiveChat() {
     const isMobile = useIsMobile();
@@ -50,10 +53,11 @@ export default function AgentLiveChat() {
     const [isSending, setIsSending] = useState(false);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
     
-    const [kycImg1, setKycImg1] = useState<File | null>(null);
-    const [kycImg2, setKycImg2] = useState<File | null>(null);
-    const [isKycPending, startKycTransition] = useTransition();
+    // Bulk Delete State
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,7 +97,7 @@ export default function AgentLiveChat() {
             fetchConversations();
         };
         init();
-        const sub = supabase.channel('agent_realtime_v3').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
+        const sub = supabase.channel('agent_realtime_v4').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
         return () => { supabase.removeChannel(sub); };
     }, []);
 
@@ -121,19 +125,36 @@ export default function AgentLiveChat() {
         setIsSending(false);
     };
 
-    const handleDeleteChat = async (id: string) => {
-        const res = await deleteSupportConversation(id);
-        if (res.success) {
-            toast({ title: "Conversation Purged" });
-            if (activeConversation?.id === id) {
+    const handleBulkDelete = async () => {
+        setIsBulkDeleting(true);
+        try {
+            await Promise.all(selectedIds.map(id => deleteSupportConversation(id)));
+            toast({ title: `${selectedIds.length} conversations purged.` });
+            setSelectedIds([]);
+            if (selectedIds.includes(activeConversation?.id)) {
                 setActiveConversation(null);
                 setMessages([]);
             }
             fetchConversations();
-        } else {
-            toast({ title: "Delete Failed", variant: "destructive" });
+        } catch (e) {
+            toast({ title: "Bulk delete failed", variant: "destructive" });
         }
+        setIsBulkDeleting(false);
     };
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === filteredConversations.length) setSelectedIds([]);
+        else setSelectedIds(filteredConversations.map(c => c.id));
+    };
+
+    const filteredConversations = conversations.filter(c => 
+        c.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleSelectConversation = (c: any) => {
         setActiveConversation(c);
@@ -144,47 +165,90 @@ export default function AgentLiveChat() {
         <div className="flex h-[calc(100vh-57px)] text-white overflow-hidden bg-slate-950 font-poppins">
             {/* Sidebar (List View) */}
             <div className={cn(
-                "w-full md:w-80 border-r border-white/5 bg-slate-900/30 flex flex-col shrink-0 transition-all",
+                "w-full md:w-[400px] border-r border-white/5 bg-slate-900/30 flex flex-col shrink-0 transition-all",
                 isMobile && mobileView === 'chat' && "hidden md:flex"
             )}>
-                <div className="p-6 border-b border-white/5">
+                <div className="p-6 border-b border-white/5 space-y-4">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-600" />
-                        <Input placeholder="Search chats..." className="pl-9 bg-black/40 border-white/10 h-10 text-xs font-semibold rounded-xl" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
+                        <Input 
+                            placeholder="Filter by name or email..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 bg-black/40 border-white/10 h-11 text-xs font-semibold rounded-xl" 
+                        />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={toggleSelectAll}
+                            className="text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white h-7 px-2"
+                        >
+                            {selectedIds.length === filteredConversations.length && filteredConversations.length > 0 ? "Deselect All" : "Select All"}
+                        </Button>
+                        
+                        {selectedIds.length > 0 && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-widest px-3">
+                                        <Trash2 className="w-3 h-3 mr-1.5" /> Purge ({selectedIds.length})
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Purge Selected Conversations?</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-gray-400">
+                                            This will permanently delete {selectedIds.length} conversations and all associated message history. This action is irreversible.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel className="bg-white/5 border-white/10 text-white">Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 text-white">
+                                            {isBulkDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : "Confirm Purge"}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
                     </div>
                 </div>
+
                 <ScrollArea className="flex-grow">
                     {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto opacity-20"/></div> : (
-                        conversations.map(c => (
-                            <div key={c.id} className="relative group">
-                                <button onClick={() => handleSelectConversation(c)} className={cn("w-full p-4 border-b border-white/5 text-left transition-all hover:bg-white/5 flex items-center justify-between", activeConversation?.id === c.id && "bg-primary/10 border-r-2 border-r-primary")}>
-                                    <div className="min-w-0 pr-6">
-                                        <p className="text-sm font-bold truncate text-white group-hover:text-primary">{c.profiles?.full_name || 'New Trader'}</p>
-                                        <p className="text-[11px] text-gray-500 truncate mt-0.5">{c.last_message_preview || 'No messages...'}</p>
+                        filteredConversations.map(c => (
+                            <div key={c.id} className={cn(
+                                "relative flex items-center border-b border-white/5 transition-all hover:bg-white/5 group",
+                                activeConversation?.id === c.id && "bg-primary/10",
+                                selectedIds.includes(c.id) && "bg-primary/5"
+                            )}>
+                                <div className="pl-4 shrink-0">
+                                    <Checkbox 
+                                        checked={selectedIds.includes(c.id)} 
+                                        onCheckedChange={() => toggleSelect(c.id)}
+                                        className="border-white/20 data-[state=checked]:bg-primary"
+                                    />
+                                </div>
+                                <button onClick={() => handleSelectConversation(c)} className="flex-grow p-5 text-left flex items-center justify-between min-w-0">
+                                    <div className="min-w-0 pr-4">
+                                        <p className="text-sm font-black truncate text-white group-hover:text-primary transition-colors">{c.profiles?.full_name || 'New Trader'}</p>
+                                        <p className="text-[11px] text-gray-500 truncate mt-1 leading-relaxed">{c.last_message_preview || 'No messages...'}</p>
+                                        <p className="text-[9px] text-gray-700 font-bold uppercase tracking-widest mt-2">
+                                            {format(new Date(c.last_message_at), 'MMM dd · p')}
+                                        </p>
                                     </div>
-                                    <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                                        {c.unread_count_admin > 0 && <Badge className="bg-primary text-white h-4 min-w-4 flex items-center justify-center rounded-full text-[9px]">{c.unread_count_admin}</Badge>}
-                                        <Badge variant="outline" className={cn("text-[8px] font-bold px-1.5 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
+                                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                        {c.unread_count_admin > 0 && (
+                                            <Badge className="bg-primary text-white h-5 min-w-5 flex items-center justify-center rounded-full text-[10px] font-black">
+                                                {c.unread_count_admin}
+                                            </Badge>
+                                        )}
+                                        <Badge variant="outline" className={cn("text-[9px] font-black px-2 py-0.5 border-none uppercase tracking-tighter", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-600 bg-white/5")}>
+                                            {c.status}
+                                        </Badge>
                                     </div>
                                 </button>
-                                
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <button className="absolute right-2 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-700 hover:text-red-500 z-10">
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Purge Conversation?</AlertDialogTitle>
-                                            <AlertDialogDescription className="text-gray-400">This will permanently delete this chat protocol and all associated messages.</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel className="bg-white/5 border-white/10 text-white">Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeleteChat(c.id)} className="bg-red-600 text-white">Purge Chat</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
                             </div>
                         ))
                     )}
@@ -198,41 +262,65 @@ export default function AgentLiveChat() {
             )}>
                 {!activeConversation ? (
                     <div className="flex-grow flex flex-col items-center justify-center text-center p-12">
-                        <Inbox className="h-16 w-16 text-gray-900 mb-6" />
-                        <h2 className="text-2xl font-bold text-white tracking-tight">Agent Desk</h2>
-                        <p className="text-gray-500 text-sm max-w-xs mt-2">Select a session to start assistance.</p>
+                        <div className="h-24 w-24 rounded-full bg-white/5 flex items-center justify-center mb-8 border border-white/5">
+                            <Inbox className="h-10 w-10 text-gray-700" />
+                        </div>
+                        <h2 className="text-3xl font-black text-white tracking-tighter">Terminal Standby</h2>
+                        <p className="text-gray-500 text-sm max-w-xs mt-3 font-medium">Select a trader session from the ledger to begin assistance protocol.</p>
                     </div>
                 ) : (
                     <>
-                        <header className="p-5 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-4">
-                                {isMobile && <Button variant="ghost" size="icon" onClick={() => setMobileView('list')} className="text-gray-500"><ChevronLeft className="h-5 w-5"/></Button>}
-                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20"><User className="h-5 w-5" /></div>
+                        <header className="p-6 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-5">
+                                {isMobile && <Button variant="ghost" size="icon" onClick={() => setMobileView('list')} className="text-gray-500"><ChevronLeft className="h-6 w-6"/></Button>}
+                                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_30px_rgba(139,44,245,0.1)]"><User className="h-6 w-6" /></div>
                                 <div>
-                                    <h3 className="font-bold text-white text-base leading-none">{activeConversation.profiles?.full_name}</h3>
-                                    <p className="text-[11px] text-gray-500 font-medium mt-1.5">{activeConversation.profiles?.email}</p>
+                                    <h3 className="font-black text-white text-lg leading-tight tracking-tight">{activeConversation.profiles?.full_name}</h3>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1.5">{activeConversation.profiles?.email}</p>
                                 </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Badge variant="outline" className={cn("px-4 py-1.5 border-white/10 bg-black/40 text-[10px] font-black uppercase tracking-widest", activeConversation.status === 'open' ? "text-green-400" : "text-gray-500")}>
+                                    Status: {activeConversation.status}
+                                </Badge>
                             </div>
                         </header>
 
-                        <div ref={scrollRef} className="flex-grow p-5 overflow-y-auto bg-slate-950 scroll-smooth">
-                            <div className="space-y-6 max-w-3xl mx-auto">
+                        <div ref={scrollRef} className="flex-1 p-8 overflow-y-auto bg-slate-950 scroll-smooth">
+                            <div className="space-y-8 max-w-4xl mx-auto">
+                                <div className="text-center py-4">
+                                    <p className="text-[9px] text-gray-800 font-black uppercase tracking-[0.5em]">Secure Terminal Connection Established</p>
+                                </div>
                                 {messages.map(m => (
-                                    <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
-                                        <div className={cn("max-w-[85%] p-4 rounded-2xl text-xs shadow-lg", m.sender_role === 'admin' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none")}>
-                                            {m.image_url && <div className="mb-2 rounded-lg overflow-hidden border border-white/10"><Image src={m.image_url} alt="Support" width={250} height={250} className="object-cover" /></div>}
-                                            <p className="whitespace-pre-wrap">{m.message}</p>
-                                            <p className="mt-2 text-[8px] opacity-30 text-right uppercase">{format(new Date(m.created_at), 'p')}</p>
+                                    <div key={m.id} className={cn("flex items-end gap-4", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
+                                        <div className={cn(
+                                            "max-w-[70%] p-5 rounded-3xl text-sm leading-relaxed shadow-2xl", 
+                                            m.sender_role === 'admin' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none"
+                                        )}>
+                                            {m.image_url && (
+                                                <div className="mb-4 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                                                    <Image src={m.image_url} alt="Attachment" width={400} height={400} className="object-cover" />
+                                                </div>
+                                            )}
+                                            <p className="whitespace-pre-wrap font-medium">{m.message}</p>
+                                            <p className="mt-3 text-[8px] opacity-30 text-right uppercase font-bold tracking-widest">{format(new Date(m.created_at), 'p')}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="p-4 bg-slate-900/80 border-t border-white/5 backdrop-blur-xl shrink-0">
-                            <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto">
-                                <Input placeholder="Type response..." value={messageText} onChange={(e) => setMessageText(e.target.value)} className="flex-grow bg-black/40 border-white/10 h-12 text-sm text-white rounded-xl" />
-                                <Button type="submit" size="icon" disabled={(!messageText.trim() && !selectedImage) || isSending} className="h-12 w-12 rounded-xl bg-primary"><Send className="h-5 w-5" /></Button>
+                        <div className="p-6 bg-slate-900/90 border-t border-white/5 backdrop-blur-xl shrink-0">
+                            <form onSubmit={handleSendMessage} className="flex gap-4 max-w-5xl mx-auto">
+                                <Input 
+                                    placeholder="Type response protocol..." 
+                                    value={messageText} 
+                                    onChange={(e) => setMessageText(e.target.value)} 
+                                    className="flex-grow bg-black/40 border-white/10 h-14 text-sm text-white rounded-2xl px-6 focus:ring-primary/50" 
+                                />
+                                <Button type="submit" disabled={(!messageText.trim() && !selectedImage) || isSending} className="h-14 w-14 rounded-2xl bg-primary shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                                    {isSending ? <Loader2 className="h-6 w-6 animate-spin"/> : <Send className="h-6 w-6" />}
+                                </Button>
                             </form>
                         </div>
                     </>
@@ -241,33 +329,51 @@ export default function AgentLiveChat() {
 
             {/* Info Sidepanel (Desktop Only) */}
             {activeConversation && !isMobile && (
-                <div className="w-80 border-l border-white/5 bg-slate-900/30 flex flex-col shrink-0 overflow-y-auto">
-                    <div className="p-6 space-y-8">
-                        <section className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><Info className="w-3.5 h-3.5"/> Trader Intelligence</h4>
-                            <div className="space-y-3">
-                                <div className="p-4 bg-black/20 rounded-2xl border border-white/5">
-                                    <p className="text-[10px] text-gray-600 font-bold uppercase">KYC Status</p>
-                                    <Badge variant="outline" className={cn("mt-1.5 border-none font-bold uppercase text-[9px]", userInfo?.kyc_status === 'verified' ? "bg-green-500/10 text-green-400" : "bg-amber-400/10 text-amber-400")}>{userInfo?.kyc_status || 'Pending'}</Badge>
+                <div className="w-[350px] border-l border-white/5 bg-slate-900/30 flex flex-col shrink-0 overflow-y-auto">
+                    <div className="p-8 space-y-10">
+                        <section className="space-y-5">
+                            <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2"><Info className="w-3.5 h-3.5 text-primary"/> Trader Intelligence</h4>
+                            <div className="space-y-4">
+                                <div className="p-5 bg-black/40 rounded-3xl border border-white/5">
+                                    <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-2">KYC Verification</p>
+                                    <Badge variant="outline" className={cn(
+                                        "border-none font-black uppercase text-[10px] h-7 px-3 rounded-lg", 
+                                        userInfo?.kyc_status === 'verified' ? "bg-green-500/10 text-green-400" : "bg-amber-400/10 text-amber-400"
+                                    )}>
+                                        {userInfo?.kyc_status || 'Pending'}
+                                    </Badge>
                                 </div>
-                                <div className="p-4 bg-black/20 rounded-2xl border border-white/5">
-                                    <p className="text-[10px] text-gray-600 font-bold uppercase">Contact</p>
-                                    <p className="text-xs font-bold text-white mt-1">{userInfo?.mobile_number || 'No Phone'}</p>
+                                <div className="p-5 bg-black/40 rounded-3xl border border-white/5">
+                                    <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-2">Contact Directory</p>
+                                    <p className="text-sm font-bold text-white tracking-tight">{userInfo?.mobile_number || 'Protocol Unlinked'}</p>
+                                </div>
+                                <div className="p-5 bg-black/40 rounded-3xl border border-white/5">
+                                    <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-2">Wallet Liquidity</p>
+                                    <p className="text-xl font-black text-primary tracking-tighter">₹{Number(userInfo?.wallet_balance || 0).toLocaleString('en-IN')}</p>
                                 </div>
                             </div>
                         </section>
-                        <section className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><Briefcase className="w-3.5 h-3.5"/> Portfolio</h4>
+
+                        <section className="space-y-5">
+                            <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-primary"/> Portfolio Records</h4>
                             <div className="space-y-3">
-                                {userAccounts.map(acc => (
-                                    <div key={acc.id} className="p-4 bg-black/20 rounded-2xl border border-white/5 group hover:bg-black/40">
-                                        <p className="text-[11px] font-bold text-white truncate">{acc.plan_name}</p>
+                                {userAccounts.length > 0 ? userAccounts.map(acc => (
+                                    <div key={acc.id} className="p-4 bg-black/40 rounded-2xl border border-white/5 group hover:border-primary/30 transition-all">
+                                        <p className="text-xs font-bold text-white truncate">{acc.plan_name}</p>
                                         <div className="flex items-center justify-between mt-3">
-                                            <Badge variant="outline" className="text-[8px] uppercase px-1.5">{acc.status}</Badge>
-                                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" asChild><Link href={`/admin/profile/${userInfo.id}`}><ExternalLink className="w-3 h-3 text-primary"/></Link></Button>
+                                            <Badge variant="outline" className="text-[9px] font-bold uppercase px-2 h-5 border-white/10 bg-white/5">{acc.status}</Badge>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-all" asChild>
+                                                <Link href={`/admin/profile/${userInfo.id}`}>
+                                                    <ExternalLink className="w-3.5 h-3.5 text-primary"/>
+                                                </Link>
+                                            </Button>
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="py-10 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                                        <p className="text-[10px] font-bold text-gray-700 uppercase">No active records</p>
+                                    </div>
+                                )}
                             </div>
                         </section>
                     </div>
