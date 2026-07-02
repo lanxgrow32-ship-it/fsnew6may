@@ -447,125 +447,34 @@ function Step2_SelfieWithAadhaar({ onSave, onBack, error, profile }: { onSave: (
 }
 
 function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData: FormData) => void; onBack: () => void; error: string | null, profile: Profile }) {
-    const { toast } = useToast();
-    const [recording, setRecording] = useState(false);
-    const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+    const [videoFile, setVideoFile] = useState<File | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
-    const [isCameraActive, setIsCameraActive] = useState(false);
-    
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const streamRef = useRef<MediaStream | null>(null);
-    const chunksRef = useRef<Blob[]>([]);
+    const { toast } = useToast();
 
-    const startCamera = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-            }
-            streamRef.current = stream;
-            setIsCameraActive(true);
-        } catch (err) {
-            console.error("Camera access error:", err);
-            toast({ title: "Camera Error", description: "Could not access camera. Please check permissions.", variant: "destructive" });
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setVideoFile(file);
+            if (videoUrl) URL.revokeObjectURL(videoUrl);
+            setVideoUrl(URL.createObjectURL(file));
         }
     };
 
-    const stopCamera = () => {
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-            streamRef.current = null;
-        }
-        setIsCameraActive(false);
-    };
-
-    const startRecording = () => {
-        if (!streamRef.current) return;
-        
-        chunksRef.current = [];
-        
-        // Find best supported MIME type
-        const types = [
-            "video/webm;codecs=vp8,opus",
-            "video/webm",
-            "video/mp4"
-        ];
-        let selectedType = "";
-        for (const type of types) {
-            if (MediaRecorder.isTypeSupported(type)) {
-                selectedType = type;
-                break;
-            }
-        }
-
-        const mediaRecorder = new MediaRecorder(streamRef.current, { mimeType: selectedType });
-        
-        mediaRecorder.ondataavailable = (e) => {
-            if (e.data && e.data.size > 0) {
-                chunksRef.current.push(e.data);
-            }
-        };
-        
-        mediaRecorder.onstop = () => {
-            const blob = new Blob(chunksRef.current, { type: selectedType || 'video/webm' });
-            
-            // Check if recording actually captured data (Safety Gate)
-            if (blob.size < 1000) {
-                toast({ 
-                    title: "Recording Failed", 
-                    description: "No video data captured. Please ensure your camera is visible and try again.", 
-                    variant: "destructive" 
-                });
-                return;
-            }
-
-            setVideoBlob(blob);
-            setVideoUrl(URL.createObjectURL(blob));
-        };
-        
-        mediaRecorderRef.current = mediaRecorder;
-        // Start with a timeslice to ensure data flows continuously
-        mediaRecorder.start(1000); 
-        setRecording(true);
-    };
-
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && recording) {
-            // STOP RECORDER FIRST
-            mediaRecorderRef.current.stop();
-            setRecording(false);
-            
-            // Give a tiny delay for finalization before killing camera
-            setTimeout(() => {
-                stopCamera();
-            }, 500);
-        }
-    };
-
-    const handleSave = async () => {
-        if (videoBlob) {
+    const handleSave = () => {
+        if (videoFile) {
             const reader = new FileReader();
-            reader.readAsDataURL(videoBlob);
+            reader.readAsDataURL(videoFile);
             reader.onloadend = () => {
                 const base64data = reader.result as string;
                 const formData = new FormData();
                 formData.append('video_kyc', base64data);
                 onSave(formData);
             };
+            reader.onerror = () => {
+                toast({ title: "Read Error", description: "Failed to process video file. It may be too large.", variant: "destructive" });
+            };
         }
     };
-
-    const retake = () => {
-        setVideoBlob(null);
-        setVideoUrl(null);
-        startCamera();
-    };
-
-    useEffect(() => {
-        startCamera();
-        return () => stopCamera();
-    }, []);
 
     const declarationText = `My name is ${profile.full_name}. I confirm that I am completing this Video KYC for my FundedStock account using my own identity. I agree to the Terms & Conditions, KYC Policy, and Risk Disclosure. I authorize FundedStock to verify and store my KYC details, including my video, digital signature, IP address, and device information for security, compliance, and fraud prevention.`;
 
@@ -595,50 +504,44 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                         </p>
                     </div>
 
-                    <div className="relative aspect-video rounded-xl bg-black overflow-hidden border border-white/5">
+                    <div className="relative aspect-video rounded-xl bg-black overflow-hidden border border-white/5 flex items-center justify-center">
                         {videoUrl ? (
-                            <video src={videoUrl} controls autoPlay className="w-full h-full object-cover" />
+                            <video src={videoUrl} controls className="w-full h-full object-cover" />
                         ) : (
-                            <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror" />
-                        )}
-                        
-                        {recording && (
-                            <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full animate-pulse z-30">
-                                <div className="h-2 w-2 rounded-full bg-white" />
-                                <span className="text-[10px] font-bold text-white uppercase tracking-widest">Recording</span>
+                            <div className="text-center p-8">
+                                <Video className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+                                <p className="text-sm text-gray-500 font-medium">Record your declaration using your phone's camera.</p>
+                                <p className="text-[10px] text-gray-600 mt-2 uppercase font-bold tracking-widest">Supports all modern smartphones</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div className="flex justify-center gap-4">
-                    {!videoBlob ? (
-                        recording ? (
-                            <Button onClick={stopRecording} variant="destructive" className="rounded-full h-14 px-8 shadow-xl shadow-red-900/20">
-                                <CircleStop className="mr-2 h-5 w-5" /> Stop & Review
-                            </Button>
-                        ) : (
-                            <Button onClick={startRecording} disabled={!isCameraActive} className="bg-primary hover:bg-primary/90 text-white rounded-full h-14 px-10 shadow-xl shadow-primary/20 font-bold">
-                                <Video className="mr-2 h-5 w-5" /> Start Recording
-                            </Button>
-                        )
-                    ) : (
-                        <Button onClick={retake} variant="outline" className="rounded-full h-12 px-6 border-white/10 hover:bg-white/5">
-                            <RefreshCw className="mr-2 h-4 w-4" /> Retake Video
-                        </Button>
-                    )}
+                    <input 
+                        type="file" 
+                        accept="video/*" 
+                        capture="user" 
+                        id="native-video-capture" 
+                        className="hidden" 
+                        onChange={handleFileChange} 
+                    />
+                    <Button 
+                        onClick={() => document.getElementById('native-video-capture')?.click()} 
+                        className="bg-primary hover:bg-primary/90 text-white rounded-full h-14 px-10 shadow-xl shadow-primary/20 font-bold"
+                    >
+                        <Video className="mr-2 h-5 w-5" /> 
+                        {videoUrl ? 'Retake Declaration' : 'Open Camera & Record'}
+                    </Button>
                 </div>
             </div>
 
             <CardFooter className="flex justify-between gap-4 pt-6 px-0 pb-0">
                 <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10">Back</Button>
-                <Button onClick={handleSave} disabled={!videoBlob} className="bg-purple-600 text-white hover:bg-purple-700 font-bold">Save & Continue</Button>
+                <Button onClick={handleSave} disabled={!videoFile} className="bg-purple-600 text-white hover:bg-purple-700 font-bold">Save & Continue</Button>
             </CardFooter>
             
             <style jsx>{`
-                .mirror {
-                    transform: rotateY(180deg);
-                }
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
                 }
