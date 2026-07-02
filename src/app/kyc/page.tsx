@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut, ShieldAlert, ShoppingCart, Video, CircleStop, Play } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut, ShieldAlert, ShoppingCart, Video, Info, Copy } from 'lucide-react';
 import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { signOut } from '@/app/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 
 type Profile = {
     id: string;
@@ -475,44 +476,50 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
         }
     };
 
-    const declarationText = `My name is ${profile.full_name}. I am completing this Video KYC for FundedStock using my own identity. I agree to all Terms, KYC Policy, and Risk Disclosures, and authorize my identity verification.`;
+    const declarationText = `I, ${profile.full_name}, confirm this is my FundedStock account and I agree to all terms and conditions.`;
+
+    const copyScript = () => {
+        navigator.clipboard.writeText(declarationText);
+        toast({ title: "Script Copied", description: "Keep it ready to read during recording." });
+    };
 
     return (
         <div className="space-y-6">
             <h3 className="font-semibold text-lg text-white">Step 3 of 5: Video Declaration</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex gap-3 items-center">
-                <Info className="h-5 w-5 text-amber-500 shrink-0" />
-                <p className="text-xs text-amber-200 font-medium">Desktop users: Please complete this step on your mobile for the best experience.</p>
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Read this script clearly:</p>
+                    <Button variant="ghost" size="sm" onClick={copyScript} className="h-7 text-[9px] font-bold uppercase tracking-widest text-gray-400 hover:text-white">
+                        <Copy className="h-3 w-3 mr-1" /> Copy Text
+                    </Button>
+                </div>
+                <p className="text-xl md:text-2xl font-black text-white text-center leading-tight">
+                    "{declarationText}"
+                </p>
+                <div className="pt-4 border-t border-white/5 flex gap-3 items-start">
+                    <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="text-[10px] text-amber-200 font-bold uppercase tracking-widest">Preparation Protocol:</p>
+                        <p className="text-[11px] text-gray-400 leading-relaxed">Please memorize this short sentence or take a screenshot. When you click the button below, your phone's camera app will open and hide this page.</p>
+                    </div>
+                </div>
             </div>
 
             <div className="space-y-4">
-                <div className="bg-black/40 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full p-3 bg-primary/20 backdrop-blur-md border-b border-white/5 z-20">
-                        <p className="text-[11px] font-bold text-white text-center leading-relaxed italic">
-                            Read this text aloud clearly:
-                        </p>
-                    </div>
-                    <div className="mt-8 mb-4">
-                        <p className="text-sm font-medium text-gray-200 text-center leading-relaxed">
-                            {declarationText}
-                        </p>
-                    </div>
-
-                    <div className="relative aspect-video rounded-xl bg-black overflow-hidden border border-white/5 flex items-center justify-center">
-                        {videoUrl ? (
-                            <video src={videoUrl} controls className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="text-center p-8">
-                                <Video className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                                <p className="text-sm text-gray-500 font-medium">Record your declaration using your phone's camera.</p>
-                            </div>
-                        )}
-                    </div>
+                <div className="relative aspect-video rounded-2xl bg-black overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl">
+                    {videoUrl ? (
+                        <video src={videoUrl} controls className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="text-center p-8 space-y-4">
+                            <Video className="w-16 h-16 text-gray-800 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm text-gray-500 font-bold max-w-[200px] mx-auto uppercase tracking-tighter">No video recorded yet.</p>
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex justify-center gap-4">
+                <div className="flex flex-col items-center gap-4">
                     <input 
                         type="file" 
                         accept="video/*" 
@@ -523,17 +530,17 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                     />
                     <Button 
                         onClick={() => document.getElementById('native-video-capture')?.click()} 
-                        className="bg-primary hover:bg-primary/90 text-white rounded-full h-14 px-10 shadow-xl shadow-primary/20 font-bold"
+                        className="bg-primary hover:bg-primary/90 text-white rounded-full h-14 px-10 shadow-xl shadow-primary/30 font-black text-sm uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
                     >
                         <Video className="mr-2 h-5 w-5" /> 
-                        {videoUrl ? 'Retake Declaration' : 'Open Camera & Record'}
+                        {videoUrl ? 'Retake Video' : 'Launch Camera'}
                     </Button>
                 </div>
             </div>
 
             <CardFooter className="flex justify-between gap-4 pt-6 px-0 pb-0">
-                <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10">Back</Button>
-                <Button onClick={handleSave} disabled={!videoFile} className="bg-purple-600 text-white hover:bg-purple-700 font-bold">Save & Continue</Button>
+                <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10 rounded-xl h-12 font-bold px-8">Back</Button>
+                <Button onClick={handleSave} disabled={!videoFile} className="bg-purple-600 text-white hover:bg-purple-700 font-black rounded-xl h-12 px-10 shadow-xl shadow-purple-900/20 uppercase tracking-widest text-xs">Save & Continue</Button>
             </CardFooter>
         </div>
     );
