@@ -459,6 +459,17 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
     // The mandatory script
     const script = `My name is ${profile.full_name || '[Name]'}. I confirm that I am completing this Video KYC for my FundedStock account using my own identity. I agree to the Terms & Conditions, KYC Policy, and Risk Disclosure. I authorize FundedStock to verify and store my KYC details, including my video, digital signature, IP address, and device information for security, compliance, and fraud prevention.`;
 
+    // Protocol: Ensure camera is explicitly connected to the DOM and playing
+    useEffect(() => {
+        if (videoRef.current && stream && !previewUrl) {
+            videoRef.current.srcObject = stream;
+            // High-priority playback signal
+            videoRef.current.play().catch(err => {
+                console.error("Manual Play Error:", err);
+            });
+        }
+    }, [stream, previewUrl]);
+
     const startCamera = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ 
@@ -466,9 +477,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                 audio: true 
             });
             setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
         } catch (err) {
             console.error("Camera Error:", err);
             toast({ title: "Permissions Denied", description: "Please allow camera and microphone access to proceed.", variant: "destructive" });
@@ -508,7 +516,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
-            // Don't stop the stream yet so the user can see the final frame
         }
     };
 
@@ -521,7 +528,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                 const formData = new FormData();
                 formData.append('video_kyc', base64data);
                 onSave(formData);
-                // Stop camera stream on successful save
                 stream?.getTracks().forEach(track => track.stop());
             };
         }
@@ -530,12 +536,9 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
     const retake = () => {
         setVideoBlob(null);
         setPreviewUrl(null);
-        if (videoRef.current && stream) {
-            videoRef.current.srcObject = stream;
-        }
+        // Stream is already managed by the useEffect above
     };
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
             stream?.getTracks().forEach(track => track.stop());
@@ -564,14 +567,20 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                             <video src={previewUrl} controls className="w-full h-full object-cover" />
                         ) : (
                             <>
-                                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover grayscale-[0.5] contrast-[1.2]" />
-                                {/* Teleprompter Overlay */}
-                                <div className="absolute top-4 left-4 right-4 bg-slate-950/80 backdrop-blur-md border border-white/20 p-5 rounded-2xl animate-in slide-in-from-top-4">
+                                <video 
+                                    ref={videoRef} 
+                                    autoPlay 
+                                    muted 
+                                    playsInline 
+                                    className="w-full h-full object-cover" 
+                                />
+                                {/* Teleprompter Overlay - Increased transparency for visibility */}
+                                <div className="absolute top-4 left-4 right-4 bg-slate-950/70 backdrop-blur-sm border border-white/10 p-5 rounded-2xl animate-in slide-in-from-top-4">
                                     <div className="flex items-center gap-2 mb-2">
                                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                                         <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Read aloud clearly:</p>
                                     </div>
-                                    <p className="text-sm md:text-base font-bold text-white leading-relaxed">
+                                    <p className="text-xs md:text-sm font-bold text-white leading-relaxed">
                                         {script}
                                     </p>
                                 </div>
