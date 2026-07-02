@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, CheckCircle, ShieldCheck, Camera, Check, RefreshCw, Upload, Menu, Search, Settings, Bell, User, FileCheck, MessageSquare, LogOut, ShieldAlert, ShoppingCart, Video, CircleStop, Play } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { saveKycStep, verifyPan } from './actions';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -476,20 +475,17 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
         }
     };
 
-    const declarationText = `My name is ${profile.full_name}. I confirm that I am completing this Video KYC for my FundedStock account using my own identity. I agree to the Terms & Conditions, KYC Policy, and Risk Disclosure. I authorize FundedStock to verify and store my KYC details, including my video, digital signature, IP address, and device information for security, compliance, and fraud prevention.`;
+    const declarationText = `My name is ${profile.full_name}. I am completing this Video KYC for FundedStock using my own identity. I agree to all Terms, KYC Policy, and Risk Disclosures, and authorize my identity verification.`;
 
     return (
         <div className="space-y-6">
             <h3 className="font-semibold text-lg text-white">Step 3 of 5: Video Declaration</h3>
             {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
-            <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
-                <ShieldAlert className="h-4 w-4" />
-                <AlertTitle className="font-bold">KYC REJECTION WARNING</AlertTitle>
-                <AlertDescription className="text-xs">
-                    Unclear audio, hidden faces, or reading the incorrect text will lead to immediate KYC rejection. Ensure your room is well-lit and quiet.
-                </AlertDescription>
-            </Alert>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex gap-3 items-center">
+                <Info className="h-5 w-5 text-amber-500 shrink-0" />
+                <p className="text-xs text-amber-200 font-medium">Desktop users: Please complete this step on your mobile for the best experience.</p>
+            </div>
 
             <div className="space-y-4">
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
@@ -498,7 +494,7 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                             Read this text aloud clearly:
                         </p>
                     </div>
-                    <div className="mt-8 mb-4 max-h-[120px] overflow-y-auto custom-scrollbar">
+                    <div className="mt-8 mb-4">
                         <p className="text-sm font-medium text-gray-200 text-center leading-relaxed">
                             {declarationText}
                         </p>
@@ -511,7 +507,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                             <div className="text-center p-8">
                                 <Video className="w-12 h-12 text-gray-700 mx-auto mb-4" />
                                 <p className="text-sm text-gray-500 font-medium">Record your declaration using your phone's camera.</p>
-                                <p className="text-[10px] text-gray-600 mt-2 uppercase font-bold tracking-widest">Supports all modern smartphones</p>
                             </div>
                         )}
                     </div>
@@ -540,19 +535,6 @@ function Step3_VideoKyc({ onSave, onBack, error, profile }: { onSave: (formData:
                 <Button type="button" variant="outline" onClick={onBack} className="bg-black/20 border-white/10 hover:bg-white/10">Back</Button>
                 <Button onClick={handleSave} disabled={!videoFile} className="bg-purple-600 text-white hover:bg-purple-700 font-bold">Save & Continue</Button>
             </CardFooter>
-            
-            <style jsx>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255,255,255,0.1);
-                    border-radius: 10px;
-                }
-            `}</style>
         </div>
     );
 }
