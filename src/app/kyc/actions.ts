@@ -20,6 +20,8 @@ function getBalanceFromPlanName(planName: string): number {
         else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
         return amount;
     }
+    const plainNumberMatch = name.match(/^[\d,.]+/);
+    if (plainNumberMatch) return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
     return 0;
 }
 
@@ -96,11 +98,21 @@ export async function saveKycStep(step: number, formData: FormData) {
         if (videoKycBase64) profileUpdateData.video_kyc_url = await uploadKycImage(videoKycBase64, user.id, 'video-kyc');
         break;
       case 4:
-        profileUpdateData = { traded_before: formData.get('traded_before') === 'yes', trading_experience: formData.get('trading_experience') as string, trading_style: formData.getAll('trading_style') as string[] };
+        profileUpdateData = { 
+            traded_before: formData.get('traded_before') === 'yes', 
+            trading_experience: formData.get('trading_experience') as string, 
+            trading_style: formData.getAll('trading_style') as string[],
+            comments: formData.get('comments') as string
+        };
         break;
       case 5:
         isFinalStep = true;
-        profileUpdateData = { drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes', risk_rules_understood: formData.get('risk_rules_understood') === 'yes', terms_accepted: formData.get('terms_accepted') === 'yes', kyc_status: 'verified' };
+        profileUpdateData = { 
+            drawdown_rules_accepted: formData.get('drawdown_rules_accepted') === 'yes', 
+            risk_rules_understood: formData.get('risk_rules_understood') === 'yes', 
+            terms_accepted: formData.get('terms_accepted') === 'yes', 
+            kyc_status: 'verified' 
+        };
         break;
       default: return { error: 'Invalid step.' };
     }
