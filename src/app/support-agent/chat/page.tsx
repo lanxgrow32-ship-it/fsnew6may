@@ -21,10 +21,11 @@ import {
     CheckCircle,
     Info,
     ExternalLink,
-    ChevronLeft
+    ChevronLeft,
+    Trash2
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { sendSupportMessage, markSupportRead } from '@/app/welcome/actions';
+import { sendSupportMessage, markSupportRead, deleteSupportConversation } from '@/app/welcome/actions';
 import { manualVerifyKyc } from '../actions';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,6 +34,7 @@ import Image from 'next/image';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export default function AgentLiveChat() {
     const isMobile = useIsMobile();
@@ -119,20 +121,18 @@ export default function AgentLiveChat() {
         setIsSending(false);
     };
 
-    const handleManualKyc = async () => {
-        if (!kycImg1 || !kycImg2 || !userInfo) return;
-        startKycTransition(async () => {
-            const formData = new FormData();
-            formData.append('id', userInfo.id);
-            formData.append('aadhaar_photo', kycImg1);
-            formData.append('selfie_photo', kycImg2);
-            const res = await manualVerifyKyc(formData);
-            if (res.success) {
-                toast({ title: "Verified", description: "User account live." });
-                fetchUserDetails(userInfo.id);
-                setKycImg1(null); setKycImg2(null);
-            } else toast({ title: "Error", description: res.error, variant: "destructive" });
-        });
+    const handleDeleteChat = async (id: string) => {
+        const res = await deleteSupportConversation(id);
+        if (res.success) {
+            toast({ title: "Conversation Purged" });
+            if (activeConversation?.id === id) {
+                setActiveConversation(null);
+                setMessages([]);
+            }
+            fetchConversations();
+        } else {
+            toast({ title: "Delete Failed", variant: "destructive" });
+        }
     };
 
     const handleSelectConversation = (c: any) => {
@@ -156,16 +156,36 @@ export default function AgentLiveChat() {
                 <ScrollArea className="flex-grow">
                     {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto opacity-20"/></div> : (
                         conversations.map(c => (
-                            <button key={c.id} onClick={() => handleSelectConversation(c)} className={cn("w-full p-4 border-b border-white/5 text-left transition-all hover:bg-white/5 flex items-center justify-between group", activeConversation?.id === c.id && "bg-primary/10 border-r-2 border-r-primary")}>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-bold truncate text-white group-hover:text-primary">{c.profiles?.full_name || 'New Trader'}</p>
-                                    <p className="text-[11px] text-gray-500 truncate mt-0.5">{c.last_message_preview || 'No messages...'}</p>
-                                </div>
-                                <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                                    {c.unread_count_admin > 0 && <Badge className="bg-primary text-white h-4 min-w-4 flex items-center justify-center rounded-full text-[9px]">{c.unread_count_admin}</Badge>}
-                                    <Badge variant="outline" className={cn("text-[8px] font-bold px-1.5 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
-                                </div>
-                            </button>
+                            <div key={c.id} className="relative group">
+                                <button onClick={() => handleSelectConversation(c)} className={cn("w-full p-4 border-b border-white/5 text-left transition-all hover:bg-white/5 flex items-center justify-between", activeConversation?.id === c.id && "bg-primary/10 border-r-2 border-r-primary")}>
+                                    <div className="min-w-0 pr-6">
+                                        <p className="text-sm font-bold truncate text-white group-hover:text-primary">{c.profiles?.full_name || 'New Trader'}</p>
+                                        <p className="text-[11px] text-gray-500 truncate mt-0.5">{c.last_message_preview || 'No messages...'}</p>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                                        {c.unread_count_admin > 0 && <Badge className="bg-primary text-white h-4 min-w-4 flex items-center justify-center rounded-full text-[9px]">{c.unread_count_admin}</Badge>}
+                                        <Badge variant="outline" className={cn("text-[8px] font-bold px-1.5 border-none", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
+                                    </div>
+                                </button>
+                                
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <button className="absolute right-2 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-700 hover:text-red-500 z-10">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Purge Conversation?</AlertDialogTitle>
+                                            <AlertDialogDescription className="text-gray-400">This will permanently delete this chat protocol and all associated messages.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel className="bg-white/5 border-white/10 text-white">Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteChat(c.id)} className="bg-red-600 text-white">Purge Chat</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         ))
                     )}
                 </ScrollArea>

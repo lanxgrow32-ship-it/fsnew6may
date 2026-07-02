@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -7,19 +8,19 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
     MessageSquare, 
-    LifeBuoy, 
     Send, 
     Loader2, 
     User,
-    Headphones,
     Search,
     Inbox,
-    ArrowRight
+    Trash2
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { sendSupportMessage } from '@/app/welcome/actions';
+import { sendSupportMessage, deleteSupportConversation } from '@/app/welcome/actions';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export default function SupportAgentPanel() {
     const [conversations, setConversations] = useState<any[]>([]);
@@ -27,6 +28,7 @@ export default function SupportAgentPanel() {
     const [messages, setMessages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const { toast } = useToast();
     const supabase = createClient();
 
     const fetchConversations = async () => {
@@ -83,6 +85,20 @@ export default function SupportAgentPanel() {
         await sendSupportMessage(activeConversation.id, 'AGENT_SYSTEM', 'admin', msg);
     };
 
+    const handleDeleteChat = async (id: string) => {
+        const res = await deleteSupportConversation(id);
+        if (res.success) {
+            toast({ title: "Session Cleared" });
+            if (activeConversation?.id === id) {
+                setActiveConversation(null);
+                setMessages([]);
+            }
+            fetchConversations();
+        } else {
+            toast({ title: "Delete Error", variant: "destructive" });
+        }
+    };
+
     return (
         <div className="flex h-screen bg-slate-950 text-white overflow-hidden font-poppins">
             {/* Sidebar */}
@@ -97,21 +113,40 @@ export default function SupportAgentPanel() {
                 <ScrollArea className="flex-grow">
                     {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto opacity-20"/></div> : (
                         conversations.map(c => (
-                            <button 
-                                key={c.id} 
-                                onClick={() => setActiveConversation(c)}
-                                className={cn(
-                                    "w-full p-5 border-b border-white/5 text-left transition-all hover:bg-white/5",
-                                    activeConversation?.id === c.id && "bg-primary/10 border-r-4 border-r-primary"
-                                )}
-                            >
-                                <div className="flex justify-between items-start mb-2">
-                                    <p className="text-sm font-black truncate max-w-[150px]">{c.profiles?.full_name}</p>
-                                    <Badge variant="outline" className={cn("text-[9px] px-2 font-black uppercase tracking-widest", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
-                                </div>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate mb-3">{c.subject === 'LIVE_CHAT' ? 'DIRECT LIVE CHAT' : c.subject}</p>
-                                <p className="text-[9px] text-gray-700 font-black uppercase tracking-[0.3em]">{new Date(c.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                            </button>
+                            <div key={c.id} className="relative group">
+                                <button 
+                                    onClick={() => setActiveConversation(c)}
+                                    className={cn(
+                                        "w-full p-5 border-b border-white/5 text-left transition-all hover:bg-white/5",
+                                        activeConversation?.id === c.id && "bg-primary/10 border-r-4 border-r-primary"
+                                    )}
+                                >
+                                    <div className="flex justify-between items-start mb-2 pr-6">
+                                        <p className="text-sm font-black truncate max-w-[150px]">{c.profiles?.full_name}</p>
+                                        <Badge variant="outline" className={cn("text-[9px] px-2 font-black uppercase tracking-widest", c.status === 'open' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-gray-500")}>{c.status}</Badge>
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate mb-3">{c.subject === 'LIVE_CHAT' ? 'DIRECT LIVE CHAT' : c.subject}</p>
+                                    <p className="text-[9px] text-gray-700 font-black uppercase tracking-[0.3em]">{new Date(c.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                </button>
+                                
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <button className="absolute right-4 top-5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-700 hover:text-red-500">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
+                                            <AlertDialogDescription className="text-gray-400">Permanently remove this chat and all message history from the server.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel className="bg-white/5 border-white/10 text-white">Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteChat(c.id)} className="bg-red-600 text-white">Confirm Purge</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         ))
                     )}
                 </ScrollArea>

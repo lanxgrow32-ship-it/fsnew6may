@@ -162,6 +162,20 @@ export async function createSupportConversation(userId: string, subject: string,
     return { data: conversation };
 }
 
+export async function deleteSupportConversation(convId: string) {
+    const { error } = await supabaseAdmin
+        .from('support_conversations')
+        .delete()
+        .eq('id', convId);
+    
+    if (error) return { error: error.message };
+    
+    revalidatePath('/welcome');
+    revalidatePath('/support-agent/chat');
+    revalidatePath('/admin/support-panel');
+    return { success: true };
+}
+
 export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string, imageFile?: File) {
     if (!convId || !senderId || (!message.trim() && !imageFile)) return { error: 'Invalid message.' };
     let imageUrl: string | undefined;
