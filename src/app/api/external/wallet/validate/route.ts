@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
@@ -11,8 +10,20 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const walletId = searchParams.get('wallet_id');
 
+    // CORS Headers for the external portal
+    const headers = {
+        'Access-Control-Allow-Origin': 'https://www.fundedstock.shop',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+    };
+
+    // Handle OPTIONS request for CORS preflight
+    if (req.method === 'OPTIONS') {
+        return new NextResponse(null, { status: 204, headers });
+    }
+
     if (!walletId) {
-        return NextResponse.json({ error: 'Wallet ID required' }, { status: 400 });
+        return NextResponse.json({ error: 'Wallet ID required' }, { status: 400, headers });
     }
 
     try {
@@ -23,16 +34,16 @@ export async function GET(req: NextRequest) {
             .single();
 
         if (error || !profile) {
-            return NextResponse.json({ valid: false, message: 'Invalid Wallet ID' }, { status: 404 });
+            return NextResponse.json({ valid: false, message: 'Invalid Wallet ID' }, { status: 404, headers });
         }
 
         return NextResponse.json({
             valid: true,
             name: profile.full_name,
             email: profile.email
-        });
+        }, { headers });
     } catch (e) {
         console.error('Validation API Error:', e);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers });
     }
 }

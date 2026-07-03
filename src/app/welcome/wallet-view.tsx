@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -99,7 +98,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
 
                     <div className="pt-8">
                         <Button asChild className="w-full h-14 text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                            <Link href={`https://fundedstock.shop?wallet_id=${profile.wallet_id}`} target="_blank">
+                            <Link href={`https://www.fundedstock.shop/topup?wallet_id=${profile.wallet_id}`} target="_blank">
                                 Pay via Official Portal <ExternalLink className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
