@@ -1,28 +1,43 @@
 
-# FundedStock External Gateway Integration Guide (v1.0)
+# FundedStock External Gateway Integration Guide (v1.1)
 **Core App Domain**: `app.fundedstock.io`  
 **Portal Domain**: `fundedstock.shop`
 
 ---
 
-## 1. Validation Protocol
-When a trader enters their Wallet ID on `fundedstock.shop`, you must validate it before proceeding to payment.
+## 1. Step 1: Wallet Validation (The "Green Mark" Phase)
+When a trader enters their Wallet ID on `fundedstock.shop`, you must validate it against the core database. On success, you should display the Trader's Name with a green verification mark to build trust.
 
 **Endpoint**: `GET https://app.fundedstock.io/api/external/wallet/validate?wallet_id={ID}`
 
-**Response (Success)**:
+**Response (Success - 200 OK)**:
 ```json
 {
   "valid": true,
-  "name": "Trader Name",
-  "email": "trader@example.com"
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
+**Response (Failure - 404 Not Found)**:
+```json
+{
+  "valid": false,
+  "message": "Invalid Wallet ID"
 }
 ```
 
 ---
 
-## 2. Credit Notification (Post-Payment)
-Once the Razorpay/Gateway payment is confirmed on your end, notify the core app to credit the wallet.
+## 2. Step 2: Payment Processing
+You are responsible for integrating the **Cashfree Payment Gateway** on `fundedstock.shop`. 
+- Collect the validated `wallet_id`.
+- Process the payment (INR).
+
+---
+
+## 3. Step 3: Credit Notification (Post-Payment)
+Once Cashfree confirms the payment is successful on your end, notify the core app to credit the wallet.
 
 **Endpoint**: `POST https://app.fundedstock.io/api/external/wallet/credit`
 
@@ -34,23 +49,23 @@ Once the Razorpay/Gateway payment is confirmed on your end, notify the core app 
 {
   "wallet_id": 12345678,
   "amount": 10000,
-  "transaction_id": "PAYID_XYZ_123",
+  "transaction_id": "CASHFREE_ORDER_ID_999",
   "secret_key": "YOUR_SHARED_SECRET_KEY"
 }
 ```
 
 ---
 
-## 3. Business Logic & Rules
-The core app (`app.fundedstock.io`) will handle the following automatically upon receiving your signal:
-
-1.  **Bonus Check**: If `amount` >= 10,000, the system adds a 5% bonus to the trader's balance.
-2.  **Audit Trail**: A "Portal Top-up" transaction is logged.
-3.  **Communication**: The trader receives a "Wallet Success" email confirmation via Make.com.
+## 4. Business Logic (Handled by Core App)
+The core app will automatically:
+1. **Apply Bonus**: If `amount` >= 10,000, a **5% Loyalty Bonus** is added.
+2. **Audit Trail**: Logs a "Portal Top-up" transaction.
+3. **Notify**: Sends a "Wallet Success" email via Make.com.
+4. **Instant Update**: The trader's balance updates in their dashboard immediately.
 
 ---
 
-## 4. Required from You (Developer)
-1.  **Secret Key**: Define a strong `FS_GATEWAY_SECRET` and provide it to the Core App admin to add to their `.env`.
-2.  **Security**: Ensure your POST call uses HTTPS and passes the correct `secret_key`.
-3.  **UX**: Redirect the user back to `https://app.fundedstock.io/welcome?tab=wallet` after successful payment.
+## 5. Security & Redirection
+1. **Secret Key**: You must use the `FS_GATEWAY_SECRET` provided by the admin in the `secret_key` field of your POST call.
+2. **Success Redirect**: After the POST call is successful, redirect the user back to:  
+   `https://app.fundedstock.io/welcome?tab=wallet`

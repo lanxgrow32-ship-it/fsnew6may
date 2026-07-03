@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 /**
  * API for fundedstock.shop to validate a user's Wallet ID
  * GET /api/external/wallet/validate?wallet_id=12345678
+ * Returns name for the "Green Mark" validation UI on the portal.
  */
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
         const { data: profile, error } = await supabaseAdmin
             .from('profiles')
             .select('full_name, email')
-            .eq('wallet_id', walletId)
+            .eq('wallet_id', parseInt(walletId))
             .single();
 
         if (error || !profile) {
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
             email: profile.email
         });
     } catch (e) {
+        console.error('Validation API Error:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

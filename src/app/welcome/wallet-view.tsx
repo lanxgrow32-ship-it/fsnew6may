@@ -70,14 +70,14 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Method 1: Automated Gateway */}
+                {/* Method 1: Automated Gateway (Cashfree) */}
                 <GlassCard className="p-8 border-primary/20 bg-primary/5 flex flex-col justify-between">
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
                             <div className="p-3 rounded-2xl bg-primary/20 text-primary border border-primary/20 shadow-[0_0_30px_rgba(139,44,245,0.2)]">
                                 <Zap className="w-6 h-6" />
                             </div>
-                            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 font-bold px-3 py-1">Instant Activation</Badge>
+                            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 font-bold px-3 py-1">Instant Credits</Badge>
                         </div>
                         
                         <div className="space-y-2">
@@ -86,14 +86,14 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                                 <h3 className="text-4xl font-black text-white tracking-tighter">{profile.wallet_id || 'Generating...'}</h3>
                                 <Button variant="ghost" size="icon" onClick={() => copyToClipboard(profile.wallet_id?.toString())} className="h-8 w-8 text-gray-500 hover:text-white"><Copy className="w-4 h-4"/></Button>
                             </div>
-                            <p className="text-xs text-gray-400 font-medium">Use this ID on our payment portal to confirm your identity.</p>
+                            <p className="text-xs text-gray-400 font-medium">This ID identifies your account on our official payment portal.</p>
                         </div>
 
                         <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-3">
                             <div className="flex items-center gap-2 text-xs font-bold text-primary">
                                 <Sparkles className="w-3.5 h-3.5" /> 5% Bonus Protocol Active
                             </div>
-                            <p className="text-[10px] text-gray-500 leading-relaxed">A 5% cash bonus is automatically credited to all wallet deposits of ₹10,000 or more via our official gateway.</p>
+                            <p className="text-[10px] text-gray-500 leading-relaxed">A 5% cash bonus is automatically credited to all wallet deposits of ₹10,000 or more via our official portal.</p>
                         </div>
                     </div>
 
@@ -103,7 +103,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                                 Pay via Official Portal <ExternalLink className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
-                        <p className="text-[9px] text-center text-gray-600 mt-3 font-bold uppercase tracking-widest">Portal Destination: fundedstock.shop</p>
+                        <p className="text-[9px] text-center text-gray-600 mt-3 font-bold uppercase tracking-widest">Gateway Provider: Cashfree Payments</p>
                     </div>
                 </GlassCard>
 
@@ -159,7 +159,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                         </div>
                         <div className="space-y-1">
                             <h4 className="text-sm font-bold text-white">Secure Transfer Protocol</h4>
-                            <p className="text-xs text-gray-500 leading-relaxed">All wallet transactions are encrypted. Deposits via the gateway portal are audited instantly, while manual UPI deposits are verified by our team within 30–60 minutes during market hours.</p>
+                            <p className="text-xs text-gray-500 leading-relaxed">All wallet transactions are encrypted. Deposits via the portal are audited instantly through the Cashfree payment bridge, while manual deposits take standard verification time.</p>
                         </div>
                     </div>
                 </GlassCard>
