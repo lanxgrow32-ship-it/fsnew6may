@@ -63,9 +63,26 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto animate-in fade-in duration-500">
+            {/* Balance Hero Section */}
+            <GlassCard className="p-8 border-primary/20 bg-primary/5 text-center md:text-left">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center justify-center md:justify-start gap-1.5">
+                            <IndianRupee className="w-3 h-3"/> Current Liquidity
+                        </p>
+                        <h2 className="text-5xl font-black text-white tracking-tighter">
+                            ₹{Number(profile.wallet_balance || 0).toLocaleString('en-IN')}
+                        </h2>
+                    </div>
+                    <Badge className="bg-primary/20 text-primary border-primary/20 px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider mx-auto md:mx-0">
+                        Express Wallet Active
+                    </Badge>
+                </div>
+            </GlassCard>
+
             <div className="space-y-1">
-                <h2 className="text-2xl font-bold text-white tracking-tight">Express Wallet</h2>
-                <p className="text-gray-400 text-sm font-medium">Add funds for instant activations via our secure payment gateway.</p>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Add Funds</h2>
+                <p className="text-gray-400 text-sm font-medium">Recharge your wallet for instant activations and tournament entries.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

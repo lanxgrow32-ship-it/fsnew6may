@@ -168,9 +168,9 @@ function WelcomeContent({
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex flex-col items-end mr-2">
-                            <span className="text-[9px] font-bold text-gray-600 mb-0.5 uppercase tracking-widest">Available Cash</span>
-                            <span className="text-primary font-bold text-base">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                        <div className="flex flex-col items-end mr-2 sm:mr-4">
+                            <span className="text-[8px] sm:text-[9px] font-bold text-gray-600 mb-0.5 uppercase tracking-widest leading-none">Balance</span>
+                            <span className="text-primary font-bold text-sm sm:text-base leading-none">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
                         </div>
                         
                         <div className="flex items-center gap-3">
