@@ -20,6 +20,8 @@ function getAutoClassification(planName: string): string {
 function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
     const name = planName.toLowerCase();
+    
+    // Check for units like K, L, Cr
     const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
     if (match) {
         let amount = parseFloat(match[1].replace(/,/g, ''));
@@ -29,6 +31,13 @@ function getBalanceFromPlanName(planName: string): number {
         else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
         return amount;
     }
+    
+    // Check for plain numbers (e.g., 100000)
+    const plainNumberMatch = name.match(/^[\d,.]+/);
+    if (plainNumberMatch) {
+        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
+    }
+    
     return 0;
 }
 
