@@ -169,7 +169,7 @@ export default async function PassThenPayPage() {
                             />
                             <FaqItem 
                                 question="How and when will I get Performance Rewards?" 
-                                answer="You can request a payout every 14 days — provided you have traded for a minimum of 5 days in that cycle and have accumulated a minimum reward of ₹2,00,000. Payment comes directly to your UPI or bank account within 3–5 business days. Your registration fee is refunded on your 3rd successful payout."
+                                answer="You can request a payout every 14 days — provided you have traded for a minimum of 5 days in that cycle and have accumulated a minimum reward of ₹2,000. Payment comes directly to your UPI or bank account within 3–5 business days. Your registration fee is refunded on your 3rd successful payout."
                             />
                             <FaqItem 
                                 question="What is the difference between PassThenPay and the 2-Step evaluation?" 

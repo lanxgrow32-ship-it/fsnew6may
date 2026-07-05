@@ -148,8 +148,8 @@ export default async function TwoStepRulesPage() {
                             </CardHeader>
                             <CardContent>
                                 <DetailedRule title="Profit Split" tag="80% Trader / 20% Firm" description="You keep 80% of all profits generated. There are no caps on total earnings." />
-                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="Payouts are available every 14 days, provided you have traded on a minimum of 5 days within that cycle. Minimum payout is ₹2,00,000." />
-                                <DetailedRule title="Evaluation Fee Refund" tag="100% on 3rd Payout" description="Your full evaluation fee is refunded automatically upon your 3rd successful payout of ₹2,00,000+." />
+                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="Payouts are available every 14 days, provided you have traded on a minimum of 5 days within that cycle. Minimum payout is ₹2,000." />
+                                <DetailedRule title="Evaluation Fee Refund" tag="100% on 3rd Payout" description="Your full evaluation fee is refunded automatically upon your 3rd successful payout of at least ₹2,000+." />
                                 <DetailedRule title="Stop Loss — Mandatory" tag="Required on every trade" description="Every position on the live account must have a stop loss set at entry. This is strictly enforced once you go live." tagVariant="destructive" />
                                 <DetailedRule title="Max Daily Loss (Funded)" tag="5% of account" description="The 5% daily loss limit carries into your funded account. Breaching this triggers automatic suspension." tagVariant="destructive" />
                                 <DetailedRule title="Max Overall Drawdown (Funded)" tag="10% of account" description="The overall drawdown limit is 10% from the starting balance. Breaching this results in immediate termination." tagVariant="destructive" />
@@ -183,7 +183,7 @@ export default async function TwoStepRulesPage() {
                                     />
                                     <FaqItem
                                         question="When do I get my fee back?"
-                                        answer="Your full evaluation fee is refunded alongside your 3rd successful payout of at least ₹2,00,000."
+                                        answer="Your full evaluation fee is refunded alongside your 3rd successful payout of at least ₹2,000."
                                     />
                                 </Accordion>
                             </CardContent>

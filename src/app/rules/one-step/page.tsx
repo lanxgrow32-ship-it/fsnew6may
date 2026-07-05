@@ -137,7 +137,7 @@ export default async function OneStepRulesPage() {
                             </CardHeader>
                             <CardContent>
                                 <DetailedRule title="Profit Split" tag="80% Trader / 20% Firm" description="You keep 80% of all profits on your funded account. FundedStock retains 20% as its share." />
-                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="Payout requests are available every 14 days, provided you have traded on at least 5 days within that cycle. Minimum payout amount is ₹2,00,000." />
+                                <DetailedRule title="Payout Cycle" tag="Every 14 days" description="Payout requests are available every 14 days, provided you have traded on at least 5 days within that cycle. Minimum payout amount is ₹2,000." />
                                 <DetailedRule title="Evaluation Fee Refund" tag="100% on 3rd Payout" description="Your full evaluation fee is automatically refunded on your 3rd successful payout — provided each payout meets the 5 trading day minimum and ₹2,000 threshold." />
                                 <DetailedRule title="Stop Loss — Mandatory" tag="Required on every trade" description="Every position on the live funded account must have a stop loss set at the time of entry. Positions without a stop loss will be flagged and may be force-closed." tagVariant="destructive" />
                                 <DetailedRule title="Max Daily Loss (Funded)" tag="5% of account" description="The 5% daily loss limit carries into the funded account. Breaching this triggers an automatic account suspension." tagVariant="destructive" />
@@ -179,6 +179,10 @@ export default async function OneStepRulesPage() {
                                     <FaqItem
                                         question="How is the 5% daily loss limit calculated for overnight positions?"
                                         answer="The daily loss limit is calculated from your account balance at the start of each trading day. Gap losses at market open are counted against the new day's 5% limit."
+                                    />
+                                    <FaqItem
+                                        question="When do I get my fee back?"
+                                        answer="Your full evaluation fee is refunded alongside your 3rd successful payout of at least ₹2,000."
                                     />
                                 </Accordion>
                             </CardContent>
