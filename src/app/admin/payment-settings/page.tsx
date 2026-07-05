@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -15,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2, PackageCheck } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2, PackageCheck, ShoppingCart } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -26,7 +27,7 @@ type PaymentDetails = {
     upi_id: string;
     qr_code_url: string;
     referral_commission_percentage: number;
-    active_payment_gateway: 'lgpay' | 'manual' | 'watchpay' | 'automated';
+    active_payment_gateway: 'lgpay' | 'manual' | 'watchpay' | 'automated' | 'cashfree';
     automated_gateway_mode: 'both' | 'lgpay' | 'watchpay';
     pay_later_upi_id: string | null;
     pay_later_qr_code_url: string | null;
@@ -48,7 +49,7 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     const { toast } = useToast();
     const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
     
-    const [activeGateway, setActiveGateway] = useState<'lgpay' | 'manual' | 'watchpay' | 'automated'>(currentSettings?.active_payment_gateway || 'manual');
+    const [activeGateway, setActiveGateway] = useState<'lgpay' | 'manual' | 'watchpay' | 'automated' | 'cashfree'>(currentSettings?.active_payment_gateway || 'manual');
     const [automatedMode, setAutomatedMode] = useState<'both' | 'lgpay' | 'watchpay'>(currentSettings?.automated_gateway_mode || 'both');
 
     const formRef = useRef<HTMLFormElement>(null);
@@ -86,21 +87,29 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
             <Card>
                 <CardHeader>
                     <CardTitle>Active Payment Strategy</CardTitle>
-                    <CardDescription>Choose between automated or manual verification.</CardDescription>
+                    <CardDescription>Choose how direct plan purchases are processed.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
                      <RadioGroup 
                         name="active_gateway"
                         value={activeGateway}
                         onValueChange={(value: any) => setActiveGateway(value)}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                        className="grid grid-cols-1 md:grid-cols-3 gap-4"
                      >
                         <div>
                              <RadioGroupItem value="automated" id="gateway-automated" className="sr-only" />
                              <Label htmlFor="gateway-automated" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'automated' && "border-primary bg-primary/5")}>
                                 <Zap className={cn("mb-2 h-6 w-6", activeGateway === 'automated' ? "text-primary" : "text-muted-foreground")} />
-                                <span className="text-center font-bold text-lg">Smart Automated</span>
+                                <span className="text-center font-bold text-lg">Automated</span>
                                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">LGPay + WatchPay</span>
+                            </Label>
+                        </div>
+                        <div>
+                             <RadioGroupItem value="cashfree" id="gateway-cashfree" className="sr-only" />
+                             <Label htmlFor="gateway-cashfree" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'cashfree' && "border-primary bg-primary/5")}>
+                                <ShoppingCart className={cn("mb-2 h-6 w-6", activeGateway === 'cashfree' ? "text-primary" : "text-muted-foreground")} />
+                                <span className="text-center font-bold text-lg">Cashfree</span>
+                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">External Portal</span>
                             </Label>
                         </div>
                          <div>

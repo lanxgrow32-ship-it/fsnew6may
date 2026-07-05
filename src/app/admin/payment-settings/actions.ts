@@ -24,7 +24,7 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const upiId = formData.get('upi_id') as string;
   const upiQrCodeFile = formData.get('qr_code') as File;
   const commissionPercentage = formData.get('referral_commission_percentage') as string;
-  const activeGateway = formData.get('active_gateway') as 'lgpay' | 'manual' | 'watchpay' | 'automated';
+  const activeGateway = formData.get('active_gateway') as 'lgpay' | 'manual' | 'watchpay' | 'automated' | 'cashfree';
   const automatedMode = formData.get('automated_mode') as 'both' | 'lgpay' | 'watchpay';
   const isPtpEnabled = formData.get('is_ptp_enabled') === 'on';
 
@@ -36,7 +36,7 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const watchPayMerchantId = formData.get('watchpay_merchant_id') as string;
   const watchPayApiKey = formData.get('watchpay_api_key') as string;
 
-  if (!['lgpay', 'manual', 'watchpay', 'automated'].includes(activeGateway)) {
+  if (!['lgpay', 'manual', 'watchpay', 'automated', 'cashfree'].includes(activeGateway)) {
       return { error: 'Invalid gateway selected.' };
   }
    if (activeGateway === 'manual' && !upiId) {

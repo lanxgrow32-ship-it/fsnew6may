@@ -21,7 +21,8 @@ import {
     Info,
     Timer,
     Ticket,
-    Check
+    Check,
+    ExternalLink
 } from 'lucide-react';
 import { purchaseWithWallet, requestManualAccount, validateCoupon } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -88,6 +89,7 @@ export function ArenaView({
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
     const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
+    const activeGateway = paymentSettings?.active_payment_gateway || 'manual';
 
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -154,6 +156,13 @@ export function ArenaView({
         });
     };
 
+    const handleExternalPurchase = () => {
+        const finalPrice = calculateFinalPrice();
+        const url = `https://www.fundedstock.shop/purchase?wallet_id=${profile.wallet_id}&plan=${encodeURIComponent(selectedPlan.title)}&price=${finalPrice}`;
+        window.open(url, '_blank');
+        toast({ title: "Redirecting...", description: "Opening secure payment portal." });
+    }
+
     if (checkoutStep === 'method') {
         const isPTP = selectedPlan.title.toLowerCase().includes('ptp');
         return (
@@ -213,18 +222,33 @@ export function ArenaView({
                                 {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
                             </button>
 
-                            <button 
-                                onClick={() => setCheckoutStep('direct-pay')}
-                                className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
-                            >
-                                <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                                    <CreditCard className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-base font-bold text-white">Standard Direct Payment</p>
-                                    <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Verifies in ~30 mins</p>
-                                </div>
-                            </button>
+                            {activeGateway === 'cashfree' ? (
+                                <button 
+                                    onClick={handleExternalPurchase}
+                                    className="group flex items-center gap-4 p-6 bg-primary/5 border border-primary/20 rounded-3xl text-left transition-all hover:bg-primary/10 hover:border-primary/50 shadow-xl"
+                                >
+                                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                        <Zap className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-base font-bold text-white">Cashfree Gateway</p>
+                                        <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">UPI / Cards / NetBanking</p>
+                                    </div>
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={() => setCheckoutStep('direct-pay')}
+                                    className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
+                                >
+                                    <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                        <CreditCard className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-base font-bold text-white">Standard Direct Payment</p>
+                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Verifies in ~30 mins</p>
+                                    </div>
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -298,12 +322,13 @@ export function ArenaView({
                         <form onSubmit={handleDirectSubmit} className="flex-1 p-8 flex flex-col justify-center space-y-6">
                             <div className="space-y-3">
                                 <Label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Transaction ID (UTR)</Label>
+                                <input type="hidden" name="dummy" />
                                 <Input 
                                     placeholder="Enter 12-digit UPI reference" 
                                     value={utr} 
                                     onChange={(e) => setUtr(e.target.value)} 
                                     required 
-                                    className="bg-black/20 border-white/10 h-12 text-white text-base font-mono focus:ring-primary/50" 
+                                    className="bg-black/20 border-white/10 text-white text-base font-mono focus:ring-primary/50" 
                                 />
                                 <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium bg-white/5 p-2 rounded-lg border border-white/5">
                                     <CheckCircle className="h-3 w-3 text-green-500"/>
