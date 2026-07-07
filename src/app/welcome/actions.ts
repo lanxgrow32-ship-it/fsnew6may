@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -24,7 +23,6 @@ function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
     const name = planName.toLowerCase();
     
-    // Check for units like K, L, Cr
     const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
     if (match) {
         let amount = parseFloat(match[1].replace(/,/g, ''));
@@ -35,7 +33,6 @@ function getBalanceFromPlanName(planName: string): number {
         return amount;
     }
     
-    // Check for plain numbers (e.g., 100000)
     const plainNumberMatch = name.match(/^[\d,.]+/);
     if (plainNumberMatch) {
         return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
@@ -62,6 +59,11 @@ async function uploadSupportImage(file: File, conversationId: string) {
     const { data: urlData } = supabaseAdmin.storage.from('support-attachments').getPublicUrl(data.path);
     return urlData.publicUrl;
   } catch (e: any) { throw new Error('Failed to upload image.'); }
+}
+
+export async function getCompetitionEvents() {
+    const { data } = await supabaseAdmin.from('competition_events').select('*').eq('is_active', true).order('start_date', { ascending: true });
+    return data || [];
 }
 
 export async function requestManualAccount(userId: string, planName: string, amount: number, utr: string) {
@@ -241,6 +243,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
     // Block until AI responds to prevent serverless execution kill
     if (role === 'user') {
+        console.log(`[Support Action] Triggering Neural Protocol for conv: ${convId}`);
         await triggerAiResponse(convId, senderId, message.trim());
     }
     
@@ -255,7 +258,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
  */
 async function triggerAiResponse(convId: string, userId: string, message: string) {
     try {
-        console.log(`[Neural Dispatcher] Probing for session: ${convId}`);
+        console.log(`[Neural Dispatcher] Initializing Brain for session: ${convId}`);
         
         // 1. Fetch settings and state with Admin client to bypass RLS
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
@@ -292,9 +295,9 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             return;
         }
 
+        console.log(`[Neural Dispatcher] AI Response generated. Injecting to DB...`);
+
         // 4. Inject response into database
-        // We use conv.user_id as sender_id to satisfy foreign key constraints (Profiles table)
-        // sender_role: 'admin' ensures the UI displays it as an agent response.
         const { error: injectError } = await supabaseAdmin.from('support_messages').insert({
             conversation_id: convId,
             sender_id: conv.user_id, 

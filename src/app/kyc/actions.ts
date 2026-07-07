@@ -36,7 +36,7 @@ function getAutoClassification(planName: string): string {
 
 export async function verifyPan(panNumber: string) {
   if (!panNumber) return { error: 'PAN number is required.' };
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'You must be logged in.' };
   
@@ -62,20 +62,17 @@ async function uploadKycMedia(data: string | File, userId: string, type: 'aadhaa
     let ext: string;
 
     if (data instanceof File) {
-        // Direct File handling (More reliable for large videos)
         const arrayBuffer = await data.arrayBuffer();
         buffer = Buffer.from(arrayBuffer);
         mime = data.type;
         ext = data.name.split('.').pop() || (type === 'video-kyc' ? 'webm' : 'jpeg');
     } else {
-        // Base64 fallback (For steps 1 and 2)
         const base64Data = data.split(',')[1] || data;
         buffer = Buffer.from(base64Data, 'base64');
         mime = data.match(/^data:(.*);base64,/)?.[1] || (type === 'video-kyc' ? 'video/webm' : 'image/jpeg');
         ext = type === 'video-kyc' ? (mime.split('/')[1] || 'webm') : 'jpeg';
     }
     
-    // Determine bucket
     const bucket = type === 'video-kyc' ? 'kyc-videos' : 'kyc-documents';
     const fileName = `${userId}-${type}-${Date.now()}.${ext}`;
     
@@ -94,7 +91,7 @@ async function uploadKycMedia(data: string | File, userId: string, type: 'aadhaa
 }
 
 export async function saveKycStep(step: number, formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Authentication required.' };
 
@@ -143,7 +140,6 @@ export async function saveKycStep(step: number, formData: FormData) {
     if (updateError) return { error: updateError.message };
     
     if (isFinalStep && updatedProfile) {
-        // TRIGGER V3: Standalone KYC Success
         const kycWebhook = process.env.MAKE_KYC_VERIFIED_WEBHOOK_URL;
         if (kycWebhook) {
             fetch(kycWebhook, {

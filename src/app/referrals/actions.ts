@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -23,7 +22,7 @@ async function uploadQrCode(file: File, userId: string) {
 }
 
 export async function updatePayoutDetails(prevState: any, formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -63,7 +62,7 @@ export async function updatePayoutDetails(prevState: any, formData: FormData) {
 
 
 export async function requestPayout(amount: number) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -117,8 +116,6 @@ export async function requestPayout(amount: number) {
         .eq('id', user.id);
     
     if (updateError) {
-        // This is a critical issue. We should ideally roll back the payout request.
-        // For now, we'll log it and alert the user.
         console.error('CRITICAL: Failed to update user balance after creating payout request.', updateError);
         return { error: 'Your request was created, but we failed to update your balance. Please contact support.' };
     }
