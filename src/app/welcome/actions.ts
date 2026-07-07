@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -219,10 +218,23 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
         // TRIGGER AI IF ENABLED AND USER IS SENDER
         if (role === 'user' && settings?.is_ai_support_enabled && conv) {
+           // Fetch Context (Recent History)
+           const { data: history } = await supabaseAdmin
+              .from('support_messages')
+              .select('sender_role, message')
+              .eq('conversation_id', convId)
+              .order('created_at', { ascending: false })
+              .limit(10);
+
+           const formattedHistory = (history || [])
+              .reverse()
+              .map(h => ({ role: h.sender_role as 'user' | 'admin', message: h.message }));
+
            const aiResponse = await runSupportAi({
               userEmail: conv.profiles.email,
               userName: conv.profiles.full_name,
-              userMessage: message.trim()
+              userMessage: message.trim(),
+              chatHistory: formattedHistory
            });
 
            if (aiResponse) {

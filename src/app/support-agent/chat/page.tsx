@@ -24,11 +24,11 @@ import {
     ChevronLeft,
     Trash2,
     CheckSquare,
-    Square
+    Square,
+    BrainCircuit
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { sendSupportMessage, markSupportRead, deleteSupportConversation } from '@/app/welcome/actions';
-import { manualVerifyKyc } from '../actions';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -97,7 +97,7 @@ export default function AgentLiveChat() {
             fetchConversations();
         };
         init();
-        const sub = supabase.channel('agent_realtime_v5').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
+        const sub = supabase.channel('agent_realtime_v6').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
         return () => { supabase.removeChannel(sub); };
     }, []);
 
@@ -106,7 +106,7 @@ export default function AgentLiveChat() {
             fetchMessages(activeConversation.id);
             fetchUserDetails(activeConversation.user_id);
             markSupportRead(activeConversation.id, 'admin');
-            const sub = supabase.channel(`agent_conv_v5_${activeConversation.id}`)
+            const sub = supabase.channel(`agent_conv_v6_${activeConversation.id}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `conversation_id=eq.${activeConversation.id}` }, 
                 () => { fetchMessages(activeConversation.id); markSupportRead(activeConversation.id, 'admin'); }).subscribe();
             return () => { supabase.removeChannel(sub); };
@@ -293,22 +293,31 @@ export default function AgentLiveChat() {
                                 <div className="text-center py-4">
                                     <p className="text-[9px] text-gray-800 font-black uppercase tracking-[0.5em]">Secure Terminal Connection Established</p>
                                 </div>
-                                {messages.map(m => (
-                                    <div key={m.id} className={cn("flex items-end gap-4", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
-                                        <div className={cn(
-                                            "max-w-[70%] p-5 rounded-3xl text-sm leading-relaxed shadow-2xl", 
-                                            m.sender_role === 'admin' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none"
-                                        )}>
-                                            {m.image_url && (
-                                                <div className="mb-4 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
-                                                    <Image src={m.image_url} alt="Attachment" width={400} height={400} className="object-cover" />
-                                                </div>
-                                            )}
-                                            <p className="whitespace-pre-wrap font-medium">{m.message}</p>
-                                            <p className="mt-3 text-[8px] opacity-30 text-right uppercase font-bold tracking-widest">{format(new Date(m.created_at), 'p')}</p>
+                                {messages.map(m => {
+                                    const isAi = m.sender_id === 'AI_SYSTEM';
+                                    return (
+                                        <div key={m.id} className={cn("flex items-end gap-4", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
+                                            <div className={cn(
+                                                "max-w-[70%] p-5 rounded-3xl text-sm leading-relaxed shadow-2xl relative", 
+                                                m.sender_role === 'admin' ? (isAi ? "bg-slate-900 border border-primary/40 text-gray-100" : "bg-primary text-white rounded-br-none") : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none"
+                                            )}>
+                                                {isAi && (
+                                                    <div className="flex items-center gap-1.5 mb-2">
+                                                        <BrainCircuit className="w-3.5 h-3.5 text-primary" />
+                                                        <span className="text-[8px] font-black text-primary uppercase tracking-widest">Neural Agent</span>
+                                                    </div>
+                                                )}
+                                                {m.image_url && (
+                                                    <div className="mb-4 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                                                        <Image src={m.image_url} alt="Attachment" width={400} height={400} className="object-cover" />
+                                                    </div>
+                                                )}
+                                                <p className="whitespace-pre-wrap font-medium">{m.message}</p>
+                                                <p className="mt-3 text-[8px] opacity-30 text-right uppercase font-bold tracking-widest">{format(new Date(m.created_at), 'p')}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
 

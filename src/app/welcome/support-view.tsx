@@ -13,7 +13,8 @@ import {
     ArrowRight,
     Headphones,
     Paperclip,
-    X
+    X,
+    BrainCircuit
 } from 'lucide-react';
 import { createSupportConversation, sendSupportMessage, markSupportRead } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -224,24 +225,41 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                         <div className="text-center py-8 border-b border-white/5 mb-6">
                              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-[0.3em]">Secure connection established</p>
                         </div>
-                        {messages.map((m) => (
-                            <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'user' ? "flex-row-reverse" : "flex-row")}>
-                                <div className={cn("h-7 w-7 rounded-full border border-white/10 flex items-center justify-center shrink-0", m.sender_role === 'user' ? "bg-primary/20 text-primary" : "bg-white/10 text-white")}>
-                                    {m.sender_role === 'user' ? <User className="h-3.5 w-3.5" /> : <Headphones className="h-3.5 w-3.5" />}
-                                </div>
-                                <div className={cn("max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed shadow-lg", m.sender_role === 'user' ? "bg-primary text-white rounded-br-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none")}>
-                                    {m.image_url && (
-                                        <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
-                                            <Image src={m.image_url} alt="Support Attachment" width={250} height={250} className="object-cover" />
+                        {messages.map((m) => {
+                            const isAi = m.sender_id === 'AI_SYSTEM';
+                            return (
+                                <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'user' ? "flex-row-reverse" : "flex-row")}>
+                                    <div className={cn(
+                                        "h-7 w-7 rounded-full border flex items-center justify-center shrink-0", 
+                                        m.sender_role === 'user' ? "bg-primary/20 text-primary border-white/10" : 
+                                        isAi ? "bg-primary text-white border-primary shadow-[0_0_10px_rgba(139,44,245,0.5)]" : "bg-white/10 text-white border-white/10"
+                                    )}>
+                                        {m.sender_role === 'user' ? <User className="h-3.5 w-3.5" /> : isAi ? <BrainCircuit className="h-3.5 w-3.5" /> : <Headphones className="h-3.5 w-3.5" />}
+                                    </div>
+                                    <div className={cn(
+                                        "max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed shadow-lg relative", 
+                                        m.sender_role === 'user' ? "bg-primary text-white rounded-br-none" : 
+                                        isAi ? "bg-slate-900 border border-primary/40 text-gray-100 rounded-bl-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none"
+                                    )}>
+                                        {isAi && (
+                                            <div className="flex items-center gap-1.5 mb-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                                <span className="text-[8px] font-black text-primary uppercase tracking-[0.1em]">Neural Response</span>
+                                            </div>
+                                        )}
+                                        {m.image_url && (
+                                            <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
+                                                <Image src={m.image_url} alt="Support Attachment" width={250} height={250} className="object-cover" />
+                                            </div>
+                                        )}
+                                        <p className="whitespace-pre-wrap">{m.message}</p>
+                                        <div className="mt-2 text-[8px] opacity-30 font-bold text-right">
+                                            {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
-                                    )}
-                                    <p className="whitespace-pre-wrap">{m.message}</p>
-                                    <div className="mt-2 text-[8px] opacity-30 font-bold text-right">
-                                        {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
