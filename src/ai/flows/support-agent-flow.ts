@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview The FundedStock AI Strategic Support Agent with Escalation Logic.
@@ -69,7 +70,18 @@ const prompt = ai.definePrompt({
 });
 
 export async function runSupportAi(input: SupportInput) {
-  // Directly call the prompt function which returns a GenerateResponse in Genkit 1.x
-  const response = await prompt(input);
-  return response.text;
+  try {
+    // Generate response using the defined prompt
+    const response = await prompt(input);
+    
+    if (!response || !response.text) {
+        console.warn("[runSupportAi] Empty text response from model.");
+        return "I am currently processing high traffic levels. Please repeat your query or hold for a moment.";
+    }
+
+    return response.text;
+  } catch (error) {
+    console.error("[runSupportAi] Critical Flow Error:", error);
+    throw error;
+  }
 }
