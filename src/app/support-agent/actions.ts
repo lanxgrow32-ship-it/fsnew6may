@@ -47,3 +47,11 @@ export async function manualVerifyKyc(formData: FormData) {
     return { success: true };
   } catch (error: any) { return { error: error.message }; }
 }
+
+export async function toggleAiSupport(enabled: boolean) {
+  const { error } = await supabaseAdmin.from('payment_details').update({ is_ai_support_enabled: enabled }).eq('id', 1);
+  if (error) return { error: error.message };
+  revalidatePath('/support-agent');
+  revalidatePath('/admin/payment-settings');
+  return { success: true };
+}

@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { format } from 'date-fns';
 
-export default function SpecialistChat() {
+function SpecialistChatContent() {
     const searchParams = useSearchParams();
     const [conversations, setConversations] = useState<any[]>([]);
     const [activeConversation, setActiveConversation] = useState<any>(null);
@@ -144,7 +145,7 @@ export default function SpecialistChat() {
                     <div className="flex-grow flex flex-col items-center justify-center text-center p-12">
                         <Activity className="h-20 w-20 text-slate-900 mb-6" />
                         <h2 className="text-3xl font-black text-white tracking-tighter">PROTOCOL READY.</h2>
-                        <p className="text-gray-600 text-xs font-bold uppercase tracking-[0.4em] mt-2">Select a technical escalation to begin mitigation</p>
+                        <p className="text-gray-600 text-xs font-bold uppercase tracking-[0.4em] mt-2">Select a technical mitigation to begin assistance</p>
                     </div>
                 ) : (
                     <>
@@ -210,5 +211,13 @@ export default function SpecialistChat() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function SpecialistChat() {
+    return (
+        <Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>}>
+            <SpecialistChatContent />
+        </Suspense>
     );
 }
