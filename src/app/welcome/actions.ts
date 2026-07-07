@@ -2,6 +2,7 @@
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { runSupportAi } from '@/ai/flows/support-agent-flow';
 
@@ -180,7 +181,7 @@ export async function createSupportConversation(userId: string, subject: string,
             message: firstMessage 
         });
         
-        // Synchronously trigger and await response to survive serverless timeout
+        // Block until AI responds to prevent serverless execution kill
         await triggerAiResponse(conversation.id, userId, firstMessage);
     }
 
@@ -238,7 +239,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
     await supabaseAdmin.from('support_conversations').update(metaUpdate).eq('id', convId);
 
-    // Synchronously trigger and await response to survive serverless timeout
+    // Block until AI responds to prevent serverless execution kill
     if (role === 'user') {
         await triggerAiResponse(convId, senderId, message.trim());
     }
@@ -254,16 +255,18 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
  */
 async function triggerAiResponse(convId: string, userId: string, message: string) {
     try {
-        console.log(`[Neural Dispatcher] Triggering for: ${convId}`);
+        console.log(`[Neural Dispatcher] Probing for session: ${convId}`);
         
+        // 1. Fetch settings and state with Admin client to bypass RLS
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
         const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
 
         if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') {
-            console.log(`[Neural Dispatcher] AI Aborted: Toggle=${settings?.is_ai_support_enabled}, Role=${conv?.assigned_role}`);
+            console.log(`[Neural Dispatcher] Protocol Aborted: Toggle=${settings?.is_ai_support_enabled}, Role=${conv?.assigned_role}`);
             return;
         }
 
+        // 2. Fetch history for context
         const { data: history } = await supabaseAdmin
             .from('support_messages')
             .select('sender_role, message')
@@ -275,6 +278,7 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             .reverse()
             .map(h => ({ role: h.sender_role as 'user' | 'admin', message: h.message }));
 
+        // 3. Fire Neural Engine
         const aiResponse = await runSupportAi({
             conversationId: convId,
             userEmail: conv.profiles.email,
@@ -283,16 +287,27 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             chatHistory: chatHistory
         });
 
-        if (!aiResponse) return;
+        if (!aiResponse) {
+            console.warn(`[Neural Dispatcher] Null response received for ${convId}`);
+            return;
+        }
 
-        // Use Conversation's user_id as a fallback to satisfy UUID profile foreign key constraints
-        await supabaseAdmin.from('support_messages').insert({
+        // 4. Inject response into database
+        // We use conv.user_id as sender_id to satisfy foreign key constraints (Profiles table)
+        // sender_role: 'admin' ensures the UI displays it as an agent response.
+        const { error: injectError } = await supabaseAdmin.from('support_messages').insert({
             conversation_id: convId,
             sender_id: conv.user_id, 
             sender_role: 'admin',
             message: aiResponse
         });
 
+        if (injectError) {
+            console.error(`[Neural Dispatcher] Injection Failure:`, injectError);
+            return;
+        }
+
+        // 5. Update Meta Data
         const { data: freshConv } = await supabaseAdmin.from('support_conversations').select('unread_count_user').eq('id', convId).single();
         await supabaseAdmin.from('support_conversations').update({
             last_message_at: new Date().toISOString(),
@@ -300,10 +315,10 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             unread_count_user: (freshConv?.unread_count_user || 0) + 1
         }).eq('id', convId);
 
-        console.log(`[Neural Dispatcher] Signal broadcasted successfully.`);
+        console.log(`[Neural Dispatcher] Protocol Successfully Broad-casted.`);
 
     } catch (error) {
-        console.error(`[Neural Dispatcher] Protocol Error:`, error);
+        console.error(`[Neural Dispatcher] Fatal Execution Error:`, error);
     }
 }
 
@@ -345,17 +360,4 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     if (error) return { error: error.message };
     revalidatePath('/welcome');
     return { success: true };
-}
-
-export async function getCompetitionEvents() {
-    const { data } = await supabaseAdmin.from('competition_events').select('*').eq('is_active', true).neq('status', 'completed').order('start_date', { ascending: true });
-    return data || [];
-}
-
-export async function toggleAiSupport(enabled: boolean) {
-  const { error } = await supabaseAdmin.from('payment_details').update({ is_ai_support_enabled: enabled }).eq('id', 1);
-  if (error) return { error: error.message };
-  revalidatePath('/support-agent');
-  revalidatePath('/admin/payment-settings');
-  return { success: true };
 }

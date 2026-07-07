@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { GatewaySwitcher } from './gateway-switcher';
+import { GatewaySwitcher } from '@/app/opjophoplopmop4598/gateway-switcher';
 import { Shield } from 'lucide-react';
 import { Metadata } from 'next';
 
