@@ -139,7 +139,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
       } catch (e) { console.error('StockMint API Error:', e); }
   }
 
-  // TRIGGER V3: Intelligent Purchase Handler
   const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
   if (purchaseWebhook) {
       fetch(purchaseWebhook, {
@@ -216,9 +215,9 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
         
         await supabaseAdmin.from('support_conversations').update(updateData).eq('id', convId);
 
-        // TRIGGER AI IF ENABLED, USER IS SENDER, AND ROLE IS STILL AI
+        // TRIGGER AI IF: AI Mode On AND User is Sender AND AI is still the assigned role
         if (role === 'user' && settings?.is_ai_support_enabled && conv && conv.assigned_role === 'ai') {
-           // Fetch Context (Recent History)
+           // Fetch Recent Context (10 messages)
            const { data: history } = await supabaseAdmin
               .from('support_messages')
               .select('sender_role, message')
@@ -230,6 +229,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
               .reverse()
               .map(h => ({ role: h.sender_role as 'user' | 'admin', message: h.message }));
 
+           // Run Neural Engine
            const aiResponse = await runSupportAi({
               conversationId: convId,
               userEmail: conv.profiles.email,
@@ -239,6 +239,9 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
            });
 
            if (aiResponse) {
+              // Check if AI chose to escalate (role will have changed in the DB via tool)
+              const { data: freshConv } = await supabaseAdmin.from('support_conversations').select('assigned_role').eq('id', convId).single();
+              
               await supabaseAdmin.from('support_messages').insert({
                   conversation_id: convId,
                   sender_id: 'AI_SYSTEM',
@@ -295,7 +298,6 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     const { error } = await supabaseAdmin.from('competition_registrations').insert({ user_id: userId, event_id: eventId, transaction_id: event.is_free ? 'FREE_JOIN' : 'WALLET_JOIN', is_approved: true, stockmint_username: stockmintUsername, stockmint_password: stockmintPassword });
     
     if (!error) {
-         // TRIGGER V3: Intelligent Purchase Handler (Competition specialized path)
          const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
          if (purchaseWebhook) {
              fetch(purchaseWebhook, {
@@ -307,7 +309,7 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
                      plan_name: `Tournament: ${event.week_label}`,
                      username: stockmintUsername,
                      password: stockmintUsername,
-                     needsKyc: false // Competitions don't require KYC for credentials
+                     needsKyc: false
                  })
              }).catch(e => console.error(e));
          }
