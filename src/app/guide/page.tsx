@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,7 +80,7 @@ const navItems = [
     { href: "/welcome", label: "Account Overview" },
     { href: "/guide", label: "Trading Guide" },
     { href: "/referrals", label: "Referrals" },
-    { href: "/welcome?tab=support", label: "Live Chat" },
+    { href: "/live-chat", label: "Live Chat" },
     { href: "/mentor", label: "AI Mentor" },
     { href: "/welcome?tab=marketplace", label: "Get Funded" },
 ];

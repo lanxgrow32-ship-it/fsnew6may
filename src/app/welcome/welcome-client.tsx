@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -38,7 +39,6 @@ import { AccountsHub } from './accounts-hub';
 import { ArenaView } from './arena-view';
 import { WalletView } from './wallet-view';
 import { TransactionsView } from './transactions-view';
-import { SupportView } from './support-view';
 import { CompetitionView } from './competition-view';
 
 const Logo = () => (
@@ -76,16 +76,16 @@ function WelcomeContent({
 
     // Sync active tab with URL params
     useEffect(() => {
-        const validTabs = ['hub', 'marketplace', 'competition', 'wallet', 'transactions', 'support', 'kyc'];
+        const validTabs = ['hub', 'marketplace', 'competition', 'wallet', 'transactions', 'kyc'];
         if (tabParam && validTabs.includes(tabParam)) {
             setActiveTab(tabParam);
         }
     }, [tabParam]);
 
-    // Real-time unread badges for Live Chat
+    // Real-time unread badges for Live Chat (Maintained for nav badges)
     useEffect(() => {
         const channel = supabase
-            .channel('user-support-realtime-v3')
+            .channel('user-support-global-v4')
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
@@ -118,7 +118,7 @@ function WelcomeContent({
         { id: 'referrals', label: "Referrals", icon: Users, href: '/referrals' },
         { id: 'guide', label: "Guide", icon: BookOpen, href: '/guide' },
         { id: 'transactions', label: "History", icon: History },
-        { id: 'support', label: "Live Chat", icon: MessageSquare, hasBadge: totalUnread > 0 },
+        { id: 'support', label: "Live Chat", icon: MessageSquare, href: '/live-chat', hasBadge: totalUnread > 0 },
         { id: 'kyc', label: "KYC", icon: FileCheck },
     ];
 
@@ -141,9 +141,12 @@ function WelcomeContent({
 
                                 if (item.href) {
                                     return (
-                                        <Link key={item.id} href={item.href} className={commonClasses}>
+                                        <Link key={item.id} href={item.href} className={cn(commonClasses, "relative")}>
                                             <item.icon className="w-3.5 h-3.5" />
                                             {item.label}
+                                            {item.hasBadge && (
+                                                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                            )}
                                         </Link>
                                     );
                                 }
@@ -156,11 +159,6 @@ function WelcomeContent({
                                     >
                                         <item.icon className="w-3.5 h-3.5" />
                                         {item.label}
-                                        {item.hasBadge && (
-                                            <span className="w-3.5 h-3.5 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full animate-pulse">
-                                                {totalUnread > 9 ? '9+' : totalUnread}
-                                            </span>
-                                        )}
                                     </button>
                                 );
                             })}
@@ -225,6 +223,11 @@ function WelcomeContent({
                                                     <Link key={item.id} href={item.href} className={commonClasses} onClick={() => setIsSidebarOpen(false)}>
                                                         <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
                                                         {item.label}
+                                                        {item.hasBadge && (
+                                                            <span className="absolute right-5 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
+                                                                {totalUnread}
+                                                            </span>
+                                                        )}
                                                     </Link>
                                                 );
                                             }
@@ -240,11 +243,6 @@ function WelcomeContent({
                                                 >
                                                     <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
                                                     {item.label}
-                                                    {item.hasBadge && (
-                                                        <span className="absolute right-5 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
-                                                            {totalUnread}
-                                                        </span>
-                                                    )}
                                                 </button>
                                             );
                                         })}
@@ -296,10 +294,6 @@ function WelcomeContent({
 
                     <TabsContent value="transactions" className="animate-in fade-in duration-300">
                         <TransactionsView transactions={walletTransactions} />
-                    </TabsContent>
-
-                    <TabsContent value="support" className="animate-in fade-in duration-300">
-                        <SupportView profile={profile} conversations={supportConversations} />
                     </TabsContent>
 
                     <TabsContent value="kyc" className="animate-in fade-in duration-300">
@@ -363,7 +357,7 @@ function WelcomeContent({
 
 export function WelcomeClient(props: any) {
     return (
-        <Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-950 text-white">Initializing Dashboard...</div>}>
+        <Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-950 text-white font-poppins">Initializing Dashboard...</div>}>
             <WelcomeContent {...props} />
         </Suspense>
     );

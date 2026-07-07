@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useActionState, useRef } from 'react';
@@ -89,7 +90,7 @@ const navItems = [
     { href: "/welcome", label: "Account Overview" },
     { href: "/guide", label: "Trading Guide" },
     { href: "/referrals", label: "Referrals" },
-    { href: "/welcome?tab=support", label: "Live Chat" },
+    { href: "/live-chat", label: "Live Chat" },
     { href: "/mentor", label: "AI Mentor" },
     { href: "/welcome?tab=marketplace", label: "Get Funded" },
 ];
