@@ -1,7 +1,7 @@
 
 /**
  * @fileOverview Intelligence tools for the AI Support Agent.
- * These tools allow the AI to fetch live data from the database.
+ * These tools allow the AI to fetch live data and perform strategic routing.
  */
 
 import { ai } from '@/ai/genkit';
@@ -32,7 +32,7 @@ export const getTraderProfile = ai.defineTool(
 export const getTraderAccounts = ai.defineTool(
   {
     name: 'getTraderAccounts',
-    description: 'Fetches all trading accounts (1-Step, 2-Step, PTP) associated with the trader and their current status.',
+    description: 'Fetches all trading accounts associated with the trader and their current status.',
     inputSchema: z.object({
       email: z.string().describe('The email address of the trader.'),
     }),
@@ -60,23 +60,64 @@ export const getTraderAccounts = ai.defineTool(
 export const getPlatformRules = ai.defineTool(
   {
     name: 'getPlatformRules',
-    description: 'Provides information about drawdown limits, profit targets, and payout rules for different models.',
+    description: 'Provides information about drawdown limits, profit targets, and payout rules.',
     inputSchema: z.object({
-      query: z.string().describe('The rule to look up (e.g., "drawdown", "payouts", "PTP rules").'),
+      query: z.string().describe('The rule to look up.'),
     }),
     outputSchema: z.string(),
   },
   async (input) => {
-    const rules = `
-      1. Overall Drawdown: 10% for all standard plans. Trailing balance on Instant accounts.
-      2. Daily Drawdown: 5% of opening balance for 1-Step/2-Step, 4% for PTP.
-      3. Profit Targets: 1-Step (10%), 2-Step (Phase 1: 8%, Phase 2: 5%), PTP (6%).
-      4. Payouts: Minimum ₹2,000. Cycle is every 14 days. 80% Profit Share.
-      5. PTP (PassThenPay): Pay 199-499 upfront, achieve 6% target, then pay activation fee.
-      6. KYC: Mandatory before first payout for 1-Step/2-Step/Instant. Not strictly required for initial PTP trades but required for payouts.
-      7. Leverage: SEBI regulated limits only.
-      8. News Trading: Restricted window of ±5 minutes around high-impact events.
+    return `
+      1. Overall Drawdown: 10% (Fixed for Eval, Trailing for Instant).
+      2. Daily Drawdown: 5% (4% for PTP).
+      3. Targets: 1-Step (10%), 2-Step (8%/5%), PTP (6%).
+      4. Payouts: Every 14 days, Min ₹2,000.
+      5. KYC: Mandatory before first payout.
     `;
-    return rules;
+  }
+);
+
+export const escalateToSpecialist = ai.defineTool(
+  {
+    name: 'escalateToSpecialist',
+    description: 'Forwards the conversation to a specialized KYC/Payout agent when a trader has technical issues or complex requests regarding these topics.',
+    inputSchema: z.object({
+      conversationId: z.string(),
+      reason: z.enum(['kyc', 'payout']),
+    }),
+    outputSchema: z.any(),
+  },
+  async (input) => {
+    await supabaseAdmin
+      .from('support_conversations')
+      .update({ 
+        assigned_role: 'specialist',
+        escalation_reason: input.reason,
+        status: 'open'
+      })
+      .eq('id', input.conversationId);
+    return { success: true, target: 'Specialist Protocol' };
+  }
+);
+
+export const escalateToHuman = ai.defineTool(
+  {
+    name: 'escalateToHuman',
+    description: 'Transfers the user to a standard human support agent after they have confirmed multiple times that they want to leave the AI session.',
+    inputSchema: z.object({
+      conversationId: z.string(),
+    }),
+    outputSchema: z.any(),
+  },
+  async (input) => {
+    await supabaseAdmin
+      .from('support_conversations')
+      .update({ 
+        assigned_role: 'human',
+        escalation_reason: 'human_request',
+        status: 'open'
+      })
+      .eq('id', input.conversationId);
+    return { success: true, target: 'Senior Human Agent' };
   }
 );

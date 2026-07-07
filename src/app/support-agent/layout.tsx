@@ -1,7 +1,8 @@
+
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { MessageSquare, LogOut, LayoutDashboard } from 'lucide-react';
+import { MessageSquare, LogOut, LayoutDashboard, ShieldCheck, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from '@/app/actions';
 
@@ -25,6 +26,11 @@ export default function SupportAgentLayout({ children }: { children: React.React
             <SidebarMenuItem>
               <SidebarMenuButton href="/support-agent/chat" tooltip="Live Chat">
                 <MessageSquare /> Live Chat
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/support-agent/specialist" tooltip="Specialist Desk">
+                <ShieldCheck className="text-green-400" /> Specialist Desk
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
