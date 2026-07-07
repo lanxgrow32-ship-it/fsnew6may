@@ -69,8 +69,7 @@ const prompt = ai.definePrompt({
 });
 
 export async function runSupportAi(input: SupportInput) {
-  const { text } = await ai.generate({
-    prompt: prompt(input),
-  });
-  return text;
+  // Directly call the prompt function which returns a GenerateResponse in Genkit 1.x
+  const response = await prompt(input);
+  return response.text;
 }
