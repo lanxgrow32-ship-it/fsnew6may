@@ -25,7 +25,8 @@ import {
     Trash2,
     CheckSquare,
     Square,
-    BrainCircuit
+    BrainCircuit,
+    AlertCircle
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { sendSupportMessage, markSupportRead, deleteSupportConversation } from '@/app/welcome/actions';
@@ -38,6 +39,7 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AgentLiveChat() {
     const isMobile = useIsMobile();
@@ -97,7 +99,7 @@ export default function AgentLiveChat() {
             fetchConversations();
         };
         init();
-        const sub = supabase.channel('agent_realtime_v6').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
+        const sub = supabase.channel('agent_realtime_v7').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
         return () => { supabase.removeChannel(sub); };
     }, []);
 
@@ -106,7 +108,7 @@ export default function AgentLiveChat() {
             fetchMessages(activeConversation.id);
             fetchUserDetails(activeConversation.user_id);
             markSupportRead(activeConversation.id, 'admin');
-            const sub = supabase.channel(`agent_conv_v6_${activeConversation.id}`)
+            const sub = supabase.channel(`agent_conv_v7_${activeConversation.id}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `conversation_id=eq.${activeConversation.id}` }, 
                 () => { fetchMessages(activeConversation.id); markSupportRead(activeConversation.id, 'admin'); }).subscribe();
             return () => { supabase.removeChannel(sub); };
@@ -146,15 +148,18 @@ export default function AgentLiveChat() {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
-    const toggleSelectAll = () => {
-        if (selectedIds.length === filteredConversations.length) setSelectedIds([]);
-        else setSelectedIds(filteredConversations.map(c => c.id));
+    const toggleSelectAll = (filteredList: any[]) => {
+        if (selectedIds.length === filteredList.length) setSelectedIds([]);
+        else setSelectedIds(filteredList.map(c => c.id));
     };
 
     const filteredConversations = conversations.filter(c => 
         c.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const humanQueue = filteredConversations.filter(c => c.assigned_role === 'human');
+    const aiSessions = filteredConversations.filter(c => c.assigned_role === 'ai');
 
     const handleSelectConversation = (c: any) => {
         setActiveConversation(c);
@@ -168,93 +173,52 @@ export default function AgentLiveChat() {
                 "w-full md:w-[400px] border-r border-white/5 bg-slate-900/30 flex flex-col shrink-0 transition-all",
                 isMobile && mobileView === 'chat' && "hidden md:flex"
             )}>
-                <div className="p-6 border-b border-white/5 space-y-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
-                        <Input 
-                            placeholder="Filter by name or email..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 bg-black/40 border-white/10 h-11 text-xs font-semibold rounded-xl" 
-                        />
+                <Tabs defaultValue="all" className="flex flex-col h-full">
+                    <div className="px-6 pt-6 pb-2 space-y-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
+                            <Input 
+                                placeholder="Search traders..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 bg-black/40 border-white/10 h-11 text-xs font-semibold rounded-xl" 
+                            />
+                        </div>
+                        <TabsList className="bg-black/40 border border-white/5 w-full rounded-xl h-11 p-1">
+                            <TabsTrigger value="all" className="flex-1 rounded-lg text-[10px] font-bold uppercase tracking-widest">All</TabsTrigger>
+                            <TabsTrigger value="human" className="flex-1 rounded-lg text-[10px] font-bold uppercase tracking-widest gap-2">
+                                Human 
+                                {humanQueue.length > 0 && <span className="h-2 w-2 rounded-full bg-primary animate-pulse"/>}
+                            </TabsTrigger>
+                            <TabsTrigger value="ai" className="flex-1 rounded-lg text-[10px] font-bold uppercase tracking-widest">Neural</TabsTrigger>
+                        </TabsList>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={toggleSelectAll}
-                            className="text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white h-7 px-2"
-                        >
-                            {selectedIds.length === filteredConversations.length && filteredConversations.length > 0 ? "Deselect All" : "Select All"}
-                        </Button>
-                        
+
+                    <ScrollArea className="flex-grow">
+                        {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto opacity-20"/></div> : (
+                            <>
+                                <TabsContent value="all" className="mt-0">
+                                    <ConversationList list={filteredConversations} activeId={activeConversation?.id} onSelect={handleSelectConversation} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+                                </TabsContent>
+                                <TabsContent value="human" className="mt-0">
+                                    <ConversationList list={humanQueue} activeId={activeConversation?.id} onSelect={handleSelectConversation} selectedIds={selectedIds} onToggleSelect={toggleSelect} emptyText="No human escalations in queue." />
+                                </TabsContent>
+                                <TabsContent value="ai" className="mt-0">
+                                    <ConversationList list={aiSessions} activeId={activeConversation?.id} onSelect={handleSelectConversation} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+                                </TabsContent>
+                            </>
+                        )}
+                    </ScrollArea>
+
+                    <div className="p-4 border-t border-white/5 flex items-center justify-between">
                         {selectedIds.length > 0 && (
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-widest px-3">
-                                        <Trash2 className="w-3 h-3 mr-1.5" /> Purge ({selectedIds.length})
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Purge Selected Conversations?</AlertDialogTitle>
-                                        <AlertDialogDescription className="text-gray-400">
-                                            This will permanently delete {selectedIds.length} conversations and all associated message history. This action is irreversible.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel className="bg-white/5 border-white/10 text-white">Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 text-white">
-                                            {isBulkDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : "Confirm Purge"}
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="w-full font-bold text-[10px] uppercase tracking-widest h-9">
+                                {isBulkDeleting ? <Loader2 className="animate-spin h-3.5 w-3.5 mr-2"/> : <Trash2 className="h-3.5 w-3.5 mr-2" />}
+                                Purge {selectedIds.length} Sessions
+                            </Button>
                         )}
                     </div>
-                </div>
-
-                <ScrollArea className="flex-grow">
-                    {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto opacity-20"/></div> : (
-                        filteredConversations.map(c => (
-                            <div key={c.id} className={cn(
-                                "relative flex items-center border-b border-white/5 transition-all hover:bg-white/5 group",
-                                activeConversation?.id === c.id && "bg-primary/10",
-                                selectedIds.includes(c.id) && "bg-primary/5"
-                            )}>
-                                <div className="pl-4 shrink-0">
-                                    <Checkbox 
-                                        checked={selectedIds.includes(c.id)} 
-                                        onCheckedChange={() => toggleSelect(c.id)}
-                                        className="border-white/20 data-[state=checked]:bg-primary"
-                                    />
-                                </div>
-                                <button onClick={() => handleSelectConversation(c)} className="flex-grow p-5 text-left flex items-center justify-between min-w-0">
-                                    <div className="min-w-0 pr-4 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-sm font-black truncate text-white group-hover:text-primary transition-colors">{c.profiles?.full_name || 'New Trader'}</p>
-                                            {c.unread_count_admin > 0 && (
-                                                <div className="bg-primary text-white h-4.5 min-w-[18px] px-1 flex items-center justify-center rounded-full text-[9px] font-black shadow-lg shadow-primary/20 animate-in zoom-in">
-                                                    {c.unread_count_admin}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <p className="text-[11px] text-gray-500 truncate mt-1 leading-relaxed">{c.last_message_preview || 'No messages...'}</p>
-                                        <p className="text-[9px] text-gray-700 font-bold uppercase tracking-widest mt-2">
-                                            {format(new Date(c.last_message_at), 'MMM dd · p')}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
-                                        <Badge variant="outline" className={cn("text-[9px] font-black px-2 py-0.5 border-none uppercase tracking-tighter", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-600 bg-white/5")}>
-                                            {c.status}
-                                        </Badge>
-                                    </div>
-                                </button>
-                            </div>
-                        ))
-                    )}
-                </ScrollArea>
+                </Tabs>
             </div>
 
             {/* Main Chat Area */}
@@ -268,7 +232,7 @@ export default function AgentLiveChat() {
                             <Inbox className="h-10 w-10 text-gray-700" />
                         </div>
                         <h2 className="text-3xl font-black text-white tracking-tighter">Terminal Standby</h2>
-                        <p className="text-gray-500 text-sm max-w-xs mt-3 font-medium">Select a trader session from the ledger to begin assistance protocol.</p>
+                        <p className="text-gray-500 text-sm max-w-xs mt-3 font-medium">Select a trader session to begin assistance protocol.</p>
                     </div>
                 ) : (
                     <>
@@ -281,9 +245,12 @@ export default function AgentLiveChat() {
                                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1.5">{activeConversation.profiles?.email}</p>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex items-center gap-3">
+                                {activeConversation.assigned_role === 'human' && (
+                                    <Badge className="bg-primary/20 text-primary border border-primary/30 text-[9px] font-black uppercase tracking-widest px-3 py-1">Escalated Priority</Badge>
+                                )}
                                 <Badge variant="outline" className={cn("px-4 py-1.5 border-white/10 bg-black/40 text-[10px] font-black uppercase tracking-widest", activeConversation.status === 'open' ? "text-green-400" : "text-gray-500")}>
-                                    Status: {activeConversation.status}
+                                    {activeConversation.status}
                                 </Badge>
                             </div>
                         </header>
@@ -337,59 +304,49 @@ export default function AgentLiveChat() {
                     </>
                 )}
             </div>
-
-            {/* Info Sidepanel (Desktop Only) */}
-            {activeConversation && !isMobile && (
-                <div className="w-[350px] border-l border-white/5 bg-slate-900/30 flex flex-col shrink-0 overflow-y-auto">
-                    <div className="p-8 space-y-10">
-                        <section className="space-y-5">
-                            <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2"><Info className="w-3.5 h-3.5 text-primary"/> Trader Intelligence</h4>
-                            <div className="space-y-4">
-                                <div className="p-5 bg-black/40 rounded-3xl border border-white/5">
-                                    <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-2">KYC Verification</p>
-                                    <Badge variant="outline" className={cn(
-                                        "border-none font-black uppercase text-[10px] h-7 px-3 rounded-lg", 
-                                        userInfo?.kyc_status === 'verified' ? "bg-green-500/10 text-green-400" : "bg-amber-400/10 text-amber-400"
-                                    )}>
-                                        {userInfo?.kyc_status || 'Pending'}
-                                    </Badge>
-                                </div>
-                                <div className="p-5 bg-black/40 rounded-3xl border border-white/5">
-                                    <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-2">Contact Directory</p>
-                                    <p className="text-sm font-bold text-white tracking-tight">{userInfo?.mobile_number || 'Protocol Unlinked'}</p>
-                                </div>
-                                <div className="p-5 bg-black/40 rounded-3xl border border-white/5">
-                                    <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-2">Wallet Liquidity</p>
-                                    <p className="text-xl font-black text-primary tracking-tighter">₹{Number(userInfo?.wallet_balance || 0).toLocaleString('en-IN')}</p>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section className="space-y-5">
-                            <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-primary"/> Portfolio Records</h4>
-                            <div className="space-y-3">
-                                {userAccounts.length > 0 ? userAccounts.map(acc => (
-                                    <div key={acc.id} className="p-4 bg-black/40 rounded-2xl border border-white/5 group hover:border-primary/30 transition-all">
-                                        <p className="text-xs font-bold text-white truncate">{acc.plan_name}</p>
-                                        <div className="flex items-center justify-between mt-3">
-                                            <Badge variant="outline" className="text-[9px] font-bold uppercase px-2 h-5 border-white/10 bg-white/5">{acc.status}</Badge>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-all" asChild>
-                                                <Link href={`/admin/profile/${userInfo.id}`}>
-                                                    <ExternalLink className="w-3.5 h-3.5 text-primary"/>
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <div className="py-10 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                                        <p className="text-[10px] font-bold text-gray-700 uppercase">No active records</p>
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-                    </div>
-                </div>
-            )}
         </div>
     );
+}
+
+function ConversationList({ list, activeId, onSelect, selectedIds, onToggleSelect, emptyText = "No active sessions found." }: any) {
+    if (list.length === 0) return <div className="p-10 text-center text-gray-700 text-xs font-bold uppercase tracking-widest">{emptyText}</div>;
+    return list.map((c: any) => (
+        <div key={c.id} className={cn(
+            "relative flex items-center border-b border-white/5 transition-all hover:bg-white/5 group",
+            activeId === c.id && "bg-primary/10",
+            selectedIds.includes(c.id) && "bg-primary/5"
+        )}>
+            <div className="pl-4 shrink-0">
+                <Checkbox 
+                    checked={selectedIds.includes(c.id)} 
+                    onCheckedChange={() => onToggleSelect(c.id)}
+                    className="border-white/20 data-[state=checked]:bg-primary"
+                />
+            </div>
+            <button onClick={() => onSelect(c)} className="flex-grow p-5 text-left flex items-center justify-between min-w-0">
+                <div className="min-w-0 pr-4 flex-1">
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm font-black truncate text-white group-hover:text-primary transition-colors">{c.profiles?.full_name || 'New Trader'}</p>
+                        {c.unread_count_admin > 0 && (
+                            <div className="bg-primary text-white h-4.5 min-w-[18px] px-1 flex items-center justify-center rounded-full text-[9px] font-black shadow-lg shadow-primary/20 animate-in zoom-in">
+                                {c.unread_count_admin}
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-[11px] text-gray-500 truncate mt-1 leading-relaxed">{c.last_message_preview || 'No messages...'}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                         {c.assigned_role === 'human' && <AlertCircle className="w-3 h-3 text-primary" />}
+                         <p className="text-[9px] text-gray-700 font-bold uppercase tracking-widest">
+                            {format(new Date(c.last_message_at), 'MMM dd · p')}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
+                    <Badge variant="outline" className={cn("text-[9px] font-black px-2 py-0.5 border-none uppercase tracking-tighter", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-600 bg-white/5")}>
+                        {c.status}
+                    </Badge>
+                </div>
+            </button>
+        </div>
+    ));
 }

@@ -161,7 +161,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 }
 
 export async function createSupportConversation(userId: string, subject: string, firstMessage?: string) {
-    const { data: conversation, error } = await supabaseAdmin.from('support_conversations').insert({ user_id: userId, subject, unread_count_admin: 1 }).select().single();
+    const { data: conversation, error } = await supabaseAdmin.from('support_conversations').insert({ user_id: userId, subject, unread_count_admin: 1, assigned_role: 'ai' }).select().single();
     if (error) return { error: error.message };
     if (firstMessage) await supabaseAdmin.from('support_messages').insert({ conversation_id: conversation.id, sender_id: userId, sender_role: 'user', message: firstMessage });
     revalidatePath('/welcome');
@@ -216,8 +216,8 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
         
         await supabaseAdmin.from('support_conversations').update(updateData).eq('id', convId);
 
-        // TRIGGER AI IF ENABLED AND USER IS SENDER
-        if (role === 'user' && settings?.is_ai_support_enabled && conv) {
+        // TRIGGER AI IF ENABLED, USER IS SENDER, AND ROLE IS STILL AI
+        if (role === 'user' && settings?.is_ai_support_enabled && conv && conv.assigned_role === 'ai') {
            // Fetch Context (Recent History)
            const { data: history } = await supabaseAdmin
               .from('support_messages')
@@ -231,6 +231,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
               .map(h => ({ role: h.sender_role as 'user' | 'admin', message: h.message }));
 
            const aiResponse = await runSupportAi({
+              conversationId: convId,
               userEmail: conv.profiles.email,
               userName: conv.profiles.full_name,
               userMessage: message.trim(),
