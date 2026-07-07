@@ -3,6 +3,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { runSupportAi } from '@/ai/flows/support-agent-flow';
 
 /**
  * Helper to determine starting classification and balance
@@ -185,19 +186,64 @@ export async function deleteSupportConversation(convId: string) {
 
 export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string, imageFile?: File) {
     if (!convId || !senderId || (!message.trim() && !imageFile)) return { error: 'Invalid message.' };
+    
     let imageUrl: string | undefined;
     if (imageFile) {
         try { imageUrl = await uploadSupportImage(imageFile, convId); } catch (e: any) { return { error: e.message }; }
     }
-    const { error } = await supabaseAdmin.from('support_messages').insert({ conversation_id: convId, sender_id: senderId, sender_role: role, message: message.trim(), image_url: imageUrl });
+    
+    const { error } = await supabaseAdmin.from('support_messages').insert({ 
+      conversation_id: convId, 
+      sender_id: senderId, 
+      sender_role: role, 
+      message: message.trim(), 
+      image_url: imageUrl 
+    });
+
     if (!error) {
-        const { data: conv } = await supabaseAdmin.from('support_conversations').select('*').eq('id', convId).single();
-        const updateData: any = { last_message_at: new Date().toISOString(), last_message_preview: message.trim() || (imageUrl ? '📷 Photo' : '') };
-        if (role === 'admin') updateData.unread_count_user = (conv?.unread_count_user || 0) + 1;
-        else updateData.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
+        const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
+        const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
+
+        const updateData: any = { 
+          last_message_at: new Date().toISOString(), 
+          last_message_preview: message.trim() || (imageUrl ? '📷 Photo' : '') 
+        };
+
+        if (role === 'admin') {
+          updateData.unread_count_user = (conv?.unread_count_user || 0) + 1;
+        } else {
+          updateData.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
+        }
+        
         await supabaseAdmin.from('support_conversations').update(updateData).eq('id', convId);
+
+        // TRIGGER AI IF ENABLED AND USER IS SENDER
+        if (role === 'user' && settings?.is_ai_support_enabled && conv) {
+           const aiResponse = await runSupportAi({
+              userEmail: conv.profiles.email,
+              userName: conv.profiles.full_name,
+              userMessage: message.trim()
+           });
+
+           if (aiResponse) {
+              await supabaseAdmin.from('support_messages').insert({
+                  conversation_id: convId,
+                  sender_id: 'AI_SYSTEM',
+                  sender_role: 'admin',
+                  message: aiResponse
+              });
+              
+              await supabaseAdmin.from('support_conversations').update({
+                  last_message_at: new Date().toISOString(),
+                  last_message_preview: aiResponse,
+                  unread_count_user: (conv.unread_count_user || 0) + 1
+              }).eq('id', convId);
+           }
+        }
     }
+    
     revalidatePath('/welcome');
+    revalidatePath('/support-agent/chat');
     return { error: error?.message };
 }
 
@@ -262,4 +308,12 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
 export async function getCompetitionEvents() {
     const { data } = await supabaseAdmin.from('competition_events').select('*').eq('is_active', true).neq('status', 'completed').order('start_date', { ascending: true });
     return data || [];
+}
+
+export async function toggleAiSupport(enabled: boolean) {
+  const { error } = await supabaseAdmin.from('payment_details').update({ is_ai_support_enabled: enabled }).eq('id', 1);
+  if (error) return { error: error.message };
+  revalidatePath('/support-agent');
+  revalidatePath('/admin/payment-settings');
+  return { success: true };
 }

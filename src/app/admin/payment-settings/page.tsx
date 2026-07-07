@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2, PackageCheck, ShoppingCart } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2, PackageCheck, ShoppingCart, BrainCircuit } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -31,9 +31,8 @@ type PaymentDetails = {
     automated_gateway_mode: 'both' | 'lgpay' | 'watchpay';
     pay_later_upi_id: string | null;
     pay_later_qr_code_url: string | null;
-    watchpay_merchant_id: string | null;
-    watchpay_api_key: string | null;
     is_ptp_enabled: boolean;
+    is_ai_support_enabled: boolean;
 };
 
 function SubmitButton() {
@@ -67,10 +66,21 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
         <form ref={formRef} action={formAction} className="space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Marketplace Inventory</CardTitle>
-                    <CardDescription>Control which account models are visible to traders.</CardDescription>
+                    <CardTitle>Global Automation</CardTitle>
+                    <CardDescription>Configure AI assistants and marketplace visibility.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-white/5">
+                        <div className="space-y-0.5">
+                            <Label className="text-sm font-bold flex items-center gap-2">
+                                <BrainCircuit className="w-4 h-4 text-primary" />
+                                AI Support Mode
+                            </Label>
+                            <p className="text-xs text-muted-foreground">If enabled, the AI will auto-reply to traders with live database context.</p>
+                        </div>
+                        <Switch name="is_ai_support_enabled" defaultChecked={currentSettings?.is_ai_support_enabled ?? false} />
+                    </div>
+
                     <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-white/5">
                         <div className="space-y-0.5">
                             <Label className="text-sm font-bold flex items-center gap-2">
