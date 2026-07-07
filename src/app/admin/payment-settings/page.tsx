@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2, PackageCheck, ShoppingCart, BrainCircuit } from 'lucide-react';
+import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2, PackageCheck, ShoppingCart, BrainCircuit, UploadCloud } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -33,6 +33,8 @@ type PaymentDetails = {
     pay_later_qr_code_url: string | null;
     is_ptp_enabled: boolean;
     is_ai_support_enabled: boolean;
+    watchpay_merchant_id?: string;
+    watchpay_api_key?: string;
 };
 
 function SubmitButton() {
@@ -132,29 +134,79 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                         </div>
                     </RadioGroup>
 
-                    {activeGateway === 'automated' && (
-                        <div className="space-y-4 pt-4 border-t border-dashed animate-in fade-in slide-in-from-top-2">
-                            <Label className="text-sm font-bold flex items-center gap-2"><Settings2 className="w-4 h-4 text-primary" /> Automated Routing</Label>
-                            <RadioGroup name="automated_mode" value={automatedMode} onValueChange={(value: any) => setAutomatedMode(value)} className="grid grid-cols-3 gap-2">
-                                <div><RadioGroupItem value="both" id="mode-both" className="sr-only" /><Label htmlFor="mode-both" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'both' && "bg-primary text-primary-foreground border-primary")}>50/50 Split</Label></div>
-                                <div><RadioGroupItem value="lgpay" id="mode-lg" className="sr-only" /><Label htmlFor="mode-lg" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'lgpay' && "bg-primary text-primary-foreground border-primary")}>LGPay Only</Label></div>
-                                <div><RadioGroupItem value="watchpay" id="mode-wp" className="sr-only" /><Label htmlFor="mode-wp" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'watchpay' && "bg-primary text-primary-foreground border-primary")}>WatchPay Only</Label></div>
-                            </RadioGroup>
+                    {(activeGateway === 'automated' || activeGateway === 'watchpay') && (
+                        <div className="space-y-6 pt-6 border-t border-dashed animate-in fade-in slide-in-from-top-2">
+                             <Label className="text-sm font-bold flex items-center gap-2"><Settings2 className="w-4 h-4 text-primary" /> Gateway Credentials</Label>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="watchpay_merchant_id">WatchPay Merchant ID</Label>
+                                    <Input id="watchpay_merchant_id" name="watchpay_merchant_id" defaultValue={currentSettings?.watchpay_merchant_id || ''} placeholder="M123456" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="watchpay_api_key">WatchPay API Key</Label>
+                                    <Input id="watchpay_api_key" name="watchpay_api_key" defaultValue={currentSettings?.watchpay_api_key || ''} placeholder="api_key_..." />
+                                </div>
+                             </div>
+
+                             {activeGateway === 'automated' && (
+                                <div className="space-y-4 pt-4 border-t border-white/5">
+                                    <Label className="text-xs font-bold text-gray-500 uppercase">Routing Strategy</Label>
+                                    <RadioGroup name="automated_mode" value={automatedMode} onValueChange={(value: any) => setAutomatedMode(value)} className="grid grid-cols-3 gap-2">
+                                        <div><RadioGroupItem value="both" id="mode-both" className="sr-only" /><Label htmlFor="mode-both" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'both' && "bg-primary text-primary-foreground border-primary")}>50/50 Split</Label></div>
+                                        <div><RadioGroupItem value="lgpay" id="mode-lg" className="sr-only" /><Label htmlFor="mode-lg" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'lgpay' && "bg-primary text-primary-foreground border-primary")}>LGPay Only</Label></div>
+                                        <div><RadioGroupItem value="watchpay" id="mode-wp" className="sr-only" /><Label htmlFor="mode-wp" className={cn("flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-3 cursor-pointer text-xs font-semibold", automatedMode === 'watchpay' && "bg-primary text-primary-foreground border-primary")}>WatchPay Only</Label></div>
+                                    </RadioGroup>
+                                </div>
+                             )}
                         </div>
                     )}
                 </CardContent>
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>Manual Payment Details</CardTitle></CardHeader>
-                <CardContent className="space-y-6">
-                     <div className="space-y-2">
-                        <Label htmlFor="upi_id">Standard UPI ID</Label>
-                        <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi@okhdfc" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="pay_later_upi_id">Pay Later UPI ID</Label>
-                        <Input id="pay_later_upi_id" name="pay_later_upi_id" defaultValue={currentSettings?.pay_later_upi_id || ''} placeholder="pay-later@oksbi" />
+                <CardHeader>
+                    <CardTitle>Manual Payment Details</CardTitle>
+                    <CardDescription>Setup standard and pay-later manual verification gateways.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Standard UPI */}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="upi_id">Standard UPI ID</Label>
+                                <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi@okhdfc" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Standard QR Code</Label>
+                                <div className="flex items-center gap-4">
+                                    {currentSettings?.qr_code_url && (
+                                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
+                                            <Image src={currentSettings.qr_code_url} alt="Current QR" layout="fill" className="object-cover" />
+                                        </div>
+                                    )}
+                                    <Input name="qr_code" type="file" accept="image/*" className="flex-1" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Pay Later UPI */}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="pay_later_upi_id">Pay Later UPI ID</Label>
+                                <Input id="pay_later_upi_id" name="pay_later_upi_id" defaultValue={currentSettings?.pay_later_upi_id || ''} placeholder="pay-later@oksbi" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Pay Later QR Code</Label>
+                                <div className="flex items-center gap-4">
+                                    {currentSettings?.pay_later_qr_code_url && (
+                                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
+                                            <Image src={currentSettings.pay_later_qr_code_url} alt="Current PTP QR" layout="fill" className="object-cover" />
+                                        </div>
+                                    )}
+                                    <Input name="pay_later_qr_code" type="file" accept="image/*" className="flex-1" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -221,7 +273,7 @@ export default function PaymentSettingsPage() {
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
-                    <div className="max-w-2xl mx-auto">
+                    <div className="max-w-4xl mx-auto">
                         {isLoading ? <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : <PaymentSettingsForm currentSettings={settings} />}
                     </div>
                 </main>

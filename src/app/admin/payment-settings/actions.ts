@@ -20,14 +20,20 @@ async function uploadImage(file: File, bucket: string, fileName: string) {
 }
 
 export async function updatePaymentSettings(prevState: any, formData: FormData) {
-  // Regular settings
+  // Extract all fields from FormData
   const upiId = formData.get('upi_id') as string;
+  const payLaterUpiId = formData.get('pay_later_upi_id') as string;
   const upiQrCodeFile = formData.get('qr_code') as File;
+  const payLaterQrCodeFile = formData.get('pay_later_qr_code') as File;
   const commissionPercentage = formData.get('referral_commission_percentage') as string;
   const activeGateway = formData.get('active_gateway') as 'lgpay' | 'manual' | 'watchpay' | 'automated' | 'cashfree';
   const automatedMode = formData.get('automated_mode') as 'both' | 'lgpay' | 'watchpay';
   const isPtpEnabled = formData.get('is_ptp_enabled') === 'on';
   const isAiSupportEnabled = formData.get('is_ai_support_enabled') === 'on';
+  
+  // Watchpay credentials
+  const watchPayMerchantId = formData.get('watchpay_merchant_id') as string;
+  const watchPayApiKey = formData.get('watchpay_api_key') as string;
 
   if (!['lgpay', 'manual', 'watchpay', 'automated', 'cashfree'].includes(activeGateway)) {
       return { error: 'Invalid gateway selected.' };
@@ -35,6 +41,8 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
    if (activeGateway === 'manual' && !upiId) {
       return { error: 'UPI ID is required to enable the manual gateway.' };
   }
+
+  // Basic validation for automated modes if they were using these specific credentials
   if ((activeGateway === 'watchpay' || activeGateway === 'automated') && (!watchPayMerchantId || !watchPayApiKey)) {
       return { error: 'WatchPay Merchant ID and API Key are required to enable this gateway mode.' };
   }
@@ -52,6 +60,8 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
     automated_gateway_mode: automatedMode,
     is_ptp_enabled: isPtpEnabled,
     is_ai_support_enabled: isAiSupportEnabled,
+    watchpay_merchant_id: watchPayMerchantId,
+    watchpay_api_key: watchPayApiKey
   };
 
   try {
