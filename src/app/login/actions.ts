@@ -35,8 +35,8 @@ export async function login(prevState: any, formData: FormData) {
     // Redirect support agents to their dedicated standalone hub
     redirect('/support-agent');
   } else if (profile?.role === 'specialist') {
-    // Redirect KYC/Payout specialists directly to their desk
-    redirect('/support-agent/specialist');
+    // REDIRECT V2: Redirect Specialists to their standalone Pure Panel
+    redirect('/specialist-desk');
   } else {
     redirect('/welcome');
   }

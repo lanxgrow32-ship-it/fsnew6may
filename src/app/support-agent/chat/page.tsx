@@ -16,10 +16,10 @@ import {
     ChevronLeft,
     Trash2,
     BrainCircuit,
-    AlertCircle,
-    UserCheck,
     AlertTriangle,
-    ShieldAlert
+    ShieldAlert,
+    UserCheck,
+    CheckCircle2
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { sendSupportMessage, markSupportRead, deleteSupportConversation } from '@/app/welcome/actions';
@@ -42,8 +42,6 @@ export default function AgentLiveChat() {
     const [loading, setLoading] = useState(true);
     const [messageText, setMessageText] = useState('');
     const [isSending, setIsSending] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     
     // Bulk Delete State
@@ -51,20 +49,16 @@ export default function AgentLiveChat() {
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     const scrollRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const supabase = createClient();
 
-    const scrollToBottom = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    };
-
     const fetchConversations = async () => {
+        // FILTER: Standard Support only sees AI or Human Insistent sessions. 
+        // Specialist sessions are completely removed from this view.
         const { data } = await supabase
             .from('support_conversations')
             .select('*, profiles:user_id(full_name, email)')
+            .neq('assigned_role', 'specialist')
             .order('last_message_at', { ascending: false });
         setConversations(data || []);
         setLoading(false);
@@ -82,7 +76,7 @@ export default function AgentLiveChat() {
             fetchConversations();
         };
         init();
-        const sub = supabase.channel('agent_sync_v9').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
+        const sub = supabase.channel('agent_desk_v10').on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, fetchConversations).subscribe();
         return () => { supabase.removeChannel(sub); };
     }, []);
 
@@ -90,22 +84,26 @@ export default function AgentLiveChat() {
         if (activeConversation) {
             fetchMessages(activeConversation.id);
             markSupportRead(activeConversation.id, 'admin');
-            const sub = supabase.channel(`agent_thread_v9_${activeConversation.id}`)
+            const sub = supabase.channel(`thread_v10_${activeConversation.id}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `conversation_id=eq.${activeConversation.id}` }, 
                 () => { fetchMessages(activeConversation.id); markSupportRead(activeConversation.id, 'admin'); }).subscribe();
             return () => { supabase.removeChannel(sub); };
         }
     }, [activeConversation]);
 
-    useEffect(() => { scrollToBottom(); }, [messages]);
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [messages]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!agentId || !activeConversation || (!messageText.trim() && !selectedImage) || isSending) return;
+        if (!agentId || !activeConversation || !messageText.trim() || isSending) return;
         setIsSending(true);
-        const res = await sendSupportMessage(activeConversation.id, agentId, 'admin', messageText, selectedImage || undefined);
-        if (res.error) toast({ title: "Failed to send", variant: "destructive" });
-        else { setMessageText(''); setSelectedImage(null); setImagePreview(null); }
+        const res = await sendSupportMessage(activeConversation.id, agentId, 'admin', messageText);
+        if (res.error) toast({ title: "Send Error", variant: "destructive" });
+        else setMessageText('');
         setIsSending(false);
     };
 
@@ -113,11 +111,11 @@ export default function AgentLiveChat() {
         setIsBulkDeleting(true);
         try {
             await Promise.all(selectedIds.map(id => deleteSupportConversation(id)));
-            toast({ title: `${selectedIds.length} sessions cleared.` });
+            toast({ title: `${selectedIds.length} sessions purged.` });
             setSelectedIds([]);
             if (selectedIds.includes(activeConversation?.id)) setActiveConversation(null);
             fetchConversations();
-        } catch (e) { toast({ title: "Delete failed", variant: "destructive" }); }
+        } catch (e) { toast({ title: "Purge failed", variant: "destructive" }); }
         setIsBulkDeleting(false);
     };
 
@@ -137,7 +135,7 @@ export default function AgentLiveChat() {
         <div className="flex h-[calc(100vh-57px)] text-white overflow-hidden bg-slate-950 font-poppins">
             {/* Sidebar */}
             <div className={cn(
-                "w-full md:w-[400px] border-r border-white/5 bg-slate-900/30 flex flex-col shrink-0",
+                "w-full md:w-[380px] border-r border-white/5 bg-slate-900/30 flex flex-col shrink-0",
                 isMobile && mobileView === 'chat' && "hidden md:flex"
             )}>
                 <Tabs defaultValue="human" className="flex flex-col h-full">
@@ -145,7 +143,7 @@ export default function AgentLiveChat() {
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
                             <Input 
-                                placeholder="Search traders..." 
+                                placeholder="Search queue..." 
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-10 bg-black/40 border-white/10 h-11 text-xs font-semibold rounded-xl" 
@@ -154,12 +152,11 @@ export default function AgentLiveChat() {
                         <TabsList className="bg-black/40 border border-white/5 w-full rounded-xl h-11 p-1">
                             <TabsTrigger value="human" className="flex-1 rounded-lg text-[10px] font-bold uppercase tracking-widest gap-2">
                                 <UserCheck className="w-3.5 h-3.5" /> Manual Queue
-                                {humanQueue.length > 0 && <Badge className="h-4 px-1 bg-primary text-white text-[8px] animate-pulse">{humanQueue.length}</Badge>}
+                                {humanQueue.length > 0 && <Badge className="h-4 px-1 bg-amber-500 text-white text-[8px]">{humanQueue.length}</Badge>}
                             </TabsTrigger>
                             <TabsTrigger value="ai" className="flex-1 rounded-lg text-[10px] font-bold uppercase tracking-widest gap-2">
-                                <BrainCircuit className="w-3.5 h-3.5" /> Neural Live
+                                <BrainCircuit className="w-3.5 h-3.5" /> Live Monitor
                             </TabsTrigger>
-                            <TabsTrigger value="all" className="flex-1 rounded-lg text-[10px] font-bold uppercase tracking-widest">All</TabsTrigger>
                         </TabsList>
                     </div>
 
@@ -167,13 +164,10 @@ export default function AgentLiveChat() {
                         {loading ? <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto opacity-20"/></div> : (
                             <>
                                 <TabsContent value="human" className="mt-0">
-                                    <ConversationList list={humanQueue} activeId={activeConversation?.id} onSelect={(c:any) => { setActiveConversation(c); if(isMobile) setMobileView('chat'); }} selectedIds={selectedIds} onToggleSelect={toggleSelect} emptyText="No users requested manual support." />
+                                    <ConversationList list={humanQueue} activeId={activeConversation?.id} onSelect={(c:any) => { setActiveConversation(c); if(isMobile) setMobileView('chat'); }} selectedIds={selectedIds} onToggleSelect={toggleSelect} emptyText="No users requested human support." />
                                 </TabsContent>
                                 <TabsContent value="ai" className="mt-0">
-                                    <ConversationList list={aiSessions} activeId={activeConversation?.id} onSelect={(c:any) => { setActiveConversation(c); if(isMobile) setMobileView('chat'); }} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
-                                </TabsContent>
-                                <TabsContent value="all" className="mt-0">
-                                    <ConversationList list={filteredConversations} activeId={activeConversation?.id} onSelect={(c:any) => { setActiveConversation(c); if(isMobile) setMobileView('chat'); }} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+                                    <ConversationList list={aiSessions} activeId={activeConversation?.id} onSelect={(c:any) => { setActiveConversation(c); if(isMobile) setMobileView('chat'); }} selectedIds={selectedIds} onToggleSelect={toggleSelect} emptyText="No active AI sessions." />
                                 </TabsContent>
                             </>
                         )}
@@ -183,7 +177,7 @@ export default function AgentLiveChat() {
                         {selectedIds.length > 0 && (
                             <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="w-full font-bold text-[10px] uppercase tracking-widest h-9">
                                 {isBulkDeleting ? <Loader2 className="animate-spin h-3.5 w-3.5 mr-2"/> : <Trash2 className="h-3.5 w-3.5 mr-2" />}
-                                Purge {selectedIds.length} Sessions
+                                Clear {selectedIds.length} Conversations
                             </Button>
                         )}
                     </div>
@@ -197,40 +191,40 @@ export default function AgentLiveChat() {
             )}>
                 {!activeConversation ? (
                     <div className="flex-grow flex flex-col items-center justify-center text-center p-12">
-                        <Inbox className="h-16 w-16 text-gray-900 mb-6" />
-                        <h2 className="text-2xl font-black text-white tracking-tighter">Terminal Standby</h2>
-                        <p className="text-gray-500 text-xs uppercase tracking-widest mt-2">Select a protocol session to begin</p>
+                        <Inbox className="h-16 w-16 text-slate-900 mb-6" />
+                        <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Support Standby</h2>
+                        <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Select a session from the manual queue</p>
                     </div>
                 ) : (
                     <>
                         <header className="p-6 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex items-center justify-between">
                             <div className="flex items-center gap-5">
                                 {isMobile && <Button variant="ghost" size="icon" onClick={() => setMobileView('list')} className="text-gray-500"><ChevronLeft className="h-6 w-6"/></Button>}
-                                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_20px_rgba(139,44,245,0.1)]">
+                                <div className={cn(
+                                    "h-12 w-12 rounded-2xl flex items-center justify-center text-white border transition-all",
+                                    activeConversation.assigned_role === 'human' ? "bg-amber-500/10 border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]" : "bg-primary/10 border-primary/20 shadow-[0_0_20px_rgba(139,44,245,0.1)]"
+                                )}>
                                     <User className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <h3 className="font-black text-white text-lg leading-tight">{activeConversation.profiles?.full_name}</h3>
+                                    <h3 className="font-black text-white text-lg leading-tight uppercase tracking-tight">{activeConversation.profiles?.full_name}</h3>
                                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1.5">{activeConversation.profiles?.email}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                {activeConversation.assigned_role === 'human' && (
-                                    <div className="flex items-center gap-2 bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-                                        <ShieldAlert className="w-3.5 h-3.5" /> Manual Escalation
-                                    </div>
+                                {activeConversation.assigned_role === 'human' ? (
+                                    <Badge className="bg-amber-500 text-white text-[9px] font-black uppercase tracking-widest h-8 px-4 border-none shadow-lg">Manual Request</Badge>
+                                ) : (
+                                    <Badge className="bg-primary text-white text-[9px] font-black uppercase tracking-widest h-8 px-4 border-none">AI Control</Badge>
                                 )}
-                                <Badge variant="outline" className={cn("px-4 py-1.5 border-white/10 bg-black/40 text-[10px] font-black uppercase tracking-widest", activeConversation.status === 'open' ? "text-green-400" : "text-gray-500")}>
-                                    {activeConversation.status}
-                                </Badge>
                             </div>
                         </header>
 
-                        {/* Manual Queue Warning Bar */}
+                        {/* Handover Alert Bar */}
                         {activeConversation.assigned_role === 'human' && (
-                            <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center gap-3">
+                            <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex items-center gap-3 animate-in slide-in-from-top-2">
                                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">User bypassed Neural Protocol and requested manual agent assistance.</p>
+                                <p className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em]">Escalation Alert: User has explicitly requested human intervention.</p>
                             </div>
                         )}
 
@@ -241,8 +235,8 @@ export default function AgentLiveChat() {
                                     return (
                                         <div key={m.id} className={cn("flex items-end gap-4", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
                                             <div className={cn(
-                                                "max-w-[70%] p-5 rounded-3xl text-sm leading-relaxed shadow-2xl relative", 
-                                                m.sender_role === 'admin' ? (isAi ? "bg-slate-900 border border-primary/40 text-gray-100" : "bg-primary text-white rounded-br-none") : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none"
+                                                "max-w-[75%] p-6 rounded-3xl text-sm leading-relaxed shadow-2xl relative", 
+                                                m.sender_role === 'admin' ? (isAi ? "bg-slate-900 border border-primary/30 text-gray-200" : "bg-primary text-white rounded-br-none") : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none"
                                             )}>
                                                 {isAi && (
                                                     <div className="flex items-center gap-1.5 mb-2">
@@ -250,13 +244,8 @@ export default function AgentLiveChat() {
                                                         <span className="text-[8px] font-black text-primary uppercase tracking-widest">Neural Agent</span>
                                                     </div>
                                                 )}
-                                                {m.image_url && (
-                                                    <div className="mb-4 rounded-2xl overflow-hidden border border-white/10">
-                                                        <Image src={m.image_url} alt="Attachment" width={400} height={400} className="object-cover" />
-                                                    </div>
-                                                )}
-                                                <p className={cn("whitespace-pre-wrap font-medium", isAi && "text-gray-300")}>{m.message}</p>
-                                                <p className="mt-3 text-[8px] opacity-30 text-right uppercase font-bold tracking-widest">{format(new Date(m.created_at), 'p')}</p>
+                                                <p className="whitespace-pre-wrap font-medium">{m.message}</p>
+                                                <p className="mt-4 text-[8px] opacity-20 text-right uppercase font-bold tracking-widest">{format(new Date(m.created_at), 'p')}</p>
                                             </div>
                                         </div>
                                     );
@@ -267,12 +256,12 @@ export default function AgentLiveChat() {
                         <div className="p-6 bg-slate-900/90 border-t border-white/5 backdrop-blur-xl">
                             <form onSubmit={handleSendMessage} className="flex gap-4 max-w-5xl mx-auto">
                                 <Input 
-                                    placeholder="Type response protocol..." 
+                                    placeholder="Type manual response..." 
                                     value={messageText} 
                                     onChange={(e) => setMessageText(e.target.value)} 
                                     className="flex-grow bg-black/40 border-white/10 h-14 text-sm text-white rounded-2xl px-6 focus:ring-primary/50" 
                                 />
-                                <Button type="submit" disabled={(!messageText.trim() && !selectedImage) || isSending} className="h-14 w-14 rounded-2xl bg-primary shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                                <Button type="submit" disabled={!messageText.trim() || isSending} className="h-14 w-14 rounded-2xl bg-primary shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
                                     {isSending ? <Loader2 className="h-6 w-6 animate-spin"/> : <Send className="h-6 w-6" />}
                                 </Button>
                             </form>
@@ -284,8 +273,8 @@ export default function AgentLiveChat() {
     );
 }
 
-function ConversationList({ list, activeId, onSelect, selectedIds, onToggleSelect, emptyText = "Queue empty." }: any) {
-    if (list.length === 0) return <div className="p-10 text-center text-gray-700 text-[10px] font-bold uppercase tracking-[0.2em]">{emptyText}</div>;
+function ConversationList({ list, activeId, onSelect, selectedIds, onToggleSelect, emptyText }: any) {
+    if (list.length === 0) return <div className="p-12 text-center text-gray-700 text-[10px] font-bold uppercase tracking-[0.3em]">{emptyText}</div>;
     return list.map((c: any) => (
         <div key={c.id} className={cn(
             "relative flex items-center border-b border-white/5 transition-all hover:bg-white/5",
@@ -298,24 +287,18 @@ function ConversationList({ list, activeId, onSelect, selectedIds, onToggleSelec
             <button onClick={() => onSelect(c)} className="flex-grow p-5 text-left flex items-center justify-between min-w-0">
                 <div className="min-w-0 pr-4 flex-1">
                     <div className="flex items-center gap-2">
-                        <p className="text-sm font-black truncate text-white">{c.profiles?.full_name || 'New Trader'}</p>
+                        <p className="text-sm font-black truncate text-white uppercase tracking-tight">{c.profiles?.full_name || 'Anonymous'}</p>
+                        {c.assigned_role === 'human' && <UserCheck className="w-3.5 h-3.5 text-amber-500" />}
                         {c.unread_count_admin > 0 && (
                             <div className="bg-primary text-white h-4.5 min-w-[18px] px-1 flex items-center justify-center rounded-full text-[9px] font-black">
                                 {c.unread_count_admin}
                             </div>
                         )}
-                        {c.assigned_role === 'human' && (
-                            <div className="h-4 w-4 bg-amber-500/20 text-amber-500 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/10">
-                                <UserCheck className="w-2.5 h-2.5" />
-                            </div>
-                        )}
                     </div>
-                    <p className="text-[11px] text-gray-500 truncate mt-1">{c.last_message_preview || 'No messages...'}</p>
+                    <p className="text-[11px] text-gray-500 truncate mt-1.5 font-medium">{c.last_message_preview || 'New session...'}</p>
                 </div>
-                <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
-                    <Badge variant="outline" className={cn("text-[9px] font-black px-2 py-0.5 border-none uppercase tracking-tighter", c.status === 'open' ? "text-green-400 bg-green-500/5" : "text-gray-600 bg-white/5")}>
-                        {c.status}
-                    </Badge>
+                <div className="shrink-0 ml-2">
+                    <p className="text-[9px] text-gray-700 font-bold uppercase tracking-widest">{format(new Date(c.last_message_at), 'p')}</p>
                 </div>
             </button>
         </div>
