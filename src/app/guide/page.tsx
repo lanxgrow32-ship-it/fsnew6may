@@ -128,16 +128,16 @@ const RuleCard = ({ title, description, icon }: { title: string, description: st
 
 export default async function GuidePage() {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
         redirect('/login');
     }
 
     const { data: profile } = await supabase
         .from('profiles')
         .select('trading_username, trading_password, full_name, email')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single();
     
     if (!profile) {

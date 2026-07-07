@@ -8,10 +8,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function LiveChatPage() {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) redirect('/login');
+    // Use getUser() for reliable server-side auth check
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+        redirect('/login');
+    }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Fetch initial state for the chat
     const [profileRes, supportRes] = await Promise.all([
