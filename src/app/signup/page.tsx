@@ -6,7 +6,7 @@ import { ClientOnly } from '@/components/ui/client-only';
 import { SignupForm } from './signup-form';
 
 export default async function SignupPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: paymentSettings } = await supabase
     .from('payment_details')
     .select('active_payment_gateway, upi_id, qr_code_url, pay_later_upi_id, pay_later_qr_code_url')

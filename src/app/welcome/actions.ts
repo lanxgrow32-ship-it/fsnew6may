@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -183,7 +184,7 @@ export async function createSupportConversation(userId: string, subject: string,
             message: firstMessage 
         });
         
-        // Block until AI responds to prevent serverless execution kill
+        // Trigger AI Protocol
         await triggerAiResponse(conversation.id, userId, firstMessage);
     }
 
@@ -241,9 +242,9 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
     await supabaseAdmin.from('support_conversations').update(metaUpdate).eq('id', convId);
 
-    // Block until AI responds to prevent serverless execution kill
+    // Synchronously await AI response in the server action lifecycle to prevent termination
     if (role === 'user') {
-        console.log(`[Support Action] Triggering Neural Protocol for conv: ${convId}`);
+        console.log(`[Support Protocol] Triggering Neural Brain for session: ${convId}`);
         await triggerAiResponse(convId, senderId, message.trim());
     }
     
@@ -254,20 +255,15 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 }
 
 /**
- * Robust Neural Dispatcher
+ * Hardened Neural Dispatcher
  */
 async function triggerAiResponse(convId: string, userId: string, message: string) {
     try {
-        console.log(`[Neural Dispatcher] Initializing Brain for session: ${convId}`);
-        
-        // 1. Fetch settings and state with Admin client to bypass RLS
+        // 1. Fetch protocol settings
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
         const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
 
-        if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') {
-            console.log(`[Neural Dispatcher] Protocol Aborted: Toggle=${settings?.is_ai_support_enabled}, Role=${conv?.assigned_role}`);
-            return;
-        }
+        if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') return;
 
         // 2. Fetch history for context
         const { data: history } = await supabaseAdmin
@@ -290,27 +286,17 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             chatHistory: chatHistory
         });
 
-        if (!aiResponse) {
-            console.warn(`[Neural Dispatcher] Null response received for ${convId}`);
-            return;
-        }
+        if (!aiResponse) return;
 
-        console.log(`[Neural Dispatcher] AI Response generated. Injecting to DB...`);
-
-        // 4. Inject response into database
-        const { error: injectError } = await supabaseAdmin.from('support_messages').insert({
+        // 4. Inject AI response
+        await supabaseAdmin.from('support_messages').insert({
             conversation_id: convId,
-            sender_id: conv.user_id, 
+            sender_id: conv.user_id, // Satisfy FK constraint using conversation owner UUID
             sender_role: 'admin',
             message: aiResponse
         });
 
-        if (injectError) {
-            console.error(`[Neural Dispatcher] Injection Failure:`, injectError);
-            return;
-        }
-
-        // 5. Update Meta Data
+        // 5. Update Metadata
         const { data: freshConv } = await supabaseAdmin.from('support_conversations').select('unread_count_user').eq('id', convId).single();
         await supabaseAdmin.from('support_conversations').update({
             last_message_at: new Date().toISOString(),
@@ -318,10 +304,8 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             unread_count_user: (freshConv?.unread_count_user || 0) + 1
         }).eq('id', convId);
 
-        console.log(`[Neural Dispatcher] Protocol Successfully Broad-casted.`);
-
     } catch (error) {
-        console.error(`[Neural Dispatcher] Fatal Execution Error:`, error);
+        console.error(`[Neural Dispatcher] Fatal Error:`, error);
     }
 }
 

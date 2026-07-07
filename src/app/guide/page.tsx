@@ -127,7 +127,7 @@ const RuleCard = ({ title, description, icon }: { title: string, description: st
 
 
 export default async function GuidePage() {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
