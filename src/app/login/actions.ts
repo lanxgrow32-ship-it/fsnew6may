@@ -11,7 +11,7 @@ export async function login(prevState: any, formData: FormData) {
     return { error: 'Please enter both email and password.' };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
     email,

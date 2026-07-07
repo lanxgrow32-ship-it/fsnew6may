@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -6,11 +5,11 @@ import { redirect } from 'next/navigation';
 import { FundedStockLogo } from '@/components/ui/logo';
 
 export default async function HomePage() {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (session) {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role === 'admin') {
       redirect('/admin/dashboard');
     } else {

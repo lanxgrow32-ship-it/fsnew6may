@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -7,7 +6,7 @@ import { LiveChatClient } from './live-chat-client';
 export const dynamic = 'force-dynamic';
 
 export default async function LiveChatPage() {
-    const supabase = createClient();
+    const supabase = await createClient();
     // Use getUser() for reliable server-side auth check
     const { data: { user } } = await supabase.auth.getUser();
     
