@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -15,11 +15,10 @@ import {
     ShoppingCart,
     Trophy,
     History,
-    FileCheck,
-    ChevronLeft
+    FileCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { signOut } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { 
@@ -31,6 +30,7 @@ import {
 } from '@/components/ui/sheet';
 import { SupportView } from '../welcome/support-view';
 import { createClient } from '@/lib/supabase/client';
+import { markSupportRead } from '../welcome/actions';
 
 const Logo = () => (
     <div className="flex items-center gap-2">
@@ -44,15 +44,15 @@ const Logo = () => (
 );
 
 const navItems = [
-    { href: "/welcome", label: "Portfolio", icon: LayoutDashboard },
-    { href: "/welcome?tab=marketplace", label: "Get Funded", icon: ShoppingCart },
-    { href: "/welcome?tab=competition", label: "Competition", icon: Trophy },
-    { href: "/welcome?tab=wallet", label: "Wallet", icon: Wallet },
-    { href: "/referrals", label: "Referrals", icon: Users },
-    { href: "/guide", label: "Guide", icon: BookOpen },
-    { href: "/welcome?tab=transactions", label: "History", icon: History },
-    { href: "/live-chat", label: "Live Chat", icon: MessageSquare, active: true },
-    { href: "/welcome?tab=kyc", label: "KYC", icon: FileCheck },
+    { id: 'hub', href: "/welcome", label: "Portfolio", icon: LayoutDashboard },
+    { id: 'marketplace', href: "/welcome?tab=marketplace", label: "Get Funded", icon: ShoppingCart },
+    { id: 'competition', href: "/welcome?tab=competition", label: "Competition", icon: Trophy },
+    { id: 'wallet', href: "/welcome?tab=wallet", label: "Wallet", icon: Wallet },
+    { id: 'referrals', href: "/referrals", label: "Referrals", icon: Users },
+    { id: 'guide', href: "/guide", label: "Guide", icon: BookOpen },
+    { id: 'transactions', href: "/welcome?tab=transactions", label: "History", icon: History },
+    { id: 'support', href: "/live-chat", label: "Live Chat", icon: MessageSquare, active: true },
+    { id: 'kyc', href: "/welcome?tab=kyc", label: "KYC", icon: FileCheck },
 ];
 
 function Wallet({ className }: { className?: string }) {
@@ -64,6 +64,14 @@ export function LiveChatClient({ profile, initialConversations }: { profile: any
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const supabase = createClient();
     const router = useRouter();
+
+    // Auto-clear unread on load
+    useEffect(() => {
+        const liveChat = conversations.find(c => c.subject === 'LIVE_CHAT' && c.unread_count_user > 0);
+        if (liveChat) {
+            markSupportRead(liveChat.id, 'user');
+        }
+    }, [conversations]);
 
     useEffect(() => {
         const channel = supabase
@@ -97,7 +105,7 @@ export function LiveChatClient({ profile, initialConversations }: { profile: any
                         <nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">
                             {navItems.map((item) => (
                                 <Link
-                                    key={item.href}
+                                    key={item.id}
                                     href={item.href}
                                     className={cn(
                                         "px-4 py-1.5 text-[11px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0 flex items-center gap-2",
@@ -152,7 +160,7 @@ export function LiveChatClient({ profile, initialConversations }: { profile: any
                                     <div className="space-y-2">
                                         {navItems.map((item) => (
                                             <Link 
-                                                key={item.href} 
+                                                key={item.id} 
                                                 href={item.href} 
                                                 className={cn(
                                                     "w-full px-5 py-4 text-sm font-bold transition-all flex items-center gap-4 rounded-2xl relative",

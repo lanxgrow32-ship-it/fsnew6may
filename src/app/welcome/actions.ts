@@ -180,11 +180,12 @@ export async function createSupportConversation(userId: string, subject: string,
             message: firstMessage 
         });
         
-        // Await the AI trigger to ensure it completes in the server action lifecycle
+        // Block until AI response to ensure process survives on serverless
         await triggerAiResponse(conversation.id, userId, firstMessage);
     }
 
     revalidatePath('/welcome');
+    revalidatePath('/live-chat');
     revalidatePath('/support-agent/chat');
     return { data: conversation };
 }
@@ -198,6 +199,7 @@ export async function deleteSupportConversation(convId: string) {
     if (error) return { error: error.message };
     
     revalidatePath('/welcome');
+    revalidatePath('/live-chat');
     revalidatePath('/support-agent/chat');
     revalidatePath('/admin/support-panel');
     return { success: true };
@@ -237,35 +239,34 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
     await supabaseAdmin.from('support_conversations').update(metaUpdate).eq('id', convId);
 
-    // Trigger AI response synchronously to ensure it completes in serverless environments
+    // AI Trigger
     if (role === 'user') {
         await triggerAiResponse(convId, senderId, message.trim());
     }
     
     revalidatePath('/welcome');
+    revalidatePath('/live-chat');
     revalidatePath('/support-agent/chat');
     return { error: null };
 }
 
 /**
- * Isolated AI Response Handler (The Neural Dispatcher)
- * This function triggers the AI and blocks until completion to prevent process termination.
+ * Robust AI Trigger Logic (The Neural Dispatcher)
  */
 async function triggerAiResponse(convId: string, userId: string, message: string) {
     try {
-        console.log(`[Neural Protocol] Starting trigger for conversation: ${convId}`);
+        console.log(`[Neural Dispatcher] Probing conversation: ${convId}`);
         
-        // 1. Verify AI Mode and Assigned Role
+        // 1. Context check
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
         const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
 
-        // If AI is disabled globally, or this session is already handed over to human/specialist, ABORT.
         if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') {
-            console.log(`[Neural Protocol] Aborting: AI Mode=${settings?.is_ai_support_enabled}, Role=${conv?.assigned_role}`);
+            console.log(`[Neural Dispatcher] AI Abort: Toggle=${settings?.is_ai_support_enabled}, Role=${conv?.assigned_role}`);
             return;
         }
 
-        // 2. Fetch Context (Last 10 messages)
+        // 2. Load recent context
         const { data: history } = await supabaseAdmin
             .from('support_messages')
             .select('sender_role, message')
@@ -277,9 +278,7 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             .reverse()
             .map(h => ({ role: h.sender_role as 'user' | 'admin', message: h.message }));
 
-        console.log(`[Neural Protocol] Context prepared. Calling Genkit Brain...`);
-
-        // 3. Run AI Flow
+        // 3. Generate response via Genkit
         const aiResponse = await runSupportAi({
             conversationId: convId,
             userEmail: conv.profiles.email,
@@ -288,22 +287,19 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             chatHistory: chatHistory
         });
 
-        if (!aiResponse) {
-            console.warn(`[Neural Protocol] Warning: AI returned an empty response for ${convId}`);
-            return;
-        }
+        if (!aiResponse) return;
 
-        console.log(`[Neural Protocol] Success. Injecting response into stream.`);
-
-        // 4. Inject AI Response
+        // 4. Inject response
+        // Using userId as sender_id to ensure it satisfies UUID foreign keys, 
+        // while sender_role: 'admin' ensures it appears correctly on the left side of the UI.
         await supabaseAdmin.from('support_messages').insert({
             conversation_id: convId,
-            sender_id: 'AI_SYSTEM',
+            sender_id: userId, 
             sender_role: 'admin',
             message: aiResponse
         });
 
-        // 5. Final Metadata Sync
+        // 5. Update unread and preview
         const { data: freshConv } = await supabaseAdmin.from('support_conversations').select('unread_count_user').eq('id', convId).single();
         await supabaseAdmin.from('support_conversations').update({
             last_message_at: new Date().toISOString(),
@@ -311,10 +307,10 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             unread_count_user: (freshConv?.unread_count_user || 0) + 1
         }).eq('id', convId);
 
-        console.log(`[Neural Protocol] Round-trip complete for ${convId}`);
+        console.log(`[Neural Dispatcher] Signal successfully broadcasted to ${convId}`);
 
     } catch (error) {
-        console.error(`[Neural Protocol] CRITICAL ERROR for ${convId}:`, error);
+        console.error(`[Neural Dispatcher] Protocol Error:`, error);
     }
 }
 
@@ -322,6 +318,7 @@ export async function markSupportRead(convId: string, role: 'admin' | 'user') {
     const field = role === 'admin' ? 'unread_count_admin' : 'unread_count_user';
     await supabaseAdmin.from('support_conversations').update({ [field]: 0 }).eq('id', convId);
     revalidatePath('/welcome');
+    revalidatePath('/live-chat');
     return { success: true };
 }
 
