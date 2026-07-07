@@ -180,8 +180,8 @@ export async function createSupportConversation(userId: string, subject: string,
             message: firstMessage 
         });
         
-        // Trigger AI for the initial message
-        triggerAiResponse(conversation.id, userId, firstMessage);
+        // Await the AI trigger to ensure it completes in the server action lifecycle
+        await triggerAiResponse(conversation.id, userId, firstMessage);
     }
 
     revalidatePath('/welcome');
@@ -237,9 +237,9 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
     await supabaseAdmin.from('support_conversations').update(metaUpdate).eq('id', convId);
 
-    // Trigger AI response asynchronously
+    // Trigger AI response synchronously to ensure it completes in serverless environments
     if (role === 'user') {
-        triggerAiResponse(convId, senderId, message.trim());
+        await triggerAiResponse(convId, senderId, message.trim());
     }
     
     revalidatePath('/welcome');
@@ -249,7 +249,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
 /**
  * Isolated AI Response Handler (The Neural Dispatcher)
- * This function triggers the AI without blocking the main message save action.
+ * This function triggers the AI and blocks until completion to prevent process termination.
  */
 async function triggerAiResponse(convId: string, userId: string, message: string) {
     try {
@@ -259,6 +259,7 @@ async function triggerAiResponse(convId: string, userId: string, message: string
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
         const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
 
+        // If AI is disabled globally, or this session is already handed over to human/specialist, ABORT.
         if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') {
             console.log(`[Neural Protocol] Aborting: AI Mode=${settings?.is_ai_support_enabled}, Role=${conv?.assigned_role}`);
             return;
@@ -276,7 +277,7 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             .reverse()
             .map(h => ({ role: h.sender_role as 'user' | 'admin', message: h.message }));
 
-        console.log(`[Neural Protocol] Context prepared. Calling Genkit...`);
+        console.log(`[Neural Protocol] Context prepared. Calling Genkit Brain...`);
 
         // 3. Run AI Flow
         const aiResponse = await runSupportAi({
@@ -311,7 +312,6 @@ async function triggerAiResponse(convId: string, userId: string, message: string
         }).eq('id', convId);
 
         console.log(`[Neural Protocol] Round-trip complete for ${convId}`);
-        revalidatePath('/welcome');
 
     } catch (error) {
         console.error(`[Neural Protocol] CRITICAL ERROR for ${convId}:`, error);
