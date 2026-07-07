@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -19,7 +20,7 @@ export interface SalesData {
 }
 
 export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, masterView?: boolean): Promise<SalesData | null> {
-    const supabase = createClient();
+    const supabase = await createClient();
     
     const periodStart = startDate || new Date(0);
     const periodEnd = endDate || new Date();

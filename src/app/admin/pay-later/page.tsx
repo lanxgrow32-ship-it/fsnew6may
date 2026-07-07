@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import PayLaterDashboardClient from './dashboard-client';
 
 export default async function PayLaterDashboardPage({ searchParams }: { searchParams: { master_view?: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const masterView = searchParams.master_view === 'true';
 
   let query = supabase.from('profiles').select('*').eq('account_model', 'passthrupay');

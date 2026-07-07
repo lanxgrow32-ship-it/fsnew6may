@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default async function CompetitionUserDetailsPage({ params }: { params: { id: string } }) {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: profile, error: profileError } = await supabase
         .from('profiles')

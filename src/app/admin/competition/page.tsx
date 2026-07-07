@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
@@ -11,7 +12,7 @@ import { RegistrationManager } from './registration-manager';
 import { ResultsManager } from './results-manager';
 
 export default async function AdminCompetitionPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data: events } = await supabase
     .from('competition_events')

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import AdminDashboardClient from './dashboard-client';
 
 export default async function AdminDashboardPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Load a massive dataset of all users as requested
   const { data: profiles, error, count } = await supabase.from('profiles')

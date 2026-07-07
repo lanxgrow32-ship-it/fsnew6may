@@ -6,7 +6,7 @@ import { ReferralsClient } from './referrals-client';
 export const dynamic = 'force-dynamic';
 
 export default async function ReferralsPage() {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
