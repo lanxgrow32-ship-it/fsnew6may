@@ -162,7 +162,8 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
   }, [initialProfiles, initialCount]);
 
   const fetchProfiles = async () => {
-    let query = supabase.from('profiles').select('*', { count: 'exact' }).eq('account_type', 'standard').or('account_model.is.null,account_model.neq.passthrupay');
+    const client = await supabase;
+    let query = client.from('profiles').select('*', { count: 'exact' }).eq('account_type', 'standard').or('account_model.is.null,account_model.neq.passthrupay');
     if (masterView) {
       query = query.eq('is_hidden', true);
     } else {
@@ -182,16 +183,20 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
   }
 
   useEffect(() => {
-    const channel = supabase
-      .channel('realtime profiles')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
-        () => { fetchProfiles(); }
-      )
-      .subscribe();
+    const initSub = async () => {
+        const client = await supabase;
+        const channel = client
+          .channel('realtime profiles')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
+            () => { fetchProfiles(); }
+          )
+          .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+        return () => {
+          client.removeChannel(channel);
+        };
+    }
+    initSub();
   }, [supabase, masterView]);
   
   const onUserDelete = (deletedUserId: string) => {
@@ -233,11 +238,10 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
             <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/broadcast" tooltip="Broadcast Hub"><Megaphone />Broadcast Hub</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Settings</SidebarMenuButton></SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="border-t p-2">

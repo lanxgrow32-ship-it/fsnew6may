@@ -16,11 +16,42 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
-import { Home, Ticket, Wallet, LogOut, Loader2, Percent, Banknote, LineChart, IndianRupee, Swords, HardDrive, Wifi, Users, Newspaper, UserCheck, ShieldCheck, Zap, Repeat, Settings2, PackageCheck, ShoppingCart, BrainCircuit, UploadCloud } from 'lucide-react';
+import { 
+    Home, 
+    Ticket, 
+    Wallet, 
+    LogOut, 
+    Loader2, 
+    Percent, 
+    Banknote, 
+    LineChart, 
+    IndianRupee, 
+    Swords, 
+    HardDrive, 
+    Wifi, 
+    Users, 
+    Newspaper, 
+    UserCheck, 
+    ShieldCheck, 
+    Zap, 
+    Repeat, 
+    Settings2, 
+    PackageCheck, 
+    ShoppingCart, 
+    BrainCircuit, 
+    UploadCloud,
+    Megaphone,
+    Mail,
+    Send,
+    FlaskConical
+} from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { getSubscriberEmails, sendBroadcastSignal } from '../broadcast/actions';
 
 type PaymentDetails = {
     id: number;
@@ -43,6 +74,204 @@ function SubmitButton() {
         <Button type="submit" disabled={pending} className="w-full">
             {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save All Settings'}
         </Button>
+    );
+}
+
+function BroadcastHub() {
+    const { toast } = useToast();
+    const [subject, setSubject] = useState('');
+    const [message, setMessage] = useState('');
+    const [testEmail, setTestEmail] = useState('');
+    
+    const [isBroadcasting, setIsBroadcasting] = useState(false);
+    const [isTesting, setIsTesting] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [logs, setLogs] = useState<{msg: string, type: 'info' | 'success' | 'error'}[]>([]);
+
+    const addLog = (msg: string, type: 'info' | 'success' | 'error' = 'info') => {
+        setLogs(prev => [{msg, type}, ...prev].slice(0, 5));
+    };
+
+    const handleSendTest = async () => {
+        if (!testEmail || !subject || !message) {
+            toast({ title: "Incomplete Form", description: "Subject, message, and test email are required.", variant: "destructive" });
+            return;
+        }
+
+        setIsTesting(true);
+        addLog(`Initiating test to ${testEmail}...`);
+        
+        const res = await sendBroadcastSignal(testEmail, subject, message);
+        
+        if (res.success) {
+            toast({ title: "Test Signal Sent!", description: `Check ${testEmail} for the broadcast preview.` });
+            addLog(`Test successful for ${testEmail}`, 'success');
+        } else {
+            toast({ title: "Test Failed", description: res.error, variant: "destructive" });
+            addLog(`Test failed: ${res.error}`, 'error');
+        }
+        setIsTesting(false);
+    };
+
+    const handleStartBroadcast = async () => {
+        if (!subject || !message) {
+            toast({ title: "Required Fields", description: "Subject and message cannot be empty.", variant: "destructive" });
+            return;
+        }
+
+        if (!confirm("Are you sure you want to broadcast this message to ALL standard traders?")) return;
+
+        setIsBroadcasting(true);
+        addLog("Fetching subscriber list from database...");
+
+        const emails = await getSubscriberEmails();
+        
+        if (emails.length === 0) {
+            toast({ title: "No Recipients", description: "Could not find any standard users to email.", variant: "destructive" });
+            setIsBroadcasting(false);
+            return;
+        }
+
+        addLog(`Found ${emails.length} recipients. Starting dispatch...`);
+
+        let successCount = 0;
+        for (let i = 0; i < emails.length; i++) {
+            const email = emails[i];
+            const res = await sendBroadcastSignal(email, subject, message);
+            
+            if (res.success) successCount++;
+            
+            const currentProgress = Math.round(((i + 1) / emails.length) * 100);
+            setProgress(currentProgress);
+        }
+
+        addLog(`Broadcast complete. ${successCount}/${emails.length} signals delivered.`, 'success');
+        toast({ title: "Broadcast Finalized", description: `${successCount} traders notified.` });
+        setIsBroadcasting(false);
+    };
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+                <Card className="shadow-xl border-white/5">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Mail className="w-5 h-5 text-primary" />
+                            Compose Broadcast
+                        </CardTitle>
+                        <CardDescription>Craft your message to the trader community. Use plain text or Markdown.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="subject">Email Subject</Label>
+                            <Input 
+                                id="subject" 
+                                placeholder="e.g. Weekly Market Analysis & Payout Schedule" 
+                                value={subject}
+                                onChange={(e) => setSubject(e.target.value)}
+                                className="h-12 text-lg font-bold"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="message">Message Body</Label>
+                            <textarea 
+                                id="message" 
+                                placeholder="Write your email content here..." 
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                rows={12}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none leading-relaxed"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="space-y-6">
+                <Card className="bg-white/5 border-white/10">
+                    <CardHeader>
+                        <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                            <FlaskConical className="w-4 h-4 text-amber-400" />
+                            Testing Protocol
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] text-gray-500 uppercase">Test Recipient</Label>
+                            <Input 
+                                placeholder="test@example.com" 
+                                value={testEmail}
+                                onChange={(e) => setTestEmail(e.target.value)}
+                                className="bg-black/20 border-white/10"
+                            />
+                        </div>
+                        <Button 
+                            variant="outline" 
+                            onClick={handleSendTest} 
+                            disabled={isTesting || isBroadcasting}
+                            className="w-full h-11 border-amber-500/20 text-amber-500 hover:bg-amber-500/10 font-bold"
+                        >
+                            {isTesting ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <Send className="mr-2 h-4 w-4" />}
+                            Send Test Email
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className={cn("border-primary/20", isBroadcasting && "bg-primary/5")}>
+                    <CardHeader>
+                        <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                            <Megaphone className="w-4 h-4 text-primary" />
+                            Mass Dispatch
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                            <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                                Broadcast will send this email to every active standard trader.
+                            </p>
+                        </div>
+
+                        {isBroadcasting && (
+                            <div className="space-y-3">
+                                <div className="flex justify-between text-[10px] font-black uppercase text-primary">
+                                    <span>Progress</span>
+                                    <span>{progress}%</span>
+                                </div>
+                                <Progress value={progress} className="h-2" />
+                            </div>
+                        )}
+
+                        <Button 
+                            onClick={handleStartBroadcast} 
+                            disabled={isBroadcasting || isTesting}
+                            className="w-full h-14 text-base font-bold shadow-xl shadow-primary/20"
+                        >
+                            {isBroadcasting ? <Loader2 className="animate-spin mr-2 h-5 w-5"/> : <Send className="mr-2 h-5 w-5" />}
+                            Launch Broadcast
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-black border-white/5">
+                    <CardHeader className="py-3 border-b border-white/5">
+                        <CardTitle className="text-[10px] text-gray-600 uppercase font-black tracking-widest">Protocol Monitor</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 h-48 overflow-y-auto space-y-2">
+                        {logs.length > 0 ? logs.map((log, i) => (
+                            <div key={i} className="flex gap-2 text-[11px] font-mono leading-tight animate-in slide-in-from-left-2">
+                                <span className="text-gray-700">[{new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'})}]</span>
+                                <span className={cn(
+                                    log.type === 'error' ? 'text-red-400' : 
+                                    log.type === 'success' ? 'text-green-400' : 'text-gray-400'
+                                )}>{log.msg}</span>
+                            </div>
+                        )) : (
+                            <p className="text-[10px] text-gray-800 font-bold uppercase tracking-widest text-center mt-12">Standby...</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
     );
 }
 
@@ -181,7 +410,7 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                                 <div className="flex items-center gap-4">
                                     {currentSettings?.qr_code_url && (
                                         <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
-                                            <Image src={currentSettings.qr_code_url} alt="Current QR" layout="fill" className="object-cover" />
+                                            <Image src={currentSettings.qr_code_url} alt="Current QR" fill className="object-cover" />
                                         </div>
                                     )}
                                     <Input name="qr_code" type="file" accept="image/*" className="flex-1" />
@@ -200,7 +429,7 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                                 <div className="flex items-center gap-4">
                                     {currentSettings?.pay_later_qr_code_url && (
                                         <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
-                                            <Image src={currentSettings.pay_later_qr_code_url} alt="Current PTP QR" layout="fill" className="object-cover" />
+                                            <Image src={currentSettings.pay_later_qr_code_url} alt="Current PTP QR" fill className="object-cover" />
                                         </div>
                                     )}
                                     <Input name="pay_later_qr_code" type="file" accept="image/*" className="flex-1" />
@@ -233,7 +462,7 @@ export default function PaymentSettingsPage() {
 
     useEffect(() => {
         const fetchSettings = async () => {
-            const { data } = await supabase.from('payment_details').select('*').eq('id', 1).single();
+            const { data } = await (await supabase).from('payment_details').select('*').eq('id', 1).single();
             if (data) setSettings(data as PaymentDetails);
             setIsLoading(false);
         };
@@ -260,7 +489,7 @@ export default function PaymentSettingsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" isActive tooltip="Payment Settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" isActive tooltip="Settings & Broadcast"><Wallet />Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
                 <SidebarFooter className="border-t p-2">
@@ -269,13 +498,29 @@ export default function PaymentSettingsPage() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Payment Settings</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Admin Command Center</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40">
-                    <div className="max-w-4xl mx-auto">
-                        {isLoading ? <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : <PaymentSettingsForm currentSettings={settings} />}
-                    </div>
+                    <Tabs defaultValue="settings" className="w-full space-y-8">
+                        <TabsList className="bg-background border border-white/5 h-12 p-1 gap-2">
+                            <TabsTrigger value="settings" className="rounded-md font-bold px-8">Gateways & Global</TabsTrigger>
+                            <TabsTrigger value="broadcast" className="rounded-md font-bold px-8 flex items-center gap-2">
+                                <Megaphone className="w-4 h-4 text-primary" />
+                                Email Broadcast
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="settings" className="animate-in fade-in slide-in-from-left-2">
+                            <div className="max-w-4xl mx-auto">
+                                {isLoading ? <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : <PaymentSettingsForm currentSettings={settings} />}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="broadcast" className="animate-in fade-in slide-in-from-right-2">
+                            <BroadcastHub />
+                        </TabsContent>
+                    </Tabs>
                 </main>
             </SidebarInset>
         </SidebarProvider>

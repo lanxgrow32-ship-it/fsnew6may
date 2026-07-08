@@ -27,8 +27,9 @@ export default function AccountRequestsPage() {
 
     const fetchRequests = async () => {
         setLoading(true);
+        const client = await supabase;
         // FETCH ALL (Persistent Ledger)
-        const { data } = await supabase
+        const { data } = await client
             .from('user_accounts')
             .select('*, profiles(full_name, email, kyc_status)')
             .order('created_at', { ascending: false })
@@ -83,7 +84,7 @@ export default function AccountRequestsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings"><Wallet />Payment Settings</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings"><Wallet />Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
                 <SidebarFooter className="border-t p-2">
