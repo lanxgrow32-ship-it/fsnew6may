@@ -51,7 +51,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { getSubscriberEmails, sendBroadcastSignal } from '../broadcast/actions';
+import { getSubscriberData, sendBroadcastSignal } from '../broadcast/actions';
 
 type PaymentDetails = {
     id: number;
@@ -101,7 +101,7 @@ function BroadcastHub() {
         setIsTesting(true);
         addLog(`Initiating test to ${testEmail}...`);
         
-        const res = await sendBroadcastSignal(testEmail, subject, message);
+        const res = await sendBroadcastSignal(testEmail, 'Test Admin', subject, message);
         
         if (res.success) {
             toast({ title: "Test Signal Sent!", description: `Check ${testEmail} for the broadcast preview.` });
@@ -124,28 +124,31 @@ function BroadcastHub() {
         setIsBroadcasting(true);
         addLog("Fetching subscriber list from database...");
 
-        const emails = await getSubscriberEmails();
+        const subscribers = await getSubscriberData();
         
-        if (emails.length === 0) {
+        if (subscribers.length === 0) {
             toast({ title: "No Recipients", description: "Could not find any standard users to email.", variant: "destructive" });
             setIsBroadcasting(false);
             return;
         }
 
-        addLog(`Found ${emails.length} recipients. Starting dispatch...`);
+        addLog(`Found ${subscribers.length} recipients. Starting dispatch...`);
 
         let successCount = 0;
-        for (let i = 0; i < emails.length; i++) {
-            const email = emails[i];
-            const res = await sendBroadcastSignal(email, subject, message);
+        for (let i = 0; i < subscribers.length; i++) {
+            const sub = subscribers[i];
+            const res = await sendBroadcastSignal(sub.email, sub.full_name, subject, message);
             
-            if (res.success) successCount++;
+            if (res.success) {
+                successCount++;
+                console.log(`[Broadcast] Successfully dispatched to ${sub.email}`);
+            }
             
-            const currentProgress = Math.round(((i + 1) / emails.length) * 100);
+            const currentProgress = Math.round(((i + 1) / subscribers.length) * 100);
             setProgress(currentProgress);
         }
 
-        addLog(`Broadcast complete. ${successCount}/${emails.length} signals delivered.`, 'success');
+        addLog(`Broadcast complete. ${successCount}/${subscribers.length} signals delivered.`, 'success');
         toast({ title: "Broadcast Finalized", description: `${successCount} traders notified.` });
         setIsBroadcasting(false);
     };
@@ -155,32 +158,32 @@ function BroadcastHub() {
             <div className="lg:col-span-2 space-y-6">
                 <Card className="shadow-xl border-white/5">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-white">
                             <Mail className="w-5 h-5 text-primary" />
                             Compose Broadcast
                         </CardTitle>
-                        <CardDescription>Craft your message to the trader community. Use plain text or Markdown.</CardDescription>
+                        <CardDescription className="text-gray-400">Craft your message to the trader community. You can use <b>{"{{full_name}}"}</b> to personalize the content.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="subject">Email Subject</Label>
+                            <Label htmlFor="subject" className="text-white">Email Subject</Label>
                             <Input 
                                 id="subject" 
                                 placeholder="e.g. Weekly Market Analysis & Payout Schedule" 
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
-                                className="h-12 text-lg font-bold"
+                                className="h-12 text-lg font-bold bg-black/40 border-white/10 text-white"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="message">Message Body</Label>
+                            <Label htmlFor="message" className="text-white">Message Body</Label>
                             <textarea 
                                 id="message" 
-                                placeholder="Write your email content here..." 
+                                placeholder="Write your email content here... Use {{full_name}} to address the trader." 
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 rows={12}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none leading-relaxed"
+                                className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none leading-relaxed"
                             />
                         </div>
                     </CardContent>
@@ -190,8 +193,8 @@ function BroadcastHub() {
             <div className="space-y-6">
                 <Card className="bg-white/5 border-white/10">
                     <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                            <FlaskConical className="w-4 h-4 text-amber-400" />
+                        <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-amber-400">
+                            <FlaskConical className="w-4 h-4" />
                             Testing Protocol
                         </CardTitle>
                     </CardHeader>
@@ -202,7 +205,7 @@ function BroadcastHub() {
                                 placeholder="test@example.com" 
                                 value={testEmail}
                                 onChange={(e) => setTestEmail(e.target.value)}
-                                className="bg-black/20 border-white/10"
+                                className="bg-black/20 border-white/10 text-white"
                             />
                         </div>
                         <Button 
@@ -219,15 +222,15 @@ function BroadcastHub() {
 
                 <Card className={cn("border-primary/20", isBroadcasting && "bg-primary/5")}>
                     <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                            <Megaphone className="w-4 h-4 text-primary" />
+                        <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-primary">
+                            <Megaphone className="w-4 h-4" />
                             Mass Dispatch
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                            <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                                Broadcast will send this email to every active standard trader.
+                            <p className="text-xs text-gray-400 leading-relaxed font-medium">
+                                Broadcast will send this email to every active standard trader. This action is final.
                             </p>
                         </div>
 
@@ -295,15 +298,15 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
     
     return (
         <form ref={formRef} action={formAction} className="space-y-8">
-            <Card>
+            <Card className="bg-white/5 border-white/10">
                 <CardHeader>
-                    <CardTitle>Global Automation</CardTitle>
-                    <CardDescription>Configure AI assistants and marketplace visibility.</CardDescription>
+                    <CardTitle className="text-white">Global Automation</CardTitle>
+                    <CardDescription className="text-gray-400">Configure AI assistants and marketplace visibility.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-white/5">
                         <div className="space-y-0.5">
-                            <Label className="text-sm font-bold flex items-center gap-2">
+                            <Label className="text-sm font-bold flex items-center gap-2 text-white">
                                 <BrainCircuit className="w-4 h-4 text-primary" />
                                 AI Support Mode
                             </Label>
@@ -314,7 +317,7 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
 
                     <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-white/5">
                         <div className="space-y-0.5">
-                            <Label className="text-sm font-bold flex items-center gap-2">
+                            <Label className="text-sm font-bold flex items-center gap-2 text-white">
                                 <PackageCheck className="w-4 h-4 text-primary" />
                                 PassThenPay Availability
                             </Label>
@@ -325,10 +328,10 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white/5 border-white/10">
                 <CardHeader>
-                    <CardTitle>Active Payment Strategy</CardTitle>
-                    <CardDescription>Choose how direct plan purchases are processed.</CardDescription>
+                    <CardTitle className="text-white">Active Payment Strategy</CardTitle>
+                    <CardDescription className="text-gray-400">Choose how direct plan purchases are processed.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
                      <RadioGroup 
@@ -339,41 +342,41 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                      >
                         <div>
                              <RadioGroupItem value="automated" id="gateway-automated" className="sr-only" />
-                             <Label htmlFor="gateway-automated" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'automated' && "border-primary bg-primary/5")}>
+                             <Label htmlFor="gateway-automated" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-black/20 p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'automated' && "border-primary bg-primary/5")}>
                                 <Zap className={cn("mb-2 h-6 w-6", activeGateway === 'automated' ? "text-primary" : "text-muted-foreground")} />
-                                <span className="text-center font-bold text-lg">Automated</span>
+                                <span className="text-center font-bold text-lg text-white">Automated</span>
                                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">LGPay + WatchPay</span>
                             </Label>
                         </div>
                         <div>
                              <RadioGroupItem value="cashfree" id="gateway-cashfree" className="sr-only" />
-                             <Label htmlFor="gateway-cashfree" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'cashfree' && "border-primary bg-primary/5")}>
+                             <Label htmlFor="gateway-cashfree" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-black/20 p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'cashfree' && "border-primary bg-primary/5")}>
                                 <ShoppingCart className={cn("mb-2 h-6 w-6", activeGateway === 'cashfree' ? "text-primary" : "text-muted-foreground")} />
-                                <span className="text-center font-bold text-lg">Cashfree</span>
+                                <span className="text-center font-bold text-lg text-white">Cashfree</span>
                                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">External Portal</span>
                             </Label>
                         </div>
                          <div>
                             <RadioGroupItem value="manual" id="gateway-manual" className="sr-only" />
-                             <Label htmlFor="gateway-manual" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'manual' && "border-primary bg-primary/5")}>
+                             <Label htmlFor="gateway-manual" className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-black/20 p-6 hover:bg-accent hover:text-accent-foreground cursor-pointer h-32 transition-all", activeGateway === 'manual' && "border-primary bg-primary/5")}>
                                 <HardDrive className={cn("mb-2 h-6 w-6", activeGateway === 'manual' ? "text-primary" : "text-muted-foreground")} />
-                                <span className="text-center font-bold text-lg">Manual UPI</span>
+                                <span className="text-center font-bold text-lg text-white">Manual UPI</span>
                                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Verification Required</span>
                             </Label>
                         </div>
                     </RadioGroup>
 
                     {(activeGateway === 'automated' || activeGateway === 'watchpay') && (
-                        <div className="space-y-6 pt-6 border-t border-dashed animate-in fade-in slide-in-from-top-2">
-                             <Label className="text-sm font-bold flex items-center gap-2"><Settings2 className="w-4 h-4 text-primary" /> Gateway Credentials</Label>
+                        <div className="space-y-6 pt-6 border-t border-white/10 border-dashed animate-in fade-in slide-in-from-top-2">
+                             <Label className="text-sm font-bold flex items-center gap-2 text-white"><Settings2 className="w-4 h-4 text-primary" /> Gateway Credentials</Label>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="watchpay_merchant_id">WatchPay Merchant ID</Label>
-                                    <Input id="watchpay_merchant_id" name="watchpay_merchant_id" defaultValue={currentSettings?.watchpay_merchant_id || ''} placeholder="M123456" />
+                                    <Label htmlFor="watchpay_merchant_id" className="text-gray-400">WatchPay Merchant ID</Label>
+                                    <Input id="watchpay_merchant_id" name="watchpay_merchant_id" defaultValue={currentSettings?.watchpay_merchant_id || ''} placeholder="M123456" className="bg-black/20 border-white/10 text-white" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="watchpay_api_key">WatchPay API Key</Label>
-                                    <Input id="watchpay_api_key" name="watchpay_api_key" defaultValue={currentSettings?.watchpay_api_key || ''} placeholder="api_key_..." />
+                                    <Label htmlFor="watchpay_api_key" className="text-gray-400">WatchPay API Key</Label>
+                                    <Input id="watchpay_api_key" name="watchpay_api_key" defaultValue={currentSettings?.watchpay_api_key || ''} placeholder="api_key_..." className="bg-black/20 border-white/10 text-white" />
                                 </div>
                              </div>
 
@@ -392,47 +395,45 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white/5 border-white/10">
                 <CardHeader>
-                    <CardTitle>Manual Payment Details</CardTitle>
-                    <CardDescription>Setup standard and pay-later manual verification gateways.</CardDescription>
+                    <CardTitle className="text-white">Manual Payment Details</CardTitle>
+                    <CardDescription className="text-gray-400">Setup standard and pay-later manual verification gateways.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Standard UPI */}
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="upi_id">Standard UPI ID</Label>
-                                <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi@okhdfc" />
+                                <Label htmlFor="upi_id" className="text-gray-400">Standard UPI ID</Label>
+                                <Input id="upi_id" name="upi_id" defaultValue={currentSettings?.upi_id || ''} placeholder="your-upi@okhdfc" className="bg-black/20 border-white/10 text-white" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Standard QR Code</Label>
+                                <Label className="text-gray-400">Standard QR Code</Label>
                                 <div className="flex items-center gap-4">
                                     {currentSettings?.qr_code_url && (
-                                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
+                                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/10">
                                             <Image src={currentSettings.qr_code_url} alt="Current QR" fill className="object-cover" />
                                         </div>
                                     )}
-                                    <Input name="qr_code" type="file" accept="image/*" className="flex-1" />
+                                    <Input name="qr_code" type="file" accept="image/*" className="flex-1 bg-black/20 border-white/10 text-white" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Pay Later UPI */}
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="pay_later_upi_id">Pay Later UPI ID</Label>
-                                <Input id="pay_later_upi_id" name="pay_later_upi_id" defaultValue={currentSettings?.pay_later_upi_id || ''} placeholder="pay-later@oksbi" />
+                                <Label htmlFor="pay_later_upi_id" className="text-gray-400">Pay Later UPI ID</Label>
+                                <Input id="pay_later_upi_id" name="pay_later_upi_id" defaultValue={currentSettings?.pay_later_upi_id || ''} placeholder="pay-later@oksbi" className="bg-black/20 border-white/10 text-white" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Pay Later QR Code</Label>
+                                <Label className="text-gray-400">Pay Later QR Code</Label>
                                 <div className="flex items-center gap-4">
                                     {currentSettings?.pay_later_qr_code_url && (
-                                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
+                                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/10">
                                             <Image src={currentSettings.pay_later_qr_code_url} alt="Current PTP QR" fill className="object-cover" />
                                         </div>
                                     )}
-                                    <Input name="pay_later_qr_code" type="file" accept="image/*" className="flex-1" />
+                                    <Input name="pay_later_qr_code" type="file" accept="image/*" className="flex-1 bg-black/20 border-white/10 text-white" />
                                 </div>
                             </div>
                         </div>
@@ -440,12 +441,12 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                 </CardContent>
             </Card>
             
-             <Card>
-                <CardHeader><CardTitle>Referral Commission</CardTitle></CardHeader>
+             <Card className="bg-white/5 border-white/10">
+                <CardHeader><CardTitle className="text-white">Referral Commission</CardTitle></CardHeader>
                 <CardContent>
                     <div className="space-y-2">
-                        <Label htmlFor="referral_commission_percentage">Commission (%)</Label>
-                        <Input id="referral_commission_percentage" name="referral_commission_percentage" type="number" defaultValue={currentSettings?.referral_commission_percentage ?? 10} min="0" max="100" step="0.1" />
+                        <Label htmlFor="referral_commission_percentage" className="text-gray-400">Commission (%)</Label>
+                        <Input id="referral_commission_percentage" name="referral_commission_percentage" type="number" defaultValue={currentSettings?.referral_commission_percentage ?? 10} min="0" max="100" step="0.1" className="bg-black/20 border-white/10 text-white" />
                     </div>
                 </CardContent>
             </Card>
@@ -471,15 +472,15 @@ export default function PaymentSettingsPage() {
 
     return (
         <SidebarProvider>
-            <Sidebar>
-                <SidebarHeader className="border-b p-4 h-[57px] flex items-center">
+            <Sidebar className="border-r border-white/5">
+                <SidebarHeader className="border-b border-white/5 p-4 h-[57px] flex items-center bg-slate-900/50">
                     <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-lg">
                         <FundedStockLogo className="w-8 h-8 text-primary" />
-                        <span className="text-foreground group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
+                        <span className="text-white group-[[data-state=collapsed]]:hidden">FundedStock 2.0</span>
                     </Link>
                 </SidebarHeader>
-                <SidebarContent>
-                    <SidebarMenu>
+                <SidebarContent className="bg-slate-950">
+                    <SidebarMenu className="p-2 gap-1">
                         <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
                          <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
@@ -492,21 +493,21 @@ export default function PaymentSettingsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" isActive tooltip="Settings & Broadcast"><Wallet />Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
-                <SidebarFooter className="border-t p-2">
+                <SidebarFooter className="border-t border-white/5 p-2 bg-slate-950">
                     <SidebarMenu><SidebarMenuItem><form action={signOut} className="w-full"><SidebarMenuButton tooltip="Logout" asChild><button type="submit" className="w-full"><LogOut />Logout</button></SidebarMenuButton></form></SidebarMenuItem></SidebarMenu>
                 </SidebarFooter>
             </Sidebar>
-            <SidebarInset>
-                <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">Admin Command Center</h1></div>
+            <SidebarInset className="bg-slate-950">
+                <header className="flex h-[57px] items-center justify-between p-4 border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold text-white">Admin Command Center</h1></div>
                     <ThemeToggle />
                 </header>
-                <main className="p-4 md:p-8 bg-muted/40">
+                <main className="p-4 md:p-8 space-y-8">
                     <Tabs defaultValue="settings" className="w-full space-y-8">
-                        <TabsList className="bg-background border border-white/5 h-12 p-1 gap-2">
-                            <TabsTrigger value="settings" className="rounded-md font-bold px-8">Gateways & Global</TabsTrigger>
-                            <TabsTrigger value="broadcast" className="rounded-md font-bold px-8 flex items-center gap-2">
-                                <Megaphone className="w-4 h-4 text-primary" />
+                        <TabsList className="bg-black/40 border border-white/10 h-12 p-1 gap-2 rounded-xl">
+                            <TabsTrigger value="settings" className="rounded-lg font-bold px-8 data-[state=active]:bg-primary data-[state=active]:text-white">Gateways & Global</TabsTrigger>
+                            <TabsTrigger value="broadcast" className="rounded-lg font-bold px-8 flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
+                                <Megaphone className="w-4 h-4" />
                                 Email Broadcast
                             </TabsTrigger>
                         </TabsList>

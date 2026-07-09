@@ -4,12 +4,12 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
 /**
- * Fetches all trader emails for broadcast.
+ * Fetches all trader emails and names for personalized broadcast.
  */
-export async function getSubscriberEmails() {
+export async function getSubscriberData() {
     const { data, error } = await supabaseAdmin
         .from('profiles')
-        .select('email')
+        .select('email, full_name')
         .eq('account_type', 'standard');
     
     if (error) {
@@ -17,18 +17,17 @@ export async function getSubscriberEmails() {
         return [];
     }
     
-    return (data || []).map(p => p.email);
+    return data || [];
 }
 
 /**
- * Sends a single broadcast signal to Make.com.
- * This is used for both tests and individual steps in a mass broadcast.
+ * Sends a single broadcast signal to Make.com with personalization context.
  */
-export async function sendBroadcastSignal(email: string, subject: string, message: string) {
+export async function sendBroadcastSignal(email: string, name: string, subject: string, message: string) {
     const webhookUrl = process.env.MAKE_CUSTOM_BROADCAST_WEBHOOK_URL;
     
     if (!webhookUrl) {
-        return { error: 'Broadcast Webhook URL not configured.' };
+        return { error: 'Broadcast Webhook URL not configured in .env' };
     }
 
     try {
@@ -37,6 +36,7 @@ export async function sendBroadcastSignal(email: string, subject: string, messag
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 recipient_email: email,
+                full_name: name || 'Trader',
                 subject: subject,
                 message_content: message,
                 timestamp: new Date().toISOString()
