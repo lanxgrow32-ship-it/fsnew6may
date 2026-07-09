@@ -22,6 +22,7 @@ export async function getSubscriberData() {
 
 /**
  * Sends a single broadcast signal to Make.com with personalization context.
+ * Automatically converts text newlines to HTML <br> tags for Resend compatibility.
  */
 export async function sendBroadcastSignal(email: string, name: string, subject: string, message: string) {
     const webhookUrl = process.env.MAKE_CUSTOM_BROADCAST_WEBHOOK_URL;
@@ -29,6 +30,9 @@ export async function sendBroadcastSignal(email: string, name: string, subject: 
     if (!webhookUrl) {
         return { error: 'Broadcast Webhook URL not configured in .env' };
     }
+
+    // PROTOCOL v4.1: Auto-format message for HTML email clients
+    const htmlMessage = message.replace(/\n/g, '<br>');
 
     try {
         const response = await fetch(webhookUrl, {
@@ -38,7 +42,8 @@ export async function sendBroadcastSignal(email: string, name: string, subject: 
                 recipient_email: email,
                 full_name: name || 'Trader',
                 subject: subject,
-                message_content: message,
+                message_content: htmlMessage, // Sent as HTML-ready string
+                raw_text: message, // Kept as backup
                 timestamp: new Date().toISOString()
             }),
         });
@@ -49,7 +54,7 @@ export async function sendBroadcastSignal(email: string, name: string, subject: 
 
         return { success: true };
     } catch (error: any) {
-        console.error(`Broadcast Signal Failed for ${email}:`, error);
+        console.error(`[Broadcast Protocol] Signal Failed for ${email}:`, error);
         return { error: error.message };
     }
 }
