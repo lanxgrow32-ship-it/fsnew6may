@@ -9,15 +9,16 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 type Props = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const supabase = createClient();
+  const { slug } = await params;
+  const supabase = await createClient();
   const { data: post } = await supabase
     .from('blogs')
     .select('title, seo_keywords')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .eq('is_published', true)
     .single();
 
@@ -35,11 +36,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function BlogPostPage({ params }: Props) {
-    const supabase = createClient();
+    const { slug } = await params;
+    const supabase = await createClient();
     const { data: post, error } = await supabase
         .from('blogs')
         .select('*')
-        .eq('slug', params.slug)
+        .eq('slug', slug)
         .eq('is_published', true)
         .single();
     
@@ -50,7 +52,7 @@ export default async function BlogPostPage({ params }: Props) {
     return (
         <article className="bg-background min-h-screen">
              <header className="py-4 border-b bg-muted/20">
-                <div className="container mx-auto">
+                <div className="container mx-auto px-4">
                     <Button variant="ghost" asChild>
                         <Link href="/blog">
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -67,8 +69,8 @@ export default async function BlogPostPage({ params }: Props) {
                 </div>
             )}
 
-            <main className="container mx-auto -mt-16 md:-mt-24 relative z-10 px-4">
-                 <div className="max-w-3xl mx-auto bg-card p-6 md:p-10 rounded-lg shadow-lg">
+            <main className="container mx-auto -mt-16 md:-mt-24 relative z-10 px-4 pb-20">
+                 <div className="max-w-3xl mx-auto bg-card p-6 md:p-10 rounded-lg shadow-lg border border-border/50">
                     <div className="space-y-4 mb-8">
                         <h1 className="text-3xl md:text-5xl font-bold tracking-tight">{post.title}</h1>
                         <p className="text-muted-foreground">{format(new Date(post.created_at), 'MMMM d, yyyy')}</p>
@@ -81,10 +83,10 @@ export default async function BlogPostPage({ params }: Props) {
                         )}
                     </div>
 
-                    <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary hover:prose-a:underline">
+                    <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary hover:prose-a:underline text-foreground/90">
                         {post.content ? (
                             post.content.split('\n').map((paragraph, index) => (
-                                <p key={index}>{paragraph}</p>
+                                <p key={index} className="mb-4">{paragraph}</p>
                             ))
                         ) : (
                             <p>This post has no content yet.</p>

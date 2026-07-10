@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function BlogIndexPage() {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: posts, error } = await supabase
         .from('blogs')
         .select('*')
