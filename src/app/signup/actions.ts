@@ -31,7 +31,8 @@ export async function signup(prevState: any, formData: FormData) {
     return { error: 'All fields are required.' };
   }
 
-  const supabase = createClient();
+  // Next.js 15: cookies() is async, so createClient() returns a promise.
+  const supabase = await createClient();
 
   // 1. Create User in Auth
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({

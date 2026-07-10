@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -21,7 +20,8 @@ async function uploadSupportAttachment(file: File, conversationId: string) {
 }
 
 export async function createTicket(prevState: any, formData: FormData) {
-    const supabase = createClient();
+    // Next.js 15: cookies() is async, so createClient() returns a promise.
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -80,7 +80,8 @@ export async function createTicket(prevState: any, formData: FormData) {
 }
 
 export async function addReply(conversationId: string, formData: FormData) {
-    const supabase = createClient();
+    // Next.js 15: cookies() is async, so createClient() returns a promise.
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
