@@ -1,38 +1,14 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
+import { getAutoClassification, getBalanceFromPlanName } from '@/lib/plan-utils';
 
 const ekycUsername = process.env.EKYCHUB_USERNAME;
 const ekycToken = process.env.EKYCHUB_TOKEN;
-
-function getBalanceFromPlanName(planName: string): number {
-    if (!planName) return 0;
-    const name = planName.toLowerCase();
-    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
-    if (match) {
-        let amount = parseFloat(match[1].replace(/,/g, ''));
-        const unit = match[2];
-        if (unit === 'k') amount *= 1000;
-        else if (unit === 'l' || unit === 'lakh') amount *= 100000;
-        else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
-        return amount;
-    }
-    const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
-    return 0;
-}
-
-function getAutoClassification(planName: string): string {
-    const name = planName.toLowerCase();
-    if (name.includes('ptp') || name.includes('passthenpay')) return 'passthenpay';
-    if (name.includes('instant')) return 'instant_live';
-    if (name.includes('1-step')) return 'one_step_phase_1';
-    if (name.includes('2-step')) return 'two_step_phase_1';
-    return 'evaluation';
-}
 
 export async function verifyPan(panNumber: string) {
   if (!panNumber) return { error: 'PAN number is required.' };
@@ -158,10 +134,18 @@ export async function saveKycStep(step: number, formData: FormData) {
 
         if (stockmintApiKey && initialBalance > 0) {
              try {
+                const stockmintUsername = updatedProfile.email.toLowerCase().trim();
                 await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-                    body: JSON.stringify({ fullName: updatedProfile.full_name, email: updatedProfile.email, password: updatedProfile.email, initialBalance, accountClassification: classification, accountModel: 'normal' }),
+                    body: JSON.stringify({ 
+                        fullName: updatedProfile.full_name, 
+                        email: stockmintUsername, 
+                        password: stockmintUsername, 
+                        initialBalance, 
+                        accountClassification: classification, 
+                        accountModel: 'normal' 
+                    }),
                 });
             } catch (e) { console.error('StockMint creation failed:', e); }
         }

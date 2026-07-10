@@ -4,39 +4,7 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { format } from 'date-fns';
-
-// Helper to determine starting classification
-function getAutoClassification(planName: string): string {
-    const name = planName.toLowerCase();
-    // Strict PTP Check
-    if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
-        return 'passthenpay';
-    }
-    if (name.includes('instant')) return 'instant_live';
-    if (name.includes('1-step')) return 'one_step_phase_1';
-    if (name.includes('2-step')) return 'two_step_phase_1';
-    return 'evaluation';
-}
-
-// Helper function to get account size text from plan name
-function getAccountSizeText(planName: string): string {
-    if (!planName) return 'N/A';
-    const lowerPlanName = planName.toLowerCase();
-
-    if (lowerPlanName.includes('1l') || lowerPlanName.includes('1,00,000')) return '1,00,000';
-    if (lowerPlanName.includes('2l') || lowerPlanName.includes('2,00,000')) return '2,00,000';
-    if (lowerPlanName.includes('5l') || lowerPlanName.includes('5,00,000')) return '5,00,000';
-    if (lowerPlanName.includes('10l') || lowerPlanName.includes('10,00,000')) return '10,00,000';
-    if (lowerPlanName.includes('25l') || lowerPlanName.includes('25,00,000')) return '25,00,000';
-    if (lowerPlanName.includes('50l') || lowerPlanName.includes('50,00_000')) return '50,00,000';
-    
-    const plainNumberMatch = lowerPlanName.match(/^[\d,._]+/);
-    if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/[,_]/g, '')).toLocaleString('en-IN', {useGrouping: false});
-    }
-
-    return 'N/A';
-}
+import { getAutoClassification, getBalanceFromPlanName } from '@/lib/plan-utils';
 
 export async function createAdmin(prevState: any, formData: FormData) {
   const fullName = formData.get('full_name') as string;
@@ -70,7 +38,7 @@ export async function deleteUser(userId: string) {
 export async function deleteMultipleUsers(userIds: string[]) {
   if (!userIds || userIds.length === 0) return { error: 'No user IDs provided.' };
   const deletePromises = userIds.map(id => supabaseAdmin.auth.admin.deleteUser(id));
-  const results = await Promise.allSettled(deletePromises);
+  await Promise.allSettled(deletePromises);
   revalidatePath('/admin/dashboard');
   return { success: true };
 }
@@ -88,7 +56,7 @@ export async function approveUserPayment(userId: string) {
     if (profile.is_approved) return { success: true, message: 'User is already approved.' };
 
     const classification = getAutoClassification(profile.plan_purchased || '');
-    const isPTP = profile.account_model === 'passthrupay';
+    const isPTP = profile.account_model === 'passthrupay' || (profile.plan_purchased?.toLowerCase().includes('ptp'));
     const isKycVerified = profile.kyc_status === 'verified';
 
     // 1. Update Profile
@@ -124,7 +92,7 @@ export async function approveUserPayment(userId: string) {
             email: profile.email,
             order_sn: profile.order_sn || profile.transaction_id || 'N/A',
             plan_purchased: profile.plan_purchased,
-            account_size: getAccountSizeText(profile.plan_purchased),
+            account_size: getBalanceFromPlanName(profile.plan_purchased || '').toLocaleString('en-IN'),
             final_amount_paid: profile.final_amount_paid,
             payment_method: 'Manual/Direct',
             datetime: format(new Date(profile.created_at), 'dd-MM-yyyy HH:mm:ss'),

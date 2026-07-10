@@ -5,42 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { runSupportAi } from '@/ai/flows/support-agent-flow';
-
-/**
- * Helper to determine starting classification and balance
- */
-function getAutoClassification(planName: string): string {
-    const name = planName.toLowerCase();
-    if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
-        return 'passthenpay';
-    }
-    if (name.includes('instant')) return 'instant_live';
-    if (name.includes('1-step')) return 'one_step_phase_1';
-    if (name.includes('2-step')) return 'two_step_phase_1';
-    return 'evaluation';
-}
-
-function getBalanceFromPlanName(planName: string): number {
-    if (!planName) return 0;
-    const name = planName.toLowerCase();
-    
-    const match = name.match(/([\d,.]+)\s*(k|l|lakh|cr|crore)/);
-    if (match) {
-        let amount = parseFloat(match[1].replace(/,/g, ''));
-        const unit = match[2];
-        if (unit === 'k') amount *= 1000;
-        else if (unit === 'l' || unit === 'lakh') amount *= 100000;
-        else if (unit === 'cr' || unit === 'crore') amount *= 10000000;
-        return amount;
-    }
-    
-    const plainNumberMatch = name.match(/^[\d,.]+/);
-    if (plainNumberMatch) {
-        return parseFloat(plainNumberMatch[0].replace(/,/g, ''));
-    }
-    
-    return 0;
-}
+import { getAutoClassification, getBalanceFromPlanName } from '@/lib/plan-utils';
 
 export async function validateCoupon(code: string) {
     if (!code) return { error: 'Please enter a code.' };
@@ -72,7 +37,7 @@ export async function requestManualAccount(userId: string, planName: string, amo
   const classification = getAutoClassification(planName);
   const { error } = await supabaseAdmin.from('user_accounts').insert({
       user_id: userId, plan_name: planName, status: 'pending', is_approved: false, final_amount_paid: amount,
-      transaction_id: utr, account_model: planName.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal',
+      transaction_id: utr, account_model: planName.toLowerCase().includes('ptp') || planName.toLowerCase().includes('passthenpay') ? 'passthrupay' : 'normal',
       account_classification: classification
   });
   if (error) return { error: error.message };
@@ -100,13 +65,13 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
   if (!profile) return { error: 'Profile not found.' };
   
-  const price = parseFloat(plan.price.replace(/,/g, ''));
+  const price = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
   if (profile.wallet_balance < price) return { error: 'Insufficient wallet balance.' };
 
   await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance - price }).eq('id', userId);
   await supabaseAdmin.from('wallet_transactions').insert({ user_id: userId, amount: -price, type: 'purchase', status: 'completed', description: `Purchase of ${plan.title}` });
 
-  const isPTP = plan.title.toLowerCase().includes('ptp');
+  const isPTP = plan.title.toLowerCase().includes('ptp') || plan.title.toLowerCase().includes('passthenpay');
   const classification = getAutoClassification(plan.title);
   const isKycVerified = profile.kyc_status === 'verified';
 
@@ -116,7 +81,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     final_amount_paid: price, transaction_id: 'WALLET_PURCHASE'
   }).select().single();
 
-  if (accountError || !account) return { error: 'Failed to create account.' };
+  if (accountError || !account) return { error: 'Failed to create account record.' };
 
   const stockmintApiKey = process.env.STOCKMINT_API_KEY;
   const initialBalance = getBalanceFromPlanName(plan.title);
@@ -127,7 +92,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
           const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', userId).eq('credentials_provided', true);
           const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
           const [baseEmail, domain] = profile.email.split('@');
-          stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`;
+          stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`.toLowerCase().trim();
 
           const res = await fetch('https://stockmint.io/api/users/create', {
               method: 'POST',
@@ -140,6 +105,9 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
           if (res.ok) {
               await supabaseAdmin.from('user_accounts').update({ credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active' }).eq('id', account.id);
+          } else {
+              const errBody = await res.text();
+              console.error(`[Wallet Purchase] StockMint Rejected: ${res.status} - ${errBody}`);
           }
       } catch (e) { console.error('StockMint API Error:', e); }
   }
@@ -184,7 +152,6 @@ export async function createSupportConversation(userId: string, subject: string,
             message: firstMessage 
         });
         
-        // Trigger AI Protocol
         await triggerAiResponse(conversation.id, userId, firstMessage);
     }
 
@@ -225,26 +192,17 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
       image_url: imageUrl 
     });
 
-    if (insertError) {
-        console.error("Message Insert Error:", insertError);
-        return { error: insertError.message };
-    }
+    if (insertError) return { error: insertError.message };
 
     const { data: conv } = await supabaseAdmin.from('support_conversations').select('unread_count_admin, unread_count_user').eq('id', convId).single();
-    
-    const metaUpdate: any = { 
-        last_message_at: new Date().toISOString(), 
-        last_message_preview: message.trim() || (imageUrl ? '📷 Photo' : '') 
-    };
+    const metaUpdate: any = { last_message_at: new Date().toISOString(), last_message_preview: message.trim() || (imageUrl ? '📷 Photo' : '') };
 
     if (role === 'admin') metaUpdate.unread_count_user = (conv?.unread_count_user || 0) + 1;
     else metaUpdate.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
 
     await supabaseAdmin.from('support_conversations').update(metaUpdate).eq('id', convId);
 
-    // Synchronously await AI response in the server action lifecycle to prevent termination
     if (role === 'user') {
-        console.log(`[Support Protocol] Triggering Neural Brain for session: ${convId}`);
         await triggerAiResponse(convId, senderId, message.trim());
     }
     
@@ -254,59 +212,31 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
     return { error: null };
 }
 
-/**
- * Hardened Neural Dispatcher
- */
 async function triggerAiResponse(convId: string, userId: string, message: string) {
     try {
-        // 1. Fetch protocol settings
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
         const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
 
         if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') return;
 
-        // 2. Fetch history for context
-        const { data: history } = await supabaseAdmin
-            .from('support_messages')
-            .select('sender_role, message')
-            .eq('conversation_id', convId)
-            .order('created_at', { ascending: false })
-            .limit(10);
+        const { data: history } = await supabaseAdmin.from('support_messages').select('sender_role, message').eq('conversation_id', convId).order('created_at', { ascending: false }).limit(10);
+        const chatHistory = (history || []).reverse().map(h => ({ role: h.sender_role as 'user' | 'admin', message: h.message }));
 
-        const chatHistory = (history || [])
-            .reverse()
-            .map(h => ({ role: h.sender_role as 'user' | 'admin', message: h.message }));
-
-        // 3. Fire Neural Engine
         const aiResponse = await runSupportAi({
-            conversationId: convId,
-            userEmail: conv.profiles.email,
-            userName: conv.profiles.full_name,
-            userMessage: message,
-            chatHistory: chatHistory
+            conversationId: convId, userEmail: conv.profiles.email, userName: conv.profiles.full_name, userMessage: message, chatHistory: chatHistory
         });
 
         if (!aiResponse) return;
 
-        // 4. Inject AI response
         await supabaseAdmin.from('support_messages').insert({
-            conversation_id: convId,
-            sender_id: conv.user_id, // Satisfy FK constraint using conversation owner UUID
-            sender_role: 'admin',
-            message: aiResponse
+            conversation_id: convId, sender_id: conv.user_id, sender_role: 'admin', message: aiResponse
         });
 
-        // 5. Update Metadata
         const { data: freshConv } = await supabaseAdmin.from('support_conversations').select('unread_count_user').eq('id', convId).single();
         await supabaseAdmin.from('support_conversations').update({
-            last_message_at: new Date().toISOString(),
-            last_message_preview: aiResponse,
-            unread_count_user: (freshConv?.unread_count_user || 0) + 1
+            last_message_at: new Date().toISOString(), last_message_preview: aiResponse, unread_count_user: (freshConv?.unread_count_user || 0) + 1
         }).eq('id', convId);
-
-    } catch (error) {
-        console.error(`[Neural Dispatcher] Fatal Error:`, error);
-    }
+    } catch (error) { console.error(`[Neural] Fatal Error:`, error); }
 }
 
 export async function markSupportRead(convId: string, role: 'admin' | 'user') {
@@ -328,7 +258,7 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
         await supabaseAdmin.from('wallet_transactions').insert({ user_id: userId, amount: -event.entry_fee, type: 'purchase', status: 'completed', description: `Entry for ${event.week_label}` });
     }
 
-    const stockmintUsername = `${profile.email.split('@')[0]}-comp-${eventId.substring(0,4)}@${profile.email.split('@')[1]}`;
+    const stockmintUsername = `${profile.email.split('@')[0]}-comp-${eventId.substring(0,4)}@${profile.email.split('@')[1]}`.toLowerCase().trim();
     const stockmintPassword = stockmintUsername;
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
 
