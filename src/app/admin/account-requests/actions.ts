@@ -3,7 +3,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { getAutoClassification, getBalanceFromPlanName } from '@/lib/plan-utils';
+import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername } from '@/lib/plan-utils';
 
 export async function approveAccount(accountId: string) {
     const { data: account, error: fetchError } = await supabaseAdmin.from('user_accounts').select('*, profiles(*)').eq('id', accountId).single();
@@ -20,18 +20,21 @@ export async function approveAccount(accountId: string) {
     
     if (approveError) return { error: approveError.message };
 
-    let stockmintUsername = profile.email; // Fallback
+    let stockmintUsername = profile.email; 
     
     if (isKycDone || isPTP) {
-        const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', profile.id).eq('credentials_provided', true);
-        const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
-        const [baseEmail, domain] = profile.email.split('@');
-        stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`.toLowerCase().trim();
+        // Multi-Account logic: Count how many accounts ALREADY have credentials
+        const { count } = await supabaseAdmin
+            .from('user_accounts')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', profile.id)
+            .eq('credentials_provided', true);
+            
+        stockmintUsername = generateStockmintUsername(profile.email, count || 0);
         const initialBalance = getBalanceFromPlanName(account.plan_name);
-
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
         
-        console.log(`[Stockmint Sync] Attempting creation for: ${stockmintUsername}. Balance: ${initialBalance}, Class: ${classification}`);
+        console.log(`[Stockmint Sync] Target: ${stockmintUsername}. Balance: ${initialBalance}, Classification: ${classification}`);
 
         if (stockmintApiKey && initialBalance > 0) {
             try {
@@ -52,22 +55,23 @@ export async function approveAccount(accountId: string) {
 
                 if (res.ok) {
                     await supabaseAdmin.from('user_accounts').update({
-                        credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active'
+                        credentials_provided: true, 
+                        trading_username: stockmintUsername, 
+                        trading_password: stockmintUsername, 
+                        status: 'active'
                     }).eq('id', accountId);
                     console.log(`[Stockmint Sync] SUCCESS for ${stockmintUsername}`);
                 } else {
                     const errorBody = await res.text();
-                    console.error(`[Stockmint Sync] API REJECTED: ${res.status}. Body: ${errorBody}`);
+                    console.error(`[Stockmint Sync] REJECTED: ${res.status}. Body: ${errorBody}`);
                 }
             } catch (e) { 
-                console.error('[Stockmint Sync] CRITICAL FETCH ERROR:', e); 
+                console.error('[Stockmint Sync] NETWORK ERROR:', e); 
             }
-        } else {
-            console.warn(`[Stockmint Sync] SKIPPED. Key Missing: ${!stockmintApiKey}, Balance Invalid: ${initialBalance <= 0}`);
         }
     }
 
-    // TRIGGER V3: Intelligent Purchase Handler
+    // Webhook Automation
     const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
     if (webhookUrl) {
         fetch(webhookUrl, {

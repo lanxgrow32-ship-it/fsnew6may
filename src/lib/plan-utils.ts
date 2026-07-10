@@ -26,10 +26,10 @@ export function getAutoClassification(planName: string): string {
 
 export function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
-    // Strip currency symbols and trim
+    // Strip currency symbols and common noise
     const name = planName.toLowerCase().replace(/[₹$,]/g, '').trim();
     
-    // 1. Check for units like K, L, Cr
+    // 1. Check for units like K, L, Cr, Lakh
     const unitMatch = name.match(/([\d.]+)\s*(k|l|lakh|cr|crore)/);
     if (unitMatch) {
         let amount = parseFloat(unitMatch[1]);
@@ -40,11 +40,24 @@ export function getBalanceFromPlanName(planName: string): number {
         return amount;
     }
     
-    // 2. Search for any plain number in the string (e.g. 100000)
+    // 2. Search for any plain number in the string (e.g. "100000")
     const numberMatch = name.match(/\d+/);
     if (numberMatch) {
         return parseInt(numberMatch[0]);
     }
     
     return 0;
+}
+
+/**
+ * Generates a unique Stockmint Terminal Email/ID for multi-account support.
+ * @param baseEmail The trader's registration email.
+ * @param credentialsProvidedCount How many accounts ALREADY have credentials.
+ */
+export function generateStockmintUsername(baseEmail: string, credentialsProvidedCount: number): string {
+    const [userPart, domainPart] = baseEmail.split('@');
+    if (credentialsProvidedCount === 0) return baseEmail.toLowerCase().trim();
+    
+    // Version suffix e.g. trader-ac2@gmail.com
+    return `${userPart}-ac${credentialsProvidedCount + 1}@${domainPart}`.toLowerCase().trim();
 }
