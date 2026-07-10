@@ -233,7 +233,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
     
     if (insertError) return { error: insertError.message };
     
-    const { data: conv } = await supabaseAdmin.from('support_conversations').select('unread_count_admin, unread_count_user').eq('id', convId).single();
+    const { data: conv } = await supabaseAdmin.from('support_conversations').select('unread_count_admin, unread_count_user, user_id').eq('id', convId).single();
     const metaUpdate: any = { last_message_at: new Date().toISOString(), last_message_preview: message.trim() };
     
     if (role === 'admin') metaUpdate.unread_count_user = (conv?.unread_count_user || 0) + 1;
@@ -242,7 +242,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
     await supabaseAdmin.from('support_conversations').update(metaUpdate).eq('id', convId);
     
     if (role === 'user') {
-        // Sync response injection
+        // HANDLED SYNC: Trigger AI response and WAIT for it
         await triggerAiResponse(convId, senderId, message.trim());
     }
     
@@ -253,10 +253,14 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
 async function triggerAiResponse(convId: string, userId: string, message: string) {
     try {
+        console.log(`[Neural Protocol] Starting dispatcher for conv ${convId}...`);
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
         const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
         
-        if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') return;
+        if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') {
+            console.log(`[Neural Protocol] Dispatcher aborted: AI disabled or session assigned to ${conv?.assigned_role}`);
+            return;
+        }
         
         const { data: history } = await supabaseAdmin
             .from('support_messages')
@@ -278,7 +282,10 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             chatHistory: chatHistory 
         });
         
-        if (!aiResponse) return;
+        if (!aiResponse) {
+            console.warn(`[Neural Protocol] Empty response received from model.`);
+            return;
+        }
         
         // Use user_id as fallback sender_id for DB constraints, but 'admin' role for UI
         await supabaseAdmin.from('support_messages').insert({ 
@@ -296,8 +303,9 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             unread_count_user: (freshConv?.unread_count_user || 0) + 1 
         }).eq('id', convId);
         
+        console.log(`[Neural Protocol] Response delivered to ${conv.profiles.email}`);
     } catch (error) { 
-        console.error(`[Neural] AI Error:`, error); 
+        console.error(`[Neural Protocol] Dispatcher CRITICAL FAILURE:`, error); 
     }
 }
 

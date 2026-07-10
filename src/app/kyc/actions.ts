@@ -90,7 +90,7 @@ export async function saveKycStep(step: number, formData: FormData) {
     const { data: updatedProfile, error: updateError } = await supabase.from('profiles').update(profileUpdateData).eq('id', user.id).select().single();
     if (updateError) return { error: updateError.message };
     
-    // --- FINAL HANDSHAKE PROTOCOL ---
+    // --- FINAL HANDSHAKE PROTOCOL (SPEC v4.0) ---
     if (isFinalStep && updatedProfile) {
         // 1. Mark existing pending accounts for activation
         const { data: pendingAccounts } = await supabaseAdmin.from('user_accounts').select('*').eq('user_id', user.id).eq('status', 'pending').eq('is_approved', true);
@@ -101,6 +101,7 @@ export async function saveKycStep(step: number, formData: FormData) {
             for (const acc of pendingAccounts) {
                 const initialBalance = getBalanceFromPlanName(acc.plan_name);
                 const classification = getAutoClassification(acc.plan_name);
+                const isPTP = classification === 'passthenpay';
                 
                 // Check current credentials count for uniqueness
                 const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('credentials_provided', true);
@@ -108,18 +109,27 @@ export async function saveKycStep(step: number, formData: FormData) {
 
                 if (stockmintApiKey && initialBalance > 0) {
                     try {
+                        const payload = { 
+                            fullName: updatedProfile.full_name, 
+                            email: stockmintUsername, 
+                            password: stockmintUsername,
+                            initialBalance, 
+                            accountClassification: classification, 
+                            accountModel: isPTP ? 'passthenpay' : 'normal' 
+                        };
+
                         const res = await fetch('https://stockmint.io/api/users/create', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-                            body: JSON.stringify({ 
-                                fullName: updatedProfile.full_name, email: stockmintUsername, password: stockmintUsername,
-                                initialBalance, accountClassification: classification, accountModel: 'normal' 
-                            }),
+                            body: JSON.stringify(payload),
                         });
 
                         if (res.ok) {
                             await supabaseAdmin.from('user_accounts').update({ 
-                                credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active' 
+                                credentials_provided: true, 
+                                trading_username: stockmintUsername, 
+                                trading_password: stockmintUsername, 
+                                status: 'active' 
                             }).eq('id', acc.id);
                         }
                     } catch (e) { console.error('KYC-to-Stockmint Sync Failed:', e); }

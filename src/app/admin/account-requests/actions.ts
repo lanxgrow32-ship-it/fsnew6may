@@ -10,12 +10,14 @@ export async function approveAccount(accountId: string) {
     if (fetchError || !account) return { error: 'Account request not found.' };
 
     const profile = account.profiles;
-    const isPTP = account.account_model === 'passthrupay';
+    const isPTP = account.account_model === 'passthrupay' || account.plan_name.toLowerCase().includes('ptp');
     const isKycDone = profile.kyc_status === 'verified';
     const classification = getAutoClassification(account.plan_name);
 
     const { error: approveError } = await supabaseAdmin.from('user_accounts').update({ 
-        is_approved: true, status: isKycDone || isPTP ? 'active' : 'pending', account_classification: classification
+        is_approved: true, 
+        status: isKycDone || isPTP ? 'active' : 'pending', 
+        account_classification: classification
     }).eq('id', accountId);
     
     if (approveError) return { error: approveError.message };

@@ -136,7 +136,7 @@ export default async function GuidePage() {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('trading_username, trading_password, full_name, email')
+        .select('full_name, email')
         .eq('id', user.id)
         .single();
     
@@ -144,11 +144,21 @@ export default async function GuidePage() {
         redirect('/login');
     }
 
+    // Multi-Account friendly fetching for the guide
+    const { data: accounts } = await supabase
+        .from('user_accounts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('credentials_provided', true)
+        .limit(1);
+
+    const activeAccount = accounts?.[0];
+
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
-                <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
+                <div className="absolute top-[-25%] left-[-10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
           
@@ -177,11 +187,11 @@ export default async function GuidePage() {
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     <div className="rounded-lg border border-white/10 bg-black/20 p-4">
                                         <p className="text-sm font-medium text-gray-400">Your Username</p>
-                                        <p className="text-lg font-mono text-white">{profile?.trading_username || 'Not Provided'}</p>
+                                        <p className="text-lg font-mono text-white">{activeAccount?.trading_username || 'Awaiting activation'}</p>
                                     </div>
                                     <div className="rounded-lg border border-white/10 bg-black/20 p-4">
                                         <p className="text-sm font-medium text-gray-400">Your Password</p>
-                                        <p className="text-lg font-mono text-white">{profile?.trading_password || 'Not Provided'}</p>
+                                        <p className="text-lg font-mono text-white">{activeAccount?.trading_password || 'Awaiting activation'}</p>
                                     </div>
                                 </div>
                             </div>

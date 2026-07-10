@@ -2,11 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { getAutoClassification, getBalanceFromPlanName } from '@/lib/plan-utils';
+import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername } from '@/lib/plan-utils';
 
 /**
  * Secure API for external portal to notify main app of a successful plan purchase.
  * POST /api/external/purchase
+ * Follows SPEC v4.0
  */
 
 export async function POST(req: NextRequest) {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
         const classification = getAutoClassification(plan_name);
         const isKycVerified = profile.kyc_status === 'verified';
 
-        // 2. Create the Account Request
+        // 2. Create the Account Record
         const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
             user_id: profile.id,
             plan_name,
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
 
         if (accountError || !account) throw new Error('Account Provisioning Failure');
 
-        // 3. StockMint Hub Sync
+        // 3. StockMint Hub Sync (SPEC v4.0)
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
         const initialBalance = getBalanceFromPlanName(plan_name);
         let stockmintUsername = profile.email;
@@ -61,17 +62,21 @@ export async function POST(req: NextRequest) {
         if (stockmintApiKey && initialBalance > 0) {
             try {
                 const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', profile.id).eq('credentials_provided', true);
-                const versionSuffix = count && count > 0 ? `-ac${count + 1}` : '';
-                const [baseEmail, domain] = profile.email.split('@');
-                stockmintUsername = `${baseEmail}${versionSuffix}@${domain}`.toLowerCase().trim();
+                stockmintUsername = generateStockmintUsername(profile.email, count || 0);
+
+                const payload = { 
+                    fullName: profile.full_name, 
+                    email: stockmintUsername, 
+                    password: stockmintUsername,
+                    initialBalance, 
+                    accountClassification: classification, 
+                    accountModel: isPTP ? 'passthenpay' : 'normal'
+                };
 
                 const res = await fetch('https://stockmint.io/api/users/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-                    body: JSON.stringify({ 
-                        fullName: profile.full_name, email: stockmintUsername, password: stockmintUsername,
-                        initialBalance, accountClassification: classification, accountModel: isPTP ? 'passthenpay' : 'normal'
-                    }),
+                    body: JSON.stringify(payload),
                 });
 
                 if (res.ok) {

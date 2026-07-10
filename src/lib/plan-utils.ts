@@ -2,6 +2,7 @@
 /**
  * Consolidated utility functions for plan classification and balance parsing.
  * Shared between Admin, Welcome, and API routes to ensure Stockmint synchronization.
+ * Follows SPEC v4.0
  */
 
 export function getAutoClassification(planName: string): string {
