@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -64,8 +63,31 @@ export async function approveUserPayment(userId: string) {
         is_approved: true,
         account_classification: classification
     }).eq('id', userId);
+
+    // 2. REFERRAL PROTOCOL: Credit referrer if applicable
+    if (profile.referred_by && profile.final_amount_paid > 0) {
+        const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
+        const commPercent = settings?.referral_commission_percentage || 10;
+        const commissionAmount = (profile.final_amount_paid * commPercent) / 100;
+
+        if (commissionAmount > 0) {
+            // Add to referrer's balance
+            await supabaseAdmin.rpc('add_to_referral_balance', {
+                user_id: profile.referred_by,
+                amount_to_add: commissionAmount
+            });
+
+            // Log referral transaction
+            await supabaseAdmin.from('referrals').insert({
+                referrer_id: profile.referred_by,
+                referred_id: userId,
+                commission_amount: commissionAmount,
+                plan_name: profile.plan_purchased
+            });
+        }
+    }
     
-    // 2. Sync first account in user_accounts
+    // 3. Sync first account in user_accounts
     const { data: firstAccount } = await supabaseAdmin
         .from('user_accounts')
         .select('id')

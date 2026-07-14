@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Intelligence tools for the AI Support Agent.
  * These tools allow the AI to fetch live data and perform strategic routing.
@@ -11,7 +10,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 export const getTraderProfile = ai.defineTool(
   {
     name: 'getTraderProfile',
-    description: 'Fetches the current wallet balance, KYC status, and personal details of the trader.',
+    description: 'Fetches the current wallet balance, referral code, KYC status, and personal details of the trader.',
     inputSchema: z.object({
       email: z.string().describe('The email address of the trader.'),
     }),
@@ -20,7 +19,7 @@ export const getTraderProfile = ai.defineTool(
   async (input) => {
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .select('full_name, email, wallet_balance, kyc_status, is_approved, referral_balance')
+      .select('full_name, email, wallet_balance, referral_code, kyc_status, is_approved, referral_balance')
       .eq('email', input.email)
       .single();
     
@@ -60,7 +59,7 @@ export const getTraderAccounts = ai.defineTool(
 export const getPlatformRules = ai.defineTool(
   {
     name: 'getPlatformRules',
-    description: 'Provides information about drawdown limits, profit targets, and payout rules.',
+    description: 'Provides information about drawdown limits, profit targets, payout rules, and news trading restrictions.',
     inputSchema: z.object({
       query: z.string().describe('The rule to look up.'),
     }),
@@ -68,11 +67,13 @@ export const getPlatformRules = ai.defineTool(
   },
   async (input) => {
     return `
-      1. Overall Drawdown: 10% (Fixed for Eval, Trailing for Instant).
-      2. Daily Drawdown: 5% (4% for PTP).
-      3. Targets: 1-Step (10%), 2-Step (8%/5%), PTP (6%).
-      4. Payouts: Every 14 days, Min ₹2,000.
-      5. KYC: Mandatory before first payout.
+      FUNDEDSTOCK PROTOCOLS:
+      1. Drawdown: Overall 10% (Fixed for Eval, Trailing for Instant). Daily 5%. Max 2% per trade.
+      2. Profit Targets: 1-Step (10%), 2-Step (8%/5%), PassThenPay (6%).
+      3. Payouts: Every 14 days, Minimum withdrawal ₹2,000. 80% Profit Split.
+      4. News Trading: Restricted ±5 minutes around high-impact events. SMS alerts are sent 30 mins prior.
+      5. KYC: Mandatory document verification required before first disbursement.
+      6. Holding: Overnight holding allowed on 1-Step/Instant, but Intraday ONLY for 2-Step.
     `;
   }
 );
