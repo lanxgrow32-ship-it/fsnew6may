@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,7 +9,8 @@ import {
     Gift, 
     History,
     RefreshCw,
-    Filter
+    Filter,
+    ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -37,18 +39,16 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
     </div>
 );
 
-export function TransactionsView({ transactions }: { transactions: Transaction[] }) {
+export function TransactionsView({ transactions, accounts = [] }: { transactions: Transaction[], accounts?: any[] }) {
     const [filter, setFilter] = useState('all');
 
     const displayTransactions = useMemo(() => {
         const expanded: any[] = [];
         
-        // Loop through transactions (already sorted newest first in page.tsx)
+        // 1. Process Wallet Transactions
         transactions.forEach(tx => {
-            // 1. Push the REAL Transaction first (so it appears above the bonus in the list)
             expanded.push({ ...tx, isBonusEntry: false });
             
-            // 2. If it's a completed deposit with a bonus, push the bonus immediately AFTER
             if (tx.status === 'completed' && tx.type === 'deposit' && tx.bonus_amount && tx.bonus_amount > 0) {
                 expanded.push({
                     ...tx,
@@ -61,9 +61,34 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
             }
         });
 
-        if (filter === 'all') return expanded;
-        return expanded.filter(tx => tx.type === filter);
-    }, [transactions, filter]);
+        // 2. Process Account Purchases (Direct Payments)
+        // Direct purchases (manual) are in 'user_accounts' but not in 'wallet_transactions'
+        // We only add them if they aren't already represented (wallet purchases create both)
+        accounts.forEach(acc => {
+            // Check if this purchase was made via Wallet (it would have a WALLET_ or similar ID)
+            const isWalletPurchase = acc.transaction_id?.startsWith('WALLET_');
+            
+            // If it's a direct manual purchase (not from wallet), add it to the ledger
+            if (!isWalletPurchase && acc.final_amount_paid > 0) {
+                expanded.push({
+                    id: acc.id,
+                    amount: -acc.final_amount_paid,
+                    type: 'purchase',
+                    status: acc.is_approved ? 'completed' : acc.status === 'rejected' ? 'failed' : 'pending',
+                    description: `Plan: ${acc.plan_name}`,
+                    gateway_transaction_id: acc.transaction_id,
+                    created_at: acc.created_at,
+                    isBonusEntry: false
+                });
+            }
+        });
+
+        // 3. Sort merged list by date
+        const sorted = expanded.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        if (filter === 'all') return sorted;
+        return sorted.filter(tx => tx.type === filter);
+    }, [transactions, accounts, filter]);
 
     const getIcon = (type: string) => {
         switch (type) {
@@ -172,4 +197,3 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
         </div>
     );
 }
-

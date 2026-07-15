@@ -131,7 +131,7 @@ function WelcomeContent({
                     <div className="flex items-center gap-6">
                         <Logo />
                         <nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">
-                            {navItems.map((item) => {
+                            {navItems.filter(item => item.id !== 'kyc').map((item) => {
                                 const commonClasses = cn(
                                     "px-4 py-1.5 text-[11px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0 flex items-center gap-2",
                                     activeTab === item.id
@@ -293,7 +293,7 @@ function WelcomeContent({
                     </TabsContent>
 
                     <TabsContent value="transactions" className="animate-in fade-in duration-300">
-                        <TransactionsView transactions={walletTransactions} />
+                        <TransactionsView transactions={walletTransactions} accounts={accounts} />
                     </TabsContent>
 
                     <TabsContent value="kyc" className="animate-in fade-in duration-300">
