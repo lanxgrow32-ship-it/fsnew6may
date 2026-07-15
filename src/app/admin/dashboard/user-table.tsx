@@ -40,6 +40,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
     const [filters, setFilters] = useState({
         classification: 'all',
         kyc: 'all',
+        approval: 'all' // Added approval status filter
     });
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -58,10 +59,14 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                 else if (filters.classification === 'ptp') matchesClass = p.account_model === 'passthrupay';
             }
 
+            let matchesApproval = true;
+            if (filters.approval === 'approved') matchesApproval = p.is_approved;
+            else if (filters.approval === 'pending') matchesApproval = !p.is_approved;
+
             const profileDate = new Date(p.created_at);
             const matchesDate = !date?.from || (profileDate >= date.from && (!date.to || profileDate <= new Date(date.to.getTime() + 86400000)));
 
-            return matchesSearch && matchesKyc && matchesClass && matchesDate;
+            return matchesSearch && matchesKyc && matchesClass && matchesDate && matchesApproval;
         });
     }, [searchTerm, profiles, filters, date]);
 
@@ -80,6 +85,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
             'Email': p.email,
             'Mobile': p.mobile_number,
             'Classification': p.account_classification || 'N/A',
+            'Approved': p.is_approved ? 'Yes' : 'No',
             'Joined': format(new Date(p.created_at), 'yyyy-MM-dd')
         }));
         const csv = Papa.unparse(data);
@@ -99,8 +105,16 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                     <Input placeholder="Search trader by name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-11" />
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <Select value={filters.approval} onValueChange={(v) => setFilters(f => ({...f, approval: v}))}>
+                        <SelectTrigger className="w-[150px] h-11"><SelectValue placeholder="Approval" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Any Approval</SelectItem>
+                            <SelectItem value="approved">Approved</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <Select value={filters.classification} onValueChange={(v) => setFilters(f => ({...f, classification: v}))}>
-                        <SelectTrigger className="w-[180px] h-11"><SelectValue placeholder="Account Type" /></SelectTrigger>
+                        <SelectTrigger className="w-[160px] h-11"><SelectValue placeholder="Account Type" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Account Types</SelectItem>
                             <SelectItem value="instant">Instant Live</SelectItem>
@@ -143,6 +157,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                             <TableHead>Trader</TableHead>
                             <TableHead>Contact</TableHead>
                             <TableHead>KYC Status</TableHead>
+                            <TableHead>Approval</TableHead>
                             <TableHead>Primary Level</TableHead>
                             <TableHead className="text-right">Registration</TableHead>
                         </TableRow>
@@ -173,12 +188,19 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
+                                    {p.is_approved ? (
+                                        <Badge className="bg-green-600/10 text-green-600 border-green-600/20 text-[9px] font-black uppercase">Approved</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-amber-500 border-amber-500/20 text-[9px] font-black uppercase">Pending</Badge>
+                                    )}
+                                </TableCell>
+                                <TableCell>
                                     <span className="text-xs font-bold text-primary capitalize">{p.account_classification?.replace(/_/g, ' ') || 'Registered'}</span>
                                 </TableCell>
                                 <TableCell className="text-right text-xs text-muted-foreground">{format(new Date(p.created_at), 'dd MMM yyyy')}</TableCell>
                             </TableRow>
                         )) : (
-                            <TableRow><TableCell colSpan={6} className="h-40 text-center text-muted-foreground">No traders match your current search and filter criteria.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={7} className="h-40 text-center text-muted-foreground">No traders match your current search and filter criteria.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>

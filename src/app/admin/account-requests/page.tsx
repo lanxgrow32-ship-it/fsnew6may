@@ -1,13 +1,33 @@
 
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Check, X, Home, Ticket, Wallet, LogOut, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, History, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+    Loader2, 
+    Check, 
+    X, 
+    Home, 
+    Ticket, 
+    Wallet, 
+    LogOut, 
+    Banknote, 
+    LineChart, 
+    Swords, 
+    Users, 
+    Newspaper, 
+    UserCheck, 
+    History, 
+    Clock, 
+    Search,
+    Filter
+} from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
@@ -24,11 +44,14 @@ export default function AccountRequestsPage() {
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isPending, startTransition] = useTransition();
+    
+    // Search and Filter States
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
 
     const fetchRequests = async () => {
         setLoading(true);
         const client = await supabase;
-        // FETCH ALL (Persistent Ledger)
         const { data } = await client
             .from('user_accounts')
             .select('*, profiles(full_name, email, kyc_status)')
@@ -41,6 +64,23 @@ export default function AccountRequestsPage() {
     useEffect(() => {
         fetchRequests();
     }, []);
+
+    const filteredRequests = useMemo(() => {
+        return requests.filter(req => {
+            const profile = req.profiles || {};
+            const fullName = (profile.full_name || '').toLowerCase();
+            const email = (profile.email || '').toLowerCase();
+            const search = searchTerm.toLowerCase();
+            const matchesSearch = fullName.includes(search) || email.includes(search) || (req.transaction_id || '').toLowerCase().includes(search);
+
+            let matchesStatus = true;
+            if (statusFilter === 'pending') matchesStatus = !req.is_approved && req.status !== 'rejected';
+            else if (statusFilter === 'approved') matchesStatus = req.is_approved;
+            else if (statusFilter === 'rejected') matchesStatus = req.status === 'rejected';
+
+            return matchesSearch && matchesStatus;
+        });
+    }, [requests, searchTerm, statusFilter]);
 
     const handleApprove = (id: string) => {
         startTransition(async () => {
@@ -84,7 +124,7 @@ export default function AccountRequestsPage() {
                         <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
-                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings"><Wallet />Settings</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Settings</SidebarMenuButton></SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
                 <SidebarFooter className="border-t p-2">
@@ -96,12 +136,41 @@ export default function AccountRequestsPage() {
                     <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Activation Management Ledger</h1></div>
                     <ThemeToggle />
                 </header>
-                <main className="p-4 md:p-8 bg-muted/40">
+                <main className="p-4 md:p-8 bg-muted/40 space-y-6">
+                    {/* Search and Filters Bar */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search by trader name, email, or UTR..." 
+                                value={searchTerm} 
+                                onChange={(e) => setSearchTerm(e.target.value)} 
+                                className="pl-10 h-11 bg-card"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-[180px] h-11 bg-card">
+                                    <div className="flex items-center gap-2">
+                                        <Filter className="h-4 w-4 text-muted-foreground" />
+                                        <SelectValue placeholder="All Status" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Requests</SelectItem>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="approved">Approved</SelectItem>
+                                    <SelectItem value="rejected">Rejected</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Request History</CardTitle>
-                                <CardDescription>Comprehensive audit trail of all manual UPI activations.</CardDescription>
+                                <CardDescription>Showing {filteredRequests.length} results.</CardDescription>
                             </div>
                             <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-lg border border-white/5">
                                 <History className="w-4 h-4 text-gray-500" />
@@ -122,7 +191,7 @@ export default function AccountRequestsPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {requests.length > 0 ? requests.map((req) => (
+                                        {filteredRequests.length > 0 ? filteredRequests.map((req) => (
                                             <TableRow key={req.id} className={cn("group transition-colors", req.is_approved ? "bg-green-500/[0.02]" : req.status === 'rejected' ? "bg-red-500/[0.02] opacity-70" : "hover:bg-muted/30")}>
                                                 <TableCell className="text-[11px] font-bold text-muted-foreground flex items-center gap-2">
                                                     <Clock className="w-3 h-3 opacity-50"/>
@@ -161,7 +230,7 @@ export default function AccountRequestsPage() {
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
-                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">No account requests in the database.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">No requests found matching your filters.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
