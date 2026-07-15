@@ -80,14 +80,14 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                         </p>
                     </div>
                     <div className="bg-black/40 p-3 rounded-2xl border border-white/5">
-                        <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest leading-none">Engine</p>
+                        <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest leading-none">Model</p>
                         <p className="text-xs font-bold text-white mt-2 capitalize">{account.account_model === 'passthrupay' ? 'PTP (6%)' : 'Standard'}</p>
                     </div>
                 </div>
             </CardContent>
             <CardFooter className="pt-2">
                 {isWaitingApproval ? (
-                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600">Syncing Payment</Button>
+                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600">Checking Payment</Button>
                 ) : isWaitingKyc ? (
                     <Button asChild className="w-full h-11 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-amber-500/10">
                         <Link href="/kyc">Complete Identity Check <ArrowRight className="ml-2 w-3.5 h-3.5"/></Link>
@@ -95,7 +95,7 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                 ) : (
                     <Button asChild className={cn("w-full h-11 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]", isBreached && "bg-slate-800 hover:bg-slate-700")}>
                         <Link href={`/welcome/dashboard/${account.id}`}>
-                            {isBreached ? "Review Audit" : "Access Terminal"} <ArrowRight className="ml-2 w-3.5 h-3.5"/>
+                            {isBreached ? "View Result" : "Open Hub"} <ArrowRight className="ml-2 w-3.5 h-3.5"/>
                         </Link>
                     </Button>
                 )}
@@ -122,14 +122,14 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                         <div className="flex flex-col md:flex-row items-center gap-3">
                             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Welcome, {profile.full_name?.split(' ')[0]}!</h1>
                             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest px-3 py-1">
-                                {kycVerified ? 'Verified Trader' : 'Standard Access'}
+                                {kycVerified ? 'Verified Trader' : 'Member'}
                             </Badge>
                         </div>
-                        <p className="text-gray-400 font-medium text-lg max-w-lg">Manage all your trading accounts from one command hub.</p>
+                        <p className="text-gray-400 font-medium text-lg max-w-lg">Manage all your accounts from one command hub.</p>
                         
                         <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-8">
                             <div className="bg-black/60 px-5 py-3 rounded-2xl border border-white/5 flex flex-col gap-1 min-w-[120px]">
-                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Active Plans</span>
+                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Live Accounts</span>
                                 <div className="flex items-center gap-2">
                                     <Target className="w-3.5 h-3.5 text-primary"/>
                                     <span className="text-lg font-black text-white">{activeCount}</span>
@@ -143,7 +143,7 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                                 </div>
                             </div>
                             <div className="bg-black/60 px-5 py-3 rounded-2xl border border-white/5 flex flex-col gap-1 min-w-[120px]">
-                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Wallet Cash</span>
+                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Wallet</span>
                                 <div className="flex items-center gap-2">
                                     <Zap className="w-3.5 h-3.5 text-green-400"/>
                                     <span className="text-lg font-black text-white">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
@@ -153,10 +153,10 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                     </div>
                     <div className="shrink-0 flex flex-col gap-3 w-full md:w-auto">
                         <Button onClick={onSwitchToGetFunded} size="lg" className="h-14 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
-                            Acquire Capital <PlusCircle className="ml-2 w-4 h-4"/>
+                            Get Funding <PlusCircle className="ml-2 w-4 h-4"/>
                         </Button>
                         <Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl">
-                            <Link href="/guide">Rules & Protocols</Link>
+                            <Link href="/guide">Rules</Link>
                         </Button>
                     </div>
                 </div>
@@ -165,8 +165,8 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div className="space-y-1">
-                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">Protocol Portfolio</h2>
-                        <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Individual account management & metrics</p>
+                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">Account Portfolio</h2>
+                        <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Individual account details</p>
                     </div>
                     {!kycVerified && accounts.length > 0 && (
                         <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-xl border border-amber-400/20 text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-right-4">
@@ -184,11 +184,11 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                                 <Activity className="h-10 w-10 text-gray-800" />
                             </div>
                             <div className="space-y-2 mb-10">
-                                <h3 className="text-2xl font-black text-white tracking-tight">NO ACTIVE PROTOCOLS</h3>
-                                <p className="text-gray-500 max-w-sm mx-auto text-sm font-medium uppercase tracking-[0.2em]">You have not initialized any funded accounts yet.</p>
+                                <h3 className="text-2xl font-black text-white tracking-tight">NO ACTIVE ACCOUNTS</h3>
+                                <p className="text-gray-500 max-w-sm mx-auto text-sm font-medium uppercase tracking-[0.2em]">You have not purchased any funded accounts yet.</p>
                             </div>
                             <Button onClick={onSwitchToGetFunded} size="lg" className="bg-primary text-white font-black uppercase tracking-widest text-xs px-12 h-14 rounded-2xl shadow-2xl shadow-primary/20 transition-all hover:scale-110">
-                                Start Evaluation <ArrowRight className="ml-3 h-5 w-5"/>
+                                Get Started <ArrowRight className="ml-3 h-5 w-5"/>
                             </Button>
                         </GlassCard>
                     )}

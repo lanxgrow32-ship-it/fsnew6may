@@ -56,13 +56,13 @@ function SuccessContent() {
                             <CheckCircle className="h-12 w-12 text-green-400" />
                         </div>
                         <CardTitle className="text-4xl font-black text-white tracking-tighter">Purchase Successful</CardTitle>
-                        <CardDescription className="text-gray-400 text-lg mt-2">Protocol initialization complete.</CardDescription>
+                        <CardDescription className="text-gray-400 text-lg mt-2">Your account is being activated.</CardDescription>
                     </CardHeader>
                     
                     <CardContent className="space-y-8 px-10">
                         <div className="bg-black/40 border border-white/5 rounded-3xl p-8 space-y-6">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Activation Plan</p>
+                                <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Plan Name</p>
                                 <p className="text-xl font-bold text-white">{planName}</p>
                             </div>
                             
@@ -72,7 +72,7 @@ function SuccessContent() {
                                     <p className="text-lg font-bold text-primary">₹{Number(amount).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="text-right space-y-1">
-                                    <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest">Protocol ID</p>
+                                    <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest">Transaction ID</p>
                                     <p className="text-sm font-mono font-bold text-gray-400 truncate">{transactionId.substring(0, 14)}</p>
                                 </div>
                             </div>
@@ -81,7 +81,7 @@ function SuccessContent() {
                         {method === 'manual' ? (
                             <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-4 text-left">
                                 <ShieldCheck className="h-6 w-6 text-amber-500 shrink-0" />
-                                <p className="text-xs text-amber-400 font-medium">Your manual payment is now in the verification queue. Credentials will be released once the UTR is verified by our agents.</p>
+                                <p className="text-xs text-amber-400 font-medium">Your manual payment is now in the verification queue. Credentials will be released once the UTR is verified by our team.</p>
                             </div>
                         ) : (
                             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-4 text-left">
@@ -102,7 +102,7 @@ function SuccessContent() {
                 </Card>
                 
                 <p className="mt-8 text-center text-gray-600 text-[10px] font-bold uppercase tracking-[0.4em]">
-                    Institutional Secure Gateway · FundedStock Infrastructure
+                    Secure Payment Gateway · FundedStock
                 </p>
             </div>
         </div>
