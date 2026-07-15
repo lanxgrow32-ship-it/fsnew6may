@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, Loader2, User, Search, Filter } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { approveRegistration } from './actions';
@@ -86,8 +86,11 @@ export function RegistrationManager({ events }: { events: any[] }) {
                     />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[150px] h-11 bg-card">
-                        <SelectValue placeholder="Status" />
+                    <SelectTrigger className="w-[180px] h-11 bg-card">
+                        <div className="flex items-center gap-2">
+                            <Filter className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="All Status" />
+                        </div>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
@@ -162,19 +165,5 @@ export function RegistrationManager({ events }: { events: any[] }) {
                 })}
             </Tabs>
         </div>
-    );
-}
-
-// Helper generic select to avoid import errors if not already in UI
-function Select({ value, onValueChange, children }: any) {
-    const React = require('react');
-    const SelectPrimitive = require('@radix-ui/react-select');
-    const { ChevronDown } = require('lucide-react');
-    const { cn } = require('@/lib/utils');
-
-    return (
-        <SelectPrimitive.Root value={value} onValueChange={onValueChange}>
-            {children}
-        </SelectPrimitive.Root>
     );
 }

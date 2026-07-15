@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, ArrowRight, LayoutDashboard, Sparkles, ShieldCheck, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -93,7 +92,7 @@ function SuccessContent() {
                     </CardContent>
 
                     <CardFooter className="pb-12 pt-4 px-10">
-                        <Button asChild size="lg" className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95">
+                        <Button asChild size="lg" className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
                             <Link href="/welcome">
                                 <LayoutDashboard className="mr-3 h-5 w-5" />
                                 Enter Portfolio Hub
