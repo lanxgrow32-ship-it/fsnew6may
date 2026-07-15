@@ -1,23 +1,39 @@
+
 'use client';
 
-import { useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, ArrowRight, LayoutDashboard, Sparkles, ShieldCheck, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 function SuccessContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
+    const [mounted, setMounted] = useState(false);
     
-    const transactionId = searchParams.get('id') || `TX_${Date.now()}`;
-    const amount = searchParams.get('amount') || '0';
-    const planName = searchParams.get('plan') || 'Evaluation Plan';
-    const method = searchParams.get('method') || 'wallet';
+    // Values that might cause hydration mismatch if computed during render
+    const [transactionId, setTransactionId] = useState<string>('');
+    const [amount, setAmount] = useState<string>('0');
+    const [planName, setPlanName] = useState<string>('Evaluation Plan');
+    const [method, setMethod] = useState<string>('wallet');
 
     useEffect(() => {
+        // Signal that we are on the client
+        setMounted(true);
+        
+        // Compute values from URL or fallback
+        // Date.now() must be inside useEffect to avoid hydration mismatch
+        const id = searchParams.get('id') || `TX_${Date.now()}`;
+        const amt = searchParams.get('amount') || '0';
+        const plan = searchParams.get('plan') || 'Evaluation Plan';
+        const meth = searchParams.get('method') || 'wallet';
+        
+        setTransactionId(id);
+        setAmount(amt);
+        setPlanName(plan);
+        setMethod(meth);
+
         // --- GOOGLE TAG MANAGER HANDSHAKE ---
         // Ensure dataLayer exists
         (window as any).dataLayer = (window as any).dataLayer || [];
@@ -25,18 +41,27 @@ function SuccessContent() {
         // Push the purchase event
         (window as any).dataLayer.push({
             event: "purchase_complete",
-            transaction_id: transactionId,
-            value: parseFloat(amount),
+            transaction_id: id,
+            value: parseFloat(amt) || 0,
             currency: "INR"
         });
 
         // Set global variables for "Extract data from your page" config
-        (window as any).purchase_transaction_id = transactionId;
-        (window as any).purchase_value = parseFloat(amount);
+        (window as any).purchase_transaction_id = id;
+        (window as any).purchase_value = parseFloat(amt) || 0;
         (window as any).purchase_currency = "INR";
 
-        console.log(`[Conversion Tracking] Dispatched signal for TX: ${transactionId} | Value: ${amount}`);
-    }, [transactionId, amount]);
+        console.log(`[Conversion Tracking] Dispatched signal for TX: ${id} | Value: ${amt}`);
+    }, [searchParams]);
+
+    // Avoid rendering dynamic content that causes mismatches until after hydration
+    if (!mounted) {
+        return (
+            <div className="dark min-h-screen bg-slate-950 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="dark min-h-screen bg-slate-950 font-poppins text-gray-200 relative overflow-hidden flex items-center justify-center p-4">
@@ -69,7 +94,7 @@ function SuccessContent() {
                             <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
                                 <div className="text-left space-y-1">
                                     <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest">Amount Paid</p>
-                                    <p className="text-lg font-bold text-primary">₹{Number(amount).toLocaleString('en-IN')}</p>
+                                    <p className="text-lg font-bold text-primary">₹{(parseFloat(amount) || 0).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="text-right space-y-1">
                                     <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest">Transaction ID</p>
@@ -81,7 +106,7 @@ function SuccessContent() {
                         {method === 'manual' ? (
                             <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-4 text-left">
                                 <ShieldCheck className="h-6 w-6 text-amber-500 shrink-0" />
-                                <p className="text-xs text-amber-400 font-medium">Your manual payment is now in the verification queue. Credentials will be released once the UTR is verified by our team.</p>
+                                <p className="text-xs text-amber-400 font-medium">Your manual payment is now in the verification queue. Credentials will be released once the reference ID is verified by our team.</p>
                             </div>
                         ) : (
                             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-4 text-left">
