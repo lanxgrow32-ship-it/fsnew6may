@@ -31,6 +31,7 @@ import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const plans = {
     instant: [
@@ -79,6 +80,7 @@ export function ArenaView({
     paymentSettings: any,
     onSwitchToWallet: () => void
 }) {
+    const router = useRouter();
     const { toast } = useToast();
     const [isActionPending, startTransition] = useTransition();
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
@@ -132,8 +134,8 @@ export function ArenaView({
             if (res.error) {
                 toast({ title: "Purchase Failed", description: res.error, variant: "destructive" });
             } else {
-                toast({ title: "Plan Purchased", description: "Your new account has been created." });
-                window.location.reload();
+                // REDIRECT TO THANK YOU PAGE FOR GOOGLE ADS TRACKING
+                router.push(`/purchase-success?id=${res.transaction_id}&amount=${res.amount}&plan=${encodeURIComponent(selectedPlan.title)}`);
             }
         });
     };
@@ -148,10 +150,8 @@ export function ArenaView({
             if (res.error) {
                 toast({ title: "Submission Failed", description: res.error, variant: "destructive" });
             } else {
-                toast({ title: "Submission Received", description: "Admin will verify your direct payment shortly." });
-                setSelectedPlan(null);
-                setCheckoutStep('selection');
-                window.location.reload();
+                // REDIRECT TO THANK YOU PAGE FOR GOOGLE ADS TRACKING (even for manual, value is known)
+                router.push(`/purchase-success?id=${res.transaction_id}&amount=${res.amount}&plan=${encodeURIComponent(selectedPlan.title)}&method=manual`);
             }
         });
     };

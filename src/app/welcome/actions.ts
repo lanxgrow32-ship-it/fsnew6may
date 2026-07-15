@@ -44,11 +44,13 @@ export async function purchaseWithWallet(userId: string, plan: any) {
       wallet_balance: profile.wallet_balance - price 
   }).eq('id', userId);
 
+  const txId = `WALLET_${Date.now()}_${userId.substring(0, 4)}`;
   await supabaseAdmin.from('wallet_transactions').insert({ 
       user_id: userId, 
       amount: -price, 
       type: 'purchase', 
       status: 'completed', 
+      gateway_transaction_id: txId,
       description: `Purchase of ${plan.title}` 
   });
 
@@ -65,7 +67,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     account_model: isPTP ? 'passthrupay' : 'normal', 
     account_classification: classification,
     final_amount_paid: price, 
-    transaction_id: 'WALLET_PURCHASE'
+    transaction_id: txId
   }).select().single();
 
   if (accountError || !account) return { error: 'Account creation failed in DB.' };
@@ -77,7 +79,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
   if (stockmintApiKey && initialBalance > 0) {
       try {
-          // Multi-Account Logic: How many already have credentials?
           const { count } = await supabaseAdmin
             .from('user_accounts')
             .select('id', { count: 'exact', head: true })
@@ -95,8 +96,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               accountModel: isPTP ? 'passthenpay' : 'normal'
           };
 
-          console.log(`[Wallet Purchase] Syncing with StockMint: ${stockmintUsername}`);
-
           const res = await fetch('https://stockmint.io/api/users/create', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
@@ -110,10 +109,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
                   trading_password: stockmintUsername, 
                   status: 'active' 
               }).eq('id', account.id);
-              console.log(`[Wallet Purchase] StockMint Success: ${stockmintUsername}`);
-          } else {
-              const errBody = await res.text();
-              console.error(`[Wallet Purchase] StockMint REJECTED: ${res.status} - ${errBody}`);
           }
       } catch (e) { 
           console.error('[Wallet Purchase] StockMint Network/Sync Error:', e); 
@@ -138,7 +133,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   }
 
   revalidatePath('/welcome');
-  return { success: true };
+  return { success: true, transaction_id: txId, amount: price };
 }
 
 export async function validateCoupon(code: string) {
@@ -167,7 +162,7 @@ export async function requestManualAccount(userId: string, planName: string, amo
   
   revalidatePath('/welcome');
   revalidatePath('/admin/account-requests');
-  return { success: true };
+  return { success: true, transaction_id: utr, amount: amount };
 }
 
 export async function topUpWallet(userId: string, amount: number, utr: string) {
@@ -242,7 +237,6 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
     await supabaseAdmin.from('support_conversations').update(metaUpdate).eq('id', convId);
     
     if (role === 'user') {
-        // HANDLED SYNC: Trigger AI response and WAIT for it
         await triggerAiResponse(convId, senderId, message.trim());
     }
     
@@ -253,14 +247,10 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
 
 async function triggerAiResponse(convId: string, userId: string, message: string) {
     try {
-        console.log(`[Neural Protocol] Starting dispatcher for conv ${convId}...`);
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
         const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
         
-        if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') {
-            console.log(`[Neural Protocol] Dispatcher aborted: AI disabled or session assigned to ${conv?.assigned_role}`);
-            return;
-        }
+        if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') return;
         
         const { data: history } = await supabaseAdmin
             .from('support_messages')
@@ -282,14 +272,10 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             chatHistory: chatHistory 
         });
         
-        if (!aiResponse) {
-            console.warn(`[Neural Protocol] Empty response received from model.`);
-            return;
-        }
+        if (!aiResponse) return;
         
-        // Use user_id as fallback sender_id for DB constraints, but 'admin' role for UI
         await supabaseAdmin.from('support_messages').insert({ 
-            conversation_id: convId, 
+            conversation_id: conv.id, 
             sender_id: conv.user_id, 
             sender_role: 'admin', 
             message: aiResponse 
@@ -302,11 +288,7 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             last_message_preview: aiResponse, 
             unread_count_user: (freshConv?.unread_count_user || 0) + 1 
         }).eq('id', convId);
-        
-        console.log(`[Neural Protocol] Response delivered to ${conv.profiles.email}`);
-    } catch (error) { 
-        console.error(`[Neural Protocol] Dispatcher CRITICAL FAILURE:`, error); 
-    }
+    } catch (error) { console.error(`[Neural Protocol] Dispatcher CRITICAL FAILURE:`, error); }
 }
 
 export async function markSupportRead(convId: string, role: 'admin' | 'user') {
@@ -323,6 +305,8 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     
     if (!event || !profile) return { error: 'Data error' };
     
+    const txId = `COMP_${Date.now()}_${userId.substring(0, 4)}`;
+
     if (!event.is_free) {
         if (profile.wallet_balance < event.entry_fee) return { error: 'Insufficient funds.' };
         await supabaseAdmin.from('profiles').update({ wallet_balance: profile.wallet_balance - event.entry_fee }).eq('id', userId);
@@ -331,6 +315,7 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
             amount: -event.entry_fee, 
             type: 'purchase', 
             status: 'completed', 
+            gateway_transaction_id: txId,
             description: `Entry for ${event.week_label}` 
         });
     }
@@ -340,7 +325,7 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId);
 
-    const stockmintUsername = generateStockmintUsername(profile.email, (count || 0) + 100); // Offset for competition accounts
+    const stockmintUsername = generateStockmintUsername(profile.email, (count || 0) + 100);
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
 
     if (stockmintApiKey) {
@@ -357,15 +342,13 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
                     accountModel: 'normal' 
                 }),
             });
-        } catch (e) { 
-            console.error('Comp Sync Error:', e); 
-        }
+        } catch (e) { console.error('Comp Sync Error:', e); }
     }
 
     const { error } = await supabaseAdmin.from('competition_registrations').insert({ 
         user_id: userId, 
         event_id: eventId, 
-        transaction_id: event.is_free ? 'FREE_JOIN' : 'WALLET_JOIN', 
+        transaction_id: event.is_free ? 'FREE_JOIN' : txId, 
         is_approved: true, 
         stockmint_username: stockmintUsername, 
         stockmint_password: stockmintUsername 
@@ -374,5 +357,5 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     if (error) return { error: error.message };
     
     revalidatePath('/welcome');
-    return { success: true };
+    return { success: true, transaction_id: event.is_free ? 'FREE' : txId, amount: event.is_free ? 0 : event.entry_fee };
 }
