@@ -64,26 +64,29 @@ export async function approveUserPayment(userId: string) {
         account_classification: classification
     }).eq('id', userId);
 
-    // 2. REFERRAL PROTOCOL: Credit referrer if applicable
+    // 2. REFERRAL PROTOCOL: Credit referrer if applicable (v4.1 Hardened)
     if (profile.referred_by && profile.final_amount_paid > 0) {
+        // Fetch commission percentage from global settings
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
-        const commissionAmount = (profile.final_amount_paid * commPercent) / 100;
+        const commissionAmount = Math.floor((profile.final_amount_paid * commPercent) / 100);
 
         if (commissionAmount > 0) {
-            // Add to referrer's balance
-            await supabaseAdmin.rpc('add_to_referral_balance', {
-                user_id: profile.referred_by,
-                amount_to_add: commissionAmount
-            });
+            // Get current referrer profile to calculate new balance
+            const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
+            const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
 
-            // Log referral transaction
+            // Update balance
+            await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
+
+            // Log referral transaction for audit
             await supabaseAdmin.from('referrals').insert({
                 referrer_id: profile.referred_by,
                 referred_id: userId,
                 commission_amount: commissionAmount,
-                plan_name: profile.plan_purchased
+                plan_name: profile.plan_purchased || 'Evaluation Plan'
             });
+            console.log(`[Referral Engine] Credited ₹${commissionAmount} to referrer ${profile.referred_by} for user ${userId}`);
         }
     }
     
@@ -124,5 +127,6 @@ export async function approveUserPayment(userId: string) {
 
     revalidatePath('/admin/dashboard');
     revalidatePath('/welcome');
+    revalidatePath('/referrals');
     return { success: true };
 }

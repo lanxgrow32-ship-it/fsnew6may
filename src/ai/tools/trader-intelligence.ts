@@ -23,7 +23,7 @@ export const getTraderProfile = ai.defineTool(
       .eq('email', input.email)
       .single();
     
-    if (error) return { error: 'Trader not found.' };
+    if (error) return { error: 'Trader not found in the protocol database.' };
     return data;
   }
 );
@@ -31,7 +31,7 @@ export const getTraderProfile = ai.defineTool(
 export const getTraderAccounts = ai.defineTool(
   {
     name: 'getTraderAccounts',
-    description: 'Fetches all trading accounts associated with the trader and their current status.',
+    description: 'Fetches all trading accounts (Evaluation, Instant, PTP) associated with the trader and their status.',
     inputSchema: z.object({
       email: z.string().describe('The email address of the trader.'),
     }),
@@ -59,7 +59,7 @@ export const getTraderAccounts = ai.defineTool(
 export const getPlatformRules = ai.defineTool(
   {
     name: 'getPlatformRules',
-    description: 'Provides information about drawdown limits, profit targets, payout rules, and news trading restrictions.',
+    description: 'Provides exact specifications for drawdown limits, profit targets, payout cycles, and news trading restrictions.',
     inputSchema: z.object({
       query: z.string().describe('The rule to look up.'),
     }),
@@ -67,13 +67,14 @@ export const getPlatformRules = ai.defineTool(
   },
   async (input) => {
     return `
-      FUNDEDSTOCK PROTOCOLS:
-      1. Drawdown: Overall 10% (Fixed for Eval, Trailing for Instant). Daily 5%. Max 2% per trade.
-      2. Profit Targets: 1-Step (10%), 2-Step (8%/5%), PassThenPay (6%).
-      3. Payouts: Every 14 days, Minimum withdrawal ₹2,000. 80% Profit Split.
-      4. News Trading: Restricted ±5 minutes around high-impact events. SMS alerts are sent 30 mins prior.
-      5. KYC: Mandatory document verification required before first disbursement.
-      6. Holding: Overnight holding allowed on 1-Step/Instant, but Intraday ONLY for 2-Step.
+      FUNDEDSTOCK OFFICIAL PROTOCOLS:
+      1. Drawdown: Overall 10% (Fixed for Eval/PTP, Trailing for Instant). Daily 5%. Max 2% loss per individual trade.
+      2. Profit Targets: 1-Step (10%), 2-Step (8% Phase 1, 5% Phase 2), PassThenPay (6%).
+      3. Payouts: Eligible every 14 days. Minimum withdrawal ₹2,000. 80% Profit Split.
+      4. News Trading: Restricted ±5 minutes around high-impact economic events (Union Budget, RBI, etc).
+      5. Consistency: 20% consistency rule applies to 1-Step and 2-Step evaluations to ensure professional discipline.
+      6. KYC: Mandatory identity verification required before first reward disbursement.
+      7. Fee Refund: Full evaluation fee is refunded on the 3rd successful payout.
     `;
   }
 );
@@ -81,10 +82,10 @@ export const getPlatformRules = ai.defineTool(
 export const escalateToSpecialist = ai.defineTool(
   {
     name: 'escalateToSpecialist',
-    description: 'Forwards the conversation to a specialized KYC/Payout agent when a trader has technical issues or complex requests regarding these topics.',
+    description: 'Forwards the conversation to technical specialists when a trader has severe system issues or complex payout blocks.',
     inputSchema: z.object({
       conversationId: z.string(),
-      reason: z.enum(['kyc', 'payout']),
+      reason: z.enum(['kyc', 'payout', 'technical']),
     }),
     outputSchema: z.any(),
   },
@@ -104,7 +105,7 @@ export const escalateToSpecialist = ai.defineTool(
 export const escalateToHuman = ai.defineTool(
   {
     name: 'escalateToHuman',
-    description: 'Transfers the user to a standard human support agent after they have confirmed multiple times that they want to leave the AI session.',
+    description: 'Transfers the user to a standard human support agent after the "Certainty Gate" confirms they wish to leave the AI session.',
     inputSchema: z.object({
       conversationId: z.string(),
     }),
