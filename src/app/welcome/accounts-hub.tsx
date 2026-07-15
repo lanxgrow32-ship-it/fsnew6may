@@ -125,7 +125,7 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                                 {kycVerified ? 'Verified Trader' : 'Standard Access'}
                             </Badge>
                         </div>
-                        <p className="text-gray-400 font-medium text-lg max-w-lg">Monitor your institutional capital across multiple protocols from one command center.</p>
+                        <p className="text-gray-400 font-medium text-lg max-w-lg">Manage all your trading accounts from one command hub.</p>
                         
                         <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-8">
                             <div className="bg-black/60 px-5 py-3 rounded-2xl border border-white/5 flex flex-col gap-1 min-w-[120px]">
