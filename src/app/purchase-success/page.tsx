@@ -5,7 +5,7 @@ import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ArrowRight, LayoutDashboard, Sparkles, ShieldCheck } from 'lucide-react';
+import { CheckCircle, ArrowRight, LayoutDashboard, Sparkles, ShieldCheck, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
