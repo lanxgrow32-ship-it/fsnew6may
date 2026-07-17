@@ -1,7 +1,9 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { generateStockmintUsername, getBalanceFromPlanName, getAutoClassification } from '@/lib/plan-utils';
 
 async function uploadBreachProof(file: File, userId: string) {
   const fileExt = file.name.split('.').pop();
@@ -123,4 +125,68 @@ export async function sendBreachRecoveryEmail(prevState: any, formData: FormData
     });
     return { success: 'Recovery protocol sent successfully.' };
   } catch (e: any) { return { error: e.message }; }
+}
+
+/**
+ * Manual override to provision Stockmint credentials for a specific account.
+ */
+export async function syncAccountCredentials(accountId: string) {
+    const { data: account, error: fetchError } = await supabaseAdmin
+        .from('user_accounts')
+        .select('*, profiles(*)')
+        .eq('id', accountId)
+        .single();
+    
+    if (fetchError || !account) return { error: 'Account request not found.' };
+
+    const profile = account.profiles;
+    const initialBalance = getBalanceFromPlanName(account.plan_name);
+    const classification = account.account_classification || getAutoClassification(account.plan_name);
+    const isPTP = classification === 'passthenpay';
+    const apiKey = process.env.STOCKMINT_API_KEY;
+
+    if (!apiKey) return { error: 'STOCKMINT_API_KEY is missing on server.' };
+
+    // Multi-Account logic: Check how many ALREADY have credentials to get next unique suffix
+    const { count } = await supabaseAdmin
+        .from('user_accounts')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', profile.id)
+        .eq('credentials_provided', true);
+
+    const stockmintUsername = generateStockmintUsername(profile.email, count || 0);
+
+    try {
+        const payload = { 
+            fullName: profile.full_name, 
+            email: stockmintUsername, 
+            password: stockmintUsername,
+            initialBalance, 
+            accountClassification: classification, 
+            accountModel: isPTP ? 'passthenpay' : 'normal'
+        };
+
+        const res = await fetch('https://stockmint.io/api/users/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+            body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+            await supabaseAdmin.from('user_accounts').update({
+                credentials_provided: true, 
+                trading_username: stockmintUsername, 
+                trading_password: stockmintUsername, 
+                status: 'active'
+            }).eq('id', accountId);
+            
+            revalidatePath(`/admin/profile/${profile.id}`);
+            return { success: true };
+        } else {
+            const errorBody = await res.text();
+            return { error: `Stockmint Rejected: ${res.status}. ${errorBody}` };
+        }
+    } catch (e: any) { 
+        return { error: `Network error: ${e.message}` }; 
+    }
 }

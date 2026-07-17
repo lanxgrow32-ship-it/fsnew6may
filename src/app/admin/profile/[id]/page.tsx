@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, use, useActionState } from 'react';
+import { useState, useEffect, use, useActionState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,10 +24,11 @@ import {
     Mail,
     KeyRound,
     ShieldCheck,
-    Video
+    Video,
+    RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateProfile, resetPassword, sendBreachRecoveryEmail } from './actions';
+import { updateProfile, resetPassword, sendBreachRecoveryEmail, syncAccountCredentials } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,6 +54,32 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: s
 const Separator = ({ className }: { className?: string }) => (
     <div className={cn("h-px w-full", className)} />
 );
+
+function ProvisionButton({ accountId }: { accountId: string }) {
+    const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
+
+    const handleSync = () => {
+        startTransition(async () => {
+            const res = await syncAccountCredentials(accountId);
+            if (res.error) toast({ title: "Sync Failed", description: res.error, variant: "destructive" });
+            else toast({ title: "Hub Credentialed", description: "Account is now live on Stockmint." });
+        });
+    }
+
+    return (
+        <Button 
+            onClick={handleSync} 
+            disabled={isPending}
+            variant="outline" 
+            size="sm" 
+            className="h-7 px-3 bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 text-[9px] font-black uppercase tracking-widest"
+        >
+            {isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1"/> : <RefreshCw className="w-3 h-3 mr-1" />}
+            Provision Hub
+        </Button>
+    )
+}
 
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -79,19 +107,23 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     if (pwState.error) toast({ title: "Error", description: pwState.error, variant: "destructive" });
   }, [pwState, toast]);
 
+  const fetchData = async () => {
+    const [pRes, aRes, cRes] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', id).single(),
+      supabase.from('user_accounts').select('*').eq('user_id', id).order('created_at', { ascending: false }),
+      supabase.from('competition_registrations').select('*').eq('user_id', id)
+    ]);
+    if (pRes.data) setProfile(pRes.data);
+    if (aRes.data) setAccounts(aRes.data);
+    if (cRes.data) setCompetitions(cRes.data);
+    setIsFetching(false);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      const [pRes, aRes, cRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', id).single(),
-        supabase.from('user_accounts').select('*').eq('user_id', id).order('created_at', { ascending: false }),
-        supabase.from('competition_registrations').select('*').eq('user_id', id)
-      ]);
-      if (pRes.data) setProfile(pRes.data);
-      if (aRes.data) setAccounts(aRes.data);
-      if (cRes.data) setCompetitions(cRes.data);
-      setIsFetching(false);
-    };
     fetchData();
+    // Subscribe to account changes to refresh UI when provisioned
+    const sub = supabase.channel('profile_sync').on('postgres_changes', { event: '*', schema: 'public', table: 'user_accounts', filter: `user_id=eq.${id}` }, fetchData).subscribe();
+    return () => { supabase.removeChannel(sub); };
   }, [id, supabase]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -218,7 +250,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                                     <span className="text-muted-foreground">{acc.trading_username || 'Awaiting Hub'}</span>
                                                 </p>
                                             </div>
-                                            <Badge variant="outline" className={cn("capitalize h-7 px-3 border-none font-bold ml-4", acc.status === 'active' ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400")}>{acc.status}</Badge>
+                                            <div className="flex items-center gap-3 ml-4">
+                                                {!acc.credentials_provided && acc.is_approved && (
+                                                    <ProvisionButton accountId={acc.id} />
+                                                )}
+                                                <Badge variant="outline" className={cn("capitalize h-7 px-3 border-none font-bold", acc.status === 'active' ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400")}>{acc.status}</Badge>
+                                            </div>
                                         </div>
                                     )) : <div className="py-20 text-center text-gray-600 font-bold italic border-2 border-dashed border-white/5 rounded-3xl">No trading history available.</div>}
                                 </div>
