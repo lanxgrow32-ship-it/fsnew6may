@@ -344,7 +344,7 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
 
 /**
  * Starts a 48-hour Free Trial account.
- * One trial allowed per trader.
+ * Uses a 500+ offset for usernames to strictly isolate from standard accounts.
  */
 export async function startFreeTrial(userId: string) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
@@ -363,7 +363,7 @@ export async function startFreeTrial(userId: string) {
     const now = new Date();
     const expiry = calculateTrialExpiry(now);
 
-    // 3. Provision Stockmint Hub
+    // 3. Provision Stockmint Hub with Trial Isolation Offset (+500)
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
     const { count: totalAccs } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', userId);
     const stockmintUsername = generateStockmintUsername(profile.email, (totalAccs || 0) + 500);
@@ -378,6 +378,7 @@ export async function startFreeTrial(userId: string) {
                 accountClassification: 'evaluation', 
                 accountModel: 'normal'
             };
+            // Uses the same creation API as standard accounts, but with a unique ID
             await fetch('https://stockmint.io/api/users/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
@@ -407,31 +408,36 @@ export async function startFreeTrial(userId: string) {
 }
 
 /**
- * Verifies if a trial is expired and performs the Stockmint WIPE.
+ * Verifies if a trial is expired and performs the Stockmint DELETE protocol.
+ * This is the only place the DELETE API is called, ensuring standard accounts are safe.
  */
 export async function checkAndCleanTrial(accountId: string) {
     const { data: acc } = await supabaseAdmin.from('user_accounts').select('*').eq('id', accountId).single();
+    
+    // Only proceed if it's a trial account that hasn't been deleted yet
     if (!acc || !acc.is_trial || acc.status === 'deleted') return { expired: false };
 
     const now = new Date();
     const expiry = new Date(acc.expires_at);
 
     if (now > expiry) {
-        console.log(`[Trial Cleanup] Expiry reached for ${acc.trading_username}. Wiping hub...`);
+        console.log(`[Trial Cleanup] Expiry reached for ${acc.trading_username}. Triggering deletion API...`);
         
         const apiKey = process.env.STOCKMINT_API_KEY;
         if (apiKey && acc.trading_username) {
             try {
-                // Call the developer's DELETE/DEACTIVATE API
+                // Call the NEW standalone deletion API provided by the developer
                 await fetch('https://stockmint.io/api/users/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
                     body: JSON.stringify({ email: acc.trading_username }),
                 });
-            } catch (e) { console.error('Hub Cleanup API Failed:', e); }
+            } catch (e) { 
+                console.error('Hub Cleanup API Failed (Check endpoint status):', e); 
+            }
         }
 
-        // Update our DB
+        // Update our local DB status
         await supabaseAdmin.from('user_accounts').update({ 
             status: 'deleted',
             trading_username: 'EXPIRED',
