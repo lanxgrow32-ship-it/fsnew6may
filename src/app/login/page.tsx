@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState } from 'react';
@@ -103,7 +104,7 @@ export default function LoginPage() {
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
                                     <Label htmlFor="password" title="password" className="text-gray-300">Password</Label>
-                                    <Link href="#" className="text-xs text-primary hover:underline font-bold">Forgot Password?</Link>
+                                    <Link href="/forgot-password" title="reset" className="text-xs text-primary hover:underline font-bold">Forgot Password?</Link>
                                 </div>
                                 <Input 
                                     id="password" 
