@@ -20,7 +20,9 @@ import {
     Trophy,
     LayoutDashboard,
     Activity,
-    Target
+    Target,
+    Timer,
+    FlaskConical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -42,26 +44,41 @@ const UserAvatar = () => (
 const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: boolean }) => {
     const paymentApproved = account.is_approved;
     const isBreached = account.status === 'breached';
+    const isDeleted = account.status === 'deleted';
     const isPtp = account.account_model === 'passthrupay';
-    const isWaitingKyc = paymentApproved && !kycVerified && !isBreached && !isPtp;
+    const isTrial = account.is_trial;
+    const isWaitingKyc = paymentApproved && !kycVerified && !isBreached && !isPtp && !isTrial;
     const isWaitingApproval = !paymentApproved;
 
     return (
-        <GlassCard className={cn("group transition-all duration-300 hover:scale-[1.02] border-white/5", isBreached && "border-red-500/20 bg-red-500/5", (isWaitingApproval || isWaitingKyc) && "border-amber-400/20 bg-amber-400/5")}>
+        <GlassCard className={cn(
+            "group transition-all duration-300 hover:scale-[1.02] border-white/5", 
+            isBreached && "border-red-500/20 bg-red-500/5",
+            isDeleted && "opacity-60 grayscale",
+            isTrial && !isDeleted && "border-primary/40 bg-primary/5 shadow-2xl shadow-primary/10",
+            (isWaitingApproval || isWaitingKyc) && "border-amber-400/20 bg-amber-400/5"
+        )}>
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div className="min-w-0">
-                        <CardTitle className="text-lg text-white font-black truncate">{account.plan_name}</CardTitle>
+                        <CardTitle className="text-lg text-white font-black truncate flex items-center gap-2">
+                            {account.plan_name}
+                            {isTrial && <Badge className="bg-primary text-white text-[8px] h-4 font-black uppercase border-none">TRIAL</Badge>}
+                        </CardTitle>
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1.5">
                             <Grid3x3 className="w-3 h-3 opacity-50"/> {account.id.substring(0, 8)}
                         </p>
                     </div>
-                    {isBreached ? (
+                    {isDeleted ? (
+                        <div className="bg-gray-500/20 text-gray-500 p-2.5 rounded-xl border border-white/5"><Timer className="w-4 h-4"/></div>
+                    ) : isBreached ? (
                         <div className="bg-red-500/20 text-red-400 p-2.5 rounded-xl border border-red-500/20"><ShieldAlert className="w-4 h-4"/></div>
                     ) : isWaitingApproval ? (
                         <div className="bg-amber-400/20 text-amber-400 p-2.5 rounded-xl border border-amber-400/20 animate-pulse"><Clock className="w-4 h-4"/></div>
                     ) : isWaitingKyc ? (
                          <div className="bg-amber-400/20 text-amber-400 p-2.5 rounded-xl border border-amber-400/20"><FileCheck className="w-4 h-4"/></div>
+                    ) : isTrial ? (
+                        <div className="bg-primary/20 text-primary p-2.5 rounded-xl border border-primary/30 animate-pulse shadow-[0_0_15px_rgba(139,44,245,0.3)]"><FlaskConical className="w-4 h-4"/></div>
                     ) : (
                         <div className="bg-green-500/20 text-green-400 p-2.5 rounded-xl border border-green-500/20"><ShieldCheck className="w-4 h-4"/></div>
                     )}
@@ -72,30 +89,37 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                     <div className="bg-black/40 p-3 rounded-2xl border border-white/5">
                         <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest leading-none">Status</p>
                         <p className={cn("text-xs font-bold capitalize mt-2", 
+                            isDeleted ? "text-gray-500" :
                             isBreached ? "text-red-400" : 
                             isWaitingApproval ? "text-amber-400" : 
                             isWaitingKyc ? "text-amber-400" : "text-green-400"
                         )}>
-                            {isBreached ? "Breached" : isWaitingApproval ? "Verifying" : isWaitingKyc ? "Needs KYC" : "Live"}
+                            {isDeleted ? "Expired" : isBreached ? "Breached" : isWaitingApproval ? "Verifying" : isWaitingKyc ? "Needs KYC" : "Live"}
                         </p>
                     </div>
                     <div className="bg-black/40 p-3 rounded-2xl border border-white/5">
                         <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest leading-none">Model</p>
-                        <p className="text-xs font-bold text-white mt-2 capitalize">{account.account_model === 'passthrupay' ? 'PTP (6%)' : 'Standard'}</p>
+                        <p className="text-xs font-bold text-white mt-2 capitalize">{isTrial ? 'Trial Run' : account.account_model === 'passthrupay' ? 'PTP (6%)' : 'Standard'}</p>
                     </div>
                 </div>
             </CardContent>
             <CardFooter className="pt-2">
-                {isWaitingApproval ? (
+                {isDeleted ? (
+                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-700">Access Revoked</Button>
+                ) : isWaitingApproval ? (
                     <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600">Checking Payment</Button>
                 ) : isWaitingKyc ? (
                     <Button asChild className="w-full h-11 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-amber-500/10">
                         <Link href="/kyc">Complete Identity Check <ArrowRight className="ml-2 w-3.5 h-3.5"/></Link>
                     </Button>
                 ) : (
-                    <Button asChild className={cn("w-full h-11 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]", isBreached && "bg-slate-800 hover:bg-slate-700")}>
+                    <Button asChild className={cn(
+                        "w-full h-11 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]", 
+                        isBreached && "bg-slate-800 hover:bg-slate-700",
+                        isTrial && "bg-white text-black hover:bg-gray-100 shadow-white/10"
+                    )}>
                         <Link href={`/welcome/dashboard/${account.id}`}>
-                            {isBreached ? "View Result" : "Open Hub"} <ArrowRight className="ml-2 w-3.5 h-3.5"/>
+                            {isBreached ? "View Result" : isTrial ? "Enter Lab" : "Open Hub"} <ArrowRight className="ml-2 w-3.5 h-3.5"/>
                         </Link>
                     </Button>
                 )}
@@ -168,7 +192,7 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                         <h2 className="text-2xl font-black text-white tracking-tight uppercase">Account Portfolio</h2>
                         <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Individual account details</p>
                     </div>
-                    {!kycVerified && accounts.length > 0 && (
+                    {!kycVerified && accounts.filter(a => !a.is_trial).length > 0 && (
                         <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-xl border border-amber-400/20 text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-right-4">
                             <ShieldAlert className="w-3.5 h-3.5"/> Action Required: Identity Check
                         </Link>

@@ -1,11 +1,10 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { runSupportAi } from '@/ai/flows/support-agent-flow';
-import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername } from '@/lib/plan-utils';
+import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername, calculateTrialExpiry } from '@/lib/plan-utils';
 
 /**
  * Fetches active tournament events for the user browser.
@@ -113,23 +112,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
       } catch (e) { 
           console.error('[Wallet Purchase] StockMint Network/Sync Error:', e); 
       }
-  }
-
-  // 4. Automation Trigger
-  const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
-  if (purchaseWebhook) {
-      fetch(purchaseWebhook, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              email: profile.email,
-              full_name: profile.full_name,
-              plan_name: plan.title,
-              username: stockmintUsername,
-              password: stockmintUsername,
-              needsKyc: !isKycVerified && !isPTP
-          })
-      }).catch(e => console.error(e));
   }
 
   revalidatePath('/welcome');
@@ -358,4 +340,107 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     
     revalidatePath('/welcome');
     return { success: true, transaction_id: event.is_free ? 'FREE' : txId, amount: event.is_free ? 0 : event.entry_fee };
+}
+
+/**
+ * Starts a 48-hour Free Trial account.
+ * One trial allowed per trader.
+ */
+export async function startFreeTrial(userId: string) {
+    const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
+    if (!profile) return { error: 'Trader not found.' };
+
+    // 1. One Trial Check
+    const { count } = await supabaseAdmin
+        .from('user_accounts')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_trial', true);
+    
+    if (count && count > 0) return { error: 'You have already utilized your free trial access.' };
+
+    // 2. Calculate Market-Aware Expiry
+    const now = new Date();
+    const expiry = calculateTrialExpiry(now);
+
+    // 3. Provision Stockmint Hub
+    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
+    const { count: totalAccs } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+    const stockmintUsername = generateStockmintUsername(profile.email, (totalAccs || 0) + 500);
+
+    if (stockmintApiKey) {
+        try {
+            const payload = { 
+                fullName: profile.full_name, 
+                email: stockmintUsername, 
+                password: stockmintUsername,
+                initialBalance: 500000, // Fixed 5L for Trial
+                accountClassification: 'evaluation', 
+                accountModel: 'normal'
+            };
+            await fetch('https://stockmint.io/api/users/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
+                body: JSON.stringify(payload),
+            });
+        } catch (e) { console.error('Trial Creation Hub Failure:', e); }
+    }
+
+    // 4. Create Local Account Record
+    const { data: account, error } = await supabaseAdmin.from('user_accounts').insert({
+        user_id: userId,
+        plan_name: '5L Broker Trial (48h)',
+        status: 'active',
+        is_approved: true,
+        is_trial: true,
+        expires_at: expiry.toISOString(),
+        credentials_provided: true,
+        trading_username: stockmintUsername,
+        trading_password: stockmintUsername,
+        account_classification: 'evaluation'
+    }).select().single();
+
+    if (error) return { error: error.message };
+
+    revalidatePath('/welcome');
+    return { success: true, accountId: account.id };
+}
+
+/**
+ * Verifies if a trial is expired and performs the Stockmint WIPE.
+ */
+export async function checkAndCleanTrial(accountId: string) {
+    const { data: acc } = await supabaseAdmin.from('user_accounts').select('*').eq('id', accountId).single();
+    if (!acc || !acc.is_trial || acc.status === 'deleted') return { expired: false };
+
+    const now = new Date();
+    const expiry = new Date(acc.expires_at);
+
+    if (now > expiry) {
+        console.log(`[Trial Cleanup] Expiry reached for ${acc.trading_username}. Wiping hub...`);
+        
+        const apiKey = process.env.STOCKMINT_API_KEY;
+        if (apiKey && acc.trading_username) {
+            try {
+                // Call the developer's DELETE/DEACTIVATE API
+                await fetch('https://stockmint.io/api/users/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+                    body: JSON.stringify({ email: acc.trading_username }),
+                });
+            } catch (e) { console.error('Hub Cleanup API Failed:', e); }
+        }
+
+        // Update our DB
+        await supabaseAdmin.from('user_accounts').update({ 
+            status: 'deleted',
+            trading_username: 'EXPIRED',
+            trading_password: 'EXPIRED'
+        }).eq('id', accountId);
+
+        revalidatePath('/welcome');
+        return { expired: true };
+    }
+
+    return { expired: false };
 }

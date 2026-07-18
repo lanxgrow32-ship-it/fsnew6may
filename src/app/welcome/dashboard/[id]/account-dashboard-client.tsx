@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -23,7 +22,10 @@ import {
     Calendar, 
     EyeOff, 
     Eye, 
-    CheckCircle 
+    CheckCircle,
+    Timer,
+    Zap,
+    FlaskConical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,6 +33,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { signOut } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { differenceInSeconds } from 'date-fns';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
@@ -78,11 +81,51 @@ const StatCard = ({ title, value, icon, details, progress, progressColor, decora
   </GlassCard>
 );
 
+function CountdownTimer({ expiresAt }: { expiresAt: string }) {
+    const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
+
+    useEffect(() => {
+        const target = new Date(expiresAt);
+        
+        const update = () => {
+            const now = new Date();
+            const diff = differenceInSeconds(target, now);
+            
+            if (diff <= 0) {
+                setTimeLeft('EXPIRED');
+                window.location.reload();
+                return;
+            }
+
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        };
+
+        const interval = setInterval(update, 1000);
+        update();
+        return () => clearInterval(interval);
+    }, [expiresAt]);
+
+    return (
+        <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex items-center justify-between gap-8 shadow-[0_0_30px_rgba(139,44,245,0.1)]">
+            <div className="flex items-center gap-3">
+                <Timer className="h-5 w-5 text-primary animate-pulse" />
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Trial Session Remaining</p>
+            </div>
+            <p className="text-2xl font-black text-white font-mono tracking-tighter">{timeLeft}</p>
+        </div>
+    );
+}
+
 export function AccountDashboardClient({ account, profile, stats, initialBalance }: { account: any, profile: any, stats: any, initialBalance: number }) {
     const { toast } = useToast();
     const router = useRouter();
     const pnlProgress = initialBalance > 0 ? (Math.abs(stats.totalPnl || 0) / initialBalance) * 100 : 0;
     const currentClassification = stats.accountClassification || account.account_classification || 'evaluation';
+    const isTrial = account.is_trial;
 
     const copyText = (text: string) => {
         if (!text) return;
@@ -108,7 +151,7 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                     </div>
                     <div className="flex items-center gap-3">
                         <form action={signOut} className="hidden lg:block">
-                            <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2">
+                            <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2 h-9">
                                 <LogOut className="w-3.5 h-3.5" />
                                 Logout
                             </Button>
@@ -149,12 +192,15 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                     </div>
                 </header>
 
-                <div className="flex items-center gap-4 mb-8">
-                    <Button variant="outline" size="icon" asChild className="bg-black/20 border-white/10 hover:bg-white/20"><Link href="/welcome"><Grid3x3 className="w-4 h-4"/></Link></Button>
-                    <div>
-                        <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">{account.plan_name}</h1>
-                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Live Metrics & Hub Access</p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="icon" asChild className="bg-black/20 border-white/10 hover:bg-white/20"><Link href="/welcome"><Grid3x3 className="w-4 h-4"/></Link></Button>
+                        <div>
+                            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">{account.plan_name}</h1>
+                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Live Metrics & Hub Access</p>
+                        </div>
                     </div>
+                    {isTrial && <CountdownTimer expiresAt={account.expires_at} />}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -173,7 +219,7 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Engine Model</p>
-                                <p className="text-xs md:text-sm font-bold text-white mt-1 truncate capitalize">{account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
+                                <p className="text-xs md:text-sm font-bold text-white mt-1 truncate capitalize">{isTrial ? 'Trial Run' : account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Live Status</p>

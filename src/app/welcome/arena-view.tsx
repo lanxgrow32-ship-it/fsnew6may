@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -22,9 +21,10 @@ import {
     Timer,
     Ticket,
     Check,
-    ExternalLink
+    ExternalLink,
+    Sparkles
 } from 'lucide-react';
-import { purchaseWithWallet, requestManualAccount, validateCoupon } from './actions';
+import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -89,6 +89,7 @@ export function ArenaView({
     const [couponCode, setCouponCode] = useState('');
     const [discount, setDiscount] = useState(0);
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+    const [isStartingTrial, setIsStartingTrial] = useState(false);
 
     const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
     const activeGateway = paymentSettings?.active_payment_gateway || 'manual';
@@ -96,6 +97,18 @@ export function ArenaView({
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [checkoutStep]);
+
+    const handleStartTrial = async () => {
+        setIsStartingTrial(true);
+        const res = await startFreeTrial(profile.id);
+        if (res.error) {
+            toast({ title: "Trial Failed", description: res.error, variant: "destructive" });
+        } else {
+            toast({ title: "Trial Activated!", description: "48 hours of platform access granted." });
+            router.push('/welcome');
+        }
+        setIsStartingTrial(false);
+    }
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return;
@@ -134,7 +147,6 @@ export function ArenaView({
             if (res.error) {
                 toast({ title: "Purchase Failed", description: res.error, variant: "destructive" });
             } else {
-                // REDIRECT TO THANK YOU PAGE FOR GOOGLE ADS TRACKING
                 router.push(`/purchase-success?id=${res.transaction_id}&amount=${res.amount}&plan=${encodeURIComponent(selectedPlan.title)}`);
             }
         });
@@ -150,7 +162,6 @@ export function ArenaView({
             if (res.error) {
                 toast({ title: "Submission Failed", description: res.error, variant: "destructive" });
             } else {
-                // REDIRECT TO THANK YOU PAGE FOR GOOGLE ADS TRACKING (even for manual, value is known)
                 router.push(`/purchase-success?id=${res.transaction_id}&amount=${res.amount}&plan=${encodeURIComponent(selectedPlan.title)}&method=manual`);
             }
         });
@@ -398,7 +409,7 @@ export function ArenaView({
     const gridCols = isPtpActive ? "lg:grid-cols-4" : "lg:grid-cols-3";
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-8 animate-in fade-in duration-500 pb-20">
             <div className="space-y-1">
                 <h2 className="text-2xl font-bold text-white tracking-tight">Get Funded</h2>
                 <p className="text-gray-400 text-sm font-medium">Select your path to instant capital and professional scaling.</p>
@@ -439,6 +450,48 @@ export function ArenaView({
                     </TabsContent>
                 )}
             </Tabs>
+
+            {/* Premium Trial Banner */}
+            <div className="pt-12">
+                <GlassCard className="relative p-8 md:p-12 border-primary/30 bg-primary/5 shadow-2xl shadow-primary/10 flex flex-col md:flex-row items-center justify-between gap-8 group">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 -z-0 rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                        <Sparkles className="w-48 h-48 text-primary" />
+                    </div>
+                    <div className="space-y-4 text-center md:text-left relative z-10">
+                        <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                            <Badge className="bg-primary/20 text-primary border-primary/20 px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">
+                                Protocol Preview
+                            </Badge>
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">• NEW Experience</span>
+                        </div>
+                        <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter !leading-tight">
+                            Experience the Broker <br /> <span className="text-primary">Trial for 48 Hours.</span>
+                        </h3>
+                        <p className="text-gray-400 max-w-md text-base font-medium">
+                            Test our high-fidelity institutional terminal with ₹5 Lakh simulated capital. Market-aware logic ensures your clock only ticks on trading days.
+                        </p>
+                        <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
+                            <div className="flex items-center gap-2 text-green-400 font-bold text-xs uppercase tracking-widest">
+                                <CheckCircle className="h-4 w-4" /> Instant Activation
+                            </div>
+                            <div className="flex items-center gap-2 text-green-400 font-bold text-xs uppercase tracking-widest">
+                                <CheckCircle className="h-4 w-4" /> No KYC Required
+                            </div>
+                        </div>
+                    </div>
+                    <div className="shrink-0 w-full md:w-auto relative z-10">
+                        <Button 
+                            onClick={handleStartTrial}
+                            disabled={isStartingTrial}
+                            className="w-full md:w-auto h-16 px-12 rounded-2xl bg-white text-black hover:bg-gray-100 font-black uppercase tracking-[0.2em] shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all hover:scale-105 active:scale-95 text-xs"
+                        >
+                            {isStartingTrial ? <Loader2 className="h-5 w-5 animate-spin"/> : "Initialize Free Trial"}
+                        </Button>
+                        <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-widest mt-4">Valid once per trader session</p>
+                    </div>
+                </GlassCard>
+            </div>
         </div>
     );
 }
+

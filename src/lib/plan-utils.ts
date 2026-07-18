@@ -51,13 +51,32 @@ export function getBalanceFromPlanName(planName: string): number {
 
 /**
  * Generates a unique Stockmint Terminal Email/ID for multi-account support.
- * @param baseEmail The trader's registration email.
- * @param credentialsProvidedCount How many accounts ALREADY have credentials.
  */
 export function generateStockmintUsername(baseEmail: string, credentialsProvidedCount: number): string {
     const [userPart, domainPart] = baseEmail.split('@');
     if (credentialsProvidedCount === 0) return baseEmail.toLowerCase().trim();
-    
-    // Version suffix e.g. trader-ac2@gmail.com
     return `${userPart}-ac${credentialsProvidedCount + 1}@${domainPart}`.toLowerCase().trim();
+}
+
+/**
+ * Calculates the 48-hour trial expiry with Market-Aware (Weekend) logic.
+ * If Friday/Sat/Sun -> Clock starts Monday 9:00 AM.
+ */
+export function calculateTrialExpiry(startDate: Date): Date {
+    const day = startDate.getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
+    let expiry = new Date(startDate);
+
+    // Logic: Friday, Saturday, Sunday creations start their 48h from Monday 9AM
+    if (day === 5 || day === 6 || day === 0) {
+        // Find next Monday
+        const daysToMonday = (day === 5) ? 3 : (day === 6) ? 2 : 1;
+        expiry.setDate(startDate.getDate() + daysToMonday);
+        expiry.setHours(9, 0, 0, 0); // Monday 9:00 AM
+        expiry.setHours(expiry.getHours() + 48); // Add 48 hours
+    } else {
+        // Standard Monday-Thursday creation: Just add 48 hours
+        expiry.setHours(startDate.getHours() + 48);
+    }
+
+    return expiry;
 }

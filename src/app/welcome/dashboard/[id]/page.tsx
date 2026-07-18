@@ -1,8 +1,8 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { AccountDashboardClient } from './account-dashboard-client';
+import { checkAndCleanTrial } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +30,10 @@ export default async function AccountDashboardPage({ params }: { params: Promise
     
     if (!session) redirect('/login');
 
-    // Fetch account with profile joined
+    // 1. TRIAL CLEANUP: Check if trial is expired before showing data
+    await checkAndCleanTrial(id);
+
+    // 2. Fetch account with profile joined
     const { data: account } = await supabase
         .from('user_accounts')
         .select('*, profiles(*)')
@@ -39,6 +42,11 @@ export default async function AccountDashboardPage({ params }: { params: Promise
         .single();
 
     if (!account) notFound();
+
+    // 3. Prevent access to expired trials
+    if (account.status === 'deleted' && account.is_trial) {
+        redirect('/welcome');
+    }
 
     const profile = account.profiles;
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
@@ -53,16 +61,15 @@ export default async function AccountDashboardPage({ params }: { params: Promise
     };
 
     // Server-side fetch from StockMint Hub
-    if (stockmintApiKey && account.trading_username) {
+    if (stockmintApiKey && account.trading_username && account.trading_username !== 'EXPIRED') {
         try {
             const res = await fetch(`https://stockmint.io/api/users/stats?email=${account.trading_username}`, {
                 headers: { 'X-API-Key': stockmintApiKey },
-                next: { revalidate: 0 } // No cache for live terminal stats
+                next: { revalidate: 0 } 
             });
             if (res.ok) {
                 const json = await res.json();
                 if (json.success && json.data) {
-                    // Safe merge stats to prevent property access errors
                     stats = { ...stats, ...json.data };
                 }
             }
