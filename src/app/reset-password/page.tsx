@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ShieldCheck, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Loader2, ShieldCheck, KeyRound, CheckCircle2, RefreshCw } from 'lucide-react';
 import { resetPasswordSubmit } from './actions';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { ClientOnly } from '@/components/ui/client-only';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function ResetPasswordPage() {
     if (state.success) {
       toast({ 
         title: "Security Updated", 
-        description: "Your password has been reset successfully. You are now being logged in." 
+        description: "Your password has been reset successfully. Redirecting to dashboard..." 
       });
       setTimeout(() => router.push('/welcome'), 2000);
     }
@@ -56,10 +57,18 @@ export default function ResetPasswordPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {state?.error && (
-                            <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
-                                <AlertTitle>Protocol Error</AlertTitle>
-                                <AlertDescription>{state.error}</AlertDescription>
-                            </Alert>
+                            <div className="space-y-4">
+                                <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
+                                    <AlertTitle>Protocol Error</AlertTitle>
+                                    <AlertDescription>{state.error}</AlertDescription>
+                                </Alert>
+                                <Button asChild variant="outline" className="w-full h-11 border-white/10 bg-black/40 text-gray-400 hover:text-white">
+                                    <Link href="/forgot-password">
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Request New Link
+                                    </Link>
+                                </Button>
+                            </div>
                         )}
 
                         {state?.success ? (
@@ -72,7 +81,7 @@ export default function ResetPasswordPage() {
                                     <p className="text-xs text-gray-500 uppercase tracking-widest">Routing to Dashboard...</p>
                                 </div>
                             </div>
-                        ) : (
+                        ) : !state?.error && (
                             <form action={formAction} className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="password" title="password" className="text-gray-300">New Password</Label>
@@ -83,6 +92,7 @@ export default function ResetPasswordPage() {
                                             name="password" 
                                             type="password" 
                                             required 
+                                            autoComplete="new-password"
                                             className="pl-10 bg-black/20 border-white/10 text-white h-12 focus:ring-primary/50" 
                                         />
                                     </div>
@@ -97,6 +107,7 @@ export default function ResetPasswordPage() {
                                             name="confirm_password" 
                                             type="password" 
                                             required 
+                                            autoComplete="new-password"
                                             className="pl-10 bg-black/20 border-white/10 text-white h-12 focus:ring-primary/50" 
                                         />
                                     </div>
