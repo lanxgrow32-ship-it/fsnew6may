@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -94,7 +95,7 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                             isWaitingApproval ? "text-amber-400" : 
                             isWaitingKyc ? "text-amber-400" : "text-green-400"
                         )}>
-                            {isDeleted ? "Expired" : isBreached ? "Breached" : isWaitingApproval ? "Verifying" : isWaitingKyc ? "Needs KYC" : "Live"}
+                            {isDeleted ? "Access Revoked" : isBreached ? "Breached" : isWaitingApproval ? "Verifying Payment" : isWaitingKyc ? "Action Required" : "Account Live"}
                         </p>
                     </div>
                     <div className="bg-black/40 p-3 rounded-2xl border border-white/5">
@@ -105,9 +106,9 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
             </CardContent>
             <CardFooter className="pt-2">
                 {isDeleted ? (
-                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-700">Access Revoked</Button>
+                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-700">Session Expired</Button>
                 ) : isWaitingApproval ? (
-                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600">Checking Payment</Button>
+                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600">Checking Reference</Button>
                 ) : isWaitingKyc ? (
                     <Button asChild className="w-full h-11 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-amber-500/10">
                         <Link href="/kyc">Complete Identity Check <ArrowRight className="ml-2 w-3.5 h-3.5"/></Link>
@@ -119,7 +120,7 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                         isTrial && "bg-white text-black hover:bg-gray-100 shadow-white/10"
                     )}>
                         <Link href={`/welcome/dashboard/${account.id}`}>
-                            {isBreached ? "View Result" : isTrial ? "Enter Lab" : "Open Hub"} <ArrowRight className="ml-2 w-3.5 h-3.5"/>
+                            {isBreached ? "View Performance" : isTrial ? "Enter Trial Lab" : "Open Account Hub"} <ArrowRight className="ml-2 w-3.5 h-3.5"/>
                         </Link>
                     </Button>
                 )}
@@ -149,18 +150,18 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                                 {kycVerified ? 'Verified Trader' : 'Member'}
                             </Badge>
                         </div>
-                        <p className="text-gray-400 font-medium text-lg max-w-lg">Manage all your accounts from one command hub.</p>
+                        <p className="text-gray-400 font-medium text-lg max-w-lg">Manage all your accounts from one central dashboard.</p>
                         
                         <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-8">
                             <div className="bg-black/60 px-5 py-3 rounded-2xl border border-white/5 flex flex-col gap-1 min-w-[120px]">
-                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Live Accounts</span>
+                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Active Accounts</span>
                                 <div className="flex items-center gap-2">
                                     <Target className="w-3.5 h-3.5 text-primary"/>
                                     <span className="text-lg font-black text-white">{activeCount}</span>
                                 </div>
                             </div>
                             <div className="bg-black/60 px-5 py-3 rounded-2xl border border-white/5 flex flex-col gap-1 min-w-[120px]">
-                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Pending</span>
+                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Verification</span>
                                 <div className="flex items-center gap-2">
                                     <Clock className="w-3.5 h-3.5 text-amber-500"/>
                                     <span className="text-lg font-black text-white">{pendingCount}</span>
@@ -180,7 +181,7 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                             Get Funding <PlusCircle className="ml-2 w-4 h-4"/>
                         </Button>
                         <Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl">
-                            <Link href="/guide">Rules</Link>
+                            <Link href="/guide">Trading Rules</Link>
                         </Button>
                     </div>
                 </div>
@@ -190,11 +191,11 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div className="space-y-1">
                         <h2 className="text-2xl font-black text-white tracking-tight uppercase">Account Portfolio</h2>
-                        <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Individual account details</p>
+                        <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Manage individual session credentials</p>
                     </div>
                     {!kycVerified && accounts.filter(a => !a.is_trial).length > 0 && (
                         <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-xl border border-amber-400/20 text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-right-4">
-                            <ShieldAlert className="w-3.5 h-3.5"/> Action Required: Identity Check
+                            <ShieldAlert className="w-3.5 h-3.5"/> Action Required: Identity Verification
                         </Link>
                     )}
                 </div>
@@ -209,10 +210,10 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                             </div>
                             <div className="space-y-2 mb-10">
                                 <h3 className="text-2xl font-black text-white tracking-tight">NO ACTIVE ACCOUNTS</h3>
-                                <p className="text-gray-500 max-w-sm mx-auto text-sm font-medium uppercase tracking-[0.2em]">You have not purchased any funded accounts yet.</p>
+                                <p className="text-gray-500 max-w-sm mx-auto text-sm font-medium uppercase tracking-[0.2em]">You have not started any funding challenges yet.</p>
                             </div>
                             <Button onClick={onSwitchToGetFunded} size="lg" className="bg-primary text-white font-black uppercase tracking-widest text-xs px-12 h-14 rounded-2xl shadow-2xl shadow-primary/20 transition-all hover:scale-110">
-                                Get Started <ArrowRight className="ml-3 h-5 w-5"/>
+                                Start Evaluation <ArrowRight className="ml-3 h-5 w-5"/>
                             </Button>
                         </GlassCard>
                     )}

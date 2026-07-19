@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -71,6 +72,15 @@ export default async function AccountDashboardPage({ params }: { params: Promise
                 const json = await res.json();
                 if (json.success && json.data) {
                     stats = { ...stats, ...json.data };
+                    
+                    // --- AUTO-PROMOTION SYNC (100% Automation Handshake) ---
+                    // If Stockmint has automatically promoted the user, update our DB
+                    if (json.data.accountClassification && json.data.accountClassification !== account.account_classification) {
+                        console.log(`[Promotion Sync] Stockmint promoted ${account.trading_username} to ${json.data.accountClassification}. Updating local DB.`);
+                        await supabaseAdmin.from('user_accounts').update({ 
+                            account_classification: json.data.accountClassification 
+                        }).eq('id', id);
+                    }
                 }
             }
         } catch (e) { 
