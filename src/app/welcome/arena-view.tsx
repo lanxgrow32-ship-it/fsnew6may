@@ -460,9 +460,9 @@ export function ArenaView({
                     <div className="space-y-4 text-center md:text-left relative z-10">
                         <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
                             <Badge className="bg-primary/20 text-primary border-primary/20 px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">
-                                Experience Preview
+                                Try the Broker Hub
                             </Badge>
-                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">• Trial Protocol</span>
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">• Free Trial</span>
                         </div>
                         <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter !leading-tight">
                             Experience the Broker <br /> <span className="text-primary">Trial for 48 Hours.</span>
@@ -485,7 +485,7 @@ export function ArenaView({
                             disabled={isStartingTrial}
                             className="w-full md:w-auto h-16 px-12 rounded-2xl bg-white text-black hover:bg-gray-100 font-black uppercase tracking-[0.2em] shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all hover:scale-105 active:scale-95 text-xs"
                         >
-                            {isStartingTrial ? <Loader2 className="h-5 w-5 animate-spin"/> : "Initialize Free Trial"}
+                            {isStartingTrial ? <Loader2 className="h-5 w-5 animate-spin"/> : "Start Free Trial"}
                         </Button>
                         <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-widest mt-4">Valid once per trader session</p>
                     </div>

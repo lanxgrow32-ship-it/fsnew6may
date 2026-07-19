@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -120,7 +119,7 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                         isTrial && "bg-white text-black hover:bg-gray-100 shadow-white/10"
                     )}>
                         <Link href={`/welcome/dashboard/${account.id}`}>
-                            {isBreached ? "View Performance" : isTrial ? "Enter Trial Lab" : "Open Account Hub"} <ArrowRight className="ml-2 w-3.5 h-3.5"/>
+                            {isBreached ? "View Performance" : isTrial ? "Enter Trial Lab" : "Open Account Dashboard"} <ArrowRight className="ml-2 w-3.5 h-3.5"/>
                         </Link>
                     </Button>
                 )}

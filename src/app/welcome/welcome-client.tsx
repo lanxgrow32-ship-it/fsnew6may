@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -82,7 +81,7 @@ function WelcomeContent({
         }
     }, [tabParam]);
 
-    // Real-time unread badges for Live Chat (Maintained for nav badges)
+    // Real-time unread badges for Live Chat
     useEffect(() => {
         const channel = supabase
             .channel('user-support-global-v4')
@@ -328,7 +327,7 @@ function WelcomeContent({
                                             <p className="text-white font-bold">{profile.mobile_number}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">System Protocol ID</p>
+                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Trader Register ID</p>
                                             <p className="text-white font-mono text-xs">{profile.id}</p>
                                         </div>
                                     </div>

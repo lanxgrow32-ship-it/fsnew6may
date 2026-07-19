@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useActionState, useRef } from 'react';
@@ -83,7 +82,7 @@ function UserNav({ profile }: { profile: any}) {
 }
 
 const navItems = [
-    { href: "/welcome", label: "Account Overview" },
+    { href: "/welcome", label: "Portfolio" },
     { href: "/guide", label: "Trading Guide" },
     { href: "/referrals", label: "Referrals" },
     { href: "/live-chat", label: "Live Chat" },
@@ -377,7 +376,7 @@ function PayoutDetailsForm({ profile }: { profile: any }) {
                     )}
                 </CardContent>
                 <CardFooter>
-                    <Button type="submit" className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 h-11 font-bold rounded-xl text-xs uppercase tracking-widest">Update Protocol</Button>
+                    <Button type="submit" className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 h-11 font-bold rounded-xl text-xs uppercase tracking-widest">Update Payout Details</Button>
                 </CardFooter>
             </form>
         </GlassCard>

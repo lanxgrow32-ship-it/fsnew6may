@@ -107,7 +107,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
 
                         <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-3">
                             <div className="flex items-center gap-2 text-xs font-bold text-primary">
-                                <Sparkles className="w-3.5 h-3.5" /> 5% Bonus Protocol Active
+                                <Sparkles className="w-3.5 h-3.5" /> 5% Bonus Applied Automatically
                             </div>
                             <p className="text-[10px] text-gray-500 leading-relaxed">A 5% cash bonus is automatically credited to all wallet deposits of ₹10,000 or more via our official portal.</p>
                         </div>
@@ -174,7 +174,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                             <ShieldCheck className="w-5 h-5 text-green-400" />
                         </div>
                         <div className="space-y-1">
-                            <h4 className="text-sm font-bold text-white">Secure Transfer Protocol</h4>
+                            <h4 className="text-sm font-bold text-white">Safe & Secure Transfers</h4>
                             <p className="text-xs text-gray-500 leading-relaxed">All wallet transactions are encrypted. Deposits via the portal are audited instantly through the Cashfree payment bridge, while manual deposits take standard verification time.</p>
                         </div>
                     </div>
