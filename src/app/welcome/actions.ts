@@ -345,6 +345,7 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
 /**
  * Starts a 48-hour Free Trial account.
  * Uses a 500+ offset for usernames to strictly isolate from standard accounts.
+ * Balance is fixed at ₹5,00,000 (5 Lakh).
  */
 export async function startFreeTrial(userId: string) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
@@ -426,7 +427,7 @@ export async function checkAndCleanTrial(accountId: string) {
         const apiKey = process.env.STOCKMINT_API_KEY;
         if (apiKey && acc.trading_username) {
             try {
-                // Call the NEW standalone deletion API provided by the developer
+                // Call the standalone deletion API provided by the developer
                 await fetch('https://stockmint.io/api/users/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },

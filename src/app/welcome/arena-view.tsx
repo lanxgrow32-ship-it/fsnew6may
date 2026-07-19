@@ -186,7 +186,7 @@ export function ArenaView({
                     <div className="space-y-4 flex-1">
                         <div className="space-y-1">
                             <h2 className="text-2xl font-bold text-white tracking-tight">Payment Method</h2>
-                            <p className="text-gray-400 text-sm font-medium">Select your activation protocol for the {selectedPlan.title}.</p>
+                            <p className="text-gray-400 text-sm font-medium">Select your activation strategy for the {selectedPlan.title}.</p>
                         </div>
 
                         {!isPTP && (
@@ -460,9 +460,9 @@ export function ArenaView({
                     <div className="space-y-4 text-center md:text-left relative z-10">
                         <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
                             <Badge className="bg-primary/20 text-primary border-primary/20 px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">
-                                Protocol Preview
+                                Experience Preview
                             </Badge>
-                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">• NEW Experience</span>
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">• Trial Protocol</span>
                         </div>
                         <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter !leading-tight">
                             Experience the Broker <br /> <span className="text-primary">Trial for 48 Hours.</span>
@@ -494,4 +494,3 @@ export function ArenaView({
         </div>
     );
 }
-
