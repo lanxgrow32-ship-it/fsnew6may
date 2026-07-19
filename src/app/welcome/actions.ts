@@ -20,7 +20,7 @@ export async function getCompetitionEvents() {
 }
 
 /**
- * Express Wallet Purchase Protocol (v4.0 Hardened)
+ * Express Wallet Purchase Logic (Hardened)
  */
 export async function purchaseWithWallet(userId: string, plan: any) {
   if (!userId || !plan) return { error: 'Missing details.' };
@@ -39,7 +39,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     return { error: 'Insufficient wallet balance.' };
   }
 
-  // 1. Deduct Liquidity
+  // 1. Deduct Balance
   await supabaseAdmin.from('profiles').update({ 
       wallet_balance: profile.wallet_balance - price 
   }).eq('id', userId);
@@ -70,9 +70,9 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     transaction_id: txId
   }).select().single();
 
-  if (accountError || !account) return { error: 'Account creation failed in DB.' };
+  if (accountError || !account) return { error: 'Account creation failed.' };
 
-  // 3. Stockmint Hub Sync (v4.0 Protocol)
+  // 3. Stockmint Hub Sync
   const stockmintApiKey = process.env.STOCKMINT_API_KEY;
   const initialBalance = getBalanceFromPlanName(plan.title);
   let stockmintUsername = profile.email;
@@ -111,7 +111,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               }).eq('id', account.id);
           }
       } catch (e) { 
-          console.error('[Wallet Purchase] StockMint Network/Sync Error:', e); 
+          console.error('[Wallet Purchase] StockMint Hub Error:', e); 
       }
   }
 
@@ -271,7 +271,7 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             last_message_preview: aiResponse, 
             unread_count_user: (freshConv?.unread_count_user || 0) + 1 
         }).eq('id', convId);
-    } catch (error) { console.error(`[Neural Protocol] Dispatcher CRITICAL FAILURE:`, error); }
+    } catch (error) { console.error(`[AI Support] Assistant Error:`, error); }
 }
 
 export async function markSupportRead(convId: string, role: 'admin' | 'user') {
@@ -325,7 +325,7 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
                     accountModel: 'normal' 
                 }),
             });
-        } catch (e) { console.error('Comp Sync Error:', e); }
+        } catch (e) { console.error('Tournament Hub Error:', e); }
     }
 
     const { error } = await supabaseAdmin.from('competition_registrations').insert({ 
@@ -345,8 +345,6 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
 
 /**
  * Starts a 48-hour Free Trial account.
- * Uses a 500+ offset for usernames to strictly isolate from standard accounts.
- * Balance is fixed at ₹5,00,000 (5 Lakh).
  */
 export async function startFreeTrial(userId: string) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
@@ -359,13 +357,13 @@ export async function startFreeTrial(userId: string) {
         .eq('user_id', userId)
         .eq('is_trial', true);
     
-    if (count && count > 0) return { error: 'You have already utilized your free trial access.' };
+    if (count && count > 0) return { error: 'You have already used your free trial.' };
 
     // 2. Calculate Market-Aware Expiry
     const now = new Date();
     const expiry = calculateTrialExpiry(now);
 
-    // 3. Provision Stockmint Hub with Trial Isolation Offset (+500)
+    // 3. Provision Stockmint Hub
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
     const { count: totalAccs } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', userId);
     const stockmintUsername = generateStockmintUsername(profile.email, (totalAccs || 0) + 500);
@@ -376,7 +374,7 @@ export async function startFreeTrial(userId: string) {
                 fullName: profile.full_name, 
                 email: stockmintUsername, 
                 password: stockmintUsername,
-                initialBalance: 500000, // Fixed 5L for Trial
+                initialBalance: 500000, 
                 accountClassification: 'evaluation', 
                 accountModel: 'normal'
             };
@@ -385,7 +383,7 @@ export async function startFreeTrial(userId: string) {
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
                 body: JSON.stringify(payload),
             });
-        } catch (e) { console.error('Trial Creation Hub Failure:', e); }
+        } catch (e) { console.error('Trial Creation Hub Error:', e); }
     }
 
     // 4. Create Local Account Record
@@ -409,7 +407,7 @@ export async function startFreeTrial(userId: string) {
 }
 
 /**
- * Verifies if a trial is expired and performs the Stockmint DELETE protocol.
+ * Cleans up expired trials.
  */
 export async function checkAndCleanTrial(accountId: string) {
     const { data: acc } = await supabaseAdmin.from('user_accounts').select('*').eq('id', accountId).single();
@@ -420,8 +418,6 @@ export async function checkAndCleanTrial(accountId: string) {
     const expiry = new Date(acc.expires_at);
 
     if (now > expiry) {
-        console.log(`[Trial Cleanup] Expiry reached for ${acc.trading_username}. Triggering deletion API...`);
-        
         const apiKey = process.env.STOCKMINT_API_KEY;
         if (apiKey && acc.trading_username) {
             try {
@@ -431,7 +427,7 @@ export async function checkAndCleanTrial(accountId: string) {
                     body: JSON.stringify({ email: acc.trading_username }),
                 });
             } catch (e) { 
-                console.error('[Cleanup API Error] Network failure:', e); 
+                console.error('[Trial Cleanup] Hub Error:', e); 
             }
         }
 
@@ -449,7 +445,7 @@ export async function checkAndCleanTrial(accountId: string) {
 }
 
 /**
- * Sweeps all active trial accounts for a specific user and cleans up expired ones.
+ * Sweeps all active trial accounts for a specific user.
  */
 export async function cleanupAllTrials(userId: string) {
     const { data: trials } = await supabaseAdmin
@@ -474,7 +470,7 @@ export async function cleanupAllTrials(userId: string) {
                         headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
                         body: JSON.stringify({ email: trial.trading_username }),
                     });
-                } catch (e) { console.error('[Batch Cleanup] Sync Error:', e); }
+                } catch (e) { console.error('[Batch Cleanup] Hub Error:', e); }
             }
 
             await supabaseAdmin.from('user_accounts').update({ 
