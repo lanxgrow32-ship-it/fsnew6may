@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -437,7 +436,7 @@ export async function checkAndCleanTrial(accountId: string) {
             trading_password: 'EXPIRED'
         }).eq('id', accountId);
 
-        revalidatePath('/welcome');
+        // NOTE: revalidatePath removed to prevent render-time execution errors.
         return { expired: true };
     }
 
@@ -480,5 +479,5 @@ export async function cleanupAllTrials(userId: string) {
             }).eq('id', trial.id);
         }
     }
-    revalidatePath('/welcome');
+    // NOTE: revalidatePath removed to prevent render-time execution errors.
 }
