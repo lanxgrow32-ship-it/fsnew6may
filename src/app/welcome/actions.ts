@@ -427,14 +427,14 @@ export async function checkAndCleanTrial(accountId: string) {
         const apiKey = process.env.STOCKMINT_API_KEY;
         if (apiKey && acc.trading_username) {
             try {
-                // Call the standalone deletion API provided by the developer
+                // Call the standalone deletion API confirmed by Stockmint Dev
                 await fetch('https://stockmint.io/api/users/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
                     body: JSON.stringify({ email: acc.trading_username }),
                 });
             } catch (e) { 
-                console.error('Hub Cleanup API Failed (Check endpoint status):', e); 
+                console.error('[Cleanup API Error] Network or Hub failure during deactivation:', e); 
             }
         }
 
@@ -481,7 +481,7 @@ export async function cleanupAllTrials(userId: string) {
                         headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
                         body: JSON.stringify({ email: trial.trading_username }),
                     });
-                } catch (e) { console.error('Batch Cleanup Network Error:', e); }
+                } catch (e) { console.error('[Batch Cleanup] Sync Error:', e); }
             }
 
             // 2. Mark as deleted locally

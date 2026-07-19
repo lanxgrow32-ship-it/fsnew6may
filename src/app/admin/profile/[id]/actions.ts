@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -53,12 +52,17 @@ export async function updateProfile(formData: FormData) {
       }
   } catch (e: any) { return { error: e.message }; }
 
-  // Update profile
+  // 1. Update Profile
   const { error } = await supabaseAdmin.from('profiles').update(updateData).eq('id', id);
   if (error) return { error: error.message };
 
-  // SYNC WITH STOCKMINT (v2.6): Promotion / Phase Change
+  // 2. SYNC WITH STOCKMINT (v2.6): Promotion / Phase Change
   if (account_classification !== wasClassified) {
+      // Update local user_accounts records to match the new global classification for this user
+      await supabaseAdmin.from('user_accounts').update({ 
+        account_classification: account_classification 
+      }).eq('user_id', id);
+
       const { data: accounts } = await supabaseAdmin
         .from('user_accounts')
         .select('trading_username')
@@ -83,7 +87,7 @@ export async function updateProfile(formData: FormData) {
                   }
               }));
           } catch (e) {
-              console.error('StockMint Promotion Sync Error:', e);
+              console.error('[Stockmint Promotion Sync] Connection Failure:', e);
           }
       }
   }
