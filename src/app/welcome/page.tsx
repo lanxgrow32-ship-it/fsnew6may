@@ -1,8 +1,8 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { WelcomeClient } from './welcome-client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { cleanupAllTrials } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,10 @@ export default async function WelcomePage() {
 
     const userId = user.id;
 
-    // Fetch comprehensive data
+    // 1. RUN CLEANUP PROTOCOL (Atomic Purge sweep for expired trials)
+    await cleanupAllTrials(userId);
+
+    // 2. Fetch comprehensive data
     const [profileRes, accountsRes, walletRes, paymentSettingsRes, compRes, supportRes] = await Promise.all([
         supabaseAdmin.from('profiles').select('*').eq('id', userId).single(),
         supabaseAdmin.from('user_accounts').select('*').eq('user_id', userId).order('created_at', { ascending: false }),

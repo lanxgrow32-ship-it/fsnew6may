@@ -451,3 +451,46 @@ export async function checkAndCleanTrial(accountId: string) {
 
     return { expired: false };
 }
+
+/**
+ * Sweeps all active trial accounts for a specific user and cleans up expired ones.
+ * This ensures the portfolio view is always accurate.
+ */
+export async function cleanupAllTrials(userId: string) {
+    const { data: trials } = await supabaseAdmin
+        .from('user_accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_trial', true)
+        .neq('status', 'deleted');
+    
+    if (!trials || trials.length === 0) return;
+
+    const now = new Date();
+    const apiKey = process.env.STOCKMINT_API_KEY;
+
+    for (const trial of trials) {
+        const expiry = new Date(trial.expires_at);
+        if (now > expiry) {
+            console.log(`[Batch Cleanup] Expiring trial ${trial.trading_username}`);
+            // 1. Delete from Stockmint Hub
+            if (apiKey && trial.trading_username) {
+                try {
+                    await fetch('https://stockmint.io/api/users/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+                        body: JSON.stringify({ email: trial.trading_username }),
+                    });
+                } catch (e) { console.error('Batch Cleanup Network Error:', e); }
+            }
+
+            // 2. Mark as deleted locally
+            await supabaseAdmin.from('user_accounts').update({ 
+                status: 'deleted',
+                trading_username: 'EXPIRED',
+                trading_password: 'EXPIRED'
+            }).eq('id', trial.id);
+        }
+    }
+    revalidatePath('/welcome');
+}
