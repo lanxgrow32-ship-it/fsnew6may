@@ -16,8 +16,7 @@ const instantFundingPlans = [
   { size: '2,00,000', title: '2L Instant Funding', price: '9,999' },
   { size: '5,00,000', title: '5L Instant Funding', price: '17,999' },
   { size: '10,00,000', title: '10L Instant Funding', price: '28,999' },
-  { size: '25,00,000', title: '25L Instant Funding', price: '49,500' },
-  { size: '35,00,000', title: '35L Instant Funding', price: '24,999', isFlashSale: true },
+  { size: '25,00,000', title: '25L Instant Funding', price: '24,999', isFlashSale: true },
 ];
 
 const oneStepPlans = [
@@ -85,7 +84,7 @@ const LiveViewersBanner = () => {
 
 const PlanCard = ({ size, title, price, isPopular, isFlashSale }: { size: string; title: string; price: string, isPopular?: boolean, isFlashSale?: boolean }) => {
   const currentPrice = parseFloat(price.replace(/,/g, ''));
-  const originalPrice = isFlashSale ? currentPrice * 3 : currentPrice * 2;
+  const originalPrice = isFlashSale ? currentPrice * 2 : currentPrice * 2;
   const [purchasedToday, setPurchasedToday] = useState(0);
   const [slotsRemaining, setSlotsRemaining] = useState(0);
 
@@ -155,7 +154,7 @@ const PlanCard = ({ size, title, price, isPopular, isFlashSale }: { size: string
                 <span className={cn("text-3xl font-bold text-primary", isFlashSale && "text-4xl text-white drop-shadow-[0_0_10px_rgba(139,44,245,0.8)]")}>₹{currentPrice.toLocaleString('en-IN')}</span>
             </div>
             <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest">
-                {isFlashSale ? "FLASH SALE: 70% OFF" : "50% LIMITED DISCOUNT"}
+                {isFlashSale ? "FLASH SALE: 50% OFF" : "50% LIMITED DISCOUNT"}
             </Badge>
         </div>
 
@@ -205,6 +204,7 @@ export default function PricingPage() {
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-primary/20 mb-6">
                 <Zap className="h-3 w-3" /> Select Your Path to Capital
               </div>
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight">The Arena is Waiting.</h1>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight">The Arena is Waiting.</h1>
               <p className="mt-4 text-muted-foreground max-w-4xl mx-auto text-lg">
                 Choose the evaluation model that fits your trading style and secure your funded account today.

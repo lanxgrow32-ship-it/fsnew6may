@@ -39,8 +39,7 @@ const plans = {
         { size: '2 Lakh', price: '9,999', title: '2L Instant' },
         { size: '5 Lakh', price: '17,999', title: '5L Instant' },
         { size: '10 Lakh', price: '28,999', title: '10L Instant' },
-        { size: '25 Lakh', price: '49,500', title: '25L Instant' },
-        { size: '35 Lakh', price: '24,999', title: '35L Instant', isFlashSale: true },
+        { size: '25 Lakh', price: '24,999', title: '25L Instant', isFlashSale: true },
     ],
     oneStep: [
         { size: '1 Lakh', price: '4,599', title: '1L 1-Step' },
@@ -392,7 +391,7 @@ export function ArenaView({
                     <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Capital Fee</p>
                     <div className="flex items-baseline gap-2">
                         <p className={cn("text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left", plan.isFlashSale && "text-2xl text-white")}>₹{plan.price}</p>
-                        {plan.isFlashSale && <span className="text-[10px] text-red-500 font-black line-through">₹75,000</span>}
+                        {plan.isFlashSale && <span className="text-[10px] text-red-500 font-black line-through">₹49,500</span>}
                     </div>
                 </div>
             </CardContent>
