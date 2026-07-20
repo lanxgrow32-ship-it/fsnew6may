@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CheckCircle, ExternalLink, Timer, TrendingUp, Zap } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ExternalLink, Timer, TrendingUp, Zap, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
@@ -18,6 +17,7 @@ const instantFundingPlans = [
   { size: '5,00,000', title: '5L Instant Funding', price: '17,999' },
   { size: '10,00,000', title: '10L Instant Funding', price: '28,999' },
   { size: '25,00,000', title: '25L Instant Funding', price: '49,500' },
+  { size: '50,00,000', title: '50L Instant Funding', price: '24,999', isFlashSale: true },
 ];
 
 const oneStepPlans = [
@@ -35,7 +35,7 @@ const twoStepPlans = [
     { size: '5,00,000', title: '5L 2-Step', price: '7,999' },
     { size: '10,00,000', title: '10L 2-Step', price: '12,999' },
     { size: '25,00,000', title: '25L 2-Step', price: '21,999' },
-    { size: '50,00_000', title: '50L 2-Step', price: '35,999' },
+    { size: '50,00,000', title: '50L 2-Step', price: '35,999' },
 ];
 
 const LiveViewersBanner = () => {
@@ -83,23 +83,33 @@ const LiveViewersBanner = () => {
     );
 };
 
-const PlanCard = ({ size, title, price, isPopular }: { size: string; title: string; price: string, isPopular?: boolean }) => {
+const PlanCard = ({ size, title, price, isPopular, isFlashSale }: { size: string; title: string; price: string, isPopular?: boolean, isFlashSale?: boolean }) => {
   const currentPrice = parseFloat(price.replace(/,/g, ''));
-  const originalPrice = currentPrice * 2;
+  const originalPrice = isFlashSale ? currentPrice * 4 : currentPrice * 2;
   const [purchasedToday, setPurchasedToday] = useState(0);
   const [slotsRemaining, setSlotsRemaining] = useState(0);
 
   useEffect(() => {
     setPurchasedToday(Math.floor(Math.random() * 70) + 1);
-    setSlotsRemaining(Math.floor(Math.random() * 80) + 1);
-  }, []);
+    setSlotsRemaining(isFlashSale ? Math.floor(Math.random() * 8) + 1 : Math.floor(Math.random() * 80) + 1);
+  }, [isFlashSale]);
 
   return (
-    <Card className={cn("flex flex-col h-full hover:border-primary transition-all duration-300 bg-card/50 border-border", isPopular && "border-primary/50 shadow-md shadow-primary/5")}>
-      <CardHeader className="pb-4 space-y-4">
+    <Card className={cn(
+        "flex flex-col h-full hover:border-primary transition-all duration-300 bg-card/50 border-border relative", 
+        isPopular && "border-primary/50 shadow-md shadow-primary/5",
+        isFlashSale && "border-primary border-2 shadow-[0_0_40px_rgba(139,44,245,0.3)] animate-pulse-subtle bg-primary/5"
+    )}>
+      {isPopular && !isFlashSale && <div className="text-xs font-bold bg-primary text-primary-foreground py-1 rounded-t-lg -mt-px text-center">🔥 Most Popular</div>}
+      {isFlashSale && (
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-1.5 rounded-full shadow-xl flex items-center gap-2 z-20 whitespace-nowrap">
+              <Sparkles className="w-3.5 h-3.5 animate-spin" /> Today Only: Flash Sale
+          </div>
+      )}
+      <CardHeader className="pb-4 space-y-4 pt-8">
         <div className="flex justify-between items-start">
-            <CardTitle className="text-2xl font-bold tracking-tight">₹{size}</CardTitle>
-            {isPopular && <Badge variant="default" className="text-[10px] font-bold">POPULAR</Badge>}
+            <CardTitle className={cn("text-2xl font-bold tracking-tight", isFlashSale && "text-primary text-3xl")}>₹{size}</CardTitle>
+            {isPopular && !isFlashSale && <Badge variant="default" className="text-[10px] font-bold">POPULAR</Badge>}
         </div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</p>
         
@@ -107,16 +117,16 @@ const PlanCard = ({ size, title, price, isPopular }: { size: string; title: stri
             <ClientOnly>
                 <div className="flex items-center gap-2 text-[10px] font-bold text-green-500 bg-green-500/10 w-fit px-2 py-0.5 rounded border border-green-500/20">
                     <TrendingUp className="h-3 w-3" />
-                    <span>{purchasedToday} purchased today</span>
+                    <span>{isFlashSale ? purchasedToday + 120 : purchasedToday} purchased today</span>
                 </div>
                 <div className={cn(
                     "flex items-center gap-2 text-[10px] font-bold px-2 py-0.5 rounded border",
-                    slotsRemaining < 15 
+                    (slotsRemaining < 15 || isFlashSale) 
                         ? "text-red-500 bg-red-500/10 border-red-500/20" 
                         : "text-amber-500 bg-amber-500/10 border-amber-500/20"
                 )}>
                     <Timer className="h-3 w-3" />
-                    <span>Only {slotsRemaining} slots remaining</span>
+                    <span>{isFlashSale ? `URGENT: Only ${slotsRemaining} left` : `Only ${slotsRemaining} slots remaining`}</span>
                 </div>
             </ClientOnly>
         </div>
@@ -131,17 +141,25 @@ const PlanCard = ({ size, title, price, isPopular }: { size: string; title: stri
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span className="text-muted-foreground">80% Profit Share</span>
             </div>
+            {isFlashSale && (
+                <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span className="text-white font-bold">Max Allocation Limit Bypass</span>
+                </div>
+            )}
         </div>
 
         <div className="pt-4 border-t border-white/5">
             <div className="flex items-baseline gap-2">
                 <span className="text-lg text-muted-foreground line-through font-medium">₹{originalPrice.toLocaleString('en-IN')}</span>
-                <span className="text-3xl font-bold text-primary">₹{currentPrice.toLocaleString('en-IN')}</span>
+                <span className={cn("text-3xl font-bold text-primary", isFlashSale && "text-4xl text-white drop-shadow-[0_0_10px_rgba(139,44,245,0.8)]")}>₹{currentPrice.toLocaleString('en-IN')}</span>
             </div>
-            <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest">50% LIMITED DISCOUNT</Badge>
+            <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest">
+                {isFlashSale ? "FLASH SALE: 75% OFF" : "50% LIMITED DISCOUNT"}
+            </Badge>
         </div>
 
-        <Button asChild className="w-full mt-auto font-bold uppercase tracking-widest" size="lg">
+        <Button asChild className={cn("w-full mt-auto font-bold uppercase tracking-widest", isFlashSale ? "bg-white text-black hover:bg-gray-100" : "")} size="lg">
           <Link href="/signup">Select Plan <ArrowLeft className="rotate-180 h-4 w-4 ml-2"/></Link>
         </Button>
       </CardContent>
@@ -160,6 +178,13 @@ export default function PricingPage() {
         }
         .animate-marquee {
             animation: marquee 40s linear infinite;
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.95; transform: scale(1.01); }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s ease-in-out infinite;
         }
       `}</style>
       <div className="bg-background min-h-screen text-foreground pb-24">

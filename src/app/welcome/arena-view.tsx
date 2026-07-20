@@ -40,6 +40,7 @@ const plans = {
         { size: '5 Lakh', price: '17,999', title: '5L Instant' },
         { size: '10 Lakh', price: '28,999', title: '10L Instant' },
         { size: '25 Lakh', price: '49,500', title: '25L Instant' },
+        { size: '50 Lakh', price: '24,999', title: '50L Instant', isFlashSale: true },
     ],
     oneStep: [
         { size: '1 Lakh', price: '4,599', title: '1L 1-Step' },
@@ -358,11 +359,19 @@ export function ArenaView({
     }
 
     const PlanBox = ({ plan, category }: { plan: any, category: string }) => (
-        <Card className="bg-card/50 hover:border-primary transition-all duration-300 flex flex-col h-full border-border/50 group">
+        <Card className={cn(
+            "bg-card/50 hover:border-primary transition-all duration-300 flex flex-col h-full border-border/50 group relative overflow-visible",
+            plan.isFlashSale && "border-primary border-2 shadow-[0_0_30px_rgba(139,44,245,0.2)] bg-primary/5 scale-[1.02]"
+        )}>
+            {plan.isFlashSale && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-4 py-1 rounded-full z-10 whitespace-nowrap shadow-lg">
+                    Today Only
+                </div>
+            )}
             <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg font-bold">₹{plan.size}</CardTitle>
+                        <CardTitle className={cn("text-lg font-bold", plan.isFlashSale && "text-primary text-xl")}>₹{plan.size}</CardTitle>
                         <CardDescription className="text-xs font-medium text-gray-400 mt-1">{category}</CardDescription>
                     </div>
                     <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-bold px-1.5">80% Share</Badge>
@@ -381,13 +390,16 @@ export function ArenaView({
                 </div>
                 <div className="pt-4 border-t border-white/5">
                     <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Capital Fee</p>
-                    <p className="text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left">₹{plan.price}</p>
+                    <div className="flex items-baseline gap-2">
+                        <p className={cn("text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left", plan.isFlashSale && "text-2xl text-white")}>₹{plan.price}</p>
+                        {plan.isFlashSale && <span className="text-[10px] text-red-500 font-black line-through">₹99,000</span>}
+                    </div>
                 </div>
             </CardContent>
             <CardFooter>
                 <Button 
                     onClick={() => { setSelectedPlan(plan); setCheckoutStep('method'); }} 
-                    className="w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest"
+                    className={cn("w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest", plan.isFlashSale ? "bg-white text-black hover:bg-gray-100" : "")}
                 >
                     Activate Now
                 </Button>
@@ -494,3 +506,4 @@ export function ArenaView({
         </div>
     );
 }
+
