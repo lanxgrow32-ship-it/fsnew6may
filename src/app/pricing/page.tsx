@@ -17,7 +17,7 @@ const instantFundingPlans = [
   { size: '5,00,000', title: '5L Instant Funding', price: '17,999' },
   { size: '10,00,000', title: '10L Instant Funding', price: '28,999' },
   { size: '25,00,000', title: '25L Instant Funding', price: '49,500' },
-  { size: '50,00,000', title: '50L Instant Funding', price: '24,999', isFlashSale: true },
+  { size: '35,00,000', title: '35L Instant Funding', price: '24,999', isFlashSale: true },
 ];
 
 const oneStepPlans = [
@@ -85,7 +85,7 @@ const LiveViewersBanner = () => {
 
 const PlanCard = ({ size, title, price, isPopular, isFlashSale }: { size: string; title: string; price: string, isPopular?: boolean, isFlashSale?: boolean }) => {
   const currentPrice = parseFloat(price.replace(/,/g, ''));
-  const originalPrice = isFlashSale ? currentPrice * 4 : currentPrice * 2;
+  const originalPrice = isFlashSale ? currentPrice * 3 : currentPrice * 2;
   const [purchasedToday, setPurchasedToday] = useState(0);
   const [slotsRemaining, setSlotsRemaining] = useState(0);
 
@@ -155,7 +155,7 @@ const PlanCard = ({ size, title, price, isPopular, isFlashSale }: { size: string
                 <span className={cn("text-3xl font-bold text-primary", isFlashSale && "text-4xl text-white drop-shadow-[0_0_10px_rgba(139,44,245,0.8)]")}>₹{currentPrice.toLocaleString('en-IN')}</span>
             </div>
             <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest">
-                {isFlashSale ? "FLASH SALE: 75% OFF" : "50% LIMITED DISCOUNT"}
+                {isFlashSale ? "FLASH SALE: 70% OFF" : "50% LIMITED DISCOUNT"}
             </Badge>
         </div>
 
