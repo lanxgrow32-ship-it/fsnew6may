@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -31,8 +32,9 @@ export async function approveAccount(accountId: string) {
     
     if (approveError) return { error: approveError.message };
 
-    // 2. REFERRAL ENGINE (v5.0): Credit referrer if this is the user's first REAL purchase
+    // 2. REFERRAL ENGINE (v5.0): Credit referrer ONLY if this is the user's first REAL purchase
     // We check the 'referral_commission_paid' flag on the profile to ensure one-time payment.
+    // Trials are excluded by the fact that account.final_amount_paid is checked.
     if (profile.referred_by && !profile.referral_commission_paid && !account.is_trial && account.final_amount_paid > 0) {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
@@ -45,7 +47,7 @@ export async function approveAccount(accountId: string) {
             
             await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
             
-            // Mark user as "Commission Paid" to prevent repeat payments
+            // Mark user as "Commission Paid" immediately to prevent repeat payments
             await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', profile.id);
 
             // Log for audit

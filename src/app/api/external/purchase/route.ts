@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
@@ -6,7 +7,7 @@ import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsernam
 /**
  * Secure API for external portal to notify main app of a successful plan purchase.
  * POST /api/external/purchase
- * Follows SPEC v4.0
+ * Hardened v5.0 Referral Engine Integration
  */
 
 export async function POST(req: NextRequest) {
@@ -14,10 +15,10 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { wallet_id, plan_name, amount, transaction_id, secret_key } = body;
 
-        // Security Protocol
+        // Security Check
         const systemSecret = process.env.FS_GATEWAY_SECRET;
         if (!systemSecret || secret_key !== systemSecret) {
-            return NextResponse.json({ error: 'Unauthorized Protocol Access' }, { status: 401 });
+            return NextResponse.json({ error: 'Unauthorized Access' }, { status: 401 });
         }
 
         if (!wallet_id || !plan_name || !amount || !transaction_id) {
@@ -38,7 +39,6 @@ export async function POST(req: NextRequest) {
         const isPTP = plan_name.toLowerCase().includes('ptp') || plan_name.toLowerCase().includes('passthenpay');
         const classification = getAutoClassification(plan_name);
         const isKycVerified = profile.kyc_status === 'verified';
-
         const finalPrice = parseFloat(amount);
 
         // 2. Create the Account Record
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
                 
                 await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
                 
-                // SET LOCK
+                // SET SAFETY LOCK
                 await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', profile.id);
 
                 await supabaseAdmin.from('referrals').insert({
@@ -77,11 +77,10 @@ export async function POST(req: NextRequest) {
                     commission_amount: commissionAmount,
                     plan_name: plan_name
                 });
-                console.log(`[External API] Referral Credit Dispatched: ₹${commissionAmount}`);
             }
         }
 
-        // 4. StockMint Hub Sync (SPEC v4.0)
+        // 4. StockMint Hub Sync
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
         const initialBalance = getBalanceFromPlanName(plan_name);
         let stockmintUsername = profile.email;
@@ -113,14 +112,11 @@ export async function POST(req: NextRequest) {
                         trading_password: stockmintUsername, 
                         status: 'active' 
                     }).eq('id', account.id);
-                } else {
-                    const errTxt = await res.text();
-                    console.error(`[External Purchase] StockMint API Error: ${res.status} - ${errTxt}`);
                 }
-            } catch (e) { console.error('StockMint Hub API Error:', e); }
+            } catch (e) { console.error('StockMint API Error:', e); }
         }
 
-        // 5. Trigger Automation (v3.1 Purchase Webhook)
+        // 5. Trigger Automation
         const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
         if (purchaseWebhook) {
             fetch(purchaseWebhook, {
@@ -134,7 +130,7 @@ export async function POST(req: NextRequest) {
                     password: stockmintUsername,
                     needsKyc: !isKycVerified && !isPTP
                 })
-            }).catch(e => console.error('Automation Hook Failed:', e));
+            }).catch(e => console.error('Automation Failed:', e));
         }
 
         revalidatePath('/welcome');
@@ -143,7 +139,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, account_id: account.id });
 
     } catch (error: any) {
-        console.error('External Purchase Protocol Error:', error);
+        console.error('External API Error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

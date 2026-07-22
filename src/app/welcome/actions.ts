@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -20,6 +21,7 @@ export async function getCompetitionEvents() {
 
 /**
  * Express Wallet Purchase Logic (Hardened v5.0)
+ * Only pays referral commission on the very first real purchase.
  */
 export async function purchaseWithWallet(userId: string, plan: any) {
   if (!userId || !plan) return { error: 'Missing details.' };
@@ -38,7 +40,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     return { error: 'Insufficient wallet balance.' };
   }
 
-  // 1. Deduct Balance
+  // 1. Deduct Balance from Wallet
   await supabaseAdmin.from('profiles').update({ 
       wallet_balance: profile.wallet_balance - price 
   }).eq('id', userId);
@@ -57,8 +59,8 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   const classification = getAutoClassification(plan.title);
   const isKycVerified = profile.kyc_status === 'verified';
 
-  // 2. REFERRAL ENGINE (v5.0): Credit referrer if this is the first real purchase
-  // We check the lock flag to ensure one-time credit.
+  // 2. REFERRAL ENGINE (v5.0): Credit referrer ONLY if this is the user's first REAL purchase
+  // Demo/Trial accounts are ignored. We check the 'referral_commission_paid' flag.
   if (profile.referred_by && !profile.referral_commission_paid && price > 0) {
       const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
       const commPercent = settings?.referral_commission_percentage || 10;
@@ -68,9 +70,10 @@ export async function purchaseWithWallet(userId: string, plan: any) {
           const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
           const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
           
+          // Credit Referrer
           await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
           
-          // LOCK STATUS
+          // Set Safety Lock to true immediately
           await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', userId);
 
           await supabaseAdmin.from('referrals').insert({
@@ -79,11 +82,10 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               commission_amount: commissionAmount,
               plan_name: plan.title
           });
-          console.log(`[Referral Engine] Instant Wallet Credit: ₹${commissionAmount} to ${profile.referred_by}`);
       }
   }
 
-  // 3. Provision Account Record
+  // 3. Create Account Record
   const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
     user_id: userId, 
     plan_name: plan.title, 
@@ -376,7 +378,6 @@ export async function startFreeTrial(userId: string) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return { error: 'Trader not found.' };
 
-    // 1. One Trial Check
     const { count } = await supabaseAdmin
         .from('user_accounts')
         .select('id', { count: 'exact', head: true })
@@ -385,34 +386,30 @@ export async function startFreeTrial(userId: string) {
     
     if (count && count > 0) return { error: 'You have already used your free trial.' };
 
-    // 2. Calculate Market-Aware Expiry
     const now = new Date();
     const expiry = calculateTrialExpiry(now);
 
-    // 3. Provision Stockmint Hub
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
     const { count: totalAccs } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', userId);
     const stockmintUsername = generateStockmintUsername(profile.email, (totalAccs || 0) + 500);
 
     if (stockmintApiKey) {
         try {
-            const payload = { 
-                fullName: profile.full_name, 
-                email: stockmintUsername, 
-                password: stockmintUsername,
-                initialBalance: 500000, 
-                accountClassification: 'evaluation', 
-                accountModel: 'normal'
-            };
             await fetch('https://stockmint.io/api/users/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ 
+                    fullName: profile.full_name, 
+                    email: stockmintUsername, 
+                    password: stockmintUsername,
+                    initialBalance: 500000, 
+                    accountClassification: 'evaluation', 
+                    accountModel: 'normal'
+                }),
             });
-        } catch (e) { console.error('Trial Creation Hub Error:', e); }
+        } catch (e) { console.error('Trial Hub Error:', e); }
     }
 
-    // 4. Create Local Account Record
     const { data: account, error } = await supabaseAdmin.from('user_accounts').insert({
         user_id: userId,
         plan_name: '5L Broker Trial (48h)',
@@ -437,7 +434,6 @@ export async function startFreeTrial(userId: string) {
  */
 export async function checkAndCleanTrial(accountId: string) {
     const { data: acc } = await supabaseAdmin.from('user_accounts').select('*').eq('id', accountId).single();
-    
     if (!acc || !acc.is_trial || acc.status === 'deleted') return { expired: false };
 
     const now = new Date();
@@ -452,9 +448,7 @@ export async function checkAndCleanTrial(accountId: string) {
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
                     body: JSON.stringify({ email: acc.trading_username }),
                 });
-            } catch (e) { 
-                console.error('[Trial Cleanup] Hub Error:', e); 
-            }
+            } catch (e) { console.error('[Cleanup] Hub Error:', e); }
         }
 
         await supabaseAdmin.from('user_accounts').update({ 
@@ -465,7 +459,6 @@ export async function checkAndCleanTrial(accountId: string) {
 
         return { expired: true };
     }
-
     return { expired: false };
 }
 
@@ -495,7 +488,7 @@ export async function cleanupAllTrials(userId: string) {
                         headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
                         body: JSON.stringify({ email: trial.trading_username }),
                     });
-                } catch (e) { console.error('[Batch Cleanup] Hub Error:', e); }
+                } catch (e) { console.error('[Batch] Hub Error:', e); }
             }
 
             await supabaseAdmin.from('user_accounts').update({ 

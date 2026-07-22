@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -423,7 +424,7 @@ export function ArenaView({
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
             <div className="space-y-1">
                 <h2 className="text-2xl font-bold text-white tracking-tight">Get Funded</h2>
-                <p className="text-gray-400 text-sm font-medium">Select your path to instant capital and professional scaling.</p>
+                <p className="text-gray-400 text-sm font-medium">Select your path to capital and secure your evaluation account.</p>
             </div>
 
             <Tabs defaultValue="instant" className="w-full">
