@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -43,7 +44,8 @@ export async function deleteMultipleUsers(userIds: string[]) {
 }
 
 /**
- * Legacy approve function, updated to respect the referral lock (v5.0 Hardened).
+ * Hardened Legacy Approve Function (v5.0 Referral Engine)
+ * Marks user as approved and credits the referrer ONLY once.
  */
 export async function approveUserPayment(userId: string) {
     if (!userId) return { error: 'User ID is required.' };
@@ -70,10 +72,11 @@ export async function approveUserPayment(userId: string) {
     }).eq('id', userId);
 
     // 2. REFERRAL PROTOCOL: Credit referrer ONLY if never paid before (v5.0 Hardened)
-    if (profile.referred_by && !profile.referral_commission_paid && profile.final_amount_paid > 0) {
+    const paidAmount = profile.final_amount_paid || 0;
+    if (profile.referred_by && !profile.referral_commission_paid && paidAmount > 0) {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
-        const commissionAmount = Math.floor((profile.final_amount_paid * commPercent) / 100);
+        const commissionAmount = Math.floor((paidAmount * commPercent) / 100);
 
         if (commissionAmount > 0) {
             const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
@@ -89,7 +92,7 @@ export async function approveUserPayment(userId: string) {
                 commission_amount: commissionAmount,
                 plan_name: profile.plan_purchased || 'Evaluation Plan'
             });
-            console.log(`[Referral Engine] Legacy Credit: ₹${commissionAmount} to ${profile.referred_by}`);
+            console.log(`[Referral Engine] Dashboard Credit: ₹${commissionAmount} to ${profile.referred_by}`);
         }
     }
     
