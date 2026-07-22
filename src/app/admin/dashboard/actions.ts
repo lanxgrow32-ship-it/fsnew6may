@@ -88,7 +88,7 @@ export async function approveUserPayment(userId: string) {
                 commission_amount: commissionAmount,
                 plan_name: profile.plan_purchased || 'Evaluation Plan'
             });
-            console.log(`[Referral Engine] Handled legacy credit of ₹${commissionAmount} to ${profile.referred_by}`);
+            console.log(`[Referral Engine] Handled legacy credit of ₹${commissionAmount} to ${profile.referred_by} for first purchase of ${profile.id}`);
         }
     }
     

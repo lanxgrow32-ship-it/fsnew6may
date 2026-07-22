@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
         const classification = getAutoClassification(plan_name);
         const isKycVerified = profile.kyc_status === 'verified';
 
+        const finalPrice = parseFloat(amount);
+
         // 2. Create the Account Record
         const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
             user_id: profile.id,
@@ -48,13 +50,35 @@ export async function POST(req: NextRequest) {
             is_approved: true,
             account_model: isPTP ? 'passthrupay' : 'normal',
             account_classification: classification,
-            final_amount_paid: parseFloat(amount),
+            final_amount_paid: finalPrice,
             transaction_id: transaction_id
         }).select().single();
 
         if (accountError || !account) throw new Error('Account Provisioning Failure');
 
-        // 3. StockMint Hub Sync (SPEC v4.0)
+        // 3. REFERRAL ENGINE (v5.0): Credit if first real purchase
+        if (profile.referred_by && !profile.referral_commission_paid && finalPrice > 0) {
+            const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
+            const commPercent = settings?.referral_commission_percentage || 10;
+            const commissionAmount = Math.floor((finalPrice * commPercent) / 100);
+
+            if (commissionAmount > 0) {
+                const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
+                const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
+                
+                await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
+                await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', profile.id);
+
+                await supabaseAdmin.from('referrals').insert({
+                    referrer_id: profile.referred_by,
+                    referred_id: profile.id,
+                    commission_amount: commissionAmount,
+                    plan_name: plan_name
+                });
+            }
+        }
+
+        // 4. StockMint Hub Sync (SPEC v4.0)
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
         const initialBalance = getBalanceFromPlanName(plan_name);
         let stockmintUsername = profile.email;
@@ -93,7 +117,7 @@ export async function POST(req: NextRequest) {
             } catch (e) { console.error('StockMint Hub API Error:', e); }
         }
 
-        // 4. Trigger Automation (v3.1 Purchase Webhook)
+        // 5. Trigger Automation (v3.1 Purchase Webhook)
         const purchaseWebhook = process.env.MAKE_PURCHASE_WEBHOOK_URL;
         if (purchaseWebhook) {
             fetch(purchaseWebhook, {
@@ -112,6 +136,7 @@ export async function POST(req: NextRequest) {
 
         revalidatePath('/welcome');
         revalidatePath('/admin/account-requests');
+        revalidatePath('/referrals');
         return NextResponse.json({ success: true, account_id: account.id });
 
     } catch (error: any) {

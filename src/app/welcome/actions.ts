@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -57,7 +58,30 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   const classification = getAutoClassification(plan.title);
   const isKycVerified = profile.kyc_status === 'verified';
 
-  // 2. Provision Account Record
+  // 2. REFERRAL ENGINE (v5.0): Credit referrer if this is the first real purchase
+  if (profile.referred_by && !profile.referral_commission_paid) {
+      const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
+      const commPercent = settings?.referral_commission_percentage || 10;
+      const commissionAmount = Math.floor((price * commPercent) / 100);
+
+      if (commissionAmount > 0) {
+          const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
+          const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
+          
+          await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
+          await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', userId);
+
+          await supabaseAdmin.from('referrals').insert({
+              referrer_id: profile.referred_by,
+              referred_id: userId,
+              commission_amount: commissionAmount,
+              plan_name: plan.title
+          });
+          console.log(`[Referral Engine] Instant credit: ₹${commissionAmount} to ${profile.referred_by}`);
+      }
+  }
+
+  // 3. Provision Account Record
   const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
     user_id: userId, 
     plan_name: plan.title, 
@@ -71,7 +95,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
   if (accountError || !account) return { error: 'Account creation failed.' };
 
-  // 3. Stockmint Hub Sync
+  // 4. Stockmint Hub Sync
   const stockmintApiKey = process.env.STOCKMINT_API_KEY;
   const initialBalance = getBalanceFromPlanName(plan.title);
   let stockmintUsername = profile.email;
@@ -115,6 +139,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   }
 
   revalidatePath('/welcome');
+  revalidatePath('/referrals');
   return { success: true, transaction_id: txId, amount: price };
 }
 
