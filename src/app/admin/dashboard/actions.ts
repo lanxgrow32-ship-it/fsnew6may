@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -42,6 +43,9 @@ export async function deleteMultipleUsers(userIds: string[]) {
   return { success: true };
 }
 
+/**
+ * Legacy approve function, updated to respect the referral lock.
+ */
 export async function approveUserPayment(userId: string) {
     if (!userId) return { error: 'User ID is required.' };
 
@@ -52,7 +56,7 @@ export async function approveUserPayment(userId: string) {
         .single();
     
     if (fetchError || !profile) return { error: 'User profile not found.' };
-    if (profile.is_approved) return { success: true, message: 'User is already approved.' };
+    if (profile.is_approved && profile.referral_commission_paid) return { success: true, message: 'User is already processed.' };
 
     const classification = getAutoClassification(profile.plan_purchased || '');
     const isPTP = profile.account_model === 'passthrupay' || (profile.plan_purchased?.toLowerCase().includes('ptp'));
@@ -64,29 +68,27 @@ export async function approveUserPayment(userId: string) {
         account_classification: classification
     }).eq('id', userId);
 
-    // 2. REFERRAL PROTOCOL: Credit referrer if applicable (v4.1 Hardened)
-    if (profile.referred_by && profile.final_amount_paid > 0) {
-        // Fetch commission percentage from global settings
+    // 2. REFERRAL PROTOCOL: Credit referrer ONLY if never paid before (v5.0 Hardened)
+    if (profile.referred_by && !profile.referral_commission_paid && profile.final_amount_paid > 0) {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
         const commissionAmount = Math.floor((profile.final_amount_paid * commPercent) / 100);
 
         if (commissionAmount > 0) {
-            // Get current referrer profile to calculate new balance
             const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
             const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
 
-            // Update balance
+            // Credit balance and set lock flag
             await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
+            await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', userId);
 
-            // Log referral transaction for audit
             await supabaseAdmin.from('referrals').insert({
                 referrer_id: profile.referred_by,
                 referred_id: userId,
                 commission_amount: commissionAmount,
                 plan_name: profile.plan_purchased || 'Evaluation Plan'
             });
-            console.log(`[Referral Engine] Credited ₹${commissionAmount} to referrer ${profile.referred_by} for user ${userId}`);
+            console.log(`[Referral Engine] Handled legacy credit of ₹${commissionAmount} to ${profile.referred_by}`);
         }
     }
     

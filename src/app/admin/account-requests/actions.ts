@@ -5,8 +5,17 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername } from '@/lib/plan-utils';
 
+/**
+ * Approves an individual account request from the Activation Ledger.
+ * Includes unified logic for Stockmint provisioning and Referral Credits.
+ */
 export async function approveAccount(accountId: string) {
-    const { data: account, error: fetchError } = await supabaseAdmin.from('user_accounts').select('*, profiles(*)').eq('id', accountId).single();
+    const { data: account, error: fetchError } = await supabaseAdmin
+        .from('user_accounts')
+        .select('*, profiles(*)')
+        .eq('id', accountId)
+        .single();
+    
     if (fetchError || !account) return { error: 'Account request not found.' };
 
     const profile = account.profiles;
@@ -14,6 +23,7 @@ export async function approveAccount(accountId: string) {
     const isKycDone = profile.kyc_status === 'verified';
     const classification = getAutoClassification(account.plan_name);
 
+    // 1. Update Account Status
     const { error: approveError } = await supabaseAdmin.from('user_accounts').update({ 
         is_approved: true, 
         status: isKycDone || isPTP ? 'active' : 'pending', 
@@ -21,6 +31,33 @@ export async function approveAccount(accountId: string) {
     }).eq('id', accountId);
     
     if (approveError) return { error: approveError.message };
+
+    // 2. REFERRAL ENGINE (v5.0): Credit referrer if this is the user's first REAL purchase
+    if (profile.referred_by && !profile.referral_commission_paid && !account.is_trial && account.final_amount_paid > 0) {
+        const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
+        const commPercent = settings?.referral_commission_percentage || 10;
+        const commissionAmount = Math.floor((account.final_amount_paid * commPercent) / 100);
+
+        if (commissionAmount > 0) {
+            // Credit referrer
+            const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
+            const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
+            
+            await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
+            
+            // Mark user as "Commission Paid" to prevent repeat payments
+            await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', profile.id);
+
+            // Log for audit
+            await supabaseAdmin.from('referrals').insert({
+                referrer_id: profile.referred_by,
+                referred_id: profile.id,
+                commission_amount: commissionAmount,
+                plan_name: account.plan_name
+            });
+            console.log(`[Referral Engine] Credited ₹${commissionAmount} to ${profile.referred_by} for first purchase of ${profile.id}`);
+        }
+    }
 
     let stockmintUsername = profile.email; 
     
@@ -92,6 +129,7 @@ export async function approveAccount(accountId: string) {
 
     revalidatePath('/admin/account-requests');
     revalidatePath('/welcome');
+    revalidatePath('/referrals');
     return { success: true };
 }
 
