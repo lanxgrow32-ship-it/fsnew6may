@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -44,7 +43,7 @@ export async function deleteMultipleUsers(userIds: string[]) {
 }
 
 /**
- * Legacy approve function, updated to respect the referral lock.
+ * Legacy approve function, updated to respect the referral lock (v5.0 Hardened).
  */
 export async function approveUserPayment(userId: string) {
     if (!userId) return { error: 'User ID is required.' };
@@ -56,6 +55,8 @@ export async function approveUserPayment(userId: string) {
         .single();
     
     if (fetchError || !profile) return { error: 'User profile not found.' };
+    
+    // Safety exit
     if (profile.is_approved && profile.referral_commission_paid) return { success: true, message: 'User is already processed.' };
 
     const classification = getAutoClassification(profile.plan_purchased || '');
@@ -88,7 +89,7 @@ export async function approveUserPayment(userId: string) {
                 commission_amount: commissionAmount,
                 plan_name: profile.plan_purchased || 'Evaluation Plan'
             });
-            console.log(`[Referral Engine] Handled legacy credit of ₹${commissionAmount} to ${profile.referred_by} for first purchase of ${profile.id}`);
+            console.log(`[Referral Engine] Legacy Credit: ₹${commissionAmount} to ${profile.referred_by}`);
         }
     }
     

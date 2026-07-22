@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -20,7 +19,7 @@ export async function getCompetitionEvents() {
 }
 
 /**
- * Express Wallet Purchase Logic (Hardened)
+ * Express Wallet Purchase Logic (Hardened v5.0)
  */
 export async function purchaseWithWallet(userId: string, plan: any) {
   if (!userId || !plan) return { error: 'Missing details.' };
@@ -59,7 +58,8 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   const isKycVerified = profile.kyc_status === 'verified';
 
   // 2. REFERRAL ENGINE (v5.0): Credit referrer if this is the first real purchase
-  if (profile.referred_by && !profile.referral_commission_paid) {
+  // We check the lock flag to ensure one-time credit.
+  if (profile.referred_by && !profile.referral_commission_paid && price > 0) {
       const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
       const commPercent = settings?.referral_commission_percentage || 10;
       const commissionAmount = Math.floor((price * commPercent) / 100);
@@ -69,6 +69,8 @@ export async function purchaseWithWallet(userId: string, plan: any) {
           const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
           
           await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
+          
+          // LOCK STATUS
           await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', userId);
 
           await supabaseAdmin.from('referrals').insert({
@@ -77,7 +79,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
               commission_amount: commissionAmount,
               plan_name: plan.title
           });
-          console.log(`[Referral Engine] Instant credit: ₹${commissionAmount} to ${profile.referred_by}`);
+          console.log(`[Referral Engine] Instant Wallet Credit: ₹${commissionAmount} to ${profile.referred_by}`);
       }
   }
 
@@ -461,7 +463,6 @@ export async function checkAndCleanTrial(accountId: string) {
             trading_password: 'EXPIRED'
         }).eq('id', accountId);
 
-        // NOTE: revalidatePath removed to prevent render-time execution errors.
         return { expired: true };
     }
 
@@ -504,5 +505,4 @@ export async function cleanupAllTrials(userId: string) {
             }).eq('id', trial.id);
         }
     }
-    // NOTE: revalidatePath removed to prevent render-time execution errors.
 }

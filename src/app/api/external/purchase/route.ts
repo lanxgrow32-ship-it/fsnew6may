@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
@@ -57,6 +56,7 @@ export async function POST(req: NextRequest) {
         if (accountError || !account) throw new Error('Account Provisioning Failure');
 
         // 3. REFERRAL ENGINE (v5.0): Credit if first real purchase
+        // Safety lock check: Only credit if 'referral_commission_paid' is false.
         if (profile.referred_by && !profile.referral_commission_paid && finalPrice > 0) {
             const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
             const commPercent = settings?.referral_commission_percentage || 10;
@@ -67,6 +67,8 @@ export async function POST(req: NextRequest) {
                 const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
                 
                 await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
+                
+                // SET LOCK
                 await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', profile.id);
 
                 await supabaseAdmin.from('referrals').insert({
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
                     commission_amount: commissionAmount,
                     plan_name: plan_name
                 });
+                console.log(`[External API] Referral Credit Dispatched: ₹${commissionAmount}`);
             }
         }
 
