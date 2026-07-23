@@ -42,7 +42,8 @@ import {
     UsersRound,
     Search,
     Ticket,
-    ShieldAlert
+    ShieldAlert,
+    Loader2
 } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
