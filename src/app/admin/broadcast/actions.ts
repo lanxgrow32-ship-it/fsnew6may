@@ -5,15 +5,19 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 
 /**
  * Fetches all trader emails and names for personalized broadcast.
+ * Broadened to include all non-admin users across all account types.
  */
 export async function getSubscriberData() {
+    // PROTOCOL v5.1: Increased range and removed restrictive account_type filters
+    // to target the entire platform audience.
     const { data, error } = await supabaseAdmin
         .from('profiles')
         .select('email, full_name')
-        .eq('account_type', 'standard');
+        .neq('role', 'admin') // Exclude only system admins
+        .range(0, 49999); // Ensure we catch all 2500+ users
     
     if (error) {
-        console.error("Failed to fetch subscribers:", error);
+        console.error("[Broadcast] Failed to fetch subscribers:", error);
         return [];
     }
     

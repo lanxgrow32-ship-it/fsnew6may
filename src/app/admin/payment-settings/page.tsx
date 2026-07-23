@@ -18,21 +18,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { 
     Home, 
-    Ticket, 
     Wallet, 
     LogOut, 
     Loader2, 
-    Percent, 
     Banknote, 
     LineChart, 
     IndianRupee, 
     Swords, 
     HardDrive, 
-    Wifi, 
     Users, 
     Newspaper, 
     UserCheck, 
-    ShieldCheck, 
     Zap, 
     Repeat, 
     Settings2, 
@@ -43,7 +39,9 @@ import {
     Megaphone,
     Mail,
     Send,
-    FlaskConical
+    FlaskConical,
+    UsersRound,
+    Search
 } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -85,12 +83,27 @@ function BroadcastHub() {
     
     const [isBroadcasting, setIsBroadcasting] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
+    const [audienceCount, setAudienceCount] = useState<number | null>(null);
+    const [isCounting, setIsCounting] = useState(false);
     const [progress, setProgress] = useState(0);
     const [logs, setLogs] = useState<{msg: string, type: 'info' | 'success' | 'error'}[]>([]);
 
     const addLog = (msg: string, type: 'info' | 'success' | 'error' = 'info') => {
-        setLogs(prev => [{msg, type}, ...prev].slice(0, 5));
+        setLogs(prev => [{msg, type}, ...prev].slice(0, 10));
     };
+
+    const fetchAudience = async () => {
+        setIsCounting(true);
+        addLog("Querying database for all registered traders...");
+        const subscribers = await getSubscriberData();
+        setAudienceCount(subscribers.length);
+        addLog(`Database sync complete. Total audience: ${subscribers.length}`, 'success');
+        setIsCounting(false);
+    };
+
+    useEffect(() => {
+        fetchAudience();
+    }, []);
 
     const handleSendTest = async () => {
         if (!testEmail || !subject || !message) {
@@ -99,7 +112,7 @@ function BroadcastHub() {
         }
 
         setIsTesting(true);
-        addLog(`Initiating test to ${testEmail}...`);
+        addLog(`Initiating test signal to ${testEmail}...`);
         
         const res = await sendBroadcastSignal(testEmail, 'Test Admin', subject, message);
         
@@ -119,54 +132,66 @@ function BroadcastHub() {
             return;
         }
 
-        if (!confirm("Are you sure you want to broadcast this message to ALL standard traders?")) return;
+        if (!confirm(`Are you sure you want to broadcast this message to ALL ${audienceCount || 'available'} traders?`)) return;
 
         setIsBroadcasting(true);
-        addLog("Fetching subscriber list from database...");
+        setProgress(0);
+        addLog("Re-validating subscriber list...");
 
         const subscribers = await getSubscriberData();
         
         if (subscribers.length === 0) {
-            toast({ title: "No Recipients", description: "Could not find any standard users to email.", variant: "destructive" });
+            toast({ title: "No Recipients", description: "Could not find any users to email.", variant: "destructive" });
             setIsBroadcasting(false);
             return;
         }
 
-        addLog(`Found ${subscribers.length} recipients. Starting dispatch...`);
+        addLog(`Dispatching to ${subscribers.length} recipients. DO NOT CLOSE THIS TAB.`);
 
         let successCount = 0;
+        let errorCount = 0;
+
         for (let i = 0; i < subscribers.length; i++) {
             const sub = subscribers[i];
+            
+            // Dispatch Signal
             const res = await sendBroadcastSignal(sub.email, sub.full_name, subject, message);
             
             if (res.success) {
                 successCount++;
-                console.log(`[Broadcast] Successfully dispatched to ${sub.email}`);
+                if (i % 50 === 0) addLog(`Delivered batch: ${i}/${subscribers.length}`);
+            } else {
+                errorCount++;
+                addLog(`Failed: ${sub.email}`, 'error');
             }
             
+            // Progress Calculation
             const currentProgress = Math.round(((i + 1) / subscribers.length) * 100);
             setProgress(currentProgress);
+
+            // Safety Sleep: Prevent webhook rate-limiting (100ms between calls)
+            if (i % 5 === 0) await new Promise(resolve => setTimeout(resolve, 100));
         }
 
-        addLog(`Broadcast complete. ${successCount}/${subscribers.length} signals delivered.`, 'success');
-        toast({ title: "Broadcast Finalized", description: `${successCount} traders notified.` });
+        addLog(`Broadcast complete. Success: ${successCount}, Failures: ${errorCount}`, 'success');
+        toast({ title: "Broadcast Finalized", description: `${successCount} traders successfully notified.` });
         setIsBroadcasting(false);
     };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-                <Card className="shadow-xl border-white/5">
+                <Card className="shadow-xl border-white/5 bg-slate-900/50 backdrop-blur-md">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-white">
                             <Mail className="w-5 h-5 text-primary" />
-                            Compose Broadcast
+                            Compose Global Signal
                         </CardTitle>
-                        <CardDescription className="text-gray-400">Craft your message to the trader community. You can use <b>{"{{full_name}}"}</b> to personalize the content.</CardDescription>
+                        <CardDescription className="text-gray-400">Target your entire network. You can use <b>{"{{full_name}}"}</b> to personalize the content.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="subject" className="text-white">Email Subject</Label>
+                            <Label htmlFor="subject" className="text-white text-xs font-bold uppercase tracking-widest">Signal Subject</Label>
                             <Input 
                                 id="subject" 
                                 placeholder="e.g. Weekly Market Analysis & Payout Schedule" 
@@ -176,14 +201,14 @@ function BroadcastHub() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="message" className="text-white">Message Body</Label>
+                            <Label htmlFor="message" className="text-white text-xs font-bold uppercase tracking-widest">Message Payload (HTML Supported)</Label>
                             <textarea 
                                 id="message" 
-                                placeholder="Write your email content here... Use {{full_name}} to address the trader." 
+                                placeholder="Write your email content here..." 
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
-                                rows={12}
-                                className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none leading-relaxed"
+                                rows={14}
+                                className="w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-sm text-white ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none leading-relaxed"
                             />
                         </div>
                     </CardContent>
@@ -193,84 +218,98 @@ function BroadcastHub() {
             <div className="space-y-6">
                 <Card className="bg-white/5 border-white/10">
                     <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-amber-400">
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-amber-400">
                             <FlaskConical className="w-4 h-4" />
-                            Testing Protocol
+                            Safety Verification
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label className="text-[10px] text-gray-500 uppercase">Test Recipient</Label>
+                            <Label className="text-[9px] text-gray-500 uppercase font-black">Test Destination</Label>
                             <Input 
-                                placeholder="test@example.com" 
+                                placeholder="admin@fundedstock.io" 
                                 value={testEmail}
                                 onChange={(e) => setTestEmail(e.target.value)}
-                                className="bg-black/20 border-white/10 text-white"
+                                className="bg-black/20 border-white/10 text-white h-10 text-xs"
                             />
                         </div>
                         <Button 
                             variant="outline" 
                             onClick={handleSendTest} 
                             disabled={isTesting || isBroadcasting}
-                            className="w-full h-11 border-amber-500/20 text-amber-500 hover:bg-amber-500/10 font-bold"
+                            className="w-full h-11 border-amber-500/20 text-amber-500 hover:bg-amber-500/10 font-black text-[10px] uppercase tracking-widest"
                         >
                             {isTesting ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <Send className="mr-2 h-4 w-4" />}
-                            Send Test Email
+                            Execute Test Signal
                         </Button>
                     </CardContent>
                 </Card>
 
-                <Card className={cn("border-primary/20", isBroadcasting && "bg-primary/5")}>
+                <Card className={cn("border-primary/20 bg-slate-900/50", isBroadcasting && "border-primary")}>
                     <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-primary">
-                            <Megaphone className="w-4 h-4" />
-                            Mass Dispatch
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-primary">
+                            <UsersRound className="w-4 h-4" />
+                            Audience Scope
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                            <p className="text-xs text-gray-400 leading-relaxed font-medium">
-                                Broadcast will send this email to every active standard trader. This action is final.
-                            </p>
+                        <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/5">
+                            <div className="space-y-0.5">
+                                <p className="text-[9px] text-gray-500 uppercase font-black">Confirmed Traders</p>
+                                <h4 className="text-2xl font-black text-white">
+                                    {isCounting ? <Loader2 className="h-4 w-4 animate-spin text-gray-700"/> : audienceCount ?? '---'}
+                                </h4>
+                            </div>
+                            <Button size="icon" variant="ghost" onClick={fetchAudience} disabled={isCounting || isBroadcasting} className="text-gray-600 hover:text-white">
+                                <Repeat className={cn("h-4 w-4", isCounting && "animate-spin")} />
+                            </Button>
                         </div>
 
                         {isBroadcasting && (
-                            <div className="space-y-3">
+                            <div className="space-y-3 animate-in slide-in-from-top-2">
                                 <div className="flex justify-between text-[10px] font-black uppercase text-primary">
-                                    <span>Progress</span>
+                                    <span>Syncing Infrastructure...</span>
                                     <span>{progress}%</span>
                                 </div>
-                                <Progress value={progress} className="h-2" />
+                                <Progress value={progress} className="h-1.5" />
                             </div>
                         )}
 
                         <Button 
                             onClick={handleStartBroadcast} 
-                            disabled={isBroadcasting || isTesting}
-                            className="w-full h-14 text-base font-bold shadow-xl shadow-primary/20"
+                            disabled={isBroadcasting || isTesting || isCounting || !audienceCount}
+                            className="w-full h-16 text-xs font-black uppercase tracking-widest shadow-2xl shadow-primary/20 rounded-2xl"
                         >
-                            {isBroadcasting ? <Loader2 className="animate-spin mr-2 h-5 w-5"/> : <Send className="mr-2 h-5 w-5" />}
-                            Launch Broadcast
+                            {isBroadcasting ? <Loader2 className="animate-spin mr-2 h-5 w-5"/> : <Megaphone className="mr-2 h-5 w-5" />}
+                            Launch Platform Signal
                         </Button>
+                        <p className="text-[9px] text-gray-600 text-center font-bold uppercase italic leading-tight">
+                            Note: This will dispatch emails to all {audienceCount} traders currently in the database.
+                        </p>
                     </CardContent>
                 </Card>
 
                 <Card className="bg-black border-white/5">
-                    <CardHeader className="py-3 border-b border-white/5">
-                        <CardTitle className="text-[10px] text-gray-600 uppercase font-black tracking-widest">Protocol Monitor</CardTitle>
+                    <CardHeader className="py-3 border-b border-white/5 bg-white/[0.02]">
+                        <CardTitle className="text-[9px] text-gray-600 uppercase font-black tracking-[0.3em]">Signal Monitor</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 h-48 overflow-y-auto space-y-2">
-                        {logs.length > 0 ? logs.map((log, i) => (
-                            <div key={i} className="flex gap-2 text-[11px] font-mono leading-tight animate-in slide-in-from-left-2">
-                                <span className="text-gray-700">[{new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'})}]</span>
-                                <span className={cn(
-                                    log.type === 'error' ? 'text-red-400' : 
-                                    log.type === 'success' ? 'text-green-400' : 'text-gray-400'
-                                )}>{log.msg}</span>
+                    <CardContent className="p-0">
+                        <ScrollArea className="h-48">
+                            <div className="p-4 space-y-2">
+                                {logs.length > 0 ? logs.map((log, i) => (
+                                    <div key={i} className="flex gap-2 text-[10px] font-mono leading-tight animate-in slide-in-from-left-2">
+                                        <span className="text-gray-800">[{new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})}]</span>
+                                        <span className={cn(
+                                            "font-bold",
+                                            log.type === 'error' ? 'text-red-500' : 
+                                            log.type === 'success' ? 'text-green-500' : 'text-gray-400'
+                                        )}>{log.msg}</span>
+                                    </div>
+                                )) : (
+                                    <p className="text-[9px] text-gray-800 font-black uppercase tracking-widest text-center mt-12">Monitor Standby...</p>
+                                )}
                             </div>
-                        )) : (
-                            <p className="text-[10px] text-gray-800 font-bold uppercase tracking-widest text-center mt-12">Standby...</p>
-                        )}
+                        </ScrollArea>
                     </CardContent>
                 </Card>
             </div>
@@ -508,7 +547,7 @@ export default function PaymentSettingsPage() {
                             <TabsTrigger value="settings" className="rounded-lg font-bold px-8 data-[state=active]:bg-primary data-[state=active]:text-white">Gateways & Global</TabsTrigger>
                             <TabsTrigger value="broadcast" className="rounded-lg font-bold px-8 flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
                                 <Megaphone className="w-4 h-4" />
-                                Email Broadcast
+                                Global Email Broadcast
                             </TabsTrigger>
                         </TabsList>
 
