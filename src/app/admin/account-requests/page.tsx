@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -25,7 +24,8 @@ import {
     UserCheck, 
     Search,
     Filter,
-    ShieldAlert
+    ShieldAlert,
+    History
 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
@@ -51,6 +51,7 @@ export default function AccountRequestsPage() {
     const fetchRequests = async () => {
         setLoading(true);
         const client = await supabase;
+        // SPEC v5.1: Fetch huge range to ensure historical integrity
         const { data } = await client
             .from('user_accounts')
             .select('*, profiles(full_name, email, kyc_status, mobile_number)')
@@ -133,7 +134,7 @@ export default function AccountRequestsPage() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Account Activations</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Activation Ledger</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40 space-y-6">
@@ -156,18 +157,24 @@ export default function AccountRequestsPage() {
                                     </div>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="pending">Pending Only</SelectItem>
-                                    <SelectItem value="approved">Approved List</SelectItem>
-                                    <SelectItem value="rejected">Rejected List</SelectItem>
+                                    <SelectItem value="pending">Awaiting Approval</SelectItem>
+                                    <SelectItem value="approved">Activation History</SelectItem>
+                                    <SelectItem value="rejected">Rejected Archives</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Activation Requests</CardTitle>
-                            <CardDescription>Verify manual UPI payments and grant trader access.</CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>{statusFilter === 'pending' ? 'Pending Requests' : 'Activation History'}</CardTitle>
+                                <CardDescription>Managing manual UPI verifications and historical records.</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-lg border border-white/5">
+                                <History className="w-4 h-4 text-gray-500" />
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Master Ledger</span>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-8 w-8"/></div> : (
@@ -224,7 +231,7 @@ export default function AccountRequestsPage() {
                     </Card>
                     <div className="bg-muted p-4 rounded-xl border border-white/5">
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-center">
-                            Technical Stockmint Hub logs are available on the <Link href="/admin/activation-hub" className="text-primary hover:underline">Activation Hub</Link> page.
+                            Note: Technical Stockmint sync logs are now located on the <Link href="/admin/activation-hub" className="text-primary hover:underline">Activation Hub</Link> page.
                         </p>
                     </div>
                 </main>

@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -157,7 +156,6 @@ function BroadcastHub() {
         for (let i = 0; i < subscribers.length; i++) {
             const sub = subscribers[i];
             
-            // Dispatch Signal
             const res = await sendBroadcastSignal(sub.email, sub.full_name, subject, message);
             
             if (res.success) {
@@ -168,11 +166,9 @@ function BroadcastHub() {
                 addLog(`Failed: ${sub.email}`, 'error');
             }
             
-            // Progress Calculation
             const currentProgress = Math.round(((i + 1) / subscribers.length) * 100);
             setProgress(currentProgress);
 
-            // Safety Sleep: Prevent webhook rate-limiting (100ms between calls)
             if (i % 5 === 0) await new Promise(resolve => setTimeout(resolve, 100));
         }
 
@@ -323,19 +319,13 @@ function BroadcastHub() {
 function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDetails | null }) {
     const { toast } = useToast();
     const [state, formAction] = useActionState(updatePaymentSettings, { error: null, success: null });
-    
     const [activeGateway, setActiveGateway] = useState<'lgpay' | 'manual' | 'watchpay' | 'automated' | 'cashfree'>(currentSettings?.active_payment_gateway || 'manual');
     const [automatedMode, setAutomatedMode] = useState<'both' | 'lgpay' | 'watchpay'>(currentSettings?.automated_gateway_mode || 'both');
-
     const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
-        if (state.error) {
-            toast({ title: 'Error', description: state.error, variant: 'destructive' });
-        }
-        if (state.success) {
-            toast({ title: 'Success', description: state.success });
-        }
+        if (state.error) toast({ title: 'Error', description: state.error, variant: 'destructive' });
+        if (state.success) toast({ title: 'Success', description: state.success });
     }, [state, toast]);
     
     return (
@@ -542,7 +532,7 @@ export default function PaymentSettingsPage() {
             </Sidebar>
             <SidebarInset className="bg-slate-950">
                 <header className="flex h-[57px] items-center justify-between p-4 border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold text-white">Admin Command Center</h1></div>
+                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold text-white">Command Center</h1></div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 space-y-8">
