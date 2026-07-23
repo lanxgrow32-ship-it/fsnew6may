@@ -184,8 +184,8 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                         <Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl">
                             <Link href="/guide">Trading Rules</Link>
                         </Button>
-                        <Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl">
-                            <Link href="https://wa.me/917020749658" target="_blank">Support</Link>
+                        <Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl shadow-lg">
+                            <Link href="https://t.me/FundedStock_assistant_bot" target="_blank">Support</Link>
                         </Button>
                     </div>
                 </div>
