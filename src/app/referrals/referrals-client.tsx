@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useActionState, useRef } from 'react';
@@ -42,6 +41,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { useToast } from '@/hooks/use-toast';
 import { updatePayoutDetails, requestPayout } from './actions';
 import { format } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
@@ -279,7 +279,6 @@ export function ReferralsClient({
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* NEW: My Network List */}
                         <GlassCard>
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
