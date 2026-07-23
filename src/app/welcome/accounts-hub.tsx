@@ -22,7 +22,8 @@ import {
     Activity,
     Target,
     Timer,
-    FlaskConical
+    FlaskConical,
+    MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -132,6 +133,7 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
     const kycVerified = profile.kyc_status === 'verified';
     const activeCount = accounts.filter(a => a.status === 'active').length;
     const pendingCount = accounts.filter(a => a.status === 'pending' || !a.is_approved).length;
+    const firstName = profile.full_name?.split(' ')[0] || 'Trader';
 
     return (
         <div className="space-y-10">
@@ -144,7 +146,7 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                     <UserAvatar />
                     <div className="flex-1 text-center md:text-left space-y-2">
                         <div className="flex flex-col md:flex-row items-center gap-3">
-                            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Welcome, {profile.full_name?.split(' ')[0]}!</h1>
+                            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Welcome, {firstName}!</h1>
                             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest px-3 py-1">
                                 {kycVerified ? 'Verified Trader' : 'Member'}
                             </Badge>
@@ -181,6 +183,9 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                         </Button>
                         <Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl">
                             <Link href="/guide">Trading Rules</Link>
+                        </Button>
+                        <Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl">
+                            <Link href="https://wa.me/917020749658" target="_blank">Support</Link>
                         </Button>
                     </div>
                 </div>

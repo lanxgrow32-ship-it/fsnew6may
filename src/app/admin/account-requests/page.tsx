@@ -51,7 +51,7 @@ export default function AccountRequestsPage() {
     const fetchRequests = async () => {
         setLoading(true);
         const client = await supabase;
-        // SPEC v5.1: Fetch huge range to ensure historical integrity
+        // Fetch massive range to ensure historical integrity (v5.1 Protocol)
         const { data } = await client
             .from('user_accounts')
             .select('*, profiles(full_name, email, kyc_status, mobile_number)')
