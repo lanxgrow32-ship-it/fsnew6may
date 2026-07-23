@@ -23,8 +23,6 @@ import {
     Users, 
     Newspaper, 
     UserCheck, 
-    History, 
-    Clock, 
     Search,
     Filter,
     ShieldAlert
