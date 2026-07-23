@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useActionState, useRef } from 'react';
@@ -9,7 +10,28 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Home, FileCheck, DollarSign, LogOut, BookUser, Gift, Loader2, Copy, Check, Users, Banknote, History, Wallet, MessageSquare, Percent, Link as LinkIcon, Share2, Menu, User } from 'lucide-react';
+import { 
+    Home, 
+    FileCheck, 
+    DollarSign, 
+    LogOut, 
+    Gift, 
+    Loader2, 
+    Copy, 
+    Check, 
+    Users, 
+    Banknote, 
+    History, 
+    Wallet, 
+    MessageSquare, 
+    Percent, 
+    Link as LinkIcon, 
+    Share2, 
+    Menu, 
+    User,
+    UserPlus,
+    Calendar
+} from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,9 +41,10 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { updatePayoutDetails, requestPayout } from './actions';
+import { format } from 'date-fns';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
-    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
         {children}
     </div>
 );
@@ -124,16 +147,19 @@ export function ReferralsClient({
     initialProfile, 
     initialReferrals, 
     initialPayoutRequests, 
+    initialNetwork,
     commissionPercentage 
 }: { 
     initialProfile: any, 
     initialReferrals: any[], 
     initialPayoutRequests: any[], 
+    initialNetwork: any[],
     commissionPercentage: number 
 }) {
     const { toast } = useToast();
     const [profile] = useState(initialProfile);
     const [referrals] = useState(initialReferrals);
+    const [network] = useState(initialNetwork);
     const [payoutRequests] = useState(initialPayoutRequests);
     const [copiedLink, setCopiedLink] = useState(false);
     const [copiedCode, setCopiedCode] = useState(false);
@@ -177,7 +203,7 @@ export function ReferralsClient({
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
-                <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
+                <div className="absolute top-[-25%] left-[-10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
           
@@ -251,54 +277,102 @@ export function ReferralsClient({
                             </CardFooter>
                         </GlassCard>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* NEW: My Network List */}
                         <GlassCard>
-                            <CardHeader>
-                                <CardTitle className="text-white flex items-center gap-2"><Users className="h-5 w-5 text-primary" /> Success History</CardTitle>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle className="text-white flex items-center gap-2"><Users className="h-5 w-5 text-primary" /> My Network</CardTitle>
+                                    <CardDescription className="text-gray-400">Traders who used your code to join.</CardDescription>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total Signups</p>
+                                    <p className="text-2xl font-black text-white">{network.length}</p>
+                                </div>
                             </CardHeader>
                             <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="border-white/5">
-                                            <TableHead className="text-gray-500 font-bold uppercase text-[10px]">Trader</TableHead>
-                                            <TableHead className="text-right text-gray-500 font-bold uppercase text-[10px]">Reward</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {referrals.length > 0 ? referrals.map((ref, i) => (
-                                            <TableRow key={i} className="border-white/5 hover:bg-white/[0.02]">
-                                                <TableCell>
-                                                    <p className="font-bold text-white text-sm">{ref.profiles.full_name}</p>
-                                                    <p className="text-[10px] text-gray-500">{new Date(ref.created_at).toLocaleDateString()}</p>
-                                                </TableCell>
-                                                <TableCell className="text-right font-bold text-green-400">+ ₹{ref.commission_amount.toFixed(2)}</TableCell>
+                                <ScrollArea className="h-[300px]">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="border-white/5">
+                                                <TableHead className="text-gray-500 font-bold uppercase text-[10px]">Trader Name</TableHead>
+                                                <TableHead className="text-right text-gray-500 font-bold uppercase text-[10px]">Joined On</TableHead>
                                             </TableRow>
-                                        )) : (
-                                            <TableRow>
-                                                <TableCell colSpan={2} className="h-32 text-center text-gray-600 italic">No referrals recorded yet.</TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {network.length > 0 ? network.map((user, i) => (
+                                                <TableRow key={i} className="border-white/5 hover:bg-white/[0.02]">
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">{user.full_name?.[0]}</div>
+                                                            <p className="font-bold text-white text-sm">{user.full_name || 'Anonymous Trader'}</p>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right text-[10px] text-gray-500 font-medium">
+                                                        {format(new Date(user.created_at), 'dd MMM yyyy')}
+                                                    </TableCell>
+                                                </TableRow>
+                                            )) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={2} className="h-32 text-center text-gray-600 italic">No network members yet. Start sharing!</TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </ScrollArea>
                             </CardContent>
                         </GlassCard>
 
-                        <div className="space-y-8">
-                            <div className="bg-primary/5 border border-primary/20 rounded-3xl p-8 flex flex-col items-center text-center gap-4">
-                                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Gift className="h-6 w-6" /></div>
-                                <div>
-                                    <h4 className="text-lg font-bold text-white">How it works?</h4>
-                                    <p className="text-sm text-gray-400 mt-1">Earn rewards for every standard plan your referrals purchase. Commission is added instantly upon admin approval.</p>
-                                </div>
+                        <GlassCard>
+                            <CardHeader>
+                                <CardTitle className="text-white flex items-center gap-2"><History className="h-5 w-5 text-primary"/> Success History</CardTitle>
+                                <CardDescription className="text-gray-400">Rewards from your network's first purchases.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ScrollArea className="h-[300px]">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="border-white/5">
+                                                <TableHead className="text-gray-500 font-bold uppercase text-[10px]">Trader</TableHead>
+                                                <TableHead className="text-right text-gray-500 font-bold uppercase text-[10px]">Reward</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {referrals.length > 0 ? referrals.map((ref, i) => (
+                                                <TableRow key={i} className="border-white/5 hover:bg-white/[0.02]">
+                                                    <TableCell>
+                                                        <p className="font-bold text-white text-sm">{ref.profiles.full_name}</p>
+                                                        <p className="text-[10px] text-gray-500">{format(new Date(ref.created_at), 'MMM dd, yyyy')}</p>
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-bold text-green-400">+ ₹{ref.commission_amount.toFixed(2)}</TableCell>
+                                                </TableRow>
+                                            )) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={2} className="h-32 text-center text-gray-600 italic">No referral rewards earned yet.</TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </ScrollArea>
+                            </CardContent>
+                        </GlassCard>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="bg-primary/5 border border-primary/20 rounded-3xl p-8 flex flex-col items-center text-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Gift className="h-6 w-6" /></div>
+                            <div>
+                                <h4 className="text-lg font-bold text-white">How it works?</h4>
+                                <p className="text-sm text-gray-400 mt-1">Earn rewards for the first real plan purchase your referrals make. Commission is added instantly upon payment verification.</p>
                             </div>
-                            <PayoutDetailsForm profile={profile} />
                         </div>
+                        <PayoutDetailsForm profile={profile} />
                     </div>
 
                     <GlassCard>
                         <CardHeader>
-                            <CardTitle className="text-white flex items-center gap-2"><History className="h-5 w-5 text-primary"/> Withdrawal Audit</CardTitle>
+                            <CardTitle className="text-white flex items-center gap-2"><Banknote className="h-5 w-5 text-primary"/> Withdrawal Audit</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -312,7 +386,7 @@ export function ReferralsClient({
                                 <TableBody>
                                     {payoutRequests.length > 0 ? payoutRequests.map((req, i) => (
                                         <TableRow key={i} className="border-white/5">
-                                            <TableCell className="text-gray-400 text-sm">{new Date(req.created_at).toLocaleDateString()}</TableCell>
+                                            <TableCell className="text-gray-400 text-sm">{format(new Date(req.created_at), 'dd MMM yyyy')}</TableCell>
                                             <TableCell className="text-white font-bold">₹{req.amount.toFixed(2)}</TableCell>
                                             <TableCell className="text-right">
                                                 <Badge variant="outline" className={cn(
@@ -376,7 +450,7 @@ function PayoutDetailsForm({ profile }: { profile: any }) {
                     )}
                 </CardContent>
                 <CardFooter>
-                    <Button type="submit" className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 h-11 font-bold rounded-xl text-xs uppercase tracking-widest">Update Payout Details</Button>
+                    <Button type="submit" className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 h-11 font-bold rounded-xl text-xs uppercase tracking-widest">Save Payout Details</Button>
                 </CardFooter>
             </form>
         </GlassCard>
