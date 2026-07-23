@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -133,6 +132,7 @@ export async function approveAccount(accountId: string) {
     }
 
     revalidatePath('/admin/account-requests');
+    revalidatePath('/admin/activation-hub');
     revalidatePath('/welcome');
     return { success: true };
 }
