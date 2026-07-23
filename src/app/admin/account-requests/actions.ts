@@ -8,6 +8,7 @@ import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsernam
 /**
  * Approves an individual account request from the Activation Ledger.
  * Includes unified logic for Stockmint provisioning and Referral Credits.
+ * Captures detailed errors if sync fails.
  */
 export async function approveAccount(accountId: string) {
     const { data: account, error: fetchError } = await supabaseAdmin
@@ -23,6 +24,14 @@ export async function approveAccount(accountId: string) {
     const isKycDone = profile.kyc_status === 'verified';
     const classification = getAutoClassification(account.plan_name);
 
+    // Ensure profile is complete before attempting Stockmint sync
+    if ((isKycDone || isPTP) && (!profile.full_name || !profile.mobile_number)) {
+        const missing = !profile.full_name ? 'Name' : 'Mobile Number';
+        const errMsg = `ABORTED: Missing Trader ${missing} in profile.`;
+        await supabaseAdmin.from('user_accounts').update({ activation_error: errMsg }).eq('id', accountId);
+        return { error: errMsg };
+    }
+
     // 1. Update Account Status
     const { error: approveError } = await supabaseAdmin.from('user_accounts').update({ 
         is_approved: true, 
@@ -32,39 +41,31 @@ export async function approveAccount(accountId: string) {
     
     if (approveError) return { error: approveError.message };
 
-    // 2. REFERRAL ENGINE (v5.0): Credit referrer ONLY if this is the user's first REAL purchase
-    // We check the 'referral_commission_paid' flag on the profile to ensure one-time payment.
-    // Trials are excluded by the fact that account.final_amount_paid is checked.
+    // 2. REFERRAL ENGINE (v5.0): Credit referrer ONLY if first real purchase
     if (profile.referred_by && !profile.referral_commission_paid && !account.is_trial && account.final_amount_paid > 0) {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
         const commissionAmount = Math.floor((account.final_amount_paid * commPercent) / 100);
 
         if (commissionAmount > 0) {
-            // Credit referrer
             const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
             const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
             
             await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
-            
-            // Mark user as "Commission Paid" immediately to prevent repeat payments
             await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', profile.id);
 
-            // Log for audit
             await supabaseAdmin.from('referrals').insert({
                 referrer_id: profile.referred_by,
                 referred_id: profile.id,
                 commission_amount: commissionAmount,
                 plan_name: account.plan_name
             });
-            console.log(`[Referral Engine] Credited ₹${commissionAmount} to ${profile.referred_by} for first purchase of ${profile.id}`);
         }
     }
 
     let stockmintUsername = profile.email; 
     
     if (isKycDone || isPTP) {
-        // Multi-Account logic: Count how many accounts ALREADY have credentials
         const { count } = await supabaseAdmin
             .from('user_accounts')
             .select('id', { count: 'exact', head: true })
@@ -75,8 +76,6 @@ export async function approveAccount(accountId: string) {
         const initialBalance = getBalanceFromPlanName(account.plan_name);
         const stockmintApiKey = process.env.STOCKMINT_API_KEY;
         
-        console.log(`[Stockmint Sync] Target: ${stockmintUsername}. Balance: ${initialBalance}, Classification: ${classification}`);
-
         if (stockmintApiKey && initialBalance > 0) {
             try {
                 const payload = { 
@@ -99,15 +98,19 @@ export async function approveAccount(accountId: string) {
                         credentials_provided: true, 
                         trading_username: stockmintUsername, 
                         trading_password: stockmintUsername, 
-                        status: 'active'
+                        status: 'active',
+                        activation_error: null // Clear previous errors
                     }).eq('id', accountId);
-                    console.log(`[Stockmint Sync] SUCCESS for ${stockmintUsername}`);
                 } else {
                     const errorBody = await res.text();
-                    console.error(`[Stockmint Sync] REJECTED: ${res.status}. Body: ${errorBody}`);
+                    await supabaseAdmin.from('user_accounts').update({ 
+                        activation_error: `Stockmint rejected request (${res.status}): ${errorBody}` 
+                    }).eq('id', accountId);
                 }
-            } catch (e) { 
-                console.error('[Stockmint Sync] NETWORK ERROR:', e); 
+            } catch (e: any) { 
+                await supabaseAdmin.from('user_accounts').update({ 
+                    activation_error: `Network crash during sync: ${e.message}` 
+                }).eq('id', accountId);
             }
         }
     }
@@ -131,7 +134,6 @@ export async function approveAccount(accountId: string) {
 
     revalidatePath('/admin/account-requests');
     revalidatePath('/welcome');
-    revalidatePath('/referrals');
     return { success: true };
 }
 

@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,10 @@ import {
     ShieldCheck,
     CheckCircle,
     Users,
-    BookOpen
+    BookOpen,
+    UserPlus,
+    Loader2,
+    ShieldAlert
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -32,6 +36,11 @@ import {
     SheetTrigger 
 } from '@/components/ui/sheet';
 import { createClient } from '@/lib/supabase/client';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { updateProfileDetails } from './actions';
+import { useToast } from '@/hooks/use-toast';
 
 // Sub-views
 import { AccountsHub } from './accounts-hub';
@@ -72,6 +81,34 @@ function WelcomeContent({
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [supportConversations, setSupportConversations] = useState(initialSupportConversations);
     const supabase = createClient();
+    const { toast } = useToast();
+    const [isPending, startTransition] = useTransition();
+
+    // Google User Detail Capture
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [onboardingName, setOnboardingName] = useState(profile.full_name || '');
+    const [onboardingMobile, setOnboardingMobile] = useState(profile.mobile_number || '');
+
+    useEffect(() => {
+        // If profile is missing name or mobile, force completion
+        if (!profile.full_name || !profile.mobile_number) {
+            setIsDetailModalOpen(true);
+        }
+    }, [profile]);
+
+    const handleOnboardingSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!onboardingName.trim() || !onboardingMobile.trim()) return;
+
+        startTransition(async () => {
+            const res = await updateProfileDetails(profile.id, onboardingName, onboardingMobile);
+            if (res.error) toast({ title: "Update Failed", description: res.error, variant: "destructive" });
+            else {
+                toast({ title: "Profile Ready", description: "Your details have been registered." });
+                setIsDetailModalOpen(false);
+            }
+        });
+    }
 
     // Sync active tab with URL params
     useEffect(() => {
@@ -174,7 +211,7 @@ function WelcomeContent({
                             <Link href="/profile" className="relative group">
                                 <div className="h-9 w-9 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center group-hover:border-primary transition-all">
                                     <span className="text-primary font-bold text-xs">
-                                        {profile.full_name?.[0].toUpperCase()}
+                                        {profile.full_name?.[0]?.toUpperCase() || 'U'}
                                     </span>
                                 </div>
                             </Link>
@@ -349,6 +386,53 @@ function WelcomeContent({
                         )}
                     </TabsContent>
                 </Tabs>
+
+                {/* Force Profile Completion for Google Users */}
+                <Dialog open={isDetailModalOpen} onOpenChange={() => {}}>
+                    <DialogContent className="bg-slate-950 border-white/10 text-white sm:max-w-[425px]" hideClose>
+                        <form onSubmit={handleOnboardingSubmit}>
+                            <DialogHeader>
+                                <div className="mx-auto bg-primary/10 p-4 rounded-2xl border border-primary/20 w-fit mb-4 shadow-[0_0_30px_rgba(139,44,245,0.2)]">
+                                    <UserPlus className="h-8 w-8 text-primary" />
+                                </div>
+                                <DialogTitle className="text-2xl font-black text-center tracking-tight">Onboarding Required</DialogTitle>
+                                <DialogDescription className="text-center text-gray-400">
+                                    We need your basic trader details to provision your institutional terminals on Stockmint.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-6 py-8">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Legal Full Name</Label>
+                                    <Input 
+                                        placeholder="Enter your official name" 
+                                        value={onboardingName} 
+                                        onChange={(e) => setOnboardingName(e.target.value)} 
+                                        required
+                                        className="bg-black/40 border-white/10 h-12 rounded-xl"
+                                    />
+                                    <p className="text-[9px] text-gray-600 font-bold">Must match your identity documents for KYC.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Mobile Number</Label>
+                                    <Input 
+                                        placeholder="10-digit primary contact" 
+                                        value={onboardingMobile} 
+                                        onChange={(e) => setOnboardingMobile(e.target.value)} 
+                                        required
+                                        className="bg-black/40 border-white/10 h-12 rounded-xl"
+                                    />
+                                    <p className="text-[9px] text-gray-600 font-bold italic leading-tight">Terminal credentials will be linked to this primary contact.</p>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit" disabled={isPending || !onboardingName || !onboardingMobile} className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20">
+                                    {isPending ? <Loader2 className="animate-spin h-5 w-5 mr-2"/> : <ShieldCheck className="h-5 w-5 mr-2" />}
+                                    Finalize Onboarding
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </main>
         </div>
     );

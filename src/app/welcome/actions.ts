@@ -8,16 +8,37 @@ import { runSupportAi } from '@/ai/flows/support-agent-flow';
 import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername, calculateTrialExpiry } from '@/lib/plan-utils';
 
 /**
+ * Updates basic profile details, required for Google signups.
+ */
+export async function updateProfileDetails(userId: string, fullName: string, mobile: string) {
+    if (!userId || !fullName || !mobile) return { error: 'Incomplete details provided.' };
+
+    const { error } = await supabaseAdmin
+        .from('profiles')
+        .update({ 
+            full_name: fullName, 
+            mobile_number: mobile 
+        })
+        .eq('id', userId);
+    
+    if (error) return { error: error.message };
+    
+    revalidatePath('/welcome');
+    return { success: true };
+}
+
+/**
  * Hardened utility for fetching from Stockmint Hub.
  * Prevents "unexpected response" errors by using timeout and try/catch.
+ * Logs errors to the database if accountId is provided.
  */
-async function fetchFromHub(endpoint: string, method: string, body?: any) {
+async function fetchFromHub(endpoint: string, method: string, body?: any, accountId?: string) {
     const apiKey = process.env.STOCKMINT_API_KEY;
     if (!apiKey) return { error: 'API Key Missing' };
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000); 
 
         const res = await fetch(`https://stockmint.io/api/${endpoint}`, {
             method,
@@ -34,19 +55,36 @@ async function fetchFromHub(endpoint: string, method: string, body?: any) {
         if (!res.ok) {
             const errText = await res.text();
             console.error(`[Stockmint Hub] Error ${res.status}:`, errText);
+            
+            if (accountId) {
+                await supabaseAdmin.from('user_accounts').update({ 
+                    activation_error: `API ${res.status}: ${errText}` 
+                }).eq('id', accountId);
+            }
+
             return { error: `HTTP ${res.status}`, status: res.status };
         }
 
-        return await res.json();
+        const data = await res.json();
+        
+        // Clear errors on success
+        if (accountId) {
+            await supabaseAdmin.from('user_accounts').update({ activation_error: null }).eq('id', accountId);
+        }
+
+        return data;
     } catch (e: any) {
-        console.error(`[Stockmint Hub] Connection Failed:`, e.message);
-        return { error: e.name === 'AbortError' ? 'Timeout' : 'Network error' };
+        const msg = e.name === 'AbortError' ? 'Connection Timeout' : `Network: ${e.message}`;
+        console.error(`[Stockmint Hub] Connection Failed:`, msg);
+        
+        if (accountId) {
+            await supabaseAdmin.from('user_accounts').update({ activation_error: msg }).eq('id', accountId);
+        }
+
+        return { error: msg };
     }
 }
 
-/**
- * Fetches active tournament events for the user browser.
- */
 export async function getCompetitionEvents() {
     try {
         const { data } = await supabaseAdmin
@@ -60,10 +98,6 @@ export async function getCompetitionEvents() {
     }
 }
 
-/**
- * Express Wallet Purchase Logic (Hardened v5.0)
- * Only pays referral commission on the very first real purchase.
- */
 export async function purchaseWithWallet(userId: string, plan: any) {
   if (!userId || !plan) return { error: 'Missing details.' };
   
@@ -81,7 +115,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     return { error: 'Insufficient wallet balance.' };
   }
 
-  // 1. Deduct Balance from Wallet
   await supabaseAdmin.from('profiles').update({ 
       wallet_balance: profile.wallet_balance - price 
   }).eq('id', userId);
@@ -100,7 +133,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   const classification = getAutoClassification(plan.title);
   const isKycVerified = profile.kyc_status === 'verified';
 
-  // 2. REFERRAL ENGINE (v5.0): Credit referrer ONLY if this is the user's first REAL purchase
   if (profile.referred_by && !profile.referral_commission_paid && price > 0) {
       const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
       const commPercent = settings?.referral_commission_percentage || 10;
@@ -122,7 +154,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
       }
   }
 
-  // 3. Create Account Record
   const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
     user_id: userId, 
     plan_name: plan.title, 
@@ -136,7 +167,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
   if (accountError || !account) return { error: 'Account creation failed.' };
 
-  // 4. Stockmint Hub Sync (Hardened)
   const initialBalance = getBalanceFromPlanName(plan.title);
   if (initialBalance > 0) {
       const { count } = await supabaseAdmin
@@ -146,23 +176,14 @@ export async function purchaseWithWallet(userId: string, plan: any) {
         .eq('credentials_provided', true);
 
       const stockmintUsername = generateStockmintUsername(profile.email, count || 0);
-      const hubRes = await fetchFromHub('users/create', 'POST', {
+      await fetchFromHub('users/create', 'POST', {
           fullName: profile.full_name, 
           email: stockmintUsername, 
           password: stockmintUsername,
           initialBalance, 
           accountClassification: classification, 
           accountModel: isPTP ? 'passthenpay' : 'normal'
-      });
-
-      if (!hubRes.error) {
-          await supabaseAdmin.from('user_accounts').update({ 
-              credentials_provided: true, 
-              trading_username: stockmintUsername, 
-              trading_password: stockmintUsername, 
-              status: 'active' 
-          }).eq('id', account.id);
-      }
+      }, account.id);
   }
 
   revalidatePath('/welcome');
@@ -361,7 +382,7 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
         .eq('user_id', userId);
 
     const stockmintUsername = generateStockmintUsername(profile.email, (count || 0) + 100);
-    const hubRes = await fetchFromHub('users/create', 'POST', {
+    await fetchFromHub('users/create', 'POST', {
         fullName: profile.full_name, 
         email: stockmintUsername, 
         password: stockmintUsername, 
@@ -385,9 +406,6 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     return { success: true, transaction_id: event.is_free ? 'FREE' : txId, amount: event.is_free ? 0 : event.entry_fee };
 }
 
-/**
- * Starts a 48-hour Free Trial account.
- */
 export async function startFreeTrial(userId: string) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return { error: 'Trader not found.' };
@@ -434,9 +452,6 @@ export async function startFreeTrial(userId: string) {
     return { success: true, accountId: account.id };
 }
 
-/**
- * Cleans up expired trials.
- */
 export async function checkAndCleanTrial(accountId: string) {
     try {
         const { data: acc } = await supabaseAdmin.from('user_accounts').select('*').eq('id', accountId).single();
@@ -464,9 +479,6 @@ export async function checkAndCleanTrial(accountId: string) {
     return { expired: false };
 }
 
-/**
- * Sweeps all active trial accounts for a specific user.
- */
 export async function cleanupAllTrials(userId: string) {
     try {
         const { data: trials } = await supabaseAdmin
