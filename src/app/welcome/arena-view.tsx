@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -23,9 +22,10 @@ import {
     Ticket,
     Check,
     ExternalLink,
-    Sparkles
+    Sparkles,
+    ShieldCheck
 } from 'lucide-react';
-import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial } from './actions';
+import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial, initiateGatewayPayment } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -126,6 +126,7 @@ export function ArenaView({
     }
 
     const calculateFinalPrice = () => {
+        if (!selectedPlan) return 0;
         const base = parseFloat(selectedPlan.price.replace(/,/g, ''));
         if (discount > 0) return base * (1 - discount / 100);
         return base;
@@ -152,6 +153,21 @@ export function ArenaView({
             }
         });
     };
+
+    /**
+     * Triggers the automated gateway handshake (LG-Pay or WatchPay)
+     */
+    const handleGatewayPurchase = async () => {
+        const finalPrice = calculateFinalPrice();
+        startTransition(async () => {
+            const res = await initiateGatewayPayment(profile.id, { ...selectedPlan, price: finalPrice }, activeGateway);
+            if (res.error) {
+                toast({ title: "Gateway Error", description: res.error, variant: "destructive" });
+            } else if (res.redirectUrl) {
+                window.location.href = res.redirectUrl;
+            }
+        });
+    }
 
     const handleDirectSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -234,6 +250,7 @@ export function ArenaView({
                                 {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
                             </button>
 
+                            {/* DYNAMIC SECONDARY BUTTON BASED ON ADMIN SELECTION */}
                             {activeGateway === 'cashfree' ? (
                                 <button 
                                     onClick={handleExternalPurchase}
@@ -247,7 +264,7 @@ export function ArenaView({
                                         <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">UPI / Cards / NetBanking</p>
                                     </div>
                                 </button>
-                            ) : (
+                            ) : activeGateway === 'manual' ? (
                                 <button 
                                     onClick={() => setCheckoutStep('direct-pay')}
                                     className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
@@ -259,6 +276,25 @@ export function ArenaView({
                                         <p className="text-base font-bold text-white">Standard Direct Payment</p>
                                         <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Verifies in ~30 mins</p>
                                     </div>
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={handleGatewayPurchase}
+                                    disabled={isActionPending}
+                                    className="group flex items-center gap-4 p-6 bg-primary/10 border border-primary/30 rounded-3xl text-left transition-all hover:bg-primary/20 hover:border-primary shadow-xl"
+                                >
+                                    <div className="h-12 w-12 rounded-2xl bg-primary/20 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <Zap className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-base font-bold text-white">
+                                            {activeGateway === 'automated' ? 'Fast Checkout' : 
+                                             activeGateway === 'lgpay' ? 'Instant UPI (LG-Pay)' : 
+                                             'Instant UPI (WatchPay)'}
+                                        </p>
+                                        <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">Automated Bank Handshake</p>
+                                    </div>
+                                    {isActionPending && <Loader2 className="animate-spin h-5 w-5 text-primary" />}
                                 </button>
                             )}
                         </div>

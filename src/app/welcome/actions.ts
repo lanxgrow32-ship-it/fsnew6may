@@ -5,6 +5,10 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { runSupportAi } from '@/ai/flows/support-agent-flow';
 import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername, calculateTrialExpiry } from '@/lib/plan-utils';
+import { generateLgPaySignature } from '@/lib/lg-pay';
+import { generateWatchPaySignature } from '@/lib/watchpay';
+import { randomBytes } from 'crypto';
+import { headers } from 'next/headers';
 
 /**
  * Updates basic profile details, required for Google signups.
@@ -219,6 +223,104 @@ export async function requestManualAccount(userId: string, planName: string, amo
   
   revalidatePath('/welcome');
   return { success: true, transaction_id: utr, amount: amount };
+}
+
+/**
+ * Initiates an automated payment session with LG-Pay or WatchPay.
+ * Redirects user to the secure gateway.
+ */
+export async function initiateGatewayPayment(userId: string, plan: any, gateway: string) {
+    const supabase = await createClient();
+    const { data: settings } = await supabaseAdmin.from('payment_details').select('*').eq('id', 1).single();
+    const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
+
+    if (!settings || !profile) return { error: 'Payment configuration error. Contact admin.' };
+
+    let activeGateway = gateway;
+    if (gateway === 'automated') {
+        const mode = settings.automated_gateway_mode || 'both';
+        if (mode === 'lgpay') activeGateway = 'lgpay';
+        else if (mode === 'watchpay') activeGateway = 'watchpay';
+        else activeGateway = Math.random() > 0.5 ? 'lgpay' : 'watchpay';
+    }
+
+    const amount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
+    const order_sn = `FS_${Date.now()}_${randomBytes(3).toString('hex')}`;
+
+    // Handshake: Store order state on profile for webhook verification
+    await supabaseAdmin.from('profiles').update({
+        order_sn: order_sn,
+        plan_purchased: plan.title,
+        final_amount_paid: amount
+    }).eq('id', userId);
+
+    if (activeGateway === 'lgpay') {
+        const lgPayAppId = 'YD4957';
+        const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
+        const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
+        
+        const moneyInCents = Math.round(amount * 100);
+        const ipHeader = (await headers()).get('x-forwarded-for') ?? '127.0.0.1';
+        const ip = ipHeader.split(',')[0].trim();
+
+        const params: Record<string, string> = {
+            app_id: lgPayAppId,
+            trade_type: "INRUPI",
+            order_sn: order_sn,
+            money: String(moneyInCents),
+            notify_url: notifyUrl,
+            ip: ip,
+            remark: `Activation: ${plan.title}`,
+        };
+
+        const sign = generateLgPaySignature(params, lgPayKey);
+
+        try {
+            const res = await fetch('https://www.lg-pay.com/api/order/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ ...params, sign }),
+            });
+            const result = await res.json();
+            if (result.status === 1 && result.data?.pay_url) {
+                return { redirectUrl: result.data.pay_url };
+            }
+            return { error: `Gateway rejected: ${result.msg || 'Unknown reason'}` };
+        } catch (e) { return { error: 'Connection to LG-Pay failed. Try manual method.' }; }
+    } 
+    
+    if (activeGateway === 'watchpay') {
+        const merchantId = settings.watchpay_merchant_id;
+        const apiKey = settings.watchpay_api_key;
+        if (!merchantId || !apiKey) return { error: 'WatchPay credentials not configured.' };
+
+        const params = {
+            merchantId: merchantId,
+            merchantOrder: order_sn,
+            amount: amount.toFixed(2),
+            currency: 'INR',
+            productName: plan.title,
+            callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/watchpay-webhook`,
+            returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/purchase-success?id=${order_sn}&amount=${amount}&plan=${encodeURIComponent(plan.title)}&method=automated`,
+        };
+
+        const sign = generateWatchPaySignature(params, apiKey);
+
+        try {
+            const res = await fetch('https://api.watchpay.net/v1/payment/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...params, sign }),
+            });
+            const result = await res.json();
+            if (result.status === 'success' && result.data?.paymentUrl) {
+                return { redirectUrl: result.data.paymentUrl };
+            }
+            return { error: `WatchPay error: ${result.message}` };
+        } catch (e) { return { error: 'WatchPay connection failed.' }; }
+    }
+
+    return { error: 'Invalid gateway selection.' };
 }
 
 export async function topUpWallet(userId: string, amount: number, utr: string) {
