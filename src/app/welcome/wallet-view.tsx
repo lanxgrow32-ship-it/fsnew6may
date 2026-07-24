@@ -19,7 +19,7 @@ import {
     ShieldCheck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { topUpWallet } from './actions';
+import { topUpWallet, initiateGatewayPayment } from './actions';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -35,11 +35,19 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
     const [isPending, startTransition] = useTransition();
     const [amount, setAmount] = useState('');
     const [utr, setUtr] = useState('');
+    
+    // Automated Top-up State
+    const [autoAmount, setAutoAmount] = useState('');
 
     const parsedAmount = parseFloat(amount) || 0;
     const isBelowMin = parsedAmount > 0 && parsedAmount < 10000;
+    
+    const parsedAutoAmount = parseFloat(autoAmount) || 0;
+    const isAutoBelowMin = parsedAutoAmount > 0 && parsedAutoAmount < 10000;
 
-    const handleTopUp = async (e: React.FormEvent) => {
+    const activeGateway = paymentSettings?.active_payment_gateway || 'manual';
+
+    const handleManualTopUp = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!amount || !utr || isBelowMin) return;
 
@@ -55,11 +63,37 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
         });
     };
 
+    /**
+     * Triggers the automated gateway for wallet top-up.
+     * Uses a pseudo-plan 'WALLET_TOPUP' to inform the webhook.
+     */
+    const handleAutoTopUp = async () => {
+        if (!autoAmount || isAutoBelowMin) {
+            toast({ title: "Min Deposit: ₹10,000", variant: "destructive" });
+            return;
+        }
+
+        startTransition(async () => {
+            const res = await initiateGatewayPayment(profile.id, { title: 'WALLET_TOPUP', price: parsedAutoAmount }, activeGateway);
+            if (res.error) {
+                toast({ title: "Gateway Error", description: res.error, variant: "destructive" });
+            } else if (res.redirectUrl) {
+                window.location.href = res.redirectUrl;
+            }
+        });
+    }
+
     const copyToClipboard = (text: string) => {
         if (!text) return;
         navigator.clipboard.writeText(text);
         toast({ title: "Copied to clipboard" });
     };
+
+    const handleExternalPortal = () => {
+        const url = `https://www.fundedstock.shop/topup?wallet_id=${profile.wallet_id}`;
+        window.open(url, '_blank');
+        toast({ title: "Redirecting...", description: "Opening official payment portal." });
+    }
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto animate-in fade-in duration-500">
@@ -86,7 +120,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Method 1: Automated Gateway (Cashfree) */}
+                {/* Method 1: Automated Section (Dynamic) */}
                 <GlassCard className="p-8 border-primary/20 bg-primary/5 flex flex-col justify-between">
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
@@ -102,24 +136,44 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                                 <h3 className="text-4xl font-black text-white tracking-tighter">{profile.wallet_id || 'Generating...'}</h3>
                                 <Button variant="ghost" size="icon" onClick={() => copyToClipboard(profile.wallet_id?.toString())} className="h-8 w-8 text-gray-500 hover:text-white"><Copy className="w-4 h-4"/></Button>
                             </div>
-                            <p className="text-xs text-gray-400 font-medium">This ID identifies your account on our official payment portal.</p>
                         </div>
 
                         <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-3">
                             <div className="flex items-center gap-2 text-xs font-bold text-primary">
                                 <Sparkles className="w-3.5 h-3.5" /> 5% Bonus Applied Automatically
                             </div>
-                            <p className="text-[10px] text-gray-500 leading-relaxed">A 5% cash bonus is automatically credited to all wallet deposits of ₹10,000 or more via our official portal.</p>
+                            <p className="text-[10px] text-gray-500 leading-relaxed">A 5% loyalty bonus is automatically credited to all wallet deposits of ₹10,000 or more via our automated channels.</p>
                         </div>
+
+                        {activeGateway !== 'cashfree' && activeGateway !== 'manual' && (
+                            <div className="space-y-3 pt-2">
+                                <Label className={cn("text-[9px] font-black uppercase tracking-widest", isAutoBelowMin ? "text-red-400" : "text-gray-500")}>Deposit Amount (INR)</Label>
+                                <Input 
+                                    type="number" 
+                                    placeholder="Enter amount (Min ₹10,000)" 
+                                    value={autoAmount}
+                                    onChange={(e) => setAutoAmount(e.target.value)}
+                                    className="bg-black/40 border-white/10 text-white h-11 text-sm font-bold"
+                                />
+                                {isAutoBelowMin && <p className="text-[8px] font-bold text-red-500 uppercase">Min deposit for bonus is ₹10,000</p>}
+                            </div>
+                        )}
                     </div>
 
                     <div className="pt-8">
-                        <Button asChild className="w-full h-14 text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                            <Link href={`https://www.fundedstock.shop/topup?wallet_id=${profile.wallet_id}`} target="_blank">
+                        {activeGateway === 'cashfree' ? (
+                            <Button onClick={handleExternalPortal} className="w-full h-14 text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
                                 Pay via Official Portal <ExternalLink className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                        <p className="text-[9px] text-center text-gray-600 mt-3 font-bold uppercase tracking-widest">Gateway Provider: Cashfree Payments</p>
+                            </Button>
+                        ) : (
+                            <Button onClick={handleAutoTopUp} disabled={isPending || !autoAmount || isAutoBelowMin} className="w-full h-14 text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                {isPending ? <Loader2 className="animate-spin mr-2 h-5 w-5"/> : <Zap className="mr-2 h-4 w-4" />}
+                                Automated Gateway
+                            </Button>
+                        )}
+                        <p className="text-[9px] text-center text-gray-600 mt-3 font-bold uppercase tracking-widest">
+                            Verified Protocol Provider
+                        </p>
                     </div>
                 </GlassCard>
 
@@ -147,7 +201,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                             </div>
                         </div>
 
-                        <form onSubmit={handleTopUp} className="space-y-4">
+                        <form onSubmit={handleManualTopUp} className="space-y-4">
                             <div className="space-y-3">
                                 <div className="space-y-1.5">
                                     <Label className={cn("text-[10px] font-bold uppercase", isBelowMin ? "text-red-400" : "text-gray-600")}>Amount (₹)</Label>
@@ -175,7 +229,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                         </div>
                         <div className="space-y-1">
                             <h4 className="text-sm font-bold text-white">Safe & Secure Transfers</h4>
-                            <p className="text-xs text-gray-500 leading-relaxed">All wallet transactions are encrypted. Deposits via the portal are audited instantly through the Cashfree payment bridge, while manual deposits take standard verification time.</p>
+                            <p className="text-xs text-gray-500 leading-relaxed">All wallet transactions are encrypted. Deposits via the automated gateway are audited instantly through the payment bridge, while manual deposits take standard verification time.</p>
                         </div>
                     </div>
                 </GlassCard>

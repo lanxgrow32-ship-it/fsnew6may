@@ -1,11 +1,10 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
 /**
- * WatchPay Webhook Handler (Hardened v5.0)
- * Handles automated payment confirmation and Referral Engine integration.
+ * WatchPay Webhook Handler (Hardened v5.1)
+ * Handles both Account Activation and Wallet Credits.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -27,11 +26,58 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: 'order not found' });
         }
         
-        if (!profile.is_approved) {
+        // --- BRANCH A: WALLET TOP-UP ---
+        if (profile.plan_purchased === 'WALLET_TOPUP') {
+            const depositAmount = profile.final_amount_paid || 0;
+            // Only process if not already processed
+            if (profile.transaction_id !== data.orderNo) {
+                const bonus = depositAmount >= 10000 ? (depositAmount * 0.05) : 0;
+                const totalToAdd = depositAmount + bonus;
+                const newBalance = (profile.wallet_balance || 0) + totalToAdd;
+
+                // 1. Log Ledger Entry
+                await supabaseAdmin.from('wallet_transactions').insert({
+                    user_id: profile.id,
+                    amount: depositAmount,
+                    bonus_amount: bonus,
+                    type: 'deposit',
+                    status: 'completed',
+                    gateway_transaction_id: data.orderNo,
+                    description: 'Automated Recharge (WatchPay)',
+                    processed_at: new Date().toISOString()
+                });
+
+                // 2. Update Profile & Clear Handshake
+                await supabaseAdmin.from('profiles').update({ 
+                    wallet_balance: newBalance,
+                    transaction_id: data.orderNo,
+                    order_sn: null 
+                }).eq('id', profile.id);
+
+                // 3. Trigger Automation
+                const webhookUrl = process.env.MAKE_WALLET_SUCCESS_WEBHOOK_URL;
+                if (webhookUrl) {
+                    fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: profile.email,
+                            full_name: profile.full_name,
+                            deposited_amount: depositAmount,
+                            bonus_amount: bonus,
+                            new_balance: newBalance
+                        })
+                    }).catch(e => console.error(e));
+                }
+            }
+        } 
+        // --- BRANCH B: PLAN PURCHASE ---
+        else if (!profile.is_approved) {
              // 1. Update Profile Approval
              await supabaseAdmin.from('profiles').update({ 
                 is_approved: true,
                 transaction_id: data.orderNo,
+                order_sn: null
              }).eq('id', profile.id);
 
              // 2. REFERRAL ENGINE (v5.0): Credit if first real purchase
@@ -54,7 +100,6 @@ export async function POST(req: NextRequest) {
                         commission_amount: commissionAmount,
                         plan_name: profile.plan_purchased || 'WatchPay Plan'
                     });
-                    console.log(`[Referral Engine] WatchPay Credit: ₹${commissionAmount} to ${profile.referred_by}`);
                 }
              }
 
@@ -66,12 +111,10 @@ export async function POST(req: NextRequest) {
                 is_approved: true,
                 status: isPTP || isKycVerified ? 'active' : 'pending'
             }).eq('user_id', profile.id).eq('is_approved', false);
-
-            revalidatePath('/welcome');
-            revalidatePath('/admin/dashboard');
-            revalidatePath('/referrals');
         }
         
+        revalidatePath('/welcome');
+        revalidatePath('/admin/dashboard');
         return new NextResponse('success', { status: 200 });
 
     } catch (error: any) {

@@ -288,11 +288,11 @@ export function ArenaView({
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-base font-bold text-white">
-                                            {activeGateway === 'automated' ? 'Fast Checkout' : 
-                                             activeGateway === 'lgpay' ? 'Instant UPI (LG-Pay)' : 
-                                             'Instant UPI (WatchPay)'}
+                                            {activeGateway === 'automated' ? 'Automated Gateway' : 
+                                             activeGateway === 'lgpay' ? 'Automated Gateway' : 
+                                             'Automated Gateway'}
                                         </p>
-                                        <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">Automated Bank Handshake</p>
+                                        <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">Instant Bank Handshake</p>
                                     </div>
                                     {isActionPending && <Loader2 className="animate-spin h-5 w-5 text-primary" />}
                                 </button>
