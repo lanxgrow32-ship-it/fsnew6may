@@ -32,8 +32,6 @@ export async function updateProfileDetails(userId: string, fullName: string, mob
 
 /**
  * Hardened utility for fetching from Stockmint Hub.
- * Prevents "unexpected response" errors by using timeout and try/catch.
- * Logs errors to the database if accountId is provided.
  */
 async function fetchFromHub(endpoint: string, method: string, body?: any, accountId?: string) {
     const apiKey = process.env.STOCKMINT_API_KEY;
@@ -57,47 +55,25 @@ async function fetchFromHub(endpoint: string, method: string, body?: any, accoun
         
         if (!res.ok) {
             const errText = await res.text();
-            console.error(`[Stockmint Hub] Error ${res.status}:`, errText);
-            
             if (accountId) {
                 await supabaseAdmin.from('user_accounts').update({ 
                     activation_error: `API ${res.status}: ${errText}` 
                 }).eq('id', accountId);
             }
-
             return { error: `HTTP ${res.status}`, status: res.status };
         }
 
         const data = await res.json();
-        
-        // Clear errors on success
         if (accountId) {
             await supabaseAdmin.from('user_accounts').update({ activation_error: null }).eq('id', accountId);
         }
-
         return data;
     } catch (e: any) {
         const msg = e.name === 'AbortError' ? 'Connection Timeout' : `Network: ${e.message}`;
-        console.error(`[Stockmint Hub] Connection Failed:`, msg);
-        
         if (accountId) {
             await supabaseAdmin.from('user_accounts').update({ activation_error: msg }).eq('id', accountId);
         }
-
         return { error: msg };
-    }
-}
-
-export async function getCompetitionEvents() {
-    try {
-        const { data } = await supabaseAdmin
-            .from('competition_events')
-            .select('*')
-            .eq('is_active', true)
-            .order('start_date', { ascending: true });
-        return data || [];
-    } catch (e) {
-        return [];
     }
 }
 
@@ -171,7 +147,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   if (accountError || !account) return { error: 'Account creation failed.' };
 
   const initialBalance = getBalanceFromPlanName(plan.title);
-  if (initialBalance > 0) {
+  if (initialBalance > 0 && (isPTP || isKycVerified)) {
       const { count } = await supabaseAdmin
         .from('user_accounts')
         .select('id', { count: 'exact', head: true })
@@ -226,11 +202,10 @@ export async function requestManualAccount(userId: string, planName: string, amo
 }
 
 /**
- * Initiates an automated payment session with LG-Pay or WatchPay.
- * Redirects user to the secure gateway.
+ * Initiates an automated payment session.
+ * Creates a PENDING record in the relevant table BEFORE redirecting to ensure multi-account audit.
  */
 export async function initiateGatewayPayment(userId: string, plan: any, gateway: string) {
-    const supabase = await createClient();
     const { data: settings } = await supabaseAdmin.from('payment_details').select('*').eq('id', 1).single();
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
 
@@ -247,18 +222,35 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
     const amount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
     const order_sn = `FS_${Date.now()}_${randomBytes(3).toString('hex')}`;
 
-    // Handshake: Store order state on profile for webhook verification
-    await supabaseAdmin.from('profiles').update({
-        order_sn: order_sn,
-        plan_purchased: plan.title,
-        final_amount_paid: amount
-    }).eq('id', userId);
+    // --- STRATEGIC HANDSHAKE (V4.1) ---
+    // Instead of profile updates, we create the specific transaction intent.
+    if (plan.title === 'WALLET_TOPUP') {
+        await supabaseAdmin.from('wallet_transactions').insert({
+            user_id: userId,
+            amount: amount,
+            type: 'deposit',
+            status: 'pending',
+            gateway_transaction_id: order_sn, // Used as lookup key for webhook
+            description: 'Automated Wallet Recharge'
+        });
+    } else {
+        const classification = getAutoClassification(plan.title);
+        await supabaseAdmin.from('user_accounts').insert({
+            user_id: userId,
+            plan_name: plan.title,
+            status: 'pending',
+            is_approved: false,
+            final_amount_paid: amount,
+            transaction_id: order_sn, // Used as lookup key for webhook
+            account_classification: classification,
+            account_model: plan.title.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal'
+        });
+    }
 
     if (activeGateway === 'lgpay') {
         const lgPayAppId = 'YD4957';
         const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
         const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
-        
         const moneyInCents = Math.round(amount * 100);
         const ipHeader = (await headers()).get('x-forwarded-for') ?? '127.0.0.1';
         const ip = ipHeader.split(',')[0].trim();
@@ -270,7 +262,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
             money: String(moneyInCents),
             notify_url: notifyUrl,
             ip: ip,
-            remark: `Activation: ${plan.title}`,
+            remark: plan.title === 'WALLET_TOPUP' ? 'Wallet Recharge' : `Activation: ${plan.title}`,
         };
 
         const sign = generateLgPaySignature(params, lgPayKey);
@@ -282,11 +274,9 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
                 body: new URLSearchParams({ ...params, sign }),
             });
             const result = await res.json();
-            if (result.status === 1 && result.data?.pay_url) {
-                return { redirectUrl: result.data.pay_url };
-            }
-            return { error: `Gateway rejected: ${result.msg || 'Unknown reason'}` };
-        } catch (e) { return { error: 'Connection to LG-Pay failed. Try manual method.' }; }
+            if (result.status === 1 && result.data?.pay_url) return { redirectUrl: result.data.pay_url };
+            return { error: `Gateway rejected: ${result.msg}` };
+        } catch (e) { return { error: 'Connection to LG-Pay failed.' }; }
     } 
     
     if (activeGateway === 'watchpay') {
@@ -299,7 +289,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
             merchantOrder: order_sn,
             amount: amount.toFixed(2),
             currency: 'INR',
-            productName: plan.title,
+            productName: plan.title === 'WALLET_TOPUP' ? 'Wallet Credit' : plan.title,
             callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/watchpay-webhook`,
             returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/purchase-success?id=${order_sn}&amount=${amount}&plan=${encodeURIComponent(plan.title)}&method=automated`,
         };
@@ -313,9 +303,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
                 body: JSON.stringify({ ...params, sign }),
             });
             const result = await res.json();
-            if (result.status === 'success' && result.data?.paymentUrl) {
-                return { redirectUrl: result.data.paymentUrl };
-            }
+            if (result.status === 'success' && result.data?.paymentUrl) return { redirectUrl: result.data.paymentUrl };
             return { error: `WatchPay error: ${result.message}` };
         } catch (e) { return { error: 'WatchPay connection failed.' }; }
     }
@@ -361,16 +349,7 @@ export async function createSupportConversation(userId: string, subject: string,
         await triggerAiResponse(conversation.id, userId, firstMessage);
     }
     revalidatePath('/welcome');
-    revalidatePath('/live-chat');
     return { data: conversation };
-}
-
-export async function deleteSupportConversation(convId: string) {
-    const { error } = await supabaseAdmin.from('support_conversations').delete().eq('id', convId);
-    if (error) return { error: error.message };
-    revalidatePath('/welcome');
-    revalidatePath('/live-chat');
-    return { success: true };
 }
 
 export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string, imageFile?: File) {
@@ -398,7 +377,6 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
     }
     
     revalidatePath('/welcome');
-    revalidatePath('/live-chat');
     return { error: null };
 }
 
@@ -445,14 +423,13 @@ async function triggerAiResponse(convId: string, userId: string, message: string
             last_message_preview: aiResponse, 
             unread_count_user: (freshConv?.unread_count_user || 0) + 1 
         }).eq('id', convId);
-    } catch (error) { console.error(`[AI Support] Assistant Error:`, error); }
+    } catch (error) { console.error(`[AI Support] Error:`, error); }
 }
 
 export async function markSupportRead(convId: string, role: 'admin' | 'user') {
     const field = role === 'admin' ? 'unread_count_admin' : 'unread_count_user';
     await supabaseAdmin.from('support_conversations').update({ [field]: 0 }).eq('id', convId);
     revalidatePath('/welcome');
-    revalidatePath('/live-chat');
     return { success: true };
 }
 
@@ -525,7 +502,7 @@ export async function startFreeTrial(userId: string) {
     const { count: totalAccs } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', userId);
     const stockmintUsername = generateStockmintUsername(profile.email, (totalAccs || 0) + 500);
 
-    const hubRes = await fetchFromHub('users/create', 'POST', {
+    await fetchFromHub('users/create', 'POST', {
         fullName: profile.full_name, 
         email: stockmintUsername, 
         password: stockmintUsername,
@@ -575,7 +552,7 @@ export async function checkAndCleanTrial(accountId: string) {
             return { expired: true };
         }
     } catch (e) {
-        console.error("Cleanup individual trial failure:", e);
+        console.error("Cleanup trial failure:", e);
     }
     return { expired: false };
 }
@@ -608,6 +585,6 @@ export async function cleanupAllTrials(userId: string) {
             }
         }
     } catch (e) {
-        console.error("Cleanup all trials failure:", e);
+        console.error("Cleanup trials failure:", e);
     }
 }
