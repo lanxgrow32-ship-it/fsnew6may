@@ -69,8 +69,6 @@ const LiveViewersBanner = () => {
 
 const PlanCard = ({ size, title, price, usdPrice, isPopular }: any) => {
   const currentPrice = parseFloat(price.replace(/,/g, ''));
-  const numericUsdPrice = parseFloat(usdPrice.replace(/,/g, ''));
-  const originalUsdPrice = numericUsdPrice * 2;
   const [slotsRemaining, setSlotsRemaining] = useState(0);
 
   useEffect(() => {
@@ -119,14 +117,14 @@ const PlanCard = ({ size, title, price, usdPrice, isPopular }: any) => {
         </div>
 
         <div className="pt-4 border-t border-white/5">
+            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Activation Fee</p>
             <div className="flex items-baseline gap-2">
-                <span className="text-lg text-muted-foreground line-through font-medium">${originalUsdPrice.toLocaleString()}</span>
                 <span className="text-3xl font-bold text-primary">${usdPrice}</span>
             </div>
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
+            <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1">
                 Approx. ₹{currentPrice.toLocaleString('en-IN')}
             </p>
-            <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest">
+            <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest uppercase">
                 50% LIMITED DISCOUNT
             </Badge>
         </div>
@@ -169,7 +167,7 @@ export default function ForexPricingPage() {
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] border border-primary/20 mb-6">
                 <Globe className="h-3 w-3" /> Global Forex & Crypto Arena
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight">The Arena is Waiting.</h1>
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight">The Global Arena is Waiting.</h1>
               <p className="mt-4 text-muted-foreground max-w-4xl mx-auto text-lg">
                 Choose the evaluation model that fits your global trading style and secure your funded account today.
               </p>
@@ -187,7 +185,7 @@ export default function ForexPricingPage() {
 
               <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
                   <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
-                      <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 opacity-20" />
+                      <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
                       <h3 className="text-2xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
                       <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Provisioning Liquidity Bridges...</p>
                   </div>
@@ -195,7 +193,7 @@ export default function ForexPricingPage() {
 
               <TabsContent value="1-step" className="mt-8 animate-in fade-in duration-500">
                    <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
-                      <Zap className="h-12 w-12 text-primary mx-auto mb-4 opacity-20" />
+                      <Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
                       <h3 className="text-2xl font-bold text-white tracking-tight uppercase">1-Phase Model coming soon.</h3>
                       <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Review in Progress...</p>
                   </div>

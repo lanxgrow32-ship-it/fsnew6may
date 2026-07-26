@@ -312,18 +312,21 @@ export function ArenaView({
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-400">{selectedPlan.title}</span>
-                                    <span className="font-bold text-white">₹{selectedPlan.price}</span>
+                                    <span className="font-bold text-white">{marketSegment === 'forex' ? `$${selectedPlan.usdPrice}` : `₹${selectedPlan.price}`}</span>
                                 </div>
                                 {discount > 0 && (
                                     <div className="flex justify-between items-center text-sm text-green-400 font-bold">
                                         <span>Promo Discount</span>
-                                        <span>- ₹{(parseFloat(selectedPlan.price.replace(/,/g, '')) * (discount/100)).toLocaleString('en-IN')}</span>
+                                        <span>- {marketSegment === 'forex' ? `$${(parseFloat(selectedPlan.usdPrice) * (discount/100)).toFixed(2)}` : `₹${(parseFloat(selectedPlan.price.replace(/,/g, '')) * (discount/100)).toLocaleString('en-IN')}`}</span>
                                     </div>
                                 )}
                                 <div className="pt-4 border-t border-white/5 flex justify-between items-center">
                                     <span className="text-base font-bold text-white">Total</span>
                                     <span className="text-2xl font-black text-primary">₹{calculateFinalPrice().toLocaleString('en-IN')}</span>
                                 </div>
+                                {marketSegment === 'forex' && (
+                                    <p className="text-[9px] text-gray-500 font-bold uppercase text-center mt-2">Conversion applied for checkout</p>
+                                )}
                             </div>
                         </GlassCard>
                     </div>
@@ -464,8 +467,14 @@ export function ArenaView({
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Get Funded</h2>
-                    <p className="text-gray-400 text-sm font-medium">Select your market and secure your evaluation account.</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">
+                        {marketSegment === 'forex' ? 'Global Marketplace' : 'Indian Marketplace'}
+                    </h2>
+                    <p className="text-gray-400 text-sm font-medium">
+                        {marketSegment === 'forex' 
+                            ? 'Scale your trading across Forex, Crypto, and Global Indices.' 
+                            : 'Select your market and secure your evaluation account.'}
+                    </p>
                 </div>
 
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-1 flex items-center h-12 shadow-2xl">
@@ -555,7 +564,7 @@ export function ArenaView({
                     <TabsContent value="instant" className="animate-in fade-in duration-500">
                         <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
                             <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
-                            <h3 className="text-xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
+                            <h3 className="text-2xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
                             <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Provisioning Liquidity Bridges...</p>
                         </div>
                     </TabsContent>
@@ -563,7 +572,7 @@ export function ArenaView({
                     <TabsContent value="oneStep" className="animate-in fade-in duration-500">
                         <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
                             <Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
-                            <h3 className="text-xl font-bold text-white tracking-tight uppercase">1-Phase Model coming soon.</h3>
+                            <h3 className="text-2xl font-bold text-white tracking-tight uppercase">1-Phase Model coming soon.</h3>
                             <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Review in Progress...</p>
                         </div>
                     </TabsContent>
