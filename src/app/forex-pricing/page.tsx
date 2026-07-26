@@ -13,13 +13,13 @@ import { cn } from '@/lib/utils';
 import { ClientOnly } from '@/components/ui/client-only';
 
 const forexPlans = [
-  { size: '5,000', title: '$5k Forex 2-Step', price: '2,999' },
-  { size: '10,000', title: '$10k Forex 2-Step', price: '4,999' },
-  { size: '25,000', title: '$25k Forex 2-Step', price: '9,999' },
-  { size: '50,000', title: '$50k Forex 2-Step', price: '16,999', isPopular: true },
-  { size: '100,000', title: '$100k Forex 2-Step', price: '29,999' },
-  { size: '200,000', title: '$200k Forex 2-Step', price: '49,999' },
-  { size: '400,000', title: '$400k Forex 2-Step', price: '89,999' },
+  { size: '5,000', title: '$5k Forex 2-Step', price: '2,999', usdPrice: '35' },
+  { size: '10,000', title: '$10k Forex 2-Step', price: '4,999', usdPrice: '60' },
+  { size: '25,000', title: '$25k Forex 2-Step', price: '9,999', usdPrice: '120' },
+  { size: '50,000', title: '$50k Forex 2-Step', price: '16,999', usdPrice: '200', isPopular: true },
+  { size: '100,000', title: '$100k Forex 2-Step', price: '29,999', usdPrice: '350' },
+  { size: '200,000', title: '$200k Forex 2-Step', price: '49,999', usdPrice: '600' },
+  { size: '400,000', title: '$400k Forex 2-Step', price: '89,999', usdPrice: '1,050' },
 ];
 
 const LiveViewersBanner = () => {
@@ -67,9 +67,10 @@ const LiveViewersBanner = () => {
     );
 };
 
-const PlanCard = ({ size, title, price, isPopular }: any) => {
+const PlanCard = ({ size, title, price, usdPrice, isPopular }: any) => {
   const currentPrice = parseFloat(price.replace(/,/g, ''));
-  const originalPrice = currentPrice * 2;
+  const numericUsdPrice = parseFloat(usdPrice.replace(/,/g, ''));
+  const originalUsdPrice = numericUsdPrice * 2;
   const [slotsRemaining, setSlotsRemaining] = useState(0);
 
   useEffect(() => {
@@ -119,9 +120,12 @@ const PlanCard = ({ size, title, price, isPopular }: any) => {
 
         <div className="pt-4 border-t border-white/5">
             <div className="flex items-baseline gap-2">
-                <span className="text-lg text-muted-foreground line-through font-medium">₹{originalPrice.toLocaleString('en-IN')}</span>
-                <span className="text-3xl font-bold text-primary">₹{currentPrice.toLocaleString('en-IN')}</span>
+                <span className="text-lg text-muted-foreground line-through font-medium">${originalUsdPrice.toLocaleString()}</span>
+                <span className="text-3xl font-bold text-primary">${usdPrice}</span>
             </div>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
+                Approx. ₹{currentPrice.toLocaleString('en-IN')}
+            </p>
             <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest">
                 50% LIMITED DISCOUNT
             </Badge>
@@ -184,16 +188,16 @@ export default function ForexPricingPage() {
               <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
                   <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
                       <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 opacity-20" />
-                      <h3 className="text-2xl font-bold text-white tracking-tight">Forex Instant is coming.</h3>
-                      <p className="text-gray-400 mt-2">We are currently provisioning liquidity bridges. Stay tuned.</p>
+                      <h3 className="text-2xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
+                      <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Provisioning Liquidity Bridges...</p>
                   </div>
               </TabsContent>
 
               <TabsContent value="1-step" className="mt-8 animate-in fade-in duration-500">
                    <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
                       <Zap className="h-12 w-12 text-primary mx-auto mb-4 opacity-20" />
-                      <h3 className="text-2xl font-bold text-white tracking-tight">1-Step Phase coming soon.</h3>
-                      <p className="text-gray-400 mt-2">The one-phase global evaluation model is currently under risk review.</p>
+                      <h3 className="text-2xl font-bold text-white tracking-tight uppercase">1-Phase Model coming soon.</h3>
+                      <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Review in Progress...</p>
                   </div>
               </TabsContent>
               

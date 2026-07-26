@@ -69,13 +69,13 @@ const plans = {
         { size: '50 Lakh', price: '499', title: '50L PTP' },
     ],
     forex: [
-        { size: '5,000', price: '2,999', title: '$5k Forex 2-Step' },
-        { size: '10,000', price: '4,999', title: '$10k Forex 2-Step' },
-        { size: '25,000', price: '9,999', title: '$25k Forex 2-Step' },
-        { size: '50,000', price: '16,999', title: '$50k Forex 2-Step', isPopular: true },
-        { size: '100,000', price: '29,999', title: '$100k Forex 2-Step' },
-        { size: '200,000', price: '49,999', title: '$200k Forex 2-Step' },
-        { size: '400,000', price: '89,999', title: '$400k Forex 2-Step' },
+        { size: '5,000', price: '2,999', usdPrice: '35', title: '$5k Forex 2-Step' },
+        { size: '10,000', price: '4,999', usdPrice: '60', title: '$10k Forex 2-Step' },
+        { size: '25,000', price: '9,999', usdPrice: '120', title: '$25k Forex 2-Step' },
+        { size: '50,000', price: '16,999', usdPrice: '200', title: '$50k Forex 2-Step', isPopular: true },
+        { size: '100,000', price: '29,999', usdPrice: '350', title: '$100k Forex 2-Step' },
+        { size: '200,000', price: '49,999', usdPrice: '600', title: '$200k Forex 2-Step' },
+        { size: '400,000', price: '89,999', usdPrice: '1,050', title: '$400k Forex 2-Step' },
     ]
 };
 
@@ -439,9 +439,14 @@ export function ArenaView({
                 <div className="pt-4 border-t border-white/5">
                     <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Activation Fee</p>
                     <div className="flex items-baseline gap-2">
-                        <p className={cn("text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left", plan.isFlashSale && "text-2xl text-white")}>₹{plan.price}</p>
+                        <p className={cn("text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left", plan.isFlashSale && "text-2xl text-white")}>
+                            {marketSegment === 'forex' ? `$${plan.usdPrice}` : `₹${plan.price}`}
+                        </p>
                         {plan.isFlashSale && <span className="text-[10px] text-red-500 font-black line-through">₹49,500</span>}
                     </div>
+                    {marketSegment === 'forex' && (
+                        <p className="text-[10px] text-primary font-bold">Approx. ₹{plan.price}</p>
+                    )}
                 </div>
             </CardContent>
             <CardFooter>
@@ -548,7 +553,7 @@ export function ArenaView({
                     </TabsList>
 
                     <TabsContent value="instant" className="animate-in fade-in duration-500">
-                        <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-2xl mx-auto">
+                        <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
                             <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
                             <h3 className="text-xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
                             <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Provisioning Liquidity Bridges...</p>
@@ -556,7 +561,7 @@ export function ArenaView({
                     </TabsContent>
 
                     <TabsContent value="oneStep" className="animate-in fade-in duration-500">
-                        <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-2xl mx-auto">
+                        <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
                             <Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
                             <h3 className="text-xl font-bold text-white tracking-tight uppercase">1-Phase Model coming soon.</h3>
                             <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Review in Progress...</p>
