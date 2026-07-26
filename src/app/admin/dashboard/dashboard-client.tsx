@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -156,19 +157,24 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
   const [totalDbCount, setTotalDbCount] = useState(initialCount);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [kycCount, setKycCount] = useState(0);
   const [marketType, setMarketType] = useState<'indian' | 'forex'>('indian');
   const { toast } = useToast();
   
   // Persist market selection
   useEffect(() => {
     const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex';
-    if (saved) setMarketType(saved);
+    if (saved) {
+        setMarketType(saved);
+    }
   }, []);
 
   const handleMarketSwitch = (type: 'indian' | 'forex') => {
       setMarketType(type);
       localStorage.setItem('fs_admin_market', type);
       toast({ title: `Context Switched`, description: `Viewing ${type === 'indian' ? 'Indian Market' : 'Forex Arena'}` });
+      fetchProfiles(type);
   }
   
   useEffect(() => {
@@ -176,11 +182,19 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     setTotalDbCount(initialCount);
   }, [initialProfiles, initialCount]);
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = async (targetMarket?: string) => {
     const client = await supabase;
-    // PROTOCOL v9.1: Broader query to ensure NO user is missed.
+    const currentMarket = targetMarket || marketType;
+
+    // PROTOCOL v10.1: Massive Dataset Query with precise server-side market filtering
     let query = client.from('profiles').select('*', { count: 'exact' }).neq('role', 'admin');
     
+    if (currentMarket === 'indian') {
+        query = query.or('market_type.eq.indian,market_type.is.null');
+    } else {
+        query = query.eq('market_type', 'forex');
+    }
+
     if (masterView) {
       query = query.eq('is_hidden', true);
     } else {
@@ -197,6 +211,10 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     } else if (updatedProfiles) {
         setProfiles(updatedProfiles);
         setTotalDbCount(count || updatedProfiles.length);
+        
+        // Recalculate secondary stats from the massive dataset
+        setPendingCount(updatedProfiles.filter(p => !p.is_approved).length);
+        setKycCount(updatedProfiles.filter(p => p.kyc_status === 'submitted').length);
     }
   }
 
@@ -204,7 +222,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     const initSub = async () => {
         const client = await supabase;
         const channel = client
-          .channel('realtime profiles main')
+          .channel('realtime profiles main grid')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
             () => { fetchProfiles(); }
           )
@@ -215,7 +233,8 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
         };
     }
     initSub();
-  }, [supabase, masterView]);
+    fetchProfiles(); // Trigger first refined fetch
+  }, [supabase, masterView, marketType]);
   
   const onUserDelete = (deletedUserId: string) => {
     setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== deletedUserId));
@@ -232,14 +251,10 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
       fetchProfiles();
   }
 
-  const filteredProfiles = useMemo(() => {
-    return profiles.filter(p => p.market_type === marketType || (!p.market_type && marketType === 'indian'));
-  }, [profiles, marketType]);
-
   const stats = [
-    { title: "Total Traders", value: filteredProfiles.length || 0, icon: User },
-    { title: "Pending Approval", value: filteredProfiles.filter(p => !p.is_approved).length || 0, icon: User },
-    { title: "KYC Submitted", value: filteredProfiles.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
+    { title: "Total Traders", value: totalDbCount, icon: User },
+    { title: "Pending Approval", value: pendingCount, icon: User },
+    { title: "KYC Submitted", value: kycCount, icon: User },
   ];
 
   return (
@@ -319,7 +334,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
                 ))}
             </div>
             <CreateAdminForm className="w-full md:hidden mb-6" />
-            <ClientOnly fallback={<UserTableSkeleton />}><UserTable profiles={filteredProfiles || []} onUserDelete={onUserDelete} onUserDeleteError={handleUserDeleteError} onUserUpdate={handleUserUpdate} /></ClientOnly>
+            <ClientOnly fallback={<UserTableSkeleton />}><UserTable profiles={profiles || []} onUserDelete={onUserDelete} onUserDeleteError={handleUserDeleteError} onUserUpdate={handleUserUpdate} /></ClientOnly>
         </main>
       </SidebarInset>
     </SidebarProvider>

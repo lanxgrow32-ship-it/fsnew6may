@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -63,29 +64,38 @@ export default function AccountRequestsPage() {
         setMarketType(type);
         localStorage.setItem('fs_admin_market', type);
         toast({ title: `Market Switched`, description: `Context updated to ${type === 'indian' ? 'Indian' : 'Forex'}` });
+        fetchRequests(type);
     }
 
-    const fetchRequests = async () => {
+    const fetchRequests = async (targetMarket?: string) => {
         setLoading(true);
+        const currentMarket = targetMarket || marketType;
         const client = await supabase;
-        const { data } = await client
-            .from('user_accounts')
-            .select('*, profiles(full_name, email, kyc_status, mobile_number)')
+        
+        // PROTOCOL v10.1: Massive range fetch with explicit server-side filtering
+        let query = client.from('user_accounts').select('*, profiles(full_name, email, kyc_status, mobile_number)');
+        
+        if (currentMarket === 'indian') {
+            query = query.or('market_type.eq.indian,market_type.is.null');
+        } else {
+            query = query.eq('market_type', 'forex');
+        }
+
+        const { data, error } = await query
             .order('created_at', { ascending: false })
             .range(0, 49999);
+
+        if (error) console.error("Fetch Failure:", error);
         setRequests(data || []);
         setLoading(false);
     };
 
     useEffect(() => {
         fetchRequests();
-    }, []);
+    }, [marketType]);
 
     const filteredRequests = useMemo(() => {
         return requests.filter(req => {
-            // Global Market Filter
-            if (req.market_type !== marketType && !(marketType === 'indian' && !req.market_type)) return false;
-
             const profile = req.profiles || {};
             const fullName = (profile.full_name || '').toLowerCase();
             const email = (profile.email || '').toLowerCase();
@@ -99,7 +109,7 @@ export default function AccountRequestsPage() {
 
             return matchesSearch && matchesStatus;
         });
-    }, [requests, searchTerm, statusFilter, marketType]);
+    }, [requests, searchTerm, statusFilter]);
 
     const handleApprove = (id: string) => {
         startTransition(async () => {
