@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect, useRef } from 'react';
@@ -226,7 +227,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-[0.3em]">Secure connection established</p>
                         </div>
                         {messages.map((m) => {
-                            const isAi = m.sender_id === 'AI_SYSTEM';
+                            const isAi = m.sender_id === 'AI_SYSTEM' || m.sender_id === 'AGENT_SYSTEM';
                             return (
                                 <div key={m.id} className={cn("flex items-end gap-3", m.sender_role === 'user' ? "flex-row-reverse" : "flex-row")}>
                                     <div className={cn(

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -53,8 +54,6 @@ export default function AgentLiveChat() {
     const supabase = createClient();
 
     const fetchConversations = async () => {
-        // FILTER: Standard Support only sees AI or Human Insistent sessions. 
-        // Specialist sessions are completely removed from this view.
         const { data } = await supabase
             .from('support_conversations')
             .select('*, profiles:user_id(full_name, email)')
@@ -167,7 +166,7 @@ export default function AgentLiveChat() {
                                     <ConversationList list={humanQueue} activeId={activeConversation?.id} onSelect={(c:any) => { setActiveConversation(c); if(isMobile) setMobileView('chat'); }} selectedIds={selectedIds} onToggleSelect={toggleSelect} emptyText="No users requested human support." />
                                 </TabsContent>
                                 <TabsContent value="ai" className="mt-0">
-                                    <ConversationList list={aiSessions} activeId={activeConversation?.id} onSelect={(c:any) => { setActiveConversation(c); if(isMobile) setMobileView('chat'); }} selectedIds={selectedIds} onToggleSelect={toggleSelect} emptyText="No active AI sessions." />
+                                    <ConversationList list={aiSessions} activeId={activeConversation?.id} onSelect={(c:any) => { setActiveConversation(c); if(isMobile) setMobileView('chat'); }} selectedIds={selectedIds} onToggleSelect={toggleSelect} emptyText="No active sessions." />
                                 </TabsContent>
                             </>
                         )}
@@ -215,7 +214,7 @@ export default function AgentLiveChat() {
                                 {activeConversation.assigned_role === 'human' ? (
                                     <Badge className="bg-amber-500 text-white text-[9px] font-black uppercase tracking-widest h-8 px-4 border-none shadow-lg">Manual Request</Badge>
                                 ) : (
-                                    <Badge className="bg-primary text-white text-[9px] font-black uppercase tracking-widest h-8 px-4 border-none">AI Control</Badge>
+                                    <Badge className="bg-primary text-white text-[9px] font-black uppercase tracking-widest h-8 px-4 border-none">System Response Active</Badge>
                                 )}
                             </div>
                         </header>
@@ -231,7 +230,7 @@ export default function AgentLiveChat() {
                         <div ref={scrollRef} className="flex-1 p-8 overflow-y-auto bg-slate-950 scroll-smooth">
                             <div className="space-y-8 max-w-4xl mx-auto">
                                 {messages.map(m => {
-                                    const isAi = m.sender_id === 'AI_SYSTEM';
+                                    const isAi = m.sender_id === 'AI_SYSTEM' || m.sender_id === 'AGENT_SYSTEM';
                                     return (
                                         <div key={m.id} className={cn("flex items-end gap-4", m.sender_role === 'admin' ? "flex-row-reverse" : "flex-row")}>
                                             <div className={cn(
@@ -241,7 +240,7 @@ export default function AgentLiveChat() {
                                                 {isAi && (
                                                     <div className="flex items-center gap-1.5 mb-2">
                                                         <BrainCircuit className="w-3.5 h-3.5 text-primary" />
-                                                        <span className="text-[8px] font-black text-primary uppercase tracking-widest">Neural Agent</span>
+                                                        <span className="text-[8px] font-black text-primary uppercase tracking-widest">System Response</span>
                                                     </div>
                                                 )}
                                                 <p className="whitespace-pre-wrap font-medium">{m.message}</p>

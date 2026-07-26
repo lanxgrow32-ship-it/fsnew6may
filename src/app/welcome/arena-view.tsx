@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -118,9 +119,9 @@ export function ArenaView({
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [checkoutStep]);
 
-    // HANDSHAKE: Ensure correct default tab when switching markets
     const handleMarketSwitch = (market: 'indian' | 'forex') => {
         setMarketSegment(market);
+        // Force 2-step context for Forex as it is the only active model
         if (market === 'forex') {
             setActiveTab('twoStep');
         } else {
@@ -510,7 +511,7 @@ export function ArenaView({
                                 />
                                 <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium bg-white/5 p-2 rounded-lg border border-white/5">
                                     <CheckCircle className="h-3 w-3 text-green-500"/>
-                                    Account activated manually by admin review.
+                                    Verification required for manual transfers.
                                 </div>
                             </div>
                             <Button type="submit" disabled={isActionPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">

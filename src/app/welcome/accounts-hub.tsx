@@ -175,9 +175,12 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
 
 export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accounts: any[], profile: any, onSwitchToGetFunded: () => void }) {
     const kycVerified = profile.kyc_status === 'verified';
-    const activeCount = accounts.filter(a => a.status === 'active' && !a.is_blocked).length;
-    const pendingCount = accounts.filter(a => a.status === 'pending' || !a.is_approved).length;
-    const blockedCount = accounts.filter(a => a.is_blocked).length;
+    // FILTER: Hide unapproved automated/ghost accounts from the grid
+    const visibleAccounts = accounts.filter(a => a.is_approved === true);
+    
+    const activeCount = visibleAccounts.filter(a => a.status === 'active' && !a.is_blocked).length;
+    const pendingCount = visibleAccounts.filter(a => a.status === 'pending' || !a.is_approved).length;
+    const blockedCount = visibleAccounts.filter(a => a.is_blocked).length;
     const firstName = profile.full_name?.split(' ')[0] || 'Trader';
 
     return (
@@ -216,15 +219,15 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                         <h2 className="text-2xl font-black text-white tracking-tight uppercase">Portfolio Grid</h2>
                         <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Secure session management</p>
                     </div>
-                    {!kycVerified && accounts.length > 0 && (
+                    {!kycVerified && visibleAccounts.length > 0 && (
                         <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-xl border border-amber-400/20 text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-right-4">
                             <AlertTriangle className="w-3.5 h-3.5 animate-pulse"/> 48-Hour KYC Grace Period Active
                         </Link>
                     )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {accounts.length > 0 ? (
-                        accounts.map((acc: any) => <AccountCard key={acc.id} account={acc} kycVerified={kycVerified} />)
+                    {visibleAccounts.length > 0 ? (
+                        visibleAccounts.map((acc: any) => <AccountCard key={acc.id} account={acc} kycVerified={kycVerified} />)
                     ) : (
                         <GlassCard className="col-span-full p-20 text-center border-dashed border-white/10 bg-white/[0.01]">
                             <div className="mx-auto h-20 w-20 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center mb-8 shadow-2xl">

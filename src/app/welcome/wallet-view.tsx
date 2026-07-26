@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -187,7 +188,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-black text-gray-500 uppercase">Transaction Hash (TxID)</Label>
-                                    <Input placeholder="64-character TRON hash" value={txId} onChange={(e) => setTxId(e.target.value)} required className="bg-black/20 border-white/10 text-white h-14 font-mono text-xs focus:ring-green-500/50" />
+                                    <Input placeholder="Paste hash here" value={txId} onChange={(e) => setTxId(e.target.value)} required className="bg-black/20 border-white/10 text-white h-14 font-mono text-xs focus:ring-green-500/50" />
                                 </div>
                                 <Button type="submit" disabled={isPending || !amount || !txId || isBelowMin} className="w-full h-16 bg-green-600 hover:bg-green-500 text-white font-black rounded-2xl shadow-xl shadow-green-900/20 text-xs uppercase tracking-widest">
                                     {isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <ShieldCheck className="mr-2 h-4 w-4" />} Verify & Credit INR {parsedAmount.toLocaleString()}
