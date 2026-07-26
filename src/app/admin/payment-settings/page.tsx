@@ -42,7 +42,8 @@ import {
     Search,
     Ticket,
     ShieldAlert,
-    Loader2
+    Loader2,
+    Coins
 } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -66,6 +67,7 @@ type PaymentDetails = {
     is_ai_support_enabled: boolean;
     watchpay_merchant_id?: string;
     watchpay_api_key?: string;
+    usdt_wallet_address?: string;
 };
 
 function SubmitButton() {
@@ -356,6 +358,28 @@ function PaymentSettingsForm({ currentSettings }: { currentSettings: PaymentDeta
                             <p className="text-xs text-muted-foreground">If disabled, PTP plans will vanish from the marketplace.</p>
                         </div>
                         <Switch name="is_ptp_enabled" defaultChecked={currentSettings?.is_ptp_enabled ?? true} />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="bg-white/5 border-white/10">
+                <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                        <Coins className="w-5 h-5 text-primary" /> Crypto Payment Gateway
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">Configure your TRC-20 wallet for accepting USDT.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="usdt_wallet_address" className="text-gray-400 uppercase text-[10px] font-black tracking-widest">Company USDT (TRC-20) Address</Label>
+                        <Input 
+                            id="usdt_wallet_address" 
+                            name="usdt_wallet_address" 
+                            defaultValue={currentSettings?.usdt_wallet_address || ''} 
+                            placeholder="e.g. TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" 
+                            className="bg-black/20 border-white/10 text-white font-mono"
+                        />
+                        <p className="text-[10px] text-primary font-bold italic">This address will be shown to users when they select the Crypto payment method.</p>
                     </div>
                 </CardContent>
             </Card>

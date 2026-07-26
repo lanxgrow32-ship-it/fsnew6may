@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -30,6 +29,7 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
   const automatedMode = formData.get('automated_mode') as 'both' | 'lgpay' | 'watchpay';
   const isPtpEnabled = formData.get('is_ptp_enabled') === 'on';
   const isAiSupportEnabled = formData.get('is_ai_support_enabled') === 'on';
+  const usdtWalletAddress = formData.get('usdt_wallet_address') as string;
   
   // Watchpay credentials
   const watchPayMerchantId = formData.get('watchpay_merchant_id') as string;
@@ -37,14 +37,6 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
 
   if (!['lgpay', 'manual', 'watchpay', 'automated', 'cashfree'].includes(activeGateway)) {
       return { error: 'Invalid gateway selected.' };
-  }
-   if (activeGateway === 'manual' && !upiId) {
-      return { error: 'UPI ID is required to enable the manual gateway.' };
-  }
-
-  // Basic validation for automated modes if they were using these specific credentials
-  if ((activeGateway === 'watchpay' || activeGateway === 'automated') && (!watchPayMerchantId || !watchPayApiKey)) {
-      return { error: 'WatchPay Merchant ID and API Key are required to enable this gateway mode.' };
   }
 
   const commission = parseFloat(commissionPercentage);
@@ -61,7 +53,8 @@ export async function updatePaymentSettings(prevState: any, formData: FormData) 
     is_ptp_enabled: isPtpEnabled,
     is_ai_support_enabled: isAiSupportEnabled,
     watchpay_merchant_id: watchPayMerchantId,
-    watchpay_api_key: watchPayApiKey
+    watchpay_api_key: watchPayApiKey,
+    usdt_wallet_address: usdtWalletAddress
   };
 
   try {

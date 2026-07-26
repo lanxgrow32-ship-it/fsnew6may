@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { runSupportAi } from '@/ai/flows/support-agent-flow';
+import { verifyTransactionFlow } from '@/ai/flows/verify-transaction-flow';
 import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername, calculateTrialExpiry } from '@/lib/plan-utils';
 import { generateLgPaySignature } from '@/lib/lg-pay';
 import { generateWatchPaySignature } from '@/lib/watchpay';
@@ -169,6 +170,118 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   return { success: true, transaction_id: txId, amount: price };
 }
 
+/**
+ * Handles USDT (Crypto) Payment Verification and Auto-Provisioning.
+ */
+export async function processCryptoPayment(userId: string, plan: any, txId: string) {
+    if (!userId || !plan || !txId) return { error: 'Incomplete request.' };
+
+    const { data: settings } = await supabaseAdmin.from('payment_details').select('usdt_wallet_address').eq('id', 1).single();
+    if (!settings?.usdt_wallet_address) return { error: 'Crypto gateway not configured.' };
+
+    const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
+    if (!profile) return { error: 'Profile not found.' };
+
+    const requiredAmount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
+
+    // Call Neural Verification Flow
+    const audit = await verifyTransactionFlow({
+        txId,
+        claimedAmount: requiredAmount,
+        companyWallet: settings.usdt_wallet_address
+    });
+
+    if (!audit.success) return { error: audit.error || 'Verification failed.' };
+
+    // Anti-Double Spend Check (Check existing records)
+    const { data: existing } = await supabaseAdmin.from('user_accounts').select('id').eq('transaction_id', txId).single();
+    if (existing) return { error: 'This transaction has already been used.' };
+
+    const isPTP = plan.title.toLowerCase().includes('ptp');
+    const classification = getAutoClassification(plan.title);
+    const isKycVerified = profile.kyc_status === 'verified';
+
+    // Provision the Account
+    const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
+        user_id: userId,
+        plan_name: plan.title,
+        status: isPTP || isKycVerified ? 'active' : 'pending',
+        is_approved: true,
+        transaction_id: txId,
+        final_amount_paid: requiredAmount,
+        account_classification: classification,
+        account_model: isPTP ? 'passthrupay' : 'normal'
+    }).select().single();
+
+    if (accountError || !account) return { error: 'Account write failed.' };
+
+    // Provision Hub if ready
+    if (isPTP || isKycVerified) {
+        const initialBalance = getBalanceFromPlanName(plan.title);
+        const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', userId).eq('credentials_provided', true);
+        const username = generateStockmintUsername(profile.email, count || 0);
+        
+        await fetchFromHub('users/create', 'POST', {
+            fullName: profile.full_name, email: username, password: username,
+            initialBalance, accountClassification: classification, 
+            accountModel: isPTP ? 'passthenpay' : 'normal'
+        }, account.id);
+
+        await supabaseAdmin.from('user_accounts').update({
+            credentials_provided: true, trading_username: username, trading_password: username
+        }).eq('id', account.id);
+    }
+
+    revalidatePath('/welcome');
+    return { success: true, transaction_id: txId, amount: requiredAmount };
+}
+
+/**
+ * Handles USDT (Crypto) Wallet Top-up with automated audit.
+ */
+export async function processCryptoWalletTopUp(userId: string, amount: number, txId: string) {
+    if (!userId || !amount || !txId) return { error: 'Data error.' };
+
+    const { data: settings } = await supabaseAdmin.from('payment_details').select('usdt_wallet_address').eq('id', 1).single();
+    if (!settings?.usdt_wallet_address) return { error: 'Crypto gateway not configured.' };
+
+    const audit = await verifyTransactionFlow({
+        txId,
+        claimedAmount: amount,
+        companyWallet: settings.usdt_wallet_address
+    });
+
+    if (!audit.success) return { error: audit.error };
+
+    // Check if already claimed
+    const { data: existing } = await supabaseAdmin.from('wallet_transactions').select('id').eq('gateway_transaction_id', txId).single();
+    if (existing) return { error: 'Transaction hash already redeemed.' };
+
+    const bonus = amount >= 10000 ? (amount * 0.05) : 0;
+    const total = amount + bonus;
+
+    const { data: profile } = await supabaseAdmin.from('profiles').select('wallet_balance').eq('id', userId).single();
+    if (!profile) return { error: 'Profile error' };
+
+    await supabaseAdmin.from('wallet_transactions').insert({
+        user_id: userId,
+        amount: amount,
+        bonus_amount: bonus,
+        type: 'deposit',
+        status: 'completed',
+        gateway_transaction_id: txId,
+        description: 'Crypto USDT (TRC-20) Deposit',
+        processed_at: new Date().toISOString()
+    });
+
+    await supabaseAdmin.from('profiles').update({
+        wallet_balance: profile.wallet_balance + total
+    }).eq('id', userId);
+
+    revalidatePath('/welcome');
+    return { success: true };
+}
+
 export async function validateCoupon(code: string) {
     if (!code) return { error: 'Please enter a code.' };
     try {
@@ -201,10 +314,6 @@ export async function requestManualAccount(userId: string, planName: string, amo
   return { success: true, transaction_id: utr, amount: amount };
 }
 
-/**
- * Initiates an automated payment session.
- * Creates a PENDING record in the relevant table BEFORE redirecting to ensure multi-account audit.
- */
 export async function initiateGatewayPayment(userId: string, plan: any, gateway: string) {
     const { data: settings } = await supabaseAdmin.from('payment_details').select('*').eq('id', 1).single();
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
@@ -222,15 +331,13 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
     const amount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
     const order_sn = `FS_${Date.now()}_${randomBytes(3).toString('hex')}`;
 
-    // --- STRATEGIC HANDSHAKE (V4.1) ---
-    // Instead of profile updates, we create the specific transaction intent.
     if (plan.title === 'WALLET_TOPUP') {
         await supabaseAdmin.from('wallet_transactions').insert({
             user_id: userId,
             amount: amount,
             type: 'deposit',
             status: 'pending',
-            gateway_transaction_id: order_sn, // Used as lookup key for webhook
+            gateway_transaction_id: order_sn,
             description: 'Automated Wallet Recharge'
         });
     } else {
@@ -241,7 +348,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
             status: 'pending',
             is_approved: false,
             final_amount_paid: amount,
-            transaction_id: order_sn, // Used as lookup key for webhook
+            transaction_id: order_sn,
             account_classification: classification,
             account_model: plan.title.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal'
         });

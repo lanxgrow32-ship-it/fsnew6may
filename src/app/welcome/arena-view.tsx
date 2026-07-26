@@ -28,9 +28,11 @@ import {
     ShieldCheck,
     Globe,
     LayoutGrid,
-    Coins
+    Coins,
+    Cpu,
+    ArrowUpRight
 } from 'lucide-react';
-import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial, initiateGatewayPayment } from './actions';
+import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial, initiateGatewayPayment, processCryptoPayment } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -98,8 +100,9 @@ export function ArenaView({
     const [isActionPending, startTransition] = useTransition();
     const [marketSegment, setMarketSegment] = useState<'indian' | 'forex'>('indian');
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
-    const [checkoutStep, setCheckoutStep] = useState<'selection' | 'method' | 'direct-pay'>('selection');
+    const [checkoutStep, setCheckoutStep] = useState<'selection' | 'method' | 'direct-pay' | 'crypto-pay'>('selection');
     const [utr, setUtr] = useState('');
+    const [txId, setTxId] = useState('');
     const [couponCode, setCouponCode] = useState('');
     const [discount, setDiscount] = useState(0);
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
@@ -145,6 +148,17 @@ export function ArenaView({
         return base;
     }
 
+    const calculateUsdPrice = () => {
+        if (!selectedPlan) return 0;
+        if (marketSegment === 'forex') {
+            const base = parseFloat(selectedPlan.usdPrice);
+            if (discount > 0) return base * (1 - discount / 100);
+            return base;
+        }
+        // Conversion for Indian plans if paid in crypto (Approx 1 USDT = 90 INR as buffer)
+        return Math.ceil(calculateFinalPrice() / 90);
+    }
+
     const handleWalletPurchase = async () => {
         const finalPrice = calculateFinalPrice();
         if (profile.wallet_balance < finalPrice) {
@@ -179,6 +193,21 @@ export function ArenaView({
         });
     }
 
+    const handleCryptoSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!txId.trim()) return;
+        
+        startTransition(async () => {
+            const finalUsd = calculateUsdPrice();
+            const res = await processCryptoPayment(profile.id, { ...selectedPlan, price: finalUsd }, txId);
+            if (res.error) {
+                toast({ title: "Neural Audit Failed", description: res.error, variant: "destructive" });
+            } else {
+                router.push(`/purchase-success?id=${res.transaction_id}&amount=${res.amount}&plan=${encodeURIComponent(selectedPlan.title)}&method=crypto`);
+            }
+        });
+    }
+
     const handleDirectSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!utr) return;
@@ -193,13 +222,6 @@ export function ArenaView({
             }
         });
     };
-
-    const handleExternalPurchase = () => {
-        const finalPrice = calculateFinalPrice();
-        const url = `https://www.fundedstock.shop/purchase?wallet_id=${profile.wallet_id}&plan=${encodeURIComponent(selectedPlan.title)}&price=${finalPrice}`;
-        window.open(url, '_blank');
-        toast({ title: "Redirecting...", description: "Opening secure payment portal." });
-    }
 
     if (checkoutStep === 'method') {
         const isPTP = selectedPlan.title.toLowerCase().includes('ptp');
@@ -260,33 +282,8 @@ export function ArenaView({
                                 {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
                             </button>
 
-                            {activeGateway === 'cashfree' ? (
-                                <button 
-                                    onClick={handleExternalPurchase}
-                                    className="group flex items-center gap-4 p-6 bg-primary/5 border border-primary/20 rounded-3xl text-left transition-all hover:bg-primary/10 hover:border-primary/50 shadow-xl"
-                                >
-                                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                        <Zap className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Automated Gateway</p>
-                                        <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">UPI / Cards / NetBanking</p>
-                                    </div>
-                                </button>
-                            ) : activeGateway === 'manual' ? (
-                                <button 
-                                    onClick={() => setCheckoutStep('direct-pay')}
-                                    className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
-                                >
-                                    <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                                        <CreditCard className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Standard Direct Payment</p>
-                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Verifies in ~30 mins</p>
-                                    </div>
-                                </button>
-                            ) : (
+                            {/* Automated UPI Gateway */}
+                            {activeGateway !== 'manual' && activeGateway !== 'cashfree' && (
                                 <button 
                                     onClick={handleGatewayPurchase}
                                     disabled={isActionPending}
@@ -296,10 +293,39 @@ export function ArenaView({
                                         <Zap className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Automated Gateway</p>
+                                        <p className="text-base font-bold text-white">Automated Gateway (UPI)</p>
                                         <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">Instant Bank Handshake</p>
                                     </div>
-                                    {isActionPending && <Loader2 className="animate-spin h-5 w-5 text-primary" />}
+                                </button>
+                            )}
+
+                            {/* USDT Crypto Option (Unified) */}
+                            <button 
+                                onClick={() => setCheckoutStep('crypto-pay')}
+                                className="group flex items-center gap-4 p-6 bg-green-500/5 border border-green-500/10 rounded-3xl text-left transition-all hover:bg-green-500/10 hover:border-green-500/30 shadow-xl"
+                            >
+                                <div className="h-12 w-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform">
+                                    <Coins className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-base font-bold text-white">USDT (Crypto TRC-20)</p>
+                                    <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider mt-1">Blockchain Verification</p>
+                                </div>
+                            </button>
+
+                            {/* Manual UPI Fallback */}
+                            {activeGateway === 'manual' && (
+                                <button 
+                                    onClick={() => setCheckoutStep('direct-pay')}
+                                    className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
+                                >
+                                    <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                        <CreditCard className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-base font-bold text-white">Standard Direct Payment (UPI)</p>
+                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Verifies in ~30 mins</p>
+                                    </div>
                                 </button>
                             )}
                         </div>
@@ -323,13 +349,89 @@ export function ArenaView({
                                     <span className="text-base font-bold text-white">Total</span>
                                     <span className="text-2xl font-black text-primary">₹{calculateFinalPrice().toLocaleString('en-IN')}</span>
                                 </div>
-                                {marketSegment === 'forex' && (
-                                    <p className="text-[9px] text-gray-500 font-bold uppercase text-center mt-2">Conversion applied for checkout</p>
-                                )}
                             </div>
                         </GlassCard>
                     </div>
                 </div>
+            </div>
+        );
+    }
+
+    if (checkoutStep === 'crypto-pay') {
+        const finalUsd = calculateUsdPrice();
+        const walletAddress = paymentSettings?.usdt_wallet_address || 'T...';
+
+        return (
+            <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 font-poppins">
+                <button onClick={() => setCheckoutStep('method')} className="flex items-center text-gray-500 hover:text-white font-bold p-0 h-auto transition-colors">
+                    <ChevronLeft className="mr-1 h-4 w-4" /> Back
+                </button>
+
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Redeem via Blockchain</h2>
+                    <p className="text-gray-400 text-sm font-medium">Send USDT (TRC-20) and submit your Transaction Hash.</p>
+                </div>
+
+                <GlassCard className="p-0 border-green-500/20 bg-green-500/5">
+                    <div className="flex flex-col md:flex-row">
+                        <div className="p-8 bg-black/40 border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[320px] shrink-0 flex flex-col gap-8">
+                            <div className="space-y-1.5 text-center">
+                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Amount to Transfer</p>
+                                <p className="text-4xl font-black text-green-400 tracking-tight">{finalUsd} <span className="text-sm font-bold opacity-50">USDT</span></p>
+                                <p className="text-[9px] text-gray-600 font-bold uppercase">Network: TRON (TRC-20)</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">Company Wallet Address</p>
+                                    <div className="p-4 bg-black/60 rounded-2xl border border-white/10 break-all text-xs font-mono font-bold text-white leading-relaxed">
+                                        {walletAddress}
+                                    </div>
+                                    <Button variant="outline" className="w-full h-10 rounded-xl border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest gap-2" onClick={() => { navigator.clipboard.writeText(walletAddress); toast({title: "Copied"}); }}>
+                                        <Copy className="h-3.5 w-3.5" /> Copy Address
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 p-8 flex flex-col justify-center space-y-8">
+                            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex gap-4 items-center">
+                                <div className="p-2 rounded-xl bg-primary/20 text-primary">
+                                    <Cpu className="h-5 w-5" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">Neural Audit Active</p>
+                                    <p className="text-[11px] text-gray-400 font-medium">System will audit the TRON ledger instantly upon TxID submission.</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleCryptoSubmit} className="space-y-6">
+                                <div className="space-y-2.5">
+                                    <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Transaction Hash (TxID)</Label>
+                                    <Input 
+                                        placeholder="Paste your 64-character hash" 
+                                        value={txId} 
+                                        onChange={(e) => setTxId(e.target.value)} 
+                                        required 
+                                        className="bg-black/20 border-white/10 text-white h-14 font-mono text-sm focus:ring-green-500/50 rounded-2xl px-5" 
+                                    />
+                                </div>
+                                <Button type="submit" disabled={isActionPending || !txId} className="w-full h-16 bg-green-600 hover:bg-green-500 text-white font-black rounded-2xl shadow-xl shadow-green-900/20 text-sm uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95">
+                                    {isActionPending ? <><Loader2 className="animate-spin mr-3 h-5 w-5"/> Executing Audit...</> : <><ShieldCheck className="mr-3 h-5 w-5"/> Run Verification</>}
+                                </Button>
+                            </form>
+
+                            <div className="flex justify-center gap-6">
+                                <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-600 uppercase">
+                                    <CheckCircle className="h-3 w-3 text-green-500" /> Confirmed Only
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-600 uppercase">
+                                    <CheckCircle className="h-3 w-3 text-green-500" /> TRC-20 Protocol
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </GlassCard>
             </div>
         );
     }
