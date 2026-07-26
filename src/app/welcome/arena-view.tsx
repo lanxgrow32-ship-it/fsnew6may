@@ -377,7 +377,7 @@ export function ArenaView({
                         </div>
                         <form onSubmit={handleDirectSubmit} className="flex-1 p-8 flex flex-col justify-center space-y-6">
                             <div className="space-y-3">
-                                <Label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Transaction ID (UTR)</Label>
+                                <Label className="text-11px] font-bold text-gray-500 uppercase tracking-widest">Transaction ID (UTR)</Label>
                                 <input type="hidden" name="dummy" />
                                 <Input 
                                     placeholder="Enter 12-digit UPI reference" 
@@ -467,7 +467,7 @@ export function ArenaView({
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">
-                        {marketSegment === 'forex' ? 'Global Funding Arena' : 'Indian Marketplace'}
+                        {marketSegment === 'forex' ? 'Forex Global Arena' : 'Indian Marketplace'}
                     </h2>
                     <p className="text-gray-400 text-sm font-medium">
                         {marketSegment === 'forex' 
@@ -554,7 +554,7 @@ export function ArenaView({
                 </Tabs>
             ) : (
                 <Tabs defaultValue="twoStep" className="w-full">
-                    <TabsList className="grid w-full grid-cols-1 lg:grid-cols-3 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
+                    <TabsList className="grid w-full max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
                         <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
                         <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
                         <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
