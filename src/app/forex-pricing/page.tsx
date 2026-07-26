@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -167,7 +166,7 @@ export default function ForexPricingPage() {
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] border border-primary/20 mb-6">
                 <Globe className="h-3 w-3" /> Global Forex & Crypto Arena
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight">The Global Arena is Waiting.</h1>
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight">Global Capital. Borderless Trading.</h1>
               <p className="mt-4 text-muted-foreground max-w-4xl mx-auto text-lg">
                 Choose the evaluation model that fits your global trading style and secure your funded account today.
               </p>
@@ -219,11 +218,6 @@ export default function ForexPricingPage() {
 
           <div className="mt-32 text-center">
               <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 2,500+ Global Traders</p>
-              <div className="flex flex-wrap justify-center gap-8 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
-                  <span className="text-2xl font-black">MT5 BRIDGE</span>
-                  <span className="text-2xl font-black">GLOBAL LIQUIDITY</span>
-                  <span className="text-2xl font-black">FX-CRYPTO HUB</span>
-              </div>
           </div>
         </main>
       </div>
