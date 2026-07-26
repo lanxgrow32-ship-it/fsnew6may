@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
@@ -182,7 +181,7 @@ function SpecialistChatContent() {
                                                 {isAi && (
                                                     <div className="flex items-center gap-1.5 mb-2">
                                                         <BrainCircuit className="w-3.5 h-3.5 text-primary" />
-                                                        <span className="text-[8px] font-black text-primary uppercase tracking-widest">Neural Handoff</span>
+                                                        <span className="text-[8px] font-black text-primary uppercase tracking-widest">System Handoff</span>
                                                     </div>
                                                 )}
                                                 <p className="whitespace-pre-wrap font-medium">{m.message}</p>

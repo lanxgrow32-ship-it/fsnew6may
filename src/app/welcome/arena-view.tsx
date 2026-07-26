@@ -221,7 +221,7 @@ export function ArenaView({
             const finalUsd = calculateUsdPrice();
             const res = await processCryptoPayment(profile.id, { ...selectedPlan, price: calculateFinalPrice(), usdPrice: finalUsd.toString() }, txId);
             if (res.error) {
-                toast({ title: "Neural Audit Failed", description: res.error, variant: "destructive" });
+                toast({ title: "Verification Failed", description: res.error, variant: "destructive" });
             } else {
                 router.push(`/purchase-success?id=${res.transaction_id}&amount=${res.amount}&plan=${encodeURIComponent(selectedPlan.title)}&method=crypto`);
             }
@@ -254,8 +254,8 @@ export function ArenaView({
                 <div className="flex flex-col md:flex-row justify-between items-start gap-8">
                     <div className="space-y-4 flex-1">
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-bold text-white tracking-tight">Select Checkout Logic</h2>
-                            <p className="text-gray-400 text-sm font-medium">UPI methods include a 25% platform fee. Switch to Crypto to pay 0% fees.</p>
+                            <h2 className="text-2xl font-bold text-white tracking-tight">Select Checkout Method</h2>
+                            <p className="text-gray-400 text-sm font-medium">Standard payment options for account activation.</p>
                         </div>
 
                         {!isPTP && (
@@ -294,7 +294,7 @@ export function ArenaView({
                                     <Wallet className="w-6 h-6" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-base font-bold text-white">Express Wallet Deduction</p>
+                                    <p className="text-base font-bold text-white">Wallet Balance</p>
                                     <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
                                         <Timer className="w-3 h-3" /> No Fees • Instant Activation
                                     </p>
@@ -310,7 +310,7 @@ export function ArenaView({
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <p className="text-base font-bold text-white">Pay via Crypto (USDT)</p>
+                                        <p className="text-base font-bold text-white">Crypto (USDT)</p>
                                         <Badge className="bg-green-500 text-white text-[8px] font-black h-4 px-1.5 uppercase">0% FEES</Badge>
                                     </div>
                                     <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mt-1">Recommended: Save 25% on fees</p>
@@ -334,8 +334,8 @@ export function ArenaView({
                                         <Zap className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Automated Gateway</p>
-                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Standard UPI • Includes 25% Fee</p>
+                                        <p className="text-base font-bold text-white">Automated UPI Gateway</p>
+                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Direct Bank Access • 25% Platform Fee</p>
                                     </div>
                                 </button>
                             )}
@@ -349,8 +349,8 @@ export function ArenaView({
                                         <CreditCard className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Manual QR Transfer</p>
-                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Direct Transfer • Includes 25% Fee</p>
+                                        <p className="text-base font-bold text-white">Manual Transfer</p>
+                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">QR Code Payment • 25% Platform Fee</p>
                                     </div>
                                 </button>
                             )}
@@ -401,18 +401,18 @@ export function ArenaView({
                 </button>
 
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Zero-Fee Crypto Checkout</h2>
-                    <p className="text-gray-400 text-sm font-medium">Redeem your plan instantly with USDT (TRC-20).</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Crypto Checkout</h2>
+                    <p className="text-gray-400 text-sm font-medium">Complete your purchase using USDT (TRC-20).</p>
                 </div>
 
                 <GlassCard className="p-0 border-green-500/20 bg-green-500/5">
                     <div className="flex flex-col md:flex-row">
                         <div className="p-8 bg-black/40 border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[320px] shrink-0 flex flex-col gap-8">
                             <div className="space-y-1.5 text-center">
-                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Fixed Parity Amount</p>
+                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Amount to Send</p>
                                 <p className="text-4xl font-black text-green-400 tracking-tight">{finalUsdt} <span className="text-sm font-bold opacity-50">USDT</span></p>
                                 <div className="inline-block bg-white/5 px-2 py-0.5 rounded text-[8px] text-gray-500 font-bold uppercase tracking-widest mt-1">
-                                    {marketSegment === 'indian' ? 'INR / 96 Parity' : '1 USD = 1 USDT'}
+                                    {marketSegment === 'indian' ? 'TRC-20 Network' : '1 USD = 1 USDT'}
                                 </div>
                             </div>
 
@@ -423,23 +423,13 @@ export function ArenaView({
                                         {walletAddress}
                                     </div>
                                     <Button variant="outline" className="w-full h-11 rounded-xl border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest gap-2" onClick={() => { navigator.clipboard.writeText(walletAddress); toast({title: "Address Copied"}); }}>
-                                        <Copy className="h-3.5 w-3.5" /> Copy Secure Address
+                                        <Copy className="h-3.5 w-3.5" /> Copy Address
                                     </Button>
                                 </div>
                             </div>
                         </div>
 
                         <div className="flex-1 p-8 flex flex-col justify-center space-y-8">
-                            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex gap-4 items-center">
-                                <div className="p-2 rounded-xl bg-primary/20 text-primary">
-                                    <Cpu className="h-5 w-5" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">Neural Verification Active</p>
-                                    <p className="text-[11px] text-gray-400 font-medium">The system will audit the blockchain instantly upon submission.</p>
-                                </div>
-                            </div>
-
                             <form onSubmit={handleCryptoSubmit} className="space-y-6">
                                 <div className="space-y-2.5">
                                     <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Transaction Hash (TxID)</Label>
@@ -452,13 +442,13 @@ export function ArenaView({
                                     />
                                 </div>
                                 <Button type="submit" disabled={isActionPending || !txId} className="w-full h-16 bg-green-600 hover:bg-green-500 text-white font-black rounded-2xl shadow-xl shadow-green-900/20 text-sm uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]">
-                                    {isActionPending ? <><Loader2 className="animate-spin mr-3 h-5 w-5"/> Executing Audit...</> : <><ShieldCheck className="mr-3 h-5 w-5"/> Run Verification</>}
+                                    {isActionPending ? <><Loader2 className="animate-spin mr-3 h-5 w-5"/> Processing...</> : <><ShieldCheck className="mr-3 h-5 w-5"/> Verify Payment</>}
                                 </Button>
                             </form>
 
                             <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex gap-3">
                                 <Info className="h-4 w-4 text-gray-500 shrink-0 mt-0.5" />
-                                <p className="text-[9px] text-gray-500 font-medium leading-relaxed uppercase tracking-tighter">Only send USDT via the TRON network (TRC-20). Sending assets via any other network will result in permanent loss.</p>
+                                <p className="text-[9px] text-gray-500 font-medium leading-relaxed uppercase tracking-tighter">Only send USDT via the TRON network (TRC-20). Transfers via any other chain will result in loss of funds.</p>
                             </div>
                         </div>
                     </div>
@@ -480,15 +470,15 @@ export function ArenaView({
                 </button>
 
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Manual UPI Purchase</h2>
-                    <p className="text-gray-400 text-sm font-medium">Includes 25% transaction fee. Verifies in ~30 minutes.</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Manual Payment</h2>
+                    <p className="text-gray-400 text-sm font-medium">Verify your transfer by providing the reference ID.</p>
                 </div>
 
                 <GlassCard className="p-0 border-primary/20">
                     <div className="flex flex-col md:flex-row">
                         <div className="p-8 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[280px] shrink-0 flex flex-col items-center justify-center gap-6 text-center">
                             <div className="space-y-1">
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Pay Exactly</p>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Pay Amount</p>
                                 <p className="text-3xl font-bold text-primary tracking-tight">₹{finalUpiPrice.toLocaleString('en-IN')}</p>
                             </div>
 
@@ -525,7 +515,7 @@ export function ArenaView({
                             </div>
                             <Button type="submit" disabled={isActionPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">
                                 {isActionPending ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : null}
-                                Submit for Verification
+                                Submit Reference
                             </Button>
                         </form>
                     </div>

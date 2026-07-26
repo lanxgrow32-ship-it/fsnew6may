@@ -99,7 +99,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
             if (res.error) {
                 toast({ title: "Verification Failed", description: res.error, variant: "destructive" });
             } else {
-                toast({ title: "Audit Success!", description: "Wallet balance and bonus credited." });
+                toast({ title: "Update Success!", description: "Wallet balance and bonus credited." });
                 setAmount('');
                 setTxId('');
             }
@@ -125,7 +125,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight uppercase">Recharge Center</h2>
-                    <p className="text-gray-400 text-sm font-medium">USDT deposits enjoy 0% fees and instant parity credit.</p>
+                    <p className="text-gray-400 text-sm font-medium">Recharge your wallet to purchase evaluation plans instantly.</p>
                 </div>
 
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-1 flex items-center shadow-2xl">
@@ -168,7 +168,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                     <GlassCard className="p-0 border-green-500/20 bg-green-500/5 animate-in fade-in zoom-in-95">
                         <div className="flex flex-col md:flex-row">
                             <div className="p-8 md:w-[320px] bg-black/40 border-b md:border-b-0 md:border-r border-white/5 space-y-8">
-                                <div className="space-y-2"><div className="h-10 w-10 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center border border-green-500/20"><Coins className="h-5 w-5" /></div><h3 className="text-xl font-black text-white uppercase tracking-tighter">USDT Advantage</h3></div>
+                                <div className="space-y-2"><div className="h-10 w-10 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center border border-green-500/20"><Coins className="h-5 w-5" /></div><h3 className="text-xl font-black text-white uppercase tracking-tighter">Crypto Deposit</h3></div>
                                 <div className="space-y-3"><p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">TRC-20 Address</p><div className="p-4 bg-black/60 rounded-2xl border border-white/5 text-xs font-mono font-bold text-white break-all text-center">{walletAddress}</div><Button variant="outline" className="w-full h-9 rounded-xl border-white/10 bg-white/5 text-[9px] font-black uppercase tracking-widest" onClick={() => { navigator.clipboard.writeText(walletAddress); toast({title: "Address Copied"}); }}>Copy Address</Button></div>
                                 <div className="bg-green-500/10 p-4 rounded-2xl border border-green-500/20 text-center space-y-1"><p className="text-[10px] font-black text-green-400 uppercase">Save Big</p><p className="text-[9px] text-gray-500 font-bold uppercase">Zero Surcharge on Crypto</p></div>
                             </div>

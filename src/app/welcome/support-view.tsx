@@ -239,12 +239,11 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                                     <div className={cn(
                                         "max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed shadow-lg relative", 
                                         m.sender_role === 'user' ? "bg-primary text-white rounded-br-none" : 
-                                        isAi ? "bg-slate-900 border border-primary/40 text-gray-100 rounded-bl-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none"
-                                    )}>
+                                        isAi ? "bg-slate-900 border border-primary/40 text-gray-100 rounded-bl-none" : "bg-white/5 border border-white/5 text-gray-300 rounded-bl-none")}>
                                         {isAi && (
                                             <div className="flex items-center gap-1.5 mb-2">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                                                <span className="text-[8px] font-black text-primary uppercase tracking-[0.1em]">Neural Response</span>
+                                                <span className="text-[8px] font-black text-primary uppercase tracking-[0.1em]">System Response</span>
                                             </div>
                                         )}
                                         {m.image_url && (
@@ -269,7 +268,7 @@ export function SupportView({ profile, conversations }: { profile: any, conversa
                             <Image src={imagePreview} alt="Preview" layout="fill" className="object-cover" />
                             <button onClick={clearImage} className="absolute top-0.5 right-0.5 bg-red-500 rounded-full p-0.5"><X className="h-3 w-3 text-white"/></button>
                         </div>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Image attached for query</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Image attached</p>
                     </div>
                 )}
 
