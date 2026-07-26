@@ -56,6 +56,7 @@ async function fetchFromHub(endpoint: string, method: string, body?: any, accoun
         
         if (!res.ok) {
             const errText = await res.text();
+            console.warn(`[Stockmint Hub] Connection Warning ${res.status}:`, errText);
             if (accountId) {
                 await supabaseAdmin.from('user_accounts').update({ 
                     activation_error: `API ${res.status}: ${errText}` 
@@ -71,6 +72,7 @@ async function fetchFromHub(endpoint: string, method: string, body?: any, accoun
         return data;
     } catch (e: any) {
         const msg = e.name === 'AbortError' ? 'Connection Timeout' : `Network: ${e.message}`;
+        console.warn(`[Stockmint Hub] Silent Network Error:`, msg);
         if (accountId) {
             await supabaseAdmin.from('user_accounts').update({ activation_error: msg }).eq('id', accountId);
         }
@@ -184,6 +186,10 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
 
     const requiredAmount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
 
+    // Anti-Double Spend Code-Level Check
+    const { data: existing } = await supabaseAdmin.from('user_accounts').select('id').eq('transaction_id', txId).limit(1);
+    if (existing && existing.length > 0) return { error: 'This transaction hash has already been redeemed.' };
+
     // Call Neural Verification Flow
     const audit = await verifyTransactionFlow({
         txId,
@@ -192,10 +198,6 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
     });
 
     if (!audit.success) return { error: audit.error || 'Verification failed.' };
-
-    // Anti-Double Spend Check (Check existing records)
-    const { data: existing } = await supabaseAdmin.from('user_accounts').select('id').eq('transaction_id', txId).single();
-    if (existing) return { error: 'This transaction has already been used.' };
 
     const isPTP = plan.title.toLowerCase().includes('ptp');
     const classification = getAutoClassification(plan.title);
@@ -245,6 +247,10 @@ export async function processCryptoWalletTopUp(userId: string, amount: number, t
     const { data: settings } = await supabaseAdmin.from('payment_details').select('usdt_wallet_address').eq('id', 1).single();
     if (!settings?.usdt_wallet_address) return { error: 'Crypto gateway not configured.' };
 
+    // Anti-Double Spend Check
+    const { data: existing } = await supabaseAdmin.from('wallet_transactions').select('id').eq('gateway_transaction_id', txId).limit(1);
+    if (existing && existing.length > 0) return { error: 'This transaction hash has already been used.' };
+
     const audit = await verifyTransactionFlow({
         txId,
         claimedAmount: amount,
@@ -252,10 +258,6 @@ export async function processCryptoWalletTopUp(userId: string, amount: number, t
     });
 
     if (!audit.success) return { error: audit.error };
-
-    // Check if already claimed
-    const { data: existing } = await supabaseAdmin.from('wallet_transactions').select('id').eq('gateway_transaction_id', txId).single();
-    if (existing) return { error: 'Transaction hash already redeemed.' };
 
     const bonus = amount >= 10000 ? (amount * 0.05) : 0;
     const total = amount + bonus;
