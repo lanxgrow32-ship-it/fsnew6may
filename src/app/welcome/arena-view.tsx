@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -468,7 +467,7 @@ export function ArenaView({
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">
-                        {marketSegment === 'forex' ? 'Global Marketplace' : 'Indian Marketplace'}
+                        {marketSegment === 'forex' ? 'Global Funding Arena' : 'Indian Marketplace'}
                     </h2>
                     <p className="text-gray-400 text-sm font-medium">
                         {marketSegment === 'forex' 
