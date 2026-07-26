@@ -101,6 +101,7 @@ export function ArenaView({
     const { toast } = useToast();
     const [isActionPending, startTransition] = useTransition();
     const [marketSegment, setMarketSegment] = useState<'indian' | 'forex'>('indian');
+    const [activeTab, setActiveTab] = useState('instant');
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
     const [checkoutStep, setCheckoutStep] = useState<'selection' | 'method' | 'direct-pay' | 'crypto-pay'>('selection');
     const [utr, setUtr] = useState('');
@@ -116,6 +117,16 @@ export function ArenaView({
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [checkoutStep]);
+
+    // HANDSHAKE: Ensure correct default tab when switching markets
+    const handleMarketSwitch = (market: 'indian' | 'forex') => {
+        setMarketSegment(market);
+        if (market === 'forex') {
+            setActiveTab('twoStep');
+        } else {
+            setActiveTab('instant');
+        }
+    }
 
     const handleStartTrial = async () => {
         setIsStartingTrial(true);
@@ -592,7 +603,7 @@ export function ArenaView({
 
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-1 flex items-center h-12 shadow-2xl">
                     <button 
-                        onClick={() => setMarketSegment('indian')}
+                        onClick={() => handleMarketSwitch('indian')}
                         className={cn(
                             "flex items-center gap-2 px-6 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                             marketSegment === 'indian' ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-gray-300"
@@ -602,7 +613,7 @@ export function ArenaView({
                         Indian Market
                     </button>
                     <button 
-                        onClick={() => setMarketSegment('forex')}
+                        onClick={() => handleMarketSwitch('forex')}
                         className={cn(
                             "flex items-center gap-2 px-6 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                             marketSegment === 'forex' ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-gray-300"
@@ -615,7 +626,7 @@ export function ArenaView({
             </div>
 
             {marketSegment === 'indian' ? (
-                <Tabs defaultValue="instant" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} key="indian-tabs" className="w-full">
                     <TabsList className={cn("grid w-full max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10", isPtpActive ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
                         <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
                         <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
@@ -643,7 +654,7 @@ export function ArenaView({
                     )}
                 </Tabs>
             ) : (
-                <Tabs defaultValue="twoStep" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} key="forex-tabs" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
                         <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
                         <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>

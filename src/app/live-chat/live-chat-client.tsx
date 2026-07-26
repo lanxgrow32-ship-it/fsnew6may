@@ -10,7 +10,6 @@ import {
     MessageSquare,
     User,
     Users,
-    BookOpen,
     ShoppingCart,
     Trophy,
     History,
@@ -101,7 +100,7 @@ export function LiveChatClient({ profile, initialConversations }: { profile: any
                     <div className="flex items-center gap-6">
                         <Logo />
                         <nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">
-                            {navItems.map((item) => (
+                            {navItems.filter(item => item.id !== 'kyc').map((item) => (
                                 <Link
                                     key={item.id}
                                     href={item.href}

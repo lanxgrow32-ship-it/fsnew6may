@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -119,7 +118,7 @@ function AdminNav() {
                 <DropdownMenuSeparator />
                 <form action={signOut}>
                     <DropdownMenuItem asChild>
-                        <button type="submit" className="w-full">
+                        <button type="submit" className="w-full text-left">
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </button>
