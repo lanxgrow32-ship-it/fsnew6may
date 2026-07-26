@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -12,8 +13,83 @@ import { randomBytes } from 'crypto';
 import { headers } from 'next/headers';
 
 /**
- * Updates basic profile details, required for Google signups.
+ * Global Compliance Sweep (v7.0)
+ * Finds and blocks accounts that have exceeded their 48h grace period without KYC.
  */
+export async function cleanupGracePeriods() {
+    try {
+        const now = new Date().toISOString();
+        
+        // Find accounts where timer is up AND user is NOT verified
+        const { data: expiredAccounts } = await supabaseAdmin
+            .from('user_accounts')
+            .select('*, profiles(kyc_status)')
+            .eq('is_blocked', false)
+            .lte('grace_period_expiry', now);
+        
+        if (!expiredAccounts || expiredAccounts.length === 0) return;
+
+        const apiKey = process.env.STOCKMINT_API_KEY;
+
+        for (const acc of expiredAccounts) {
+            // Only block if KYC is not yet 'verified'
+            if (acc.profiles.kyc_status !== 'verified') {
+                console.log(`[Grace Period Protocol] Blocking expired account: ${acc.trading_username}`);
+                
+                // 1. Signal Stockmint to Block Access
+                if (apiKey && acc.trading_username) {
+                    await fetch('https://stockmint.io/api/users/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+                        body: JSON.stringify({
+                            email: acc.trading_username,
+                            status: 'blocked',
+                            reason: 'KYC_PENDING'
+                        })
+                    }).catch(e => console.error("Hub Signal Failed:", e));
+                }
+
+                // 2. Update local state
+                await supabaseAdmin.from('user_accounts').update({ is_blocked: true }).eq('id', acc.id);
+            }
+        }
+        revalidatePath('/welcome');
+    } catch (e) {
+        console.error("[Grace Period Sweep] Error:", e);
+    }
+}
+
+/**
+ * Restores access to blocked accounts once KYC is verified.
+ */
+export async function unblockComplianceAccounts(userId: string) {
+    const { data: blocked } = await supabaseAdmin
+        .from('user_accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_blocked', true);
+    
+    if (!blocked || blocked.length === 0) return;
+
+    const apiKey = process.env.STOCKMINT_API_KEY;
+
+    for (const acc of blocked) {
+        if (apiKey && acc.trading_username) {
+            await fetch('https://stockmint.io/api/users/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+                body: JSON.stringify({
+                    email: acc.trading_username,
+                    status: 'active',
+                    reason: 'KYC_COMPLETED'
+                })
+            }).catch(e => console.error("Hub Signal Failed:", e));
+        }
+        await supabaseAdmin.from('user_accounts').update({ is_blocked: false }).eq('id', acc.id);
+    }
+    revalidatePath('/welcome');
+}
+
 export async function updateProfileDetails(userId: string, fullName: string, mobile: string) {
     if (!userId || !fullName || !mobile) return { error: 'Incomplete details provided.' };
 
@@ -31,9 +107,6 @@ export async function updateProfileDetails(userId: string, fullName: string, mob
     return { success: true };
 }
 
-/**
- * Hardened utility for fetching from Stockmint Hub.
- */
 async function fetchFromHub(endpoint: string, method: string, body?: any, accountId?: string) {
     const apiKey = process.env.STOCKMINT_API_KEY;
     if (!apiKey) return { error: 'API Key Missing' };
@@ -136,28 +209,38 @@ export async function purchaseWithWallet(userId: string, plan: any) {
       }
   }
 
-  const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
-    user_id: userId, 
-    plan_name: plan.title, 
-    status: isPTP || isKycVerified ? 'active' : 'pending', 
-    is_approved: true,
-    account_model: isPTP ? 'passthrupay' : 'normal', 
-    account_classification: classification,
-    final_amount_paid: price, 
-    transaction_id: txId
-  }).select().single();
-
-  if (accountError || !account) return { error: 'Account creation failed.' };
-
-  const initialBalance = getBalanceFromPlanName(plan.title);
-  if (initialBalance > 0 && (isPTP || isKycVerified)) {
-      const { count } = await supabaseAdmin
+  // Check if first funded account for 48h Grace Period
+  const { count: existingCount } = await supabaseAdmin
         .from('user_accounts')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('credentials_provided', true);
 
-      const stockmintUsername = generateStockmintUsername(profile.email, count || 0);
+  const isFirstAccount = (existingCount || 0) === 0;
+  const updateData: any = {
+    user_id: userId, 
+    plan_name: plan.title, 
+    status: 'active', 
+    is_approved: true,
+    account_model: isPTP ? 'passthrupay' : 'normal', 
+    account_classification: classification,
+    final_amount_paid: price, 
+    transaction_id: txId
+  };
+
+  if (isFirstAccount && !isKycVerified && !isPTP) {
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 48);
+      updateData.grace_period_expiry = expiry.toISOString();
+  }
+
+  const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert(updateData).select().single();
+
+  if (accountError || !account) return { error: 'Account creation failed.' };
+
+  const initialBalance = getBalanceFromPlanName(plan.title);
+  if (initialBalance > 0) {
+      const stockmintUsername = generateStockmintUsername(profile.email, existingCount || 0);
       await fetchFromHub('users/create', 'POST', {
           fullName: profile.full_name, 
           email: stockmintUsername, 
@@ -166,17 +249,18 @@ export async function purchaseWithWallet(userId: string, plan: any) {
           accountClassification: classification, 
           accountModel: isPTP ? 'passthenpay' : 'normal'
       }, account.id);
+
+      await supabaseAdmin.from('user_accounts').update({ 
+          credentials_provided: true, 
+          trading_username: stockmintUsername, 
+          trading_password: stockmintUsername 
+      }).eq('id', account.id);
   }
 
   revalidatePath('/welcome');
   return { success: true, transaction_id: txId, amount: price };
 }
 
-/**
- * Handles USDT (Crypto) Payment Verification and Auto-Provisioning.
- * - Forex plans use USD price directly as USDT.
- * - Indian plans use INR price / 96 as USDT.
- */
 export async function processCryptoPayment(userId: string, plan: any, txId: string) {
     if (!userId || !plan || !txId) return { error: 'Incomplete request.' };
 
@@ -186,11 +270,9 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return { error: 'Profile not found.' };
 
-    // Anti-Double Spend Check
     const { data: existing } = await supabaseAdmin.from('user_accounts').select('id').eq('transaction_id', txId).limit(1);
     if (existing && existing.length > 0) return { error: 'This Transaction Hash (TxID) has already been used.' };
 
-    // CALCULATION PROTOCOL (v6.0)
     let requiredUsdt = 0;
     const isForex = plan.title.toLowerCase().includes('forex');
     
@@ -201,7 +283,6 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
         requiredUsdt = parseFloat((inrPrice / 96).toFixed(2));
     }
 
-    // Call Neural Verification Flow
     const audit = await verifyTransactionFlow({
         txId,
         claimedAmount: requiredUsdt,
@@ -214,45 +295,52 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
     const classification = getAutoClassification(plan.title);
     const isKycVerified = profile.kyc_status === 'verified';
 
-    // Provision the Account
-    const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert({
+    const { count: existingCount } = await supabaseAdmin
+        .from('user_accounts')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('credentials_provided', true);
+
+    const isFirstAccount = (existingCount || 0) === 0;
+
+    const insertData: any = {
         user_id: userId,
         plan_name: plan.title,
-        status: isPTP || isKycVerified ? 'active' : 'pending',
+        status: 'active',
         is_approved: true,
         transaction_id: txId,
         final_amount_paid: typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price,
         account_classification: classification,
         account_model: isPTP ? 'passthrupay' : 'normal'
-    }).select().single();
+    };
+
+    if (isFirstAccount && !isKycVerified && !isPTP) {
+        const expiry = new Date();
+        expiry.setHours(expiry.getHours() + 48);
+        insertData.grace_period_expiry = expiry.toISOString();
+    }
+
+    const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert(insertData).select().single();
 
     if (accountError || !account) return { error: 'Internal ledger write failed.' };
 
-    // Provision Hub if ready
-    if (isPTP || isKycVerified) {
-        const initialBalance = getBalanceFromPlanName(plan.title);
-        const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact' }).eq('user_id', userId).eq('credentials_provided', true);
-        const username = generateStockmintUsername(profile.email, count || 0);
-        
-        await fetchFromHub('users/create', 'POST', {
-            fullName: profile.full_name, email: username, password: username,
-            initialBalance, accountClassification: classification, 
-            accountModel: isPTP ? 'passthenpay' : 'normal'
-        }, account.id);
+    const initialBalance = getBalanceFromPlanName(plan.title);
+    const username = generateStockmintUsername(profile.email, existingCount || 0);
+    
+    await fetchFromHub('users/create', 'POST', {
+        fullName: profile.full_name, email: username, password: username,
+        initialBalance, accountClassification: classification, 
+        accountModel: isPTP ? 'passthenpay' : 'normal'
+    }, account.id);
 
-        await supabaseAdmin.from('user_accounts').update({
-            credentials_provided: true, trading_username: username, trading_password: username
-        }).eq('id', account.id);
-    }
+    await supabaseAdmin.from('user_accounts').update({
+        credentials_provided: true, trading_username: username, trading_password: username
+    }).eq('id', account.id);
 
     revalidatePath('/welcome');
     return { success: true, transaction_id: txId, amount: requiredUsdt };
 }
 
-/**
- * Handles USDT (Crypto) Wallet Top-up with automated audit.
- * Parity: INR / 96 = USDT
- */
 export async function processCryptoWalletTopUp(userId: string, amountInr: number, txId: string) {
     if (!userId || !amountInr || !txId) return { error: 'Data error.' };
 
@@ -311,7 +399,6 @@ export async function validateCoupon(code: string) {
 export async function requestManualAccount(userId: string, planName: string, amountInr: number, utr: string) {
   if (!userId || !planName || !amountInr || !utr) return { error: 'Invalid request details.' };
   
-  // PROTOCOL v6.1: Manual UPI payments include the 25% surcharge
   const basePrice = amountInr;
   const surcharge = basePrice * 0.25;
   const finalPricePaid = basePrice + surcharge;
@@ -335,9 +422,6 @@ export async function requestManualAccount(userId: string, planName: string, amo
   return { success: true, transaction_id: utr, amount: finalPricePaid };
 }
 
-/**
- * Initiates LG-Pay or WatchPay with a 25% Surcharge for UPI automation.
- */
 export async function initiateGatewayPayment(userId: string, plan: any, gateway: string) {
     const { data: settings } = await supabaseAdmin.from('payment_details').select('*').eq('id', 1).single();
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
@@ -352,7 +436,6 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
         else activeGateway = Math.random() > 0.5 ? 'lgpay' : 'watchpay';
     }
 
-    // PROTOCOL v6.2: 25% UPI Surcharge
     const baseAmount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
     const finalAmount = baseAmount * 1.25;
 
@@ -361,7 +444,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
     if (plan.title === 'WALLET_TOPUP') {
         await supabaseAdmin.from('wallet_transactions').insert({
             user_id: userId,
-            amount: baseAmount, // Wallet receives requested amount
+            amount: baseAmount, 
             type: 'deposit',
             status: 'pending',
             gateway_transaction_id: order_sn,
@@ -449,12 +532,11 @@ export async function topUpWallet(userId: string, amount: number, utr: string) {
   if (!userId || isNaN(amount) || amount < 10000 || !utr) {
     return { error: 'Minimum wallet deposit is ₹10,000.' };
   }
-  // PROTOCOL v6.3: Manual Wallet Top-up includes 25% surcharge in final payment
   const finalPaid = amount * 1.25;
 
   const { error } = await supabaseAdmin.from('wallet_transactions').insert({
       user_id: userId, 
-      amount: amount, // Wallet receives requested amount
+      amount: amount, 
       type: 'deposit', 
       gateway_transaction_id: utr,
       status: 'pending', 

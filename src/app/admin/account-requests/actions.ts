@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -6,8 +7,7 @@ import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsernam
 
 /**
  * Approves an individual account request from the Activation Ledger.
- * Includes unified logic for Stockmint provisioning and Referral Credits.
- * Captures detailed errors if sync fails.
+ * UPDATED v7.0: Removes KYC Gate for immediate handover with 48h grace period.
  */
 export async function approveAccount(accountId: string) {
     const { data: account, error: fetchError } = await supabaseAdmin
@@ -23,24 +23,33 @@ export async function approveAccount(accountId: string) {
     const isKycDone = profile.kyc_status === 'verified';
     const classification = getAutoClassification(account.plan_name);
 
-    // Ensure profile is complete before attempting Stockmint sync
-    if ((isKycDone || isPTP) && (!profile.full_name || !profile.mobile_number)) {
-        const missing = !profile.full_name ? 'Name' : 'Mobile Number';
-        const errMsg = `ABORTED: Missing Trader ${missing} in profile.`;
-        await supabaseAdmin.from('user_accounts').update({ activation_error: errMsg }).eq('id', accountId);
-        return { error: errMsg };
+    // 1. Update Account Status (Approved Immediately)
+    const updateData: any = { 
+        is_approved: true, 
+        status: 'active', 
+        account_classification: classification
+    };
+
+    // 2. GRACE PERIOD PROTOCOL (First purchase only)
+    // Check if user has any other verified/provisioned accounts
+    const { count: existingCount } = await supabaseAdmin
+        .from('user_accounts')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', profile.id)
+        .eq('credentials_provided', true);
+
+    const isFirstAccount = (existingCount || 0) === 0;
+
+    if (isFirstAccount && !isKycDone && !isPTP) {
+        const expiry = new Date();
+        expiry.setHours(expiry.getHours() + 48);
+        updateData.grace_period_expiry = expiry.toISOString();
     }
 
-    // 1. Update Account Status
-    const { error: approveError } = await supabaseAdmin.from('user_accounts').update({ 
-        is_approved: true, 
-        status: isKycDone || isPTP ? 'active' : 'pending', 
-        account_classification: classification
-    }).eq('id', accountId);
-    
+    const { error: approveError } = await supabaseAdmin.from('user_accounts').update(updateData).eq('id', accountId);
     if (approveError) return { error: approveError.message };
 
-    // 2. REFERRAL ENGINE (v5.0): Credit referrer ONLY if first real purchase
+    // 3. REFERRAL ENGINE (v5.0): Credit referrer ONLY if first real purchase
     if (profile.referred_by && !profile.referral_commission_paid && !account.is_trial && account.final_amount_paid > 0) {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
@@ -62,55 +71,47 @@ export async function approveAccount(accountId: string) {
         }
     }
 
-    let stockmintUsername = profile.email; 
+    // 4. STOCKMINT HUB AUTO-PROVISIONING (Immediate Handover)
+    const initialBalance = getBalanceFromPlanName(account.plan_name);
+    const stockmintApiKey = process.env.STOCKMINT_API_KEY;
     
-    if (isKycDone || isPTP) {
-        const { count } = await supabaseAdmin
-            .from('user_accounts')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', profile.id)
-            .eq('credentials_provided', true);
-            
-        stockmintUsername = generateStockmintUsername(profile.email, count || 0);
-        const initialBalance = getBalanceFromPlanName(account.plan_name);
-        const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-        
-        if (stockmintApiKey && initialBalance > 0) {
-            try {
-                const payload = { 
-                    fullName: profile.full_name, 
-                    email: stockmintUsername, 
-                    password: stockmintUsername,
-                    initialBalance, 
-                    accountClassification: classification, 
-                    accountModel: isPTP ? 'passthenpay' : 'normal'
-                };
+    // Multi-account email logic
+    const stockmintUsername = generateStockmintUsername(profile.email, existingCount || 0);
+    
+    if (stockmintApiKey && initialBalance > 0) {
+        try {
+            const payload = { 
+                fullName: profile.full_name || profile.email.split('@')[0], 
+                email: stockmintUsername, 
+                password: stockmintUsername,
+                initialBalance, 
+                accountClassification: classification, 
+                accountModel: isPTP ? 'passthenpay' : 'normal'
+            };
 
-                const res = await fetch('https://stockmint.io/api/users/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
-                    body: JSON.stringify(payload),
-                });
+            const res = await fetch('https://stockmint.io/api/users/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': stockmintApiKey },
+                body: JSON.stringify(payload),
+            });
 
-                if (res.ok) {
-                    await supabaseAdmin.from('user_accounts').update({
-                        credentials_provided: true, 
-                        trading_username: stockmintUsername, 
-                        trading_password: stockmintUsername, 
-                        status: 'active',
-                        activation_error: null // Clear previous errors
-                    }).eq('id', accountId);
-                } else {
-                    const errorBody = await res.text();
-                    await supabaseAdmin.from('user_accounts').update({ 
-                        activation_error: `Stockmint rejected request (${res.status}): ${errorBody}` 
-                    }).eq('id', accountId);
-                }
-            } catch (e: any) { 
+            if (res.ok) {
+                await supabaseAdmin.from('user_accounts').update({
+                    credentials_provided: true, 
+                    trading_username: stockmintUsername, 
+                    trading_password: stockmintUsername, 
+                    status: 'active'
+                }).eq('id', accountId);
+            } else {
+                const errorBody = await res.text();
                 await supabaseAdmin.from('user_accounts').update({ 
-                    activation_error: `Network crash during sync: ${e.message}` 
+                    activation_error: `Stockmint Handover Error (${res.status}): ${errorBody}` 
                 }).eq('id', accountId);
             }
+        } catch (e: any) { 
+            await supabaseAdmin.from('user_accounts').update({ 
+                activation_error: `Hub Connectivity Failure: ${e.message}` 
+            }).eq('id', accountId);
         }
     }
 
@@ -122,11 +123,11 @@ export async function approveAccount(accountId: string) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 email: profile.email,
-                full_name: profile.full_name,
+                full_name: profile.full_name || profile.email.split('@')[0],
                 plan_name: account.plan_name,
                 username: stockmintUsername,
                 password: stockmintUsername,
-                needsKyc: !isKycDone && !isPTP
+                needsKyc: !isKycDone && !isPTP && isFirstAccount
             })
         }).catch(e => console.error(e));
     }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense, useTransition } from 'react';
@@ -38,7 +39,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updateProfileDetails } from './actions';
+import { updateProfileDetails, cleanupGracePeriods } from './actions';
 import { useToast } from '@/hooks/use-toast';
 
 // Sub-views
@@ -89,11 +90,16 @@ function WelcomeContent({
     const [onboardingMobile, setOnboardingMobile] = useState(profile.mobile_number || '');
 
     useEffect(() => {
-        // If profile is missing name or mobile, force completion
         if (!profile.full_name || !profile.mobile_number) {
             setIsDetailModalOpen(true);
         }
     }, [profile]);
+
+    // PASSIVE SWEEP PROTOCOL (v7.0)
+    // Runs every time a user visits the hub to ensure compliance across all users
+    useEffect(() => {
+        cleanupGracePeriods();
+    }, []);
 
     const handleOnboardingSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -109,7 +115,6 @@ function WelcomeContent({
         });
     }
 
-    // Sync active tab with URL params
     useEffect(() => {
         const validTabs = ['hub', 'marketplace', 'competition', 'wallet', 'transactions', 'kyc'];
         if (tabParam && validTabs.includes(tabParam)) {
@@ -117,7 +122,6 @@ function WelcomeContent({
         }
     }, [tabParam]);
 
-    // Real-time unread badges for Live Chat
     useEffect(() => {
         const channel = supabase
             .channel('user-support-global')
