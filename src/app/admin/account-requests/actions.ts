@@ -12,9 +12,7 @@ import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsernam
 export async function approveAccount(accountId: string) {
     const { data: account, error: fetchError } = await supabaseAdmin
         .from('user_accounts')
-        .select('*, profiles(*)')
-        .eq('id', accountId)
-        .single();
+        .select('*, profiles(*)').eq('id', accountId).single();
     
     if (fetchError || !account) return { error: 'Account request not found.' };
 
@@ -31,7 +29,6 @@ export async function approveAccount(accountId: string) {
     };
 
     // 2. GRACE PERIOD PROTOCOL (First purchase only)
-    // Check if user has any other verified/provisioned accounts
     const { count: existingCount } = await supabaseAdmin
         .from('user_accounts')
         .select('id', { count: 'exact', head: true })
@@ -49,7 +46,7 @@ export async function approveAccount(accountId: string) {
     const { error: approveError } = await supabaseAdmin.from('user_accounts').update(updateData).eq('id', accountId);
     if (approveError) return { error: approveError.message };
 
-    // 3. REFERRAL ENGINE (v5.0): Credit referrer ONLY if first real purchase
+    // 3. REFERRAL ENGINE (v5.0)
     if (profile.referred_by && !profile.referral_commission_paid && !account.is_trial && account.final_amount_paid > 0) {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
@@ -58,15 +55,10 @@ export async function approveAccount(accountId: string) {
         if (commissionAmount > 0) {
             const { data: referrer } = await supabaseAdmin.from('profiles').select('referral_balance').eq('id', profile.referred_by).single();
             const newBalance = (referrer?.referral_balance || 0) + commissionAmount;
-            
             await supabaseAdmin.from('profiles').update({ referral_balance: newBalance }).eq('id', profile.referred_by);
             await supabaseAdmin.from('profiles').update({ referral_commission_paid: true }).eq('id', profile.id);
-
             await supabaseAdmin.from('referrals').insert({
-                referrer_id: profile.referred_by,
-                referred_id: profile.id,
-                commission_amount: commissionAmount,
-                plan_name: account.plan_name
+                referrer_id: profile.referred_by, referred_id: profile.id, commission_amount: commissionAmount, plan_name: account.plan_name
             });
         }
     }
@@ -74,8 +66,6 @@ export async function approveAccount(accountId: string) {
     // 4. STOCKMINT HUB AUTO-PROVISIONING (Immediate Handover)
     const initialBalance = getBalanceFromPlanName(account.plan_name);
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
-    
-    // Multi-account email logic
     const stockmintUsername = generateStockmintUsername(profile.email, existingCount || 0);
     
     if (stockmintApiKey && initialBalance > 0) {
@@ -97,10 +87,7 @@ export async function approveAccount(accountId: string) {
 
             if (res.ok) {
                 await supabaseAdmin.from('user_accounts').update({
-                    credentials_provided: true, 
-                    trading_username: stockmintUsername, 
-                    trading_password: stockmintUsername, 
-                    status: 'active'
+                    credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active'
                 }).eq('id', accountId);
             } else {
                 const errorBody = await res.text();
