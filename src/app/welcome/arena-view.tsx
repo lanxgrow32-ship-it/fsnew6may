@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -582,7 +581,7 @@ export function ArenaView({
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight uppercase">
-                        {marketSegment === 'forex' ? 'Forex Global Arena' : 'Indian Market'}
+                        {marketSegment === 'forex' ? 'Forex Market' : 'Indian Market'}
                     </h2>
                     <p className="text-gray-400 text-sm font-medium">
                         {marketSegment === 'forex' 
@@ -610,7 +609,7 @@ export function ArenaView({
                         )}
                     >
                         <Globe className="w-3.5 h-3.5" />
-                        Forex Arena
+                        Forex Market
                     </button>
                 </div>
             </div>
@@ -645,14 +644,14 @@ export function ArenaView({
                 </Tabs>
             ) : (
                 <Tabs defaultValue="twoStep" className="w-full">
-                    <TabsList className="grid w-full max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
+                    <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
                         <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
                         <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
                         <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
-                        <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2"><Link href="/rules/forex-two-step"><Coins className="w-4 h-4" /> Global Protocols</Link></Button></div>
+                        <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2"><Link href="/rules/forex-two-step"><HelpCircle className="w-3.5 h-3.5" /> Rules</Link></Button></div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">{plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />)}</div>
                     </TabsContent>
 
@@ -669,7 +668,7 @@ export function ArenaView({
                         <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Experience the Platform. <span className="text-primary">48h Free Trial.</span></h3>
                         <p className="text-gray-400 max-w-md text-base font-medium">Test our institutional terminal with ₹5 Lakh simulated capital before buying.</p>
                     </div>
-                    <Button onClick={handleStartTrial} disabled={isStartingTrial} className="w-full md:w-auto h-16 px-12 rounded-2xl bg-white text-black hover:bg-gray-100 font-black uppercase tracking-[0.2em] shadow-[0_0_50px_rgba(255,255,255,0.2)] text-xs">{isStartingTrial ? <Loader2 className="h-5 w-5 animate-spin"/> : "Start Trial Session"}</Button>
+                    <Button onClick={handleStartTrial} disabled={isStartingTrial} className="w-full md:w-auto h-16 px-12 rounded-2xl bg-white text-black font-black uppercase tracking-[0.2em] shadow-[0_0_50px_rgba(255,255,255,0.2)] text-xs">{isStartingTrial ? <Loader2 className="h-5 w-5 animate-spin"/> : "Start Trial Session"}</Button>
                 </GlassCard>
             </div>
         </div>

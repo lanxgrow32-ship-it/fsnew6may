@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense, useTransition } from 'react';
@@ -137,7 +136,6 @@ function WelcomeContent({
         { id: 'competition', label: "Competition", icon: Trophy },
         { id: 'wallet', label: "Wallet", icon: Wallet },
         { id: 'referrals', label: "Referrals", icon: Users, href: '/referrals' },
-        { id: 'guide', label: "Guide", icon: BookOpen, href: '/guide' },
         { id: 'transactions', label: "History", icon: History },
         { id: 'support', label: "Live Chat", icon: MessageSquare, href: '/live-chat', hasBadge: totalUnread > 0 },
         { id: 'kyc', label: "KYC", icon: FileCheck },

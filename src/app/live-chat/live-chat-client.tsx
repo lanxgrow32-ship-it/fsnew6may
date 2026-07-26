@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -49,7 +48,6 @@ const navItems = [
     { id: 'competition', href: "/welcome?tab=competition", label: "Competition", icon: Trophy },
     { id: 'wallet', href: "/welcome?tab=wallet", label: "Wallet", icon: Wallet },
     { id: 'referrals', href: "/referrals", label: "Referrals", icon: Users },
-    { id: 'guide', href: "/guide", label: "Guide", icon: BookOpen },
     { id: 'transactions', href: "/welcome?tab=transactions", label: "History", icon: History },
     { id: 'support', href: "/live-chat", label: "Live Chat", icon: MessageSquare, active: true },
     { id: 'kyc', href: "/welcome?tab=kyc", label: "KYC", icon: FileCheck },
