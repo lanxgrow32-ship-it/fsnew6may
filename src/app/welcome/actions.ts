@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -14,8 +13,9 @@ import { headers } from 'next/headers';
 import { differenceInSeconds } from 'date-fns';
 
 /**
- * Global Compliance Sweep (v7.0)
- * Finds and blocks accounts that have exceeded their 48h grace period without KYC.
+ * Global Compliance Sweep (v7.2)
+ * Synchronized with Stockmint API v1.2 specifications.
+ * Triggers Atomic Breach and login lock for grace period expirations.
  */
 export async function cleanupGracePeriods() {
     try {
@@ -35,11 +35,11 @@ export async function cleanupGracePeriods() {
         for (const acc of expiredAccounts) {
             // Only block if KYC is not yet 'verified'
             if (acc.profiles.kyc_status !== 'verified') {
-                console.log(`[Grace Period Protocol] Blocking expired account: ${acc.trading_username}`);
+                console.log(`[Compliance Protocol] Blocking expired session: ${acc.trading_username}`);
                 
-                // 1. Signal Stockmint to Block Access
+                // 1. Trigger Remote Kill-Switch (Stockmint API v1.2)
                 if (apiKey && acc.trading_username) {
-                    await fetch('https://stockmint.io/api/users/update-status', {
+                    const res = await fetch('https://stockmint.io/api/users/update-status', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
                         body: JSON.stringify({
@@ -47,21 +47,24 @@ export async function cleanupGracePeriods() {
                             status: 'blocked',
                             reason: 'KYC_PENDING'
                         })
-                    }).catch(e => console.error("Hub Signal Failed:", e));
-                }
+                    });
 
-                // 2. Update local state
-                await supabaseAdmin.from('user_accounts').update({ is_blocked: true }).eq('id', acc.id);
+                    if (res.ok) {
+                        // 2. Update local state ONLY if signal was sent successfully
+                        await supabaseAdmin.from('user_accounts').update({ is_blocked: true }).eq('id', acc.id);
+                    }
+                }
             }
         }
         revalidatePath('/welcome');
     } catch (e) {
-        console.error("[Grace Period Sweep] Error:", e);
+        console.error("[Grace Period Protocol] Execution Failure:", e);
     }
 }
 
 /**
- * Restores access to blocked accounts once KYC is verified.
+ * Restoration Protocol (v7.2)
+ * Signals Stockmint to clear blocks once compliance requirements are met.
  */
 export async function unblockComplianceAccounts(userId: string) {
     const { data: blocked } = await supabaseAdmin
@@ -76,6 +79,7 @@ export async function unblockComplianceAccounts(userId: string) {
 
     for (const acc of blocked) {
         if (apiKey && acc.trading_username) {
+            console.log(`[Compliance Protocol] Restoring access: ${acc.trading_username}`);
             await fetch('https://stockmint.io/api/users/update-status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
