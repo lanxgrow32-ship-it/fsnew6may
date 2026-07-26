@@ -174,7 +174,8 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
 /**
  * Handles USDT (Crypto) Payment Verification and Auto-Provisioning.
- * Parity logic: 1 USD = 1 USDT.
+ * - Forex plans use USD price directly as USDT.
+ * - Indian plans use INR price / 96 as USDT.
  */
 export async function processCryptoPayment(userId: string, plan: any, txId: string) {
     if (!userId || !plan || !txId) return { error: 'Incomplete request.' };
@@ -185,11 +186,20 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return { error: 'Profile not found.' };
 
-    // Anti-Double Spend Check (Application Level)
+    // Anti-Double Spend Check
     const { data: existing } = await supabaseAdmin.from('user_accounts').select('id').eq('transaction_id', txId).limit(1);
     if (existing && existing.length > 0) return { error: 'This Transaction Hash (TxID) has already been used.' };
 
-    const requiredUsdt = typeof plan.usdPrice === 'string' ? parseFloat(plan.usdPrice) : (typeof plan.price === 'string' ? Math.ceil(parseFloat(plan.price.replace(/,/g, '')) / 90) : 0);
+    // CALCULATION PROTOCOL (v6.0)
+    let requiredUsdt = 0;
+    const isForex = plan.title.toLowerCase().includes('forex');
+    
+    if (isForex) {
+        requiredUsdt = parseFloat(plan.usdPrice);
+    } else {
+        const inrPrice = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
+        requiredUsdt = parseFloat((inrPrice / 96).toFixed(2));
+    }
 
     // Call Neural Verification Flow
     const audit = await verifyTransactionFlow({
@@ -241,27 +251,27 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
 
 /**
  * Handles USDT (Crypto) Wallet Top-up with automated audit.
+ * Parity: INR / 96 = USDT
  */
-export async function processCryptoWalletTopUp(userId: string, amountUsdt: number, txId: string) {
-    if (!userId || !amountUsdt || !txId) return { error: 'Data error.' };
+export async function processCryptoWalletTopUp(userId: string, amountInr: number, txId: string) {
+    if (!userId || !amountInr || !txId) return { error: 'Data error.' };
 
     const { data: settings } = await supabaseAdmin.from('payment_details').select('usdt_wallet_address').eq('id', 1).single();
     if (!settings?.usdt_wallet_address) return { error: 'Crypto gateway not configured.' };
 
-    // Anti-Double Spend Check
     const { data: existing } = await supabaseAdmin.from('wallet_transactions').select('id').eq('gateway_transaction_id', txId).limit(1);
     if (existing && existing.length > 0) return { error: 'This Transaction Hash (TxID) has already been used.' };
 
+    const requiredUsdt = parseFloat((amountInr / 96).toFixed(2));
+
     const audit = await verifyTransactionFlow({
         txId,
-        claimedAmount: amountUsdt,
+        claimedAmount: requiredUsdt,
         companyWallet: settings.usdt_wallet_address
     });
 
     if (!audit.success) return { error: audit.error };
 
-    // Parity: 1 USDT = 90 INR for wallet credit (Approx market value)
-    const amountInr = amountUsdt * 90;
     const bonus = amountInr >= 10000 ? (amountInr * 0.05) : 0;
     const totalToAdd = amountInr + bonus;
 
@@ -300,6 +310,12 @@ export async function validateCoupon(code: string) {
 
 export async function requestManualAccount(userId: string, planName: string, amountInr: number, utr: string) {
   if (!userId || !planName || !amountInr || !utr) return { error: 'Invalid request details.' };
+  
+  // PROTOCOL v6.1: Manual UPI payments include the 25% surcharge
+  const basePrice = amountInr;
+  const surcharge = basePrice * 0.25;
+  const finalPricePaid = basePrice + surcharge;
+
   const classification = getAutoClassification(planName);
   
   const { error } = await supabaseAdmin.from('user_accounts').insert({
@@ -307,7 +323,7 @@ export async function requestManualAccount(userId: string, planName: string, amo
       plan_name: planName, 
       status: 'pending', 
       is_approved: false, 
-      final_amount_paid: amountInr,
+      final_amount_paid: finalPricePaid,
       transaction_id: utr, 
       account_model: planName.toLowerCase().includes('ptp') || planName.toLowerCase().includes('passthenpay') ? 'passthrupay' : 'normal',
       account_classification: classification
@@ -316,9 +332,12 @@ export async function requestManualAccount(userId: string, planName: string, amo
   if (error) return { error: error.message };
   
   revalidatePath('/welcome');
-  return { success: true, transaction_id: utr, amount: amountInr };
+  return { success: true, transaction_id: utr, amount: finalPricePaid };
 }
 
+/**
+ * Initiates LG-Pay or WatchPay with a 25% Surcharge for UPI automation.
+ */
 export async function initiateGatewayPayment(userId: string, plan: any, gateway: string) {
     const { data: settings } = await supabaseAdmin.from('payment_details').select('*').eq('id', 1).single();
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
@@ -333,13 +352,16 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
         else activeGateway = Math.random() > 0.5 ? 'lgpay' : 'watchpay';
     }
 
-    const amount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
+    // PROTOCOL v6.2: 25% UPI Surcharge
+    const baseAmount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
+    const finalAmount = baseAmount * 1.25;
+
     const order_sn = `FS_${Date.now()}_${randomBytes(3).toString('hex')}`;
 
     if (plan.title === 'WALLET_TOPUP') {
         await supabaseAdmin.from('wallet_transactions').insert({
             user_id: userId,
-            amount: amount,
+            amount: baseAmount, // Wallet receives requested amount
             type: 'deposit',
             status: 'pending',
             gateway_transaction_id: order_sn,
@@ -352,7 +374,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
             plan_name: plan.title,
             status: 'pending',
             is_approved: false,
-            final_amount_paid: amount,
+            final_amount_paid: finalAmount, 
             transaction_id: order_sn,
             account_classification: classification,
             account_model: plan.title.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal'
@@ -363,7 +385,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
         const lgPayAppId = 'YD4957';
         const lgPayKey = '3zJXYxvfIY2S1gOHl3Ctunq6xx9apBX1';
         const notifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/lg-pay-webhook`;
-        const moneyInCents = Math.round(amount * 100);
+        const moneyInCents = Math.round(finalAmount * 100);
         const ipHeader = (await headers()).get('x-forwarded-for') ?? '127.0.0.1';
         const ip = ipHeader.split(',')[0].trim();
 
@@ -399,11 +421,11 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
         const params = {
             merchantId: merchantId,
             merchantOrder: order_sn,
-            amount: amount.toFixed(2),
+            amount: finalAmount.toFixed(2),
             currency: 'INR',
             productName: plan.title === 'WALLET_TOPUP' ? 'Wallet Credit' : plan.title,
             callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/watchpay-webhook`,
-            returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/purchase-success?id=${order_sn}&amount=${amount}&plan=${encodeURIComponent(plan.title)}&method=automated`,
+            returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/purchase-success?id=${order_sn}&amount=${finalAmount}&plan=${encodeURIComponent(plan.title)}&method=automated`,
         };
 
         const sign = generateWatchPaySignature(params, apiKey);
@@ -427,13 +449,16 @@ export async function topUpWallet(userId: string, amount: number, utr: string) {
   if (!userId || isNaN(amount) || amount < 10000 || !utr) {
     return { error: 'Minimum wallet deposit is ₹10,000.' };
   }
+  // PROTOCOL v6.3: Manual Wallet Top-up includes 25% surcharge in final payment
+  const finalPaid = amount * 1.25;
+
   const { error } = await supabaseAdmin.from('wallet_transactions').insert({
       user_id: userId, 
-      amount: amount, 
+      amount: amount, // Wallet receives requested amount
       type: 'deposit', 
       gateway_transaction_id: utr,
       status: 'pending', 
-      description: 'Wallet Top-up Request'
+      description: `Wallet Top-up Request (Paid: ₹${finalPaid})`
   });
   if (error) return { error: error.message };
   revalidatePath('/welcome');

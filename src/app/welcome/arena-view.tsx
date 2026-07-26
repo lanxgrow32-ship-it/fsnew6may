@@ -30,7 +30,8 @@ import {
     LayoutGrid,
     Coins,
     Cpu,
-    ArrowUpRight
+    ArrowUpRight,
+    AlertTriangle
 } from 'lucide-react';
 import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial, initiateGatewayPayment, processCryptoPayment } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -148,6 +149,14 @@ export function ArenaView({
         return base;
     }
 
+    const calculateSurchargeAmount = () => {
+        return calculateFinalPrice() * 0.25;
+    }
+
+    const calculateUpiTotalPrice = () => {
+        return calculateFinalPrice() + calculateSurchargeAmount();
+    }
+
     const calculateUsdPrice = () => {
         if (!selectedPlan) return 0;
         if (marketSegment === 'forex') {
@@ -155,8 +164,8 @@ export function ArenaView({
             if (discount > 0) return base * (1 - discount / 100);
             return base;
         }
-        // Conversion for Indian plans if paid in crypto (Approx 1 USDT = 90 INR as buffer)
-        return Math.ceil(calculateFinalPrice() / 90);
+        // Indian Plan USDT Calculation: Base INR / 96 (0% Surcharge)
+        return parseFloat((calculateFinalPrice() / 96).toFixed(2));
     }
 
     const handleWalletPurchase = async () => {
@@ -184,6 +193,7 @@ export function ArenaView({
     const handleGatewayPurchase = async () => {
         const finalPrice = calculateFinalPrice();
         startTransition(async () => {
+            // Pass base price; actions.ts handles the 25% surcharge for UPI automation
             const res = await initiateGatewayPayment(profile.id, { ...selectedPlan, price: finalPrice }, activeGateway);
             if (res.error) {
                 toast({ title: "Gateway Error", description: res.error, variant: "destructive" });
@@ -199,7 +209,7 @@ export function ArenaView({
         
         startTransition(async () => {
             const finalUsd = calculateUsdPrice();
-            const res = await processCryptoPayment(profile.id, { ...selectedPlan, price: finalUsd }, txId);
+            const res = await processCryptoPayment(profile.id, { ...selectedPlan, price: calculateFinalPrice(), usdPrice: finalUsd.toString() }, txId);
             if (res.error) {
                 toast({ title: "Neural Audit Failed", description: res.error, variant: "destructive" });
             } else {
@@ -234,14 +244,14 @@ export function ArenaView({
                 <div className="flex flex-col md:flex-row justify-between items-start gap-8">
                     <div className="space-y-4 flex-1">
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-bold text-white tracking-tight">Payment Method</h2>
-                            <p className="text-gray-400 text-sm font-medium">Select your activation strategy for the {selectedPlan.title}.</p>
+                            <h2 className="text-2xl font-bold text-white tracking-tight">Select Checkout Logic</h2>
+                            <p className="text-gray-400 text-sm font-medium">UPI methods include a 25% platform fee. Switch to Crypto to pay 0% fees.</p>
                         </div>
 
                         {!isPTP && (
                             <div className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-4">
                                 <Label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Ticket className="h-3 w-3" /> Have a Promo Code?
+                                    <Ticket className="h-3 w-3" /> Promotion Protocol
                                 </Label>
                                 <div className="flex gap-2">
                                     <Input 
@@ -260,7 +270,7 @@ export function ArenaView({
                                         {isValidatingCoupon ? <Loader2 className="animate-spin h-4 w-4"/> : discount > 0 ? <Check className="h-4 w-4 text-green-400"/> : 'Apply'}
                                     </Button>
                                 </div>
-                                {discount > 0 && <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest">✓ PROMO APPLIED: {discount}% OFF</p>}
+                                {discount > 0 && <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest">✓ REDEEMED: {discount}% DISCOUNT APPLIED</p>}
                             </div>
                         )}
 
@@ -274,44 +284,53 @@ export function ArenaView({
                                     <Wallet className="w-6 h-6" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-base font-bold text-white">Express Wallet Activation</p>
+                                    <p className="text-base font-bold text-white">Express Wallet Deduction</p>
                                     <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
-                                        <Timer className="w-3 h-3" /> Ready in seconds
+                                        <Timer className="w-3 h-3" /> No Fees • Instant Activation
                                     </p>
                                 </div>
-                                {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
                             </button>
+
+                            {/* USDT Crypto Option (Unified) */}
+                            <button 
+                                onClick={() => setCheckoutStep('crypto-pay')}
+                                className="group flex items-center gap-4 p-6 bg-green-500/10 border border-green-500/30 rounded-3xl text-left transition-all hover:bg-green-500/20 hover:border-green-400 shadow-2xl shadow-green-900/10"
+                            >
+                                <div className="h-12 w-12 rounded-2xl bg-green-500/20 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(34,197,94,0.1)]">
+                                    <Coins className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-base font-bold text-white">Pay via Crypto (USDT)</p>
+                                        <Badge className="bg-green-500 text-white text-[8px] font-black h-4 px-1.5 uppercase">0% FEES</Badge>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mt-1">Recommended: Save 25% on fees</p>
+                                </div>
+                            </button>
+
+                            <div className="relative py-4">
+                                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
+                                <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.3em] text-gray-700">
+                                    <span className="bg-slate-950 px-4">UPI Options (+25% Fee)</span>
+                                </div>
+                            </div>
 
                             {/* Automated UPI Gateway */}
                             {activeGateway !== 'manual' && activeGateway !== 'cashfree' && (
                                 <button 
                                     onClick={handleGatewayPurchase}
                                     disabled={isActionPending}
-                                    className="group flex items-center gap-4 p-6 bg-primary/10 border border-primary/30 rounded-3xl text-left transition-all hover:bg-primary/20 hover:border-primary shadow-xl"
+                                    className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
                                 >
-                                    <div className="h-12 w-12 rounded-2xl bg-primary/20 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                                         <Zap className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Automated Gateway (UPI)</p>
-                                        <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">Instant Bank Handshake</p>
+                                        <p className="text-base font-bold text-white">Automated Gateway</p>
+                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Standard UPI • Includes 25% Fee</p>
                                     </div>
                                 </button>
                             )}
-
-                            {/* USDT Crypto Option (Unified) */}
-                            <button 
-                                onClick={() => setCheckoutStep('crypto-pay')}
-                                className="group flex items-center gap-4 p-6 bg-green-500/5 border border-green-500/10 rounded-3xl text-left transition-all hover:bg-green-500/10 hover:border-green-500/30 shadow-xl"
-                            >
-                                <div className="h-12 w-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform">
-                                    <Coins className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-base font-bold text-white">USDT (Crypto TRC-20)</p>
-                                    <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider mt-1">Blockchain Verification</p>
-                                </div>
-                            </button>
 
                             {/* Manual UPI Fallback */}
                             {activeGateway === 'manual' && (
@@ -323,8 +342,8 @@ export function ArenaView({
                                         <CreditCard className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Standard Direct Payment (UPI)</p>
-                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Verifies in ~30 mins</p>
+                                        <p className="text-base font-bold text-white">Manual QR Transfer</p>
+                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Direct Transfer • Includes 25% Fee</p>
                                     </div>
                                 </button>
                             )}
@@ -333,21 +352,28 @@ export function ArenaView({
 
                     <div className="w-full md:w-80 space-y-6">
                         <GlassCard className="p-6 border-primary/20">
-                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Summary</h3>
+                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6">Price Summary</h3>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-400">{selectedPlan.title}</span>
-                                    <span className="font-bold text-white">{marketSegment === 'forex' ? `$${selectedPlan.usdPrice}` : `₹${selectedPlan.price}`}</span>
+                                    <span className="text-gray-400">Plan Base Price</span>
+                                    <span className="font-bold text-white">₹{calculateFinalPrice().toLocaleString('en-IN')}</span>
                                 </div>
-                                {discount > 0 && (
-                                    <div className="flex justify-between items-center text-sm text-green-400 font-bold">
-                                        <span>Promo Discount</span>
-                                        <span>- {marketSegment === 'forex' ? `$${(parseFloat(selectedPlan.usdPrice) * (discount/100)).toFixed(2)}` : `₹${(parseFloat(selectedPlan.price.replace(/,/g, '')) * (discount/100)).toLocaleString('en-IN')}`}</span>
+                                
+                                <div className="pt-4 border-t border-white/5 space-y-2">
+                                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Final Amount by Method</p>
+                                    <div className="flex justify-between items-center text-xs font-bold text-green-400">
+                                        <span>Crypto / Wallet</span>
+                                        <span>₹{calculateFinalPrice().toLocaleString('en-IN')}</span>
                                     </div>
-                                )}
-                                <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                                    <span className="text-base font-bold text-white">Total</span>
-                                    <span className="text-2xl font-black text-primary">₹{calculateFinalPrice().toLocaleString('en-IN')}</span>
+                                    <div className="flex justify-between items-center text-xs font-bold text-amber-500">
+                                        <span>UPI (+25% Fee)</span>
+                                        <span>₹{calculateUpiTotalPrice().toLocaleString('en-IN')}</span>
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 border-t border-white/5 bg-primary/5 -mx-6 px-6 py-4 flex flex-col gap-1 items-center text-center">
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">You Pay Today (USDT)</p>
+                                    <p className="text-3xl font-black text-white">{calculateUsdPrice()} <span className="text-sm opacity-40">USDT</span></p>
                                 </div>
                             </div>
                         </GlassCard>
@@ -358,7 +384,7 @@ export function ArenaView({
     }
 
     if (checkoutStep === 'crypto-pay') {
-        const finalUsd = calculateUsdPrice();
+        const finalUsdt = calculateUsdPrice();
         const walletAddress = paymentSettings?.usdt_wallet_address || 'T...';
 
         return (
@@ -368,27 +394,29 @@ export function ArenaView({
                 </button>
 
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Redeem via Blockchain</h2>
-                    <p className="text-gray-400 text-sm font-medium">Send USDT (TRC-20) and submit your Transaction Hash.</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Zero-Fee Crypto Checkout</h2>
+                    <p className="text-gray-400 text-sm font-medium">Redeem your plan instantly with USDT (TRC-20).</p>
                 </div>
 
                 <GlassCard className="p-0 border-green-500/20 bg-green-500/5">
                     <div className="flex flex-col md:flex-row">
                         <div className="p-8 bg-black/40 border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[320px] shrink-0 flex flex-col gap-8">
                             <div className="space-y-1.5 text-center">
-                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Amount to Transfer</p>
-                                <p className="text-4xl font-black text-green-400 tracking-tight">{finalUsd} <span className="text-sm font-bold opacity-50">USDT</span></p>
-                                <p className="text-[9px] text-gray-600 font-bold uppercase">Network: TRON (TRC-20)</p>
+                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Fixed Parity Amount</p>
+                                <p className="text-4xl font-black text-green-400 tracking-tight">{finalUsdt} <span className="text-sm font-bold opacity-50">USDT</span></p>
+                                <div className="inline-block bg-white/5 px-2 py-0.5 rounded text-[8px] text-gray-500 font-bold uppercase tracking-widest mt-1">
+                                    {marketSegment === 'indian' ? 'INR / 96 Parity' : '1 USD = 1 USDT'}
+                                </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">Company Wallet Address</p>
-                                    <div className="p-4 bg-black/60 rounded-2xl border border-white/10 break-all text-xs font-mono font-bold text-white leading-relaxed">
+                                    <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest text-center">Transfer to Address (TRC-20)</p>
+                                    <div className="p-4 bg-black/60 rounded-2xl border border-white/10 break-all text-xs font-mono font-bold text-white leading-relaxed text-center">
                                         {walletAddress}
                                     </div>
-                                    <Button variant="outline" className="w-full h-10 rounded-xl border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest gap-2" onClick={() => { navigator.clipboard.writeText(walletAddress); toast({title: "Copied"}); }}>
-                                        <Copy className="h-3.5 w-3.5" /> Copy Address
+                                    <Button variant="outline" className="w-full h-11 rounded-xl border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest gap-2" onClick={() => { navigator.clipboard.writeText(walletAddress); toast({title: "Address Copied"}); }}>
+                                        <Copy className="h-3.5 w-3.5" /> Copy Secure Address
                                     </Button>
                                 </div>
                             </div>
@@ -400,8 +428,8 @@ export function ArenaView({
                                     <Cpu className="h-5 w-5" />
                                 </div>
                                 <div className="space-y-0.5">
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">Neural Audit Active</p>
-                                    <p className="text-[11px] text-gray-400 font-medium">System will audit the TRON ledger instantly upon TxID submission.</p>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">Neural Verification Active</p>
+                                    <p className="text-[11px] text-gray-400 font-medium">The system will audit the blockchain instantly upon submission.</p>
                                 </div>
                             </div>
 
@@ -409,7 +437,7 @@ export function ArenaView({
                                 <div className="space-y-2.5">
                                     <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Transaction Hash (TxID)</Label>
                                     <Input 
-                                        placeholder="Paste your 64-character hash" 
+                                        placeholder="Paste the 64-character hash here" 
                                         value={txId} 
                                         onChange={(e) => setTxId(e.target.value)} 
                                         required 
@@ -421,13 +449,9 @@ export function ArenaView({
                                 </Button>
                             </form>
 
-                            <div className="flex justify-center gap-6">
-                                <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-600 uppercase">
-                                    <CheckCircle className="h-3 w-3 text-green-500" /> Confirmed Only
-                                </div>
-                                <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-600 uppercase">
-                                    <CheckCircle className="h-3 w-3 text-green-500" /> TRC-20 Protocol
-                                </div>
+                            <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex gap-3">
+                                <Info className="h-4 w-4 text-gray-500 shrink-0 mt-0.5" />
+                                <p className="text-[9px] text-gray-500 font-medium leading-relaxed uppercase tracking-tighter">Only send USDT via the TRON network (TRC-20). Sending assets via any other network will result in permanent loss.</p>
                             </div>
                         </div>
                     </div>
@@ -440,7 +464,7 @@ export function ArenaView({
         const isPTP = selectedPlan.title.toLowerCase().includes('ptp');
         const upiId = isPTP ? paymentSettings?.pay_later_upi_id : paymentSettings?.upi_id;
         const qrUrl = isPTP ? paymentSettings?.pay_later_qr_code_url : paymentSettings?.qr_code_url;
-        const finalPrice = calculateFinalPrice();
+        const finalUpiPrice = calculateUpiTotalPrice();
 
         return (
             <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
@@ -449,8 +473,8 @@ export function ArenaView({
                 </button>
 
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Direct Purchase</h2>
-                    <p className="text-gray-400 text-sm font-medium">Scan to pay for the {selectedPlan.title} and provide reference.</p>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Manual UPI Purchase</h2>
+                    <p className="text-gray-400 text-sm font-medium">Includes 25% transaction fee. Verifies in ~30 minutes.</p>
                 </div>
 
                 <GlassCard className="p-0 border-primary/20">
@@ -458,19 +482,19 @@ export function ArenaView({
                         <div className="p-8 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[280px] shrink-0 flex flex-col items-center justify-center gap-6 text-center">
                             <div className="space-y-1">
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Pay Exactly</p>
-                                <p className="text-3xl font-bold text-primary tracking-tight">₹{finalPrice.toLocaleString('en-IN')}</p>
+                                <p className="text-3xl font-bold text-primary tracking-tight">₹{finalUpiPrice.toLocaleString('en-IN')}</p>
                             </div>
 
                             <div className="bg-white p-2 rounded-xl shadow-2xl">
                                 {qrUrl ? (
                                     <Image src={qrUrl} alt="Payment QR" width={140} height={140} />
                                 ) : (
-                                    <div className="w-[140px] h-[140px] flex items-center justify-center text-slate-950 font-bold text-[10px]">QR Loading...</div>
+                                    <div className="w-[140px] h-[140px] flex items-center justify-center text-slate-900 font-bold text-[10px]">QR Loading...</div>
                                 )}
                             </div>
                             
                             <div className="space-y-1">
-                                <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">UPI Address</p>
+                                <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">UPI ID</p>
                                 <div className="flex items-center gap-2 justify-center">
                                     <p className="font-mono text-[10px] font-bold text-white truncate max-w-[140px]">{upiId || 'pay@fundedstock'}</p>
                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-600 hover:text-white" onClick={() => { navigator.clipboard.writeText(upiId || ''); toast({title: "Copied"}); }}><Copy className="w-3.5 h-3.5"/></Button>
@@ -479,23 +503,22 @@ export function ArenaView({
                         </div>
                         <form onSubmit={handleDirectSubmit} className="flex-1 p-8 flex flex-col justify-center space-y-6">
                             <div className="space-y-3">
-                                <Label className="text-11px] font-bold text-gray-500 uppercase tracking-widest">Transaction ID (UTR)</Label>
-                                <input type="hidden" name="dummy" />
+                                <Label className="text-11px] font-bold text-gray-500 uppercase tracking-widest">Transaction Reference (UTR)</Label>
                                 <Input 
                                     placeholder="Enter 12-digit UPI reference" 
                                     value={utr} 
                                     onChange={(e) => setUtr(e.target.value)} 
                                     required 
-                                    className="bg-black/20 border-white/10 text-white text-base font-mono focus:ring-primary/50" 
+                                    className="bg-black/20 border-white/10 text-white h-12 font-mono text-base focus:ring-primary/50" 
                                 />
                                 <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium bg-white/5 p-2 rounded-lg border border-white/5">
                                     <CheckCircle className="h-3 w-3 text-green-500"/>
-                                    Verified by our team within 30 minutes.
+                                    Account activated manually by admin review.
                                 </div>
                             </div>
                             <Button type="submit" disabled={isActionPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">
                                 {isActionPending ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : null}
-                                Confirm & Activate Plan
+                                Submit for Verification
                             </Button>
                         </form>
                     </div>
@@ -511,7 +534,7 @@ export function ArenaView({
         )}>
             {plan.isFlashSale && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-4 py-1 rounded-full z-10 whitespace-nowrap shadow-lg">
-                    Today Only
+                    Special Event
                 </div>
             )}
             <CardHeader className="pb-4">
@@ -522,7 +545,7 @@ export function ArenaView({
                         </CardTitle>
                         <CardDescription className="text-xs font-medium text-gray-400 mt-1">{category}</CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-bold px-1.5">80% Share</Badge>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-bold px-1.5">80% Split</Badge>
                 </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
@@ -535,22 +558,15 @@ export function ArenaView({
                         <CheckCircle className="h-3.5 w-3.5 text-green-500" />
                         <span>Overall Drawdown: 10%</span>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-                        <span>Daily Drawdown: 5%</span>
-                    </div>
                 </div>
                 <div className="pt-4 border-t border-white/5">
-                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Activation Fee</p>
+                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Buy Price</p>
                     <div className="flex items-baseline gap-2">
                         <p className={cn("text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left", plan.isFlashSale && "text-2xl text-white")}>
                             {marketSegment === 'forex' ? `$${plan.usdPrice}` : `₹${plan.price}`}
                         </p>
-                        {plan.isFlashSale && <span className="text-[10px] text-red-500 font-black line-through">₹49,500</span>}
                     </div>
-                    {marketSegment === 'forex' && (
-                        <p className="text-[10px] text-primary font-bold">Approx. ₹{plan.price}</p>
-                    )}
+                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1">Starting Balance Fee</p>
                 </div>
             </CardContent>
             <CardFooter>
@@ -558,7 +574,7 @@ export function ArenaView({
                     onClick={() => { setSelectedPlan(plan); setCheckoutStep('method'); }} 
                     className={cn("w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest", plan.isFlashSale ? "bg-white text-black hover:bg-gray-100" : "")}
                 >
-                    Buy Plan
+                    Get Funded
                 </Button>
             </CardFooter>
         </Card>
@@ -568,14 +584,10 @@ export function ArenaView({
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">
-                        {marketSegment === 'forex' ? 'Forex Global Arena' : 'Indian Marketplace'}
+                    <h2 className="text-2xl font-bold text-white tracking-tight uppercase">
+                        {marketSegment === 'forex' ? 'Global Arena' : 'Indian Market'}
                     </h2>
-                    <p className="text-gray-400 text-sm font-medium">
-                        {marketSegment === 'forex' 
-                            ? 'Scale your trading across Forex, Crypto, and Global Indices.' 
-                            : 'Select your market and secure your evaluation account.'}
-                    </p>
+                    <p className="text-gray-400 text-sm font-medium">Select your specialization and secure institutional funding.</p>
                 </div>
 
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-1 flex items-center h-12 shadow-2xl">
@@ -612,45 +624,21 @@ export function ArenaView({
                     </TabsList>
 
                     <TabsContent value="instant" className="animate-in fade-in zoom-in-95">
-                        <div className="flex justify-center mb-8">
-                            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
-                                <Link href="/rules/instant-funding"><HelpCircle className="w-3.5 h-3.5" /> View Rules</Link>
-                            </Button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />)}
-                        </div>
+                        <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2"><Link href="/rules/instant-funding"><HelpCircle className="w-3.5 h-3.5" /> Rules</Link></Button></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">{plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />)}</div>
                     </TabsContent>
                     <TabsContent value="oneStep" className="animate-in fade-in zoom-in-95">
-                        <div className="flex justify-center mb-8">
-                            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
-                                <Link href="/rules/one-step"><HelpCircle className="w-3.5 h-3.5" /> View Rules</Link>
-                            </Button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step" />)}
-                        </div>
+                        <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2"><Link href="/rules/one-step"><HelpCircle className="w-3.5 h-3.5" /> Rules</Link></Button></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">{plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step" />)}</div>
                     </TabsContent>
                     <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
-                        <div className="flex justify-center mb-8">
-                            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
-                                <Link href="/rules/two-step-evaluation"><HelpCircle className="w-3.5 h-3.5" /> View Rules</Link>
-                            </Button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}
-                        </div>
+                        <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2"><Link href="/rules/two-step-evaluation"><HelpCircle className="w-3.5 h-3.5" /> Rules</Link></Button></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">{plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}</div>
                     </TabsContent>
                     {isPtpActive && (
                         <TabsContent value="ptp" className="animate-in fade-in zoom-in-95">
-                            <div className="flex justify-center mb-8">
-                                <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
-                                    <Link href="/pass-then-pay"><HelpCircle className="w-3.5 h-3.5" /> About PassThenPay</Link>
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                                {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
-                            </div>
+                            <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2"><Link href="/pass-then-pay"><HelpCircle className="w-3.5 h-3.5" /> PTP Info</Link></Button></div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">{plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}</div>
                         </TabsContent>
                     )}
                 </Tabs>
@@ -662,64 +650,25 @@ export function ArenaView({
                         <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="instant" className="animate-in fade-in duration-500">
-                        <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
-                            <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
-                            <h3 className="text-2xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
-                            <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Provisioning Liquidity Bridges...</p>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="oneStep" className="animate-in fade-in duration-500">
-                        <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
-                            <Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
-                            <h3 className="text-2xl font-bold text-white tracking-tight uppercase">1-Phase Model coming soon.</h3>
-                            <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Review in Progress...</p>
-                        </div>
-                    </TabsContent>
-
                     <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
-                        <div className="flex justify-center mb-8">
-                            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2">
-                                <Link href="/rules/forex-two-step"><Coins className="w-4 h-4" /> Forex Arena Protocols</Link>
-                            </Button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                            {plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />)}
-                        </div>
+                        <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2"><Link href="/rules/forex-two-step"><Coins className="w-4 h-4" /> Global Protocols</Link></Button></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">{plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />)}</div>
                     </TabsContent>
+
+                    <TabsContent value="instant" className="py-20 text-center"><Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20"/><h3 className="text-2xl font-bold text-white uppercase">Forex Instant Coming Soon</h3></TabsContent>
+                    <TabsContent value="oneStep" className="py-20 text-center"><Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20"/><h3 className="text-2xl font-bold text-white uppercase">1-Step Model Development</h3></TabsContent>
                 </Tabs>
             )}
 
-            {/* Premium Trial Banner */}
+            {/* Free Trial Banner */}
             <div className="pt-12">
-                <GlassCard className="relative p-8 md:p-12 border-primary/30 bg-primary/5 shadow-2xl shadow-primary/10 flex flex-col md:flex-row items-center justify-between gap-8 group">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 -z-0 rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                        <Sparkles className="w-48 h-48 text-primary" />
-                    </div>
+                <GlassCard className="relative p-8 md:p-12 border-primary/30 bg-primary/5 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 group">
                     <div className="space-y-4 text-center md:text-left relative z-10">
-                        <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                            <Badge className="bg-primary/20 text-primary border-primary/20 px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">
-                                Try the Broker Hub
-                            </Badge>
-                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">• Free Trial</span>
-                        </div>
-                        <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter !leading-tight">
-                            Experience the Broker <br /> <span className="text-primary">Trial for 48 Hours.</span>
-                        </h3>
-                        <p className="text-gray-400 max-w-md text-base font-medium">
-                            Test our high-fidelity institutional terminal with ₹5 Lakh simulated capital.
-                        </p>
+                        <div className="flex items-center justify-center md:justify-start gap-2 mb-2"><Badge className="bg-primary/20 text-primary border-primary/20 px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">Broker Hub Trial</Badge></div>
+                        <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Experience the Platform. <span className="text-primary">48h Free Trial.</span></h3>
+                        <p className="text-gray-400 max-w-md text-base font-medium">Test our institutional terminal with ₹5 Lakh simulated capital before buying.</p>
                     </div>
-                    <div className="shrink-0 w-full md:w-auto relative z-10">
-                        <Button 
-                            onClick={handleStartTrial}
-                            disabled={isStartingTrial}
-                            className="w-full md:w-auto h-16 px-12 rounded-2xl bg-white text-black hover:bg-gray-100 font-black uppercase tracking-[0.2em] shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all hover:scale-105 active:scale-95 text-xs"
-                        >
-                            {isStartingTrial ? <Loader2 className="h-5 w-5 animate-spin"/> : "Start Free Trial"}
-                        </Button>
-                    </div>
+                    <Button onClick={handleStartTrial} disabled={isStartingTrial} className="w-full md:w-auto h-16 px-12 rounded-2xl bg-white text-black hover:bg-gray-100 font-black uppercase tracking-[0.2em] shadow-[0_0_50px_rgba(255,255,255,0.2)] text-xs">{isStartingTrial ? <Loader2 className="h-5 w-5 animate-spin"/> : "Start Trial Session"}</Button>
                 </GlassCard>
             </div>
         </div>
