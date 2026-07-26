@@ -174,26 +174,27 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
 /**
  * Handles USDT (Crypto) Payment Verification and Auto-Provisioning.
+ * Parity logic: 1 USD = 1 USDT.
  */
 export async function processCryptoPayment(userId: string, plan: any, txId: string) {
     if (!userId || !plan || !txId) return { error: 'Incomplete request.' };
 
     const { data: settings } = await supabaseAdmin.from('payment_details').select('usdt_wallet_address').eq('id', 1).single();
-    if (!settings?.usdt_wallet_address) return { error: 'Crypto gateway not configured.' };
+    if (!settings?.usdt_wallet_address) return { error: 'Crypto gateway not configured by admin.' };
 
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return { error: 'Profile not found.' };
 
-    const requiredAmount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
-
-    // Anti-Double Spend Code-Level Check
+    // Anti-Double Spend Check (Application Level)
     const { data: existing } = await supabaseAdmin.from('user_accounts').select('id').eq('transaction_id', txId).limit(1);
-    if (existing && existing.length > 0) return { error: 'This transaction hash has already been redeemed.' };
+    if (existing && existing.length > 0) return { error: 'This Transaction Hash (TxID) has already been used.' };
+
+    const requiredUsdt = typeof plan.usdPrice === 'string' ? parseFloat(plan.usdPrice) : (typeof plan.price === 'string' ? Math.ceil(parseFloat(plan.price.replace(/,/g, '')) / 90) : 0);
 
     // Call Neural Verification Flow
     const audit = await verifyTransactionFlow({
         txId,
-        claimedAmount: requiredAmount,
+        claimedAmount: requiredUsdt,
         companyWallet: settings.usdt_wallet_address
     });
 
@@ -210,12 +211,12 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
         status: isPTP || isKycVerified ? 'active' : 'pending',
         is_approved: true,
         transaction_id: txId,
-        final_amount_paid: requiredAmount,
+        final_amount_paid: typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price,
         account_classification: classification,
         account_model: isPTP ? 'passthrupay' : 'normal'
     }).select().single();
 
-    if (accountError || !account) return { error: 'Account write failed.' };
+    if (accountError || !account) return { error: 'Internal ledger write failed.' };
 
     // Provision Hub if ready
     if (isPTP || isKycVerified) {
@@ -235,39 +236,41 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
     }
 
     revalidatePath('/welcome');
-    return { success: true, transaction_id: txId, amount: requiredAmount };
+    return { success: true, transaction_id: txId, amount: requiredUsdt };
 }
 
 /**
  * Handles USDT (Crypto) Wallet Top-up with automated audit.
  */
-export async function processCryptoWalletTopUp(userId: string, amount: number, txId: string) {
-    if (!userId || !amount || !txId) return { error: 'Data error.' };
+export async function processCryptoWalletTopUp(userId: string, amountUsdt: number, txId: string) {
+    if (!userId || !amountUsdt || !txId) return { error: 'Data error.' };
 
     const { data: settings } = await supabaseAdmin.from('payment_details').select('usdt_wallet_address').eq('id', 1).single();
     if (!settings?.usdt_wallet_address) return { error: 'Crypto gateway not configured.' };
 
     // Anti-Double Spend Check
     const { data: existing } = await supabaseAdmin.from('wallet_transactions').select('id').eq('gateway_transaction_id', txId).limit(1);
-    if (existing && existing.length > 0) return { error: 'This transaction hash has already been used.' };
+    if (existing && existing.length > 0) return { error: 'This Transaction Hash (TxID) has already been used.' };
 
     const audit = await verifyTransactionFlow({
         txId,
-        claimedAmount: amount,
+        claimedAmount: amountUsdt,
         companyWallet: settings.usdt_wallet_address
     });
 
     if (!audit.success) return { error: audit.error };
 
-    const bonus = amount >= 10000 ? (amount * 0.05) : 0;
-    const total = amount + bonus;
+    // Parity: 1 USDT = 90 INR for wallet credit (Approx market value)
+    const amountInr = amountUsdt * 90;
+    const bonus = amountInr >= 10000 ? (amountInr * 0.05) : 0;
+    const totalToAdd = amountInr + bonus;
 
     const { data: profile } = await supabaseAdmin.from('profiles').select('wallet_balance').eq('id', userId).single();
     if (!profile) return { error: 'Profile error' };
 
     await supabaseAdmin.from('wallet_transactions').insert({
         user_id: userId,
-        amount: amount,
+        amount: amountInr,
         bonus_amount: bonus,
         type: 'deposit',
         status: 'completed',
@@ -277,7 +280,7 @@ export async function processCryptoWalletTopUp(userId: string, amount: number, t
     });
 
     await supabaseAdmin.from('profiles').update({
-        wallet_balance: profile.wallet_balance + total
+        wallet_balance: profile.wallet_balance + totalToAdd
     }).eq('id', userId);
 
     revalidatePath('/welcome');
@@ -295,8 +298,8 @@ export async function validateCoupon(code: string) {
     }
 }
 
-export async function requestManualAccount(userId: string, planName: string, amount: number, utr: string) {
-  if (!userId || !planName || !amount || !utr) return { error: 'Invalid request details.' };
+export async function requestManualAccount(userId: string, planName: string, amountInr: number, utr: string) {
+  if (!userId || !planName || !amountInr || !utr) return { error: 'Invalid request details.' };
   const classification = getAutoClassification(planName);
   
   const { error } = await supabaseAdmin.from('user_accounts').insert({
@@ -304,7 +307,7 @@ export async function requestManualAccount(userId: string, planName: string, amo
       plan_name: planName, 
       status: 'pending', 
       is_approved: false, 
-      final_amount_paid: amount,
+      final_amount_paid: amountInr,
       transaction_id: utr, 
       account_model: planName.toLowerCase().includes('ptp') || planName.toLowerCase().includes('passthenpay') ? 'passthrupay' : 'normal',
       account_classification: classification
@@ -313,7 +316,7 @@ export async function requestManualAccount(userId: string, planName: string, amo
   if (error) return { error: error.message };
   
   revalidatePath('/welcome');
-  return { success: true, transaction_id: utr, amount: amount };
+  return { success: true, transaction_id: utr, amount: amountInr };
 }
 
 export async function initiateGatewayPayment(userId: string, plan: any, gateway: string) {

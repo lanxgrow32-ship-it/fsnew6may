@@ -2,7 +2,7 @@
 /**
  * @fileOverview Blockchain verification engine for USDT (TRC-20) payments.
  * 
- * Performs 7 critical security checks to ensure non-custodial payment integrity.
+ * Performs critical security checks to ensure non-custodial payment integrity.
  */
 
 import { ai } from '@/ai/genkit';
@@ -62,7 +62,6 @@ export const verifyTransactionFlow = ai.defineFlow(
       }
 
       // 3. Contract & Multi-Transfer Extraction
-      // We look for TRC-20 transfer info
       const transfers = txData.trc20TransferInfo || [];
       const usdtTransfer = transfers.find((t: any) => t.contract_address === USDT_CONTRACT_TRC20);
 
@@ -70,7 +69,7 @@ export const verifyTransactionFlow = ai.defineFlow(
         return { success: false, error: 'No USDT (TRC-20) transfer detected in this transaction.' };
       }
 
-      // 4. Recipient Validation (Base58 match)
+      // 4. Recipient Validation (Case-insensitive match)
       if (usdtTransfer.to_address.toLowerCase() !== input.companyWallet.toLowerCase()) {
         return { success: false, error: 'Recipient mismatch. This transaction was not sent to our company wallet.' };
       }
@@ -79,7 +78,7 @@ export const verifyTransactionFlow = ai.defineFlow(
       const rawAmount = parseFloat(usdtTransfer.amount_str || usdtTransfer.amount || '0');
       const actualUsdt = rawAmount / 1_000_000; // USDT is 6 decimals on TRON
 
-      // Allow 1% variance for rounding or tiny network fees if applicable (though sender usually pays)
+      // Allow 1% variance for exchange fees or rounding
       if (actualUsdt < input.claimedAmount * 0.99) {
         return { success: false, error: `Amount mismatch. Sent ${actualUsdt} USDT, but required ${input.claimedAmount} USDT.` };
       }
