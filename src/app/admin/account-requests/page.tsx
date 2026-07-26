@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -25,7 +26,9 @@ import {
     Search,
     Filter,
     ShieldAlert,
-    History
+    History,
+    Globe,
+    LayoutGrid
 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
@@ -47,11 +50,11 @@ export default function AccountRequestsPage() {
     // Search and Filter States
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('pending');
+    const [marketFilter, setMarketFilter] = useState('all');
 
     const fetchRequests = async () => {
         setLoading(true);
         const client = await supabase;
-        // Fetch massive range to ensure historical integrity (v5.1 Protocol)
         const { data } = await client
             .from('user_accounts')
             .select('*, profiles(full_name, email, kyc_status, mobile_number)')
@@ -78,9 +81,13 @@ export default function AccountRequestsPage() {
             else if (statusFilter === 'approved') matchesStatus = req.is_approved;
             else if (statusFilter === 'rejected') matchesStatus = req.status === 'rejected';
 
-            return matchesSearch && matchesStatus;
+            let matchesMarket = true;
+            if (marketFilter === 'indian') matchesMarket = req.market_type === 'indian';
+            else if (marketFilter === 'forex') matchesMarket = req.market_type === 'forex';
+
+            return matchesSearch && matchesStatus && matchesMarket;
         });
-    }, [requests, searchTerm, statusFilter]);
+    }, [requests, searchTerm, statusFilter, marketFilter]);
 
     const handleApprove = (id: string) => {
         startTransition(async () => {
@@ -138,7 +145,7 @@ export default function AccountRequestsPage() {
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40 space-y-6">
-                    <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex flex-col lg:flex-row gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input 
@@ -148,7 +155,20 @@ export default function AccountRequestsPage() {
                                 className="pl-10 h-11 bg-card"
                             />
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Select value={marketFilter} onValueChange={setMarketFilter}>
+                                <SelectTrigger className="w-[160px] h-11 bg-card">
+                                    <div className="flex items-center gap-2">
+                                        <Globe className="h-4 w-4 text-muted-foreground" />
+                                        <SelectValue placeholder="Market" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Markets</SelectItem>
+                                    <SelectItem value="indian">Indian Market</SelectItem>
+                                    <SelectItem value="forex">Forex Market</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="w-[180px] h-11 bg-card">
                                     <div className="flex items-center gap-2">
@@ -169,7 +189,7 @@ export default function AccountRequestsPage() {
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>{statusFilter === 'pending' ? 'Pending Requests' : 'Activation History'}</CardTitle>
-                                <CardDescription>Managing manual UPI verifications and historical records.</CardDescription>
+                                <CardDescription>Managing {marketFilter !== 'all' ? marketFilter.toUpperCase() : 'Global'} manual verifications.</CardDescription>
                             </div>
                             <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-lg border border-white/5">
                                 <History className="w-4 h-4 text-gray-500" />
@@ -184,6 +204,7 @@ export default function AccountRequestsPage() {
                                             <TableHead>Arrival Time</TableHead>
                                             <TableHead>Trader</TableHead>
                                             <TableHead>Plan</TableHead>
+                                            <TableHead>Market</TableHead>
                                             <TableHead>Reference (UTR)</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
@@ -200,6 +221,12 @@ export default function AccountRequestsPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline" className="font-bold bg-black/20 text-primary border-primary/20 text-[10px]">{req.plan_name}</Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        {req.market_type === 'forex' ? <Globe className="w-3.5 h-3.5 text-blue-500" /> : <LayoutGrid className="w-3.5 h-3.5 text-green-600" />}
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">{req.market_type || 'INDIAN'}</span>
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell className="font-mono text-[10px] font-black text-gray-500 uppercase">
                                                     {req.transaction_id || 'N/A'}
@@ -222,7 +249,7 @@ export default function AccountRequestsPage() {
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
-                                            <TableRow><TableCell colSpan={5} className="text-center py-20 text-muted-foreground font-medium italic">No requests found matching your filters.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">No requests found matching your filters.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
@@ -231,7 +258,7 @@ export default function AccountRequestsPage() {
                     </Card>
                     <div className="bg-muted p-4 rounded-xl border border-white/5">
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-center">
-                            Note: Technical Stockmint sync logs are now located on the <Link href="/admin/activation-hub" className="text-primary hover:underline">Activation Hub</Link> page.
+                            Note: Market classification is automatically determined by the plan title.
                         </p>
                     </div>
                 </main>

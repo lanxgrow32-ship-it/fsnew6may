@@ -12,14 +12,15 @@ export interface SalesData {
     arpu: number;
     salesByDate: { date: string, revenue: number, sales: number }[];
     planCategoryBreakdown: { name: string, value: number }[];
+    marketBreakdown: { name: string, value: number }[];
     topPlans: { name: string, revenue: number, sales: number }[];
     salesByDayOfWeek: { day: string, revenue: number }[];
     salesByHour: { hour: string, revenue: number }[];
     allPlansBreakdown: { name: string, revenue: number, sales: number }[];
-    recentSales: { id: string, name: string | null, email: string | null, plan: string, amount: number, date: string }[];
+    recentSales: { id: string, name: string | null, email: string | null, plan: string, amount: number, date: string, market: string }[];
 }
 
-export async function getSalesData(startDate?: Date, endDate?: Date, masterView?: boolean): Promise<SalesData | null> {
+export async function getSalesData(startDate?: Date, endDate?: Date, masterView?: boolean, marketFilter?: string): Promise<SalesData | null> {
     const supabase = await createClient();
     
     const periodStart = startDate || new Date(0);
@@ -27,7 +28,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     
     let query = supabase
         .from('profiles')
-        .select('id, full_name, email, final_amount_paid, plan_purchased, created_at, discount_amount')
+        .select('id, full_name, email, final_amount_paid, plan_purchased, created_at, discount_amount, market_type')
         .eq('is_approved', true)
         .gt('final_amount_paid', 0)
         .or('account_model.is.null,account_model.neq.passthrupay');
@@ -36,6 +37,10 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         query = query.eq('is_hidden', true);
     } else {
         query = query.or('is_hidden.is.false,is_hidden.is.null');
+    }
+
+    if (marketFilter && marketFilter !== 'all') {
+        query = query.eq('market_type', marketFilter);
     }
 
     const { data: sales, error } = await query
@@ -53,6 +58,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     let totalDiscounts = 0;
     const salesByDay: { [key: string]: { revenue: number, sales: number } } = {};
     const planCategoryBreakdown: { [key: string]: number } = { 'Instant': 0, '1-Step': 0, '2-Step': 0 };
+    const marketBreakdown: { [key: string]: number } = { 'Indian': 0, 'Forex': 0 };
     const planBreakdown: { [key: string]: { revenue: number, sales: number } } = {};
     const salesByDayOfWeek: { [day: number]: number } = {};
     const salesByHour: { [hour: number]: number } = {};
@@ -79,6 +85,9 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         const dayIndex = dateObj.getDay();
         salesByDayOfWeek[dayIndex] = (salesByDayOfWeek[dayIndex] || 0) + revenue;
         
+        const market = sale.market_type === 'forex' ? 'Forex' : 'Indian';
+        marketBreakdown[market] = (marketBreakdown[market] || 0) + revenue;
+
         const plan = sale.plan_purchased || 'Unknown';
         const lowerPlanName = plan.toLowerCase();
         if (lowerPlanName.includes('instant')) planCategoryBreakdown['Instant'] += revenue;
@@ -102,6 +111,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
             .map(([date, { revenue, sales }]) => ({ date, revenue, sales }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
         planCategoryBreakdown: Object.entries(planCategoryBreakdown).map(([name, value]) => ({ name, value })),
+        marketBreakdown: Object.entries(marketBreakdown).map(([name, value]) => ({ name, value })),
         topPlans: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue)
@@ -114,6 +124,14 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         allPlansBreakdown: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue),
-        recentSales: sales.slice(0, 25).map(s => ({ id: s.id, name: s.full_name, email: s.email, plan: s.plan_purchased || 'N/A', amount: s.final_amount_paid, date: s.created_at })),
+        recentSales: sales.slice(0, 25).map(s => ({ 
+            id: s.id, 
+            name: s.full_name, 
+            email: s.email, 
+            plan: s.plan_purchased || 'N/A', 
+            amount: s.final_amount_paid, 
+            date: s.created_at,
+            market: s.market_type || 'indian'
+        })),
     };
 }

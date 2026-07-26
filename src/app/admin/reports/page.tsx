@@ -42,7 +42,9 @@ import {
     Users, 
     RefreshCw, 
     Newspaper, 
-    UserCheck 
+    UserCheck,
+    Globe,
+    LayoutGrid
 } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -50,6 +52,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientOnly } from '@/components/ui/client-only';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -58,13 +61,13 @@ interface jsPDFWithAutoTable extends jsPDF {
 const StatCard = ({ title, value, description, prefix = '₹' }: { title: string, value: number, description?: string, prefix?: string }) => (
     <Card>
         <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500 uppercase tracking-widest">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="text-3xl font-black tracking-tighter">
                 {prefix}{value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </div>
-            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+            {description && <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{description}</p>}
         </CardContent>
     </Card>
 );
@@ -83,9 +86,9 @@ const PlanBreakdownTable = ({ plans }: { plans: { name: string, revenue: number,
                 {plans.length > 0 ? (
                     plans.map(({ name, revenue, sales }) => (
                         <TableRow key={name}>
-                            <TableCell className="font-medium">{name}</TableCell>
-                            <TableCell className="text-center">{sales}</TableCell>
-                            <TableCell className="text-right">₹{revenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="font-bold text-xs">{name}</TableCell>
+                            <TableCell className="text-center font-bold text-xs">{sales}</TableCell>
+                            <TableCell className="text-right font-black text-xs">₹{revenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                         </TableRow>
                     ))
                 ) : (
@@ -103,6 +106,7 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
     const [isFetching, startTransition] = useTransition();
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [date, setDate] = useState<DateRange | undefined>({ from: undefined, to: undefined });
+    const [marketFilter, setMarketFilter] = useState('all');
     
     const chartConfig = {
       revenue: { label: "Revenue", color: "hsl(var(--primary))" },
@@ -113,15 +117,21 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
         'Instant': { label: 'Instant', color: 'hsl(var(--chart-1))' },
         '1-Step': { label: '1-Step', color: 'hsl(var(--chart-2))' },
         '2-Step': { label: '2-Step', color: 'hsl(var(--chart-3))' },
+        'Indian': { label: 'Indian', color: 'hsl(var(--chart-4))' },
+        'Forex': { label: 'Forex', color: 'hsl(var(--chart-5))' },
     }
     
     const pieChartData = data.planCategoryBreakdown.filter(d => d.value > 0).map(d => ({
         ...d, fill: `var(--color-${d.name})`
     }));
 
-    const fetchAndSetData = async (from?: Date, to?: Date) => {
+    const marketPieData = data.marketBreakdown.filter(d => d.value > 0).map(d => ({
+        ...d, fill: `var(--color-${d.name})`
+    }));
+
+    const fetchAndSetData = async (from?: Date, to?: Date, market?: string) => {
         startTransition(async () => {
-            const result = await getSalesData(from, to, masterView);
+            const result = await getSalesData(from, to, masterView, market || marketFilter);
             if (result) setData(result);
         });
     };
@@ -169,15 +179,28 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
 
     return (
          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
+            <div className="flex flex-col xl:flex-row gap-4 xl:items-end justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Sales Analytics</h2>
-                    <p className="text-sm text-muted-foreground">Excludes internal wallet movements for revenue accuracy.</p>
+                    <h2 className="text-2xl font-black tracking-tight uppercase">Sales Analytics</h2>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Core execution revenue flow · StockMint v3.0</p>
                 </div>
-                <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Select value={marketFilter} onValueChange={(v) => { setMarketFilter(v); fetchAndSetData(date?.from, date?.to, v); }}>
+                        <SelectTrigger className="w-[160px] h-11 bg-card">
+                            <div className="flex items-center gap-2">
+                                <Globe className="h-4 w-4 text-muted-foreground" />
+                                <SelectValue placeholder="Market" />
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Global (All)</SelectItem>
+                            <SelectItem value="indian">Indian Market</SelectItem>
+                            <SelectItem value="forex">Forex Arena</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant={"outline"} className="w-full sm:w-[240px] justify-start text-left font-normal">
+                            <Button variant={"outline"} className="w-full sm:w-[240px] h-11 justify-start text-left font-normal bg-card">
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {date?.from ? (date.to ? `${format(date.from, "LLL dd, y")} - ${format(date.to, "LLL dd, y")}` : format(date.from, "LLL dd, y")) : (<span>Pick a date range</span>)}
                             </Button>
@@ -186,51 +209,51 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                             <Calendar initialFocus mode="range" selected={date} onSelect={(d) => { setDate(d); fetchAndSetData(d?.from, d?.to); }} numberOfMonths={2} />
                         </PopoverContent>
                     </Popover>
-                    <div className="flex gap-2">
-                        <Button onClick={() => handleDatePreset(0)} variant="ghost" size="sm">Today</Button>
-                        <Button onClick={() => handleDatePreset(6)} variant="ghost" size="sm">7D</Button>
-                        <Button onClick={() => handleDatePreset(29)} variant="ghost" size="sm">30D</Button>
+                    <div className="flex gap-1">
+                        <Button onClick={() => handleDatePreset(0)} variant="ghost" size="sm" className="h-11 px-4 font-bold text-xs uppercase">Today</Button>
+                        <Button onClick={() => handleDatePreset(6)} variant="ghost" size="sm" className="h-11 px-4 font-bold text-xs uppercase">7D</Button>
+                        <Button onClick={() => handleDatePreset(29)} variant="ghost" size="sm" className="h-11 px-4 font-bold text-xs uppercase">30D</Button>
                     </div>
-                    <Button onClick={() => fetchAndSetData(date?.from, date?.to)} variant="outline" size="sm" disabled={isFetching}><RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />Refresh</Button>
-                    <Button onClick={downloadPdfReport} variant="outline" size="sm" disabled={isFetching || isGeneratingReport}>{isGeneratingReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}PDF</Button>
+                    <Button onClick={() => fetchAndSetData(date?.from, date?.to)} variant="outline" size="sm" className="h-11 px-4 font-bold text-xs uppercase" disabled={isFetching}><RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />Refresh</Button>
+                    <Button onClick={downloadPdfReport} variant="outline" size="sm" className="h-11 px-4 font-bold text-xs uppercase" disabled={isFetching || isGeneratingReport}>{isGeneratingReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Export</Button>
                 </div>
             </div>
 
             {isFetching ? <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary"/></div> : (
                 <>
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-                        <StatCard title="Gross Revenue" value={data.totalGrossRevenue} description="Before discounts" />
-                        <StatCard title="Net Revenue" value={data.totalNetRevenue} description={`from ${data.totalSalesCount} sales`} />
-                        <StatCard title="Total Discounts" value={data.totalDiscounts} description="Coupons & Referrals"/>
-                        <StatCard title="ARPU" value={data.arpu} description="Average Revenue / User" />
+                        <StatCard title="Gross Revenue" value={data.totalGrossRevenue} description="Before coupon deductions" />
+                        <StatCard title="Net Revenue" value={data.totalNetRevenue} description={`from ${data.totalSalesCount} verified sales`} />
+                        <StatCard title="Total Discounts" value={data.totalDiscounts} description="Coupons & Referrals issued"/>
+                        <StatCard title="Average Order" value={data.arpu} description="Revenue per acquisition" />
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                        <Card className="lg:col-span-3">
-                             <CardHeader><CardTitle>Revenue vs. Sales Trend</CardTitle></CardHeader>
+                        <Card className="lg:col-span-3 border-white/5 bg-card/50">
+                             <CardHeader><CardTitle className="text-base font-black uppercase tracking-widest">Revenue Performance</CardTitle></CardHeader>
                             <CardContent>
                                 <ClientOnly fallback={<Skeleton className="h-72" />}>
                                     <ChartContainer config={chartConfig} className="h-72">
                                         <RechartsLineChart data={data.salesByDate}>
-                                            <CartesianGrid vertical={false} />
+                                            <CartesianGrid vertical={false} strokeOpacity={0.1} />
                                             <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(new Date(value), "MMM d")} />
                                             <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
                                             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                            <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                                            <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={3} dot={false} />
                                         </RechartsLineChart>
                                     </ChartContainer>
                                 </ClientOnly>
                             </CardContent>
                         </Card>
-                         <Card className="lg:col-span-2">
-                             <CardHeader><CardTitle>Revenue by Category</CardTitle></CardHeader>
+                         <Card className="lg:col-span-2 border-white/5 bg-card/50">
+                             <CardHeader><CardTitle className="text-base font-black uppercase tracking-widest">Market Breakdown</CardTitle></CardHeader>
                             <CardContent className="flex items-center justify-center">
                                 <ClientOnly fallback={<Skeleton className="h-72" />}>
                                     <ChartContainer config={pieChartConfig} className="h-72 w-full">
                                         <PieChart>
                                             <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                                            <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius="60%" label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                                                {pieChartData.map((entry) => (<Cell key={entry.name} fill={entry.fill} />))}
+                                            <Pie data={marketPieData} dataKey="value" nameKey="name" innerRadius="60%" label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                                                {marketPieData.map((entry) => (<Cell key={entry.name} fill={entry.fill} />))}
                                             </Pie>
                                         </PieChart>
                                     </ChartContainer>
@@ -240,12 +263,12 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                     </div>
 
                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card>
-                             <CardHeader><CardTitle>Top Selling Plans</CardTitle></CardHeader>
+                        <Card className="border-white/5 bg-card/50">
+                             <CardHeader><CardTitle className="text-base font-black uppercase tracking-widest">Top Revenue Plans</CardTitle></CardHeader>
                              <CardContent><PlanBreakdownTable plans={data.topPlans} /></CardContent>
                         </Card>
-                         <Card>
-                            <CardHeader><CardTitle>All Plan Performance</CardTitle></CardHeader>
+                         <Card className="border-white/5 bg-card/50">
+                            <CardHeader><CardTitle className="text-base font-black uppercase tracking-widest">All Plan Performance</CardTitle></CardHeader>
                             <CardContent><PlanBreakdownTable plans={data.allPlansBreakdown} /></CardContent>
                         </Card>
                      </div>

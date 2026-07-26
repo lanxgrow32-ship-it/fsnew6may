@@ -5,6 +5,13 @@
  * Follows SPEC v4.1 (Forex Aware)
  */
 
+export function getMarketType(planName: string): 'indian' | 'forex' {
+    if (!planName) return 'indian';
+    const name = planName.toLowerCase();
+    if (name.includes('forex') || name.includes('$')) return 'forex';
+    return 'indian';
+}
+
 export function getAutoClassification(planName: string): string {
     if (!planName) return 'evaluation';
     const name = planName.toLowerCase();
@@ -42,8 +49,6 @@ export function getBalanceFromPlanName(planName: string): number {
             const unit = usdMatch[2]?.toLowerCase();
             if (unit === 'k') amount *= 1000;
             if (unit === 'm') amount *= 1000000;
-            // NOTE: We return the balance in USD if the plan is Forex. 
-            // The Stockmint API should be configured to interpret this based on classification.
             return amount;
         }
     }
@@ -71,34 +76,22 @@ export function getBalanceFromPlanName(planName: string): number {
     return 0;
 }
 
-/**
- * Generates a unique Stockmint Terminal Email/ID for multi-account support.
- */
 export function generateStockmintUsername(baseEmail: string, credentialsProvidedCount: number): string {
     const [userPart, domainPart] = baseEmail.split('@');
     if (credentialsProvidedCount === 0) return baseEmail.toLowerCase().trim();
     return `${userPart}-ac${credentialsProvidedCount + 1}@${domainPart}`.toLowerCase().trim();
 }
 
-/**
- * Calculates the 48-hour trial expiry with Market-Aware (Weekend) logic.
- * If Friday/Sat/Sun -> Clock starts Monday 9:00 AM.
- */
 export function calculateTrialExpiry(startDate: Date): Date {
-    const day = startDate.getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
+    const day = startDate.getDay();
     let expiry = new Date(startDate);
-
-    // Logic: Friday, Saturday, Sunday creations start their 48h from Monday 9AM
     if (day === 5 || day === 6 || day === 0) {
-        // Find next Monday
         const daysToMonday = (day === 5) ? 3 : (day === 6) ? 2 : 1;
         expiry.setDate(startDate.getDate() + daysToMonday);
-        expiry.setHours(9, 0, 0, 0); // Monday 9:00 AM
-        expiry.setHours(expiry.getHours() + 48); // Add 48 hours
+        expiry.setHours(9, 0, 0, 0);
+        expiry.setHours(expiry.getHours() + 48);
     } else {
-        // Standard Monday-Thursday creation: Just add 48 hours
         expiry.setHours(startDate.getHours() + 48);
     }
-
     return expiry;
 }

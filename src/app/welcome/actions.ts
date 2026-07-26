@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -5,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { runSupportAi } from '@/ai/flows/support-agent-flow';
 import { verifyTransactionFlow } from '@/ai/flows/verify-transaction-flow';
-import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername, calculateTrialExpiry } from '@/lib/plan-utils';
+import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername, calculateTrialExpiry, getMarketType } from '@/lib/plan-utils';
 import { generateLgPaySignature } from '@/lib/lg-pay';
 import { generateWatchPaySignature } from '@/lib/watchpay';
 import { randomBytes } from 'crypto';
@@ -191,6 +192,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
 
   const isPTP = plan.title.toLowerCase().includes('ptp') || plan.title.toLowerCase().includes('passthenpay');
   const classification = getAutoClassification(plan.title);
+  const marketType = getMarketType(plan.title);
   const isKycVerified = profile.kyc_status === 'verified';
 
   if (profile.referred_by && !profile.referral_commission_paid && price > 0) {
@@ -229,6 +231,7 @@ export async function purchaseWithWallet(userId: string, plan: any) {
     is_approved: true,
     account_model: isPTP ? 'passthrupay' : 'normal', 
     account_classification: classification,
+    market_type: marketType,
     final_amount_paid: price, 
     transaction_id: txId
   };
@@ -252,7 +255,8 @@ export async function purchaseWithWallet(userId: string, plan: any) {
           password: stockmintUsername,
           initialBalance, 
           accountClassification: classification, 
-          accountModel: isPTP ? 'passthenpay' : 'normal'
+          accountModel: isPTP ? 'passthenpay' : 'normal',
+          marketType: marketType // NEW v3.0 FIELD
       }, account.id);
 
       await supabaseAdmin.from('user_accounts').update({ 
@@ -298,6 +302,7 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
 
     const isPTP = plan.title.toLowerCase().includes('ptp');
     const classification = getAutoClassification(plan.title);
+    const marketType = getMarketType(plan.title);
     const isKycVerified = profile.kyc_status === 'verified';
 
     const { count: existingCount } = await supabaseAdmin
@@ -316,6 +321,7 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
         transaction_id: txId,
         final_amount_paid: typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price,
         account_classification: classification,
+        market_type: marketType,
         account_model: isPTP ? 'passthrupay' : 'normal'
     };
 
@@ -335,7 +341,8 @@ export async function processCryptoPayment(userId: string, plan: any, txId: stri
     await fetchFromHub('users/create', 'POST', {
         fullName: profile.full_name, email: username, password: username,
         initialBalance, accountClassification: classification, 
-        accountModel: isPTP ? 'passthenpay' : 'normal'
+        accountModel: isPTP ? 'passthenpay' : 'normal',
+        marketType: marketType // NEW v3.0 FIELD
     }, account.id);
 
     await supabaseAdmin.from('user_accounts').update({
@@ -409,6 +416,7 @@ export async function requestManualAccount(userId: string, planName: string, amo
   const finalPricePaid = basePrice + surcharge;
 
   const classification = getAutoClassification(planName);
+  const marketType = getMarketType(planName);
   
   const { error } = await supabaseAdmin.from('user_accounts').insert({
       user_id: userId, 
@@ -417,6 +425,7 @@ export async function requestManualAccount(userId: string, planName: string, amo
       is_approved: false, 
       final_amount_paid: finalPricePaid,
       transaction_id: utr, 
+      market_type: marketType,
       account_model: planName.toLowerCase().includes('ptp') || planName.toLowerCase().includes('passthenpay') ? 'passthrupay' : 'normal',
       account_classification: classification
   });
@@ -457,6 +466,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
         });
     } else {
         const classification = getAutoClassification(plan.title);
+        const marketType = getMarketType(plan.title);
         await supabaseAdmin.from('user_accounts').insert({
             user_id: userId,
             plan_name: plan.title,
@@ -464,6 +474,7 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
             is_approved: false,
             final_amount_paid: finalAmount, 
             transaction_id: order_sn,
+            market_type: marketType,
             account_classification: classification,
             account_model: plan.title.toLowerCase().includes('ptp') ? 'passthrupay' : 'normal'
         });
@@ -690,7 +701,8 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
         password: stockmintUsername, 
         initialBalance: 100000, 
         accountClassification: 'evaluation', 
-        accountModel: 'normal' 
+        accountModel: 'normal',
+        marketType: 'indian' // Competitions are strictly Indian market for now
     });
 
     const { error } = await supabaseAdmin.from('competition_registrations').insert({ 
@@ -741,7 +753,8 @@ export async function startFreeTrial(userId: string) {
         password: stockmintUsername,
         initialBalance: 500000, 
         accountClassification: 'evaluation', 
-        accountModel: 'normal'
+        accountModel: 'normal',
+        marketType: 'indian'
     });
 
     const { data: account, error } = await supabaseAdmin.from('user_accounts').insert({
@@ -754,7 +767,8 @@ export async function startFreeTrial(userId: string) {
         credentials_provided: true,
         trading_username: stockmintUsername,
         trading_password: stockmintUsername,
-        account_classification: 'evaluation'
+        account_classification: 'evaluation',
+        market_type: 'indian'
     }).select().single();
 
     if (error) return { error: error.message };

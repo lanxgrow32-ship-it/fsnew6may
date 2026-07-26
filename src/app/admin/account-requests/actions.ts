@@ -3,11 +3,11 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername } from '@/lib/plan-utils';
+import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername, getMarketType } from '@/lib/plan-utils';
 
 /**
  * Approves an individual account request from the Activation Ledger.
- * UPDATED v7.0: Removes KYC Gate for immediate handover with 48h grace period.
+ * UPDATED v8.0: Includes Market Segmentation (StockMint v3.0 Sync).
  */
 export async function approveAccount(accountId: string) {
     const { data: account, error: fetchError } = await supabaseAdmin
@@ -20,12 +20,14 @@ export async function approveAccount(accountId: string) {
     const isPTP = account.account_model === 'passthrupay' || account.plan_name.toLowerCase().includes('ptp');
     const isKycDone = profile.kyc_status === 'verified';
     const classification = getAutoClassification(account.plan_name);
+    const marketType = getMarketType(account.plan_name);
 
     // 1. Update Account Status (Approved Immediately)
     const updateData: any = { 
         is_approved: true, 
         status: 'active', 
-        account_classification: classification
+        account_classification: classification,
+        market_type: marketType
     };
 
     // 2. GRACE PERIOD PROTOCOL (First purchase only)
@@ -46,7 +48,7 @@ export async function approveAccount(accountId: string) {
     const { error: approveError } = await supabaseAdmin.from('user_accounts').update(updateData).eq('id', accountId);
     if (approveError) return { error: approveError.message };
 
-    // 3. REFERRAL ENGINE (v5.0)
+    // 3. REFERRAL ENGINE
     if (profile.referred_by && !profile.referral_commission_paid && !account.is_trial && account.final_amount_paid > 0) {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
@@ -63,7 +65,7 @@ export async function approveAccount(accountId: string) {
         }
     }
 
-    // 4. STOCKMINT HUB AUTO-PROVISIONING (Immediate Handover)
+    // 4. STOCKMINT HUB AUTO-PROVISIONING (v3.0 Segmented)
     const initialBalance = getBalanceFromPlanName(account.plan_name);
     const stockmintApiKey = process.env.STOCKMINT_API_KEY;
     const stockmintUsername = generateStockmintUsername(profile.email, existingCount || 0);
@@ -76,7 +78,8 @@ export async function approveAccount(accountId: string) {
                 password: stockmintUsername,
                 initialBalance, 
                 accountClassification: classification, 
-                accountModel: isPTP ? 'passthenpay' : 'normal'
+                accountModel: isPTP ? 'passthenpay' : 'normal',
+                marketType: marketType // NEW v3.0 FIELD
             };
 
             const res = await fetch('https://stockmint.io/api/users/create', {

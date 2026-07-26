@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -440,7 +441,7 @@ export function ArenaView({
                                         className="bg-black/20 border-white/10 text-white h-14 font-mono text-sm focus:ring-green-500/50 rounded-2xl px-5" 
                                     />
                                 </div>
-                                <Button type="submit" disabled={isActionPending || !txId} className="w-full h-16 bg-green-600 hover:bg-green-500 text-white font-black rounded-2xl shadow-xl shadow-green-900/20 text-sm uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95">
+                                <Button type="submit" disabled={isActionPending || !txId} className="w-full h-16 bg-green-600 hover:bg-green-500 text-white font-black rounded-2xl shadow-xl shadow-green-900/20 text-sm uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]">
                                     {isActionPending ? <><Loader2 className="animate-spin mr-3 h-5 w-5"/> Executing Audit...</> : <><ShieldCheck className="mr-3 h-5 w-5"/> Run Verification</>}
                                 </Button>
                             </form>
@@ -523,20 +524,14 @@ export function ArenaView({
         );
     }
 
-    const PlanBox = ({ plan, category, locked = false }: { plan: any, category: string, locked?: boolean }) => (
+    const PlanBox = ({ plan, category }: { plan: any, category: string }) => (
         <Card className={cn(
-            "bg-card/50 transition-all duration-300 flex flex-col h-full border-border/50 group relative overflow-visible",
-            plan.isFlashSale && "border-primary border-2 shadow-[0_0_30px_rgba(139,44,245,0.2)] bg-primary/5 scale-[1.02]",
-            locked && "grayscale opacity-70 cursor-not-allowed border-white/5"
+            "bg-card/50 transition-all duration-300 flex flex-col h-full border-border/50 group relative overflow-visible hover:border-primary",
+            plan.isFlashSale && "border-primary border-2 shadow-[0_0_30px_rgba(139,44,245,0.2)] bg-primary/5 scale-[1.02]"
         )}>
-            {plan.isFlashSale && !locked && (
+            {plan.isFlashSale && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-4 py-1 rounded-full z-10 whitespace-nowrap shadow-lg">
                     Special Event
-                </div>
-            )}
-            {locked && (
-                <div className="absolute top-2 right-2 z-20">
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[8px] font-black uppercase">Under Sync</Badge>
                 </div>
             )}
             <CardHeader className="pb-4">
@@ -547,7 +542,7 @@ export function ArenaView({
                         </CardTitle>
                         <CardDescription className="text-xs font-medium text-gray-400 mt-1">{category}</CardDescription>
                     </div>
-                    {!locked && <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-bold px-1.5">80% Split</Badge>}
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-bold px-1.5">80% Split</Badge>
                 </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
@@ -564,7 +559,7 @@ export function ArenaView({
                 <div className="pt-4 border-t border-white/5">
                     <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Buy Price</p>
                     <div className="flex items-baseline gap-2">
-                        <p className={cn("text-xl font-bold text-primary mt-0.5 transition-transform origin-left", !locked && "group-hover:scale-105", plan.isFlashSale && "text-2xl text-white")}>
+                        <p className={cn("text-xl font-bold text-primary mt-0.5 transition-transform origin-left group-hover:scale-105", plan.isFlashSale && "text-2xl text-white")}>
                             {marketSegment === 'forex' ? `$${plan.usdPrice}` : `₹${plan.price}`}
                         </p>
                     </div>
@@ -573,13 +568,10 @@ export function ArenaView({
             </CardContent>
             <CardFooter>
                 <Button 
-                    disabled={locked}
                     onClick={() => { setSelectedPlan(plan); setCheckoutStep('method'); }} 
-                    className={cn("w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest", plan.isFlashSale ? "bg-white text-black hover:bg-gray-100" : "", locked && "bg-slate-800 text-gray-600 border-none")}
+                    className={cn("w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest", plan.isFlashSale ? "bg-white text-black hover:bg-gray-100" : "")}
                 >
-                    {locked ? (
-                        <span className="flex items-center gap-2">Provisioning Hub <Loader2 className="w-3 h-3 animate-spin"/></span>
-                    ) : "Get Funded"}
+                    Get Funded
                 </Button>
             </CardFooter>
         </Card>
@@ -594,7 +586,7 @@ export function ArenaView({
                     </h2>
                     <p className="text-gray-400 text-sm font-medium">
                         {marketSegment === 'forex' 
-                            ? 'Forex terminal bridges are being synchronized. Plans locked during sync.' 
+                            ? 'Trade international pairs with institutional liquidity.' 
                             : 'Select your specialization and secure institutional funding.'}
                     </p>
                 </div>
@@ -661,7 +653,7 @@ export function ArenaView({
 
                     <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
                         <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2"><Link href="/rules/forex-two-step"><Coins className="w-4 h-4" /> Global Protocols</Link></Button></div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">{plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" locked />)}</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">{plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />)}</div>
                     </TabsContent>
 
                     <TabsContent value="instant" className="py-20 text-center"><Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20"/><h3 className="text-2xl font-bold text-white uppercase">Forex Instant Coming Soon</h3></TabsContent>
