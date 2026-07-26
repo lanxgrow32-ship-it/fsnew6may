@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CheckCircle, Globe, Timer, TrendingUp, Zap, Sparkles, ExternalLink, HelpCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Globe, Timer, TrendingUp, Zap, Sparkles, ExternalLink, HelpCircle, Lock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
@@ -76,31 +76,21 @@ const PlanCard = ({ size, title, price, usdPrice, isPopular }: any) => {
 
   return (
     <Card className={cn(
-        "flex flex-col h-full hover:border-primary transition-all duration-300 bg-card/50 border-border relative", 
-        isPopular && "border-primary/50 shadow-2xl shadow-primary/5"
+        "flex flex-col h-full bg-card/40 border-white/5 relative grayscale opacity-70 cursor-not-allowed", 
+        isPopular && "border-primary/20 shadow-2xl shadow-primary/5"
     )}>
-      {isPopular && <div className="text-xs font-bold bg-primary text-primary-foreground py-1 rounded-t-lg -mt-px text-center">🔥 Most Popular</div>}
+      <div className="absolute inset-0 bg-slate-950/20 z-10 rounded-lg pointer-events-none"></div>
+      
       <CardHeader className="pb-4 space-y-4 pt-8">
         <div className="flex justify-between items-start">
             <CardTitle className="text-3xl font-black text-white tracking-tight">${size}</CardTitle>
-            {isPopular && <Badge variant="default" className="text-[10px] font-bold">POPULAR</Badge>}
+            <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest border-amber-500/30 text-amber-500">Provisioning</Badge>
         </div>
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{title}</p>
-        
-        <div className="space-y-2">
-            <ClientOnly>
-                <div className={cn(
-                    "flex items-center gap-2 text-[10px] font-bold px-2 py-0.5 rounded border",
-                    slotsRemaining < 5 ? "text-red-500 bg-red-500/10 border-red-500/20" : "text-amber-500 bg-amber-500/10 border-amber-500/20"
-                )}>
-                    <Timer className="h-3 w-3" />
-                    <span>HURRY: Only {slotsRemaining} slots remaining</span>
-                </div>
-            </ClientOnly>
-        </div>
+        <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{title}</p>
       </CardHeader>
+      
       <CardContent className="flex flex-col flex-grow space-y-6">
-        <div className="space-y-3 text-sm border-t border-white/5 pt-4">
+        <div className="space-y-3 text-sm border-t border-white/5 pt-4 opacity-50">
             <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span className="text-muted-foreground">80% Performance Reward</span>
@@ -115,7 +105,7 @@ const PlanCard = ({ size, title, price, usdPrice, isPopular }: any) => {
             </div>
         </div>
 
-        <div className="pt-4 border-t border-white/5">
+        <div className="pt-4 border-t border-white/5 opacity-50">
             <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Activation Fee</p>
             <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-primary">${usdPrice}</span>
@@ -123,13 +113,10 @@ const PlanCard = ({ size, title, price, usdPrice, isPopular }: any) => {
             <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1">
                 Approx. ₹{currentPrice.toLocaleString('en-IN')}
             </p>
-            <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest uppercase">
-                50% LIMITED DISCOUNT
-            </Badge>
         </div>
 
-        <Button asChild className="w-full mt-auto font-black uppercase tracking-widest h-12 rounded-xl" size="lg">
-          <Link href="/signup">Begin Evaluation <Zap className="h-4 w-4 ml-2"/></Link>
+        <Button disabled className="w-full mt-auto font-black uppercase tracking-widest h-12 rounded-xl bg-slate-800 text-gray-500 border border-white/5">
+           Provisioning Terminal <Loader2 className="h-4 w-4 ml-2 animate-spin"/>
         </Button>
       </CardContent>
     </Card>
@@ -168,7 +155,7 @@ export default function ForexPricingPage() {
               </div>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight">Forex Global Arena</h1>
               <p className="mt-4 text-muted-foreground max-w-4xl mx-auto text-lg">
-                Choose the evaluation model that fits your global trading style and secure your funded account today.
+                Choose the evaluation model that fits your global trading style. <span className="text-amber-500 font-bold underline decoration-dotted">Provisioning of terminal bridges currently in progress.</span>
               </p>
           </div>
 

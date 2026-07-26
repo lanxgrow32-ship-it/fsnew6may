@@ -31,7 +31,8 @@ import {
     Coins,
     Cpu,
     ArrowUpRight,
-    AlertTriangle
+    AlertTriangle,
+    Lock
 } from 'lucide-react';
 import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial, initiateGatewayPayment, processCryptoPayment } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -164,7 +165,6 @@ export function ArenaView({
             if (discount > 0) return base * (1 - discount / 100);
             return base;
         }
-        // Indian Plan USDT Calculation: Base INR / 96 (0% Surcharge)
         return parseFloat((calculateFinalPrice() / 96).toFixed(2));
     }
 
@@ -193,7 +193,6 @@ export function ArenaView({
     const handleGatewayPurchase = async () => {
         const finalPrice = calculateFinalPrice();
         startTransition(async () => {
-            // Pass base price; actions.ts handles the 25% surcharge for UPI automation
             const res = await initiateGatewayPayment(profile.id, { ...selectedPlan, price: finalPrice }, activeGateway);
             if (res.error) {
                 toast({ title: "Gateway Error", description: res.error, variant: "destructive" });
@@ -291,7 +290,6 @@ export function ArenaView({
                                 </div>
                             </button>
 
-                            {/* USDT Crypto Option (Unified) */}
                             <button 
                                 onClick={() => setCheckoutStep('crypto-pay')}
                                 className="group flex items-center gap-4 p-6 bg-green-500/10 border border-green-500/30 rounded-3xl text-left transition-all hover:bg-green-500/20 hover:border-green-400 shadow-2xl shadow-green-900/10"
@@ -315,7 +313,6 @@ export function ArenaView({
                                 </div>
                             </div>
 
-                            {/* Automated UPI Gateway */}
                             {activeGateway !== 'manual' && activeGateway !== 'cashfree' && (
                                 <button 
                                     onClick={handleGatewayPurchase}
@@ -332,7 +329,6 @@ export function ArenaView({
                                 </button>
                             )}
 
-                            {/* Manual UPI Fallback */}
                             {activeGateway === 'manual' && (
                                 <button 
                                     onClick={() => setCheckoutStep('direct-pay')}
@@ -527,14 +523,20 @@ export function ArenaView({
         );
     }
 
-    const PlanBox = ({ plan, category }: { plan: any, category: string }) => (
+    const PlanBox = ({ plan, category, locked = false }: { plan: any, category: string, locked?: boolean }) => (
         <Card className={cn(
-            "bg-card/50 hover:border-primary transition-all duration-300 flex flex-col h-full border-border/50 group relative overflow-visible",
-            plan.isFlashSale && "border-primary border-2 shadow-[0_0_30px_rgba(139,44,245,0.2)] bg-primary/5 scale-[1.02]"
+            "bg-card/50 transition-all duration-300 flex flex-col h-full border-border/50 group relative overflow-visible",
+            plan.isFlashSale && "border-primary border-2 shadow-[0_0_30px_rgba(139,44,245,0.2)] bg-primary/5 scale-[1.02]",
+            locked && "grayscale opacity-70 cursor-not-allowed border-white/5"
         )}>
-            {plan.isFlashSale && (
+            {plan.isFlashSale && !locked && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-4 py-1 rounded-full z-10 whitespace-nowrap shadow-lg">
                     Special Event
+                </div>
+            )}
+            {locked && (
+                <div className="absolute top-2 right-2 z-20">
+                    <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[8px] font-black uppercase">Under Sync</Badge>
                 </div>
             )}
             <CardHeader className="pb-4">
@@ -545,7 +547,7 @@ export function ArenaView({
                         </CardTitle>
                         <CardDescription className="text-xs font-medium text-gray-400 mt-1">{category}</CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-bold px-1.5">80% Split</Badge>
+                    {!locked && <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-bold px-1.5">80% Split</Badge>}
                 </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
@@ -562,7 +564,7 @@ export function ArenaView({
                 <div className="pt-4 border-t border-white/5">
                     <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Buy Price</p>
                     <div className="flex items-baseline gap-2">
-                        <p className={cn("text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left", plan.isFlashSale && "text-2xl text-white")}>
+                        <p className={cn("text-xl font-bold text-primary mt-0.5 transition-transform origin-left", !locked && "group-hover:scale-105", plan.isFlashSale && "text-2xl text-white")}>
                             {marketSegment === 'forex' ? `$${plan.usdPrice}` : `₹${plan.price}`}
                         </p>
                     </div>
@@ -571,10 +573,13 @@ export function ArenaView({
             </CardContent>
             <CardFooter>
                 <Button 
+                    disabled={locked}
                     onClick={() => { setSelectedPlan(plan); setCheckoutStep('method'); }} 
-                    className={cn("w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest", plan.isFlashSale ? "bg-white text-black hover:bg-gray-100" : "")}
+                    className={cn("w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest", plan.isFlashSale ? "bg-white text-black hover:bg-gray-100" : "", locked && "bg-slate-800 text-gray-600 border-none")}
                 >
-                    Get Funded
+                    {locked ? (
+                        <span className="flex items-center gap-2">Provisioning Hub <Loader2 className="w-3 h-3 animate-spin"/></span>
+                    ) : "Get Funded"}
                 </Button>
             </CardFooter>
         </Card>
@@ -585,9 +590,13 @@ export function ArenaView({
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight uppercase">
-                        {marketSegment === 'forex' ? 'Global Arena' : 'Indian Market'}
+                        {marketSegment === 'forex' ? 'Forex Global Arena' : 'Indian Market'}
                     </h2>
-                    <p className="text-gray-400 text-sm font-medium">Select your specialization and secure institutional funding.</p>
+                    <p className="text-gray-400 text-sm font-medium">
+                        {marketSegment === 'forex' 
+                            ? 'Forex terminal bridges are being synchronized. Plans locked during sync.' 
+                            : 'Select your specialization and secure institutional funding.'}
+                    </p>
                 </div>
 
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-1 flex items-center h-12 shadow-2xl">
@@ -652,7 +661,7 @@ export function ArenaView({
 
                     <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
                         <div className="flex justify-center mb-8"><Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2"><Link href="/rules/forex-two-step"><Coins className="w-4 h-4" /> Global Protocols</Link></Button></div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">{plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />)}</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">{plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" locked />)}</div>
                     </TabsContent>
 
                     <TabsContent value="instant" className="py-20 text-center"><Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20"/><h3 className="text-2xl font-bold text-white uppercase">Forex Instant Coming Soon</h3></TabsContent>
