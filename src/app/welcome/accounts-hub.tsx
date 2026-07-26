@@ -200,10 +200,47 @@ export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accoun
                             <div className="bg-black/60 px-5 py-3 rounded-2xl border border-white/5 flex flex-col gap-1 min-w-[120px]"><span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Wallet</span><div className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-green-400"/><span className="text-lg font-black text-white">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span></div></div>
                         </div>
                     </div>
-                    <div className="shrink-0 flex flex-col gap-3 w-full md:w-auto"><Button onClick={onSwitchToGetFunded} size="lg" className="h-14 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">Purchase Capital <PlusCircle className="ml-2 w-4 h-4"/></Button><Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl"><Link href="/guide">Rules & Risk</Link></Button></div>
+                    <div className="shrink-0 flex flex-col gap-3 w-full md:w-auto">
+                        <Button onClick={onSwitchToGetFunded} size="lg" className="h-14 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
+                            Get Funded <PlusCircle className="ml-2 w-4 h-4"/>
+                        </Button>
+                        <Button asChild variant="outline" className="h-11 border-white/10 bg-white/5 text-white font-bold text-[10px] uppercase rounded-xl">
+                            <Link href="/guide">Rules & Risk</Link>
+                        </Button>
+                    </div>
                 </div>
             </GlassCard>
-            <div className="space-y-6"><div className="flex flex-col md:flex-row md:items-end justify-between gap-4"><div className="space-y-1"><h2 className="text-2xl font-black text-white tracking-tight uppercase">Portfolio Grid</h2><p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Secure session management</p></div>{!kycVerified && accounts.length > 0 && <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-xl border border-amber-400/20 text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-right-4"><AlertTriangle className="w-3.5 h-3.5 animate-pulse"/> 48-Hour KYC Grace Period Active</Link>}</div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{accounts.length > 0 ? (accounts.map((acc: any) => <AccountCard key={acc.id} account={acc} kycVerified={kycVerified} />)) : (<GlassCard className="col-span-full p-20 text-center border-dashed border-white/10 bg-white/[0.01]"><div className="mx-auto h-20 w-20 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center mb-8 shadow-2xl"><Activity className="h-10 w-10 text-gray-800" /></div><div className="space-y-2 mb-10"><h3 className="text-2xl font-black text-white tracking-tight">PORTFOLIO EMPTY</h3><p className="text-gray-500 max-w-sm mx-auto text-sm font-medium uppercase tracking-[0.2em]">Start an evaluation to begin your professional career.</p></div><Button onClick={onSwitchToGetFunded} size="lg" className="bg-primary text-white font-black uppercase tracking-widest text-xs px-12 h-14 rounded-2xl shadow-2xl shadow-primary/20 transition-all hover:scale-110">Launch Challenge <ArrowRight className="ml-3 h-5 w-5"/></Button></GlassCard>)}</div></div>
+            <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div className="space-y-1">
+                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">Portfolio Grid</h2>
+                        <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Secure session management</p>
+                    </div>
+                    {!kycVerified && accounts.length > 0 && (
+                        <Link href="/kyc" className="flex items-center gap-2 bg-amber-400/10 text-amber-400 px-4 py-2 rounded-xl border border-amber-400/20 text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-right-4">
+                            <AlertTriangle className="w-3.5 h-3.5 animate-pulse"/> 48-Hour KYC Grace Period Active
+                        </Link>
+                    )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {accounts.length > 0 ? (
+                        accounts.map((acc: any) => <AccountCard key={acc.id} account={acc} kycVerified={kycVerified} />)
+                    ) : (
+                        <GlassCard className="col-span-full p-20 text-center border-dashed border-white/10 bg-white/[0.01]">
+                            <div className="mx-auto h-20 w-20 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center mb-8 shadow-2xl">
+                                <Activity className="h-10 w-10 text-gray-800" />
+                            </div>
+                            <div className="space-y-2 mb-10">
+                                <h3 className="text-2xl font-black text-white tracking-tight">PORTFOLIO EMPTY</h3>
+                                <p className="text-gray-500 max-w-sm mx-auto text-sm font-medium uppercase tracking-[0.2em]">Start an evaluation to begin your professional career.</p>
+                            </div>
+                            <Button onClick={onSwitchToGetFunded} size="lg" className="bg-primary text-white font-black uppercase tracking-widest text-xs px-12 h-14 rounded-2xl shadow-2xl shadow-primary/20 transition-all hover:scale-110">
+                                Get Funded <ArrowRight className="ml-3 h-5 w-5"/>
+                            </Button>
+                        </GlassCard>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
