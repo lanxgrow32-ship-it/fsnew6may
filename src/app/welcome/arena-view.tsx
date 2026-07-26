@@ -4,6 +4,8 @@
 import { useState, useTransition, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -33,8 +35,6 @@ import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTria
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -69,13 +69,13 @@ const plans = {
         { size: '50 Lakh', price: '499', title: '50L PTP' },
     ],
     forex: [
-        { size: '$5k', price: '2,999', title: '$5k Forex 2-Step' },
-        { size: '$10k', price: '4,999', title: '$10k Forex 2-Step' },
-        { size: '$25k', price: '9,999', title: '$25k Forex 2-Step' },
-        { size: '$50k', price: '16,999', title: '$50k Forex 2-Step' },
-        { size: '$100k', price: '29,999', title: '$100k Forex 2-Step' },
-        { size: '$200k', price: '49,999', title: '$200k Forex 2-Step' },
-        { size: '$400k', price: '89,999', title: '$400k Forex 2-Step' },
+        { size: '5,000', price: '2,999', title: '$5k Forex 2-Step' },
+        { size: '10,000', price: '4,999', title: '$10k Forex 2-Step' },
+        { size: '25,000', price: '9,999', title: '$25k Forex 2-Step' },
+        { size: '50,000', price: '16,999', title: '$50k Forex 2-Step', isPopular: true },
+        { size: '100,000', price: '29,999', title: '$100k Forex 2-Step' },
+        { size: '200,000', price: '49,999', title: '$200k Forex 2-Step' },
+        { size: '400,000', price: '89,999', title: '$400k Forex 2-Step' },
     ]
 };
 
@@ -414,7 +414,7 @@ export function ArenaView({
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle className={cn("text-lg font-bold", plan.isFlashSale && "text-primary text-xl")}>
-                            {marketSegment === 'forex' ? plan.size : `₹${plan.size}`}
+                            {marketSegment === 'forex' ? `$${plan.size}` : `₹${plan.size}`}
                         </CardTitle>
                         <CardDescription className="text-xs font-medium text-gray-400 mt-1">{category}</CardDescription>
                     </div>
@@ -540,21 +540,40 @@ export function ArenaView({
                     )}
                 </Tabs>
             ) : (
-                <div className="animate-in fade-in zoom-in-95">
-                    <div className="flex justify-center mb-10">
-                        <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2">
-                            <Link href="/rules/forex-two-step"><Coins className="w-4 h-4" /> Forex Arena Protocols</Link>
-                        </Button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />)}
-                    </div>
-                    <GlassCard className="mt-12 p-8 border-primary/10 bg-primary/5 text-center">
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.5em] mb-3">Expansion Alert</p>
-                        <h4 className="text-xl font-bold text-white mb-2 tracking-tight">Forex 1-Step and Instant coming soon.</h4>
-                        <p className="text-xs text-gray-500 max-w-md mx-auto">We are actively provisioning liquidity bridges for more Forex models. Stay tuned for updates.</p>
-                    </GlassCard>
-                </div>
+                <Tabs defaultValue="twoStep" className="w-full">
+                    <TabsList className="grid w-full grid-cols-1 lg:grid-cols-3 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
+                        <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
+                        <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
+                        <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="instant" className="animate-in fade-in duration-500">
+                        <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-2xl mx-auto">
+                            <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
+                            <h3 className="text-xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
+                            <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Provisioning Liquidity Bridges...</p>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="oneStep" className="animate-in fade-in duration-500">
+                        <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-2xl mx-auto">
+                            <Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
+                            <h3 className="text-xl font-bold text-white tracking-tight uppercase">1-Phase Model coming soon.</h3>
+                            <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Review in Progress...</p>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
+                        <div className="flex justify-center mb-8">
+                            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2">
+                                <Link href="/rules/forex-two-step"><Coins className="w-4 h-4" /> Forex Arena Protocols</Link>
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                            {plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />)}
+                        </div>
+                    </TabsContent>
+                </Tabs>
             )}
 
             {/* Premium Trial Banner */}
