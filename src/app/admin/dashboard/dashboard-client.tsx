@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, Megaphone, ShieldAlert, Globe, LayoutGrid } from 'lucide-react';
@@ -21,8 +23,6 @@ import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 
 function CreateAdminForm({ className }: { className?: string }) {
     const ref = useRef<HTMLFormElement>(null);
@@ -178,14 +178,16 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
 
   const fetchProfiles = async () => {
     const client = await supabase;
-    let query = client.from('profiles').select('*', { count: 'exact' }).eq('account_type', 'standard').or('account_model.is.null,account_model.neq.passthrupay');
+    // PROTOCOL v9.1: Broader query to ensure NO user is missed.
+    let query = client.from('profiles').select('*', { count: 'exact' }).neq('role', 'admin');
+    
     if (masterView) {
       query = query.eq('is_hidden', true);
     } else {
       query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
     
-    // Explicitly fetching up to 50,000 records to show the "Full All" list
+    // Explicitly fetching up to 50,000 records to bypass Supabase default limits
     const { data: updatedProfiles, error, count } = await query
         .order('created_at', { ascending: false })
         .range(0, 49999);
@@ -202,7 +204,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     const initSub = async () => {
         const client = await supabase;
         const channel = client
-          .channel('realtime profiles')
+          .channel('realtime profiles main')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
             () => { fetchProfiles(); }
           )

@@ -4,10 +4,11 @@ import AdminDashboardClient from './dashboard-client';
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  // Load a massive dataset of all users to ensure the "Full All" list is visible
+  // Load a massive dataset of all users (ignoring account_type restricts) 
+  // to ensure the "Full All" list is visible
   const { data: profiles, error, count } = await supabase.from('profiles')
     .select('*', { count: 'exact' })
-    .eq('account_type', 'standard')
+    .neq('role', 'admin') // Only exclude actual admins
     .order('created_at', { ascending: false })
     .range(0, 49999);
 
