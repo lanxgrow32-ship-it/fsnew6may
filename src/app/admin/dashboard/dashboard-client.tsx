@@ -185,6 +185,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
       query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
     
+    // Explicitly fetching up to 50,000 records to show the "Full All" list
     const { data: updatedProfiles, error, count } = await query
         .order('created_at', { ascending: false })
         .range(0, 49999);

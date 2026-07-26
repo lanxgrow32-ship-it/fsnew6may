@@ -1,11 +1,10 @@
-
 import { createClient } from '@/lib/supabase/server';
 import AdminDashboardClient from './dashboard-client';
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  // Load a massive dataset of all users as requested
+  // Load a massive dataset of all users to ensure the "Full All" list is visible
   const { data: profiles, error, count } = await supabase.from('profiles')
     .select('*', { count: 'exact' })
     .eq('account_type', 'standard')
