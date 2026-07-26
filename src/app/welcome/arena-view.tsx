@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -23,7 +24,10 @@ import {
     Check,
     ExternalLink,
     Sparkles,
-    ShieldCheck
+    ShieldCheck,
+    Globe,
+    LayoutGrid,
+    Coins
 } from 'lucide-react';
 import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial, initiateGatewayPayment } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -63,6 +67,15 @@ const plans = {
         { size: '10 Lakh', price: '299', title: '10L PTP' },
         { size: '25 Lakh', price: '399', title: '25L PTP' },
         { size: '50 Lakh', price: '499', title: '50L PTP' },
+    ],
+    forex: [
+        { size: '$5k', price: '2,999', title: '$5k Forex 2-Step' },
+        { size: '$10k', price: '4,999', title: '$10k Forex 2-Step' },
+        { size: '$25k', price: '9,999', title: '$25k Forex 2-Step' },
+        { size: '$50k', price: '16,999', title: '$50k Forex 2-Step' },
+        { size: '$100k', price: '29,999', title: '$100k Forex 2-Step' },
+        { size: '$200k', price: '49,999', title: '$200k Forex 2-Step' },
+        { size: '$400k', price: '89,999', title: '$400k Forex 2-Step' },
     ]
 };
 
@@ -84,6 +97,7 @@ export function ArenaView({
     const router = useRouter();
     const { toast } = useToast();
     const [isActionPending, startTransition] = useTransition();
+    const [marketSegment, setMarketSegment] = useState<'indian' | 'forex'>('indian');
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
     const [checkoutStep, setCheckoutStep] = useState<'selection' | 'method' | 'direct-pay'>('selection');
     const [utr, setUtr] = useState('');
@@ -154,9 +168,6 @@ export function ArenaView({
         });
     };
 
-    /**
-     * Triggers the automated gateway handshake (LG-Pay or WatchPay)
-     */
     const handleGatewayPurchase = async () => {
         const finalPrice = calculateFinalPrice();
         startTransition(async () => {
@@ -250,7 +261,6 @@ export function ArenaView({
                                 {isActionPending && <Loader2 className="absolute right-6 animate-spin h-5 w-5 text-primary"/>}
                             </button>
 
-                            {/* DYNAMIC SECONDARY BUTTON BASED ON ADMIN SELECTION */}
                             {activeGateway === 'cashfree' ? (
                                 <button 
                                     onClick={handleExternalPurchase}
@@ -260,7 +270,7 @@ export function ArenaView({
                                         <Zap className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Cashfree Gateway</p>
+                                        <p className="text-base font-bold text-white">Automated Gateway</p>
                                         <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">UPI / Cards / NetBanking</p>
                                     </div>
                                 </button>
@@ -287,11 +297,7 @@ export function ArenaView({
                                         <Zap className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-white">
-                                            {activeGateway === 'automated' ? 'Automated Gateway' : 
-                                             activeGateway === 'lgpay' ? 'Automated Gateway' : 
-                                             'Automated Gateway'}
-                                        </p>
+                                        <p className="text-base font-bold text-white">Automated Gateway</p>
                                         <p className="text-[11px] text-primary font-bold uppercase tracking-wider mt-1">Instant Bank Handshake</p>
                                     </div>
                                     {isActionPending && <Loader2 className="animate-spin h-5 w-5 text-primary" />}
@@ -407,7 +413,9 @@ export function ArenaView({
             <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className={cn("text-lg font-bold", plan.isFlashSale && "text-primary text-xl")}>₹{plan.size}</CardTitle>
+                        <CardTitle className={cn("text-lg font-bold", plan.isFlashSale && "text-primary text-xl")}>
+                            {marketSegment === 'forex' ? plan.size : `₹${plan.size}`}
+                        </CardTitle>
                         <CardDescription className="text-xs font-medium text-gray-400 mt-1">{category}</CardDescription>
                     </div>
                     <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] font-bold px-1.5">80% Share</Badge>
@@ -421,11 +429,15 @@ export function ArenaView({
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium">
                         <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-                        <span>Drawdown: 10%</span>
+                        <span>Overall Drawdown: 10%</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                        <span>Daily Drawdown: 5%</span>
                     </div>
                 </div>
                 <div className="pt-4 border-t border-white/5">
-                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Capital Fee</p>
+                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Activation Fee</p>
                     <div className="flex items-baseline gap-2">
                         <p className={cn("text-xl font-bold text-primary mt-0.5 group-hover:scale-105 transition-transform origin-left", plan.isFlashSale && "text-2xl text-white")}>₹{plan.price}</p>
                         {plan.isFlashSale && <span className="text-[10px] text-red-500 font-black line-through">₹49,500</span>}
@@ -437,67 +449,113 @@ export function ArenaView({
                     onClick={() => { setSelectedPlan(plan); setCheckoutStep('method'); }} 
                     className={cn("w-full font-bold h-10 rounded-xl text-xs shadow-lg uppercase tracking-widest", plan.isFlashSale ? "bg-white text-black hover:bg-gray-100" : "")}
                 >
-                    Activate Now
+                    Buy Plan
                 </Button>
             </CardFooter>
         </Card>
     );
 
-    const RulesPill = ({ href, label }: { href: string, label?: string }) => (
-        <div className="flex justify-center mb-8">
-            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
-                <Link href={href}>
-                    <HelpCircle className="w-3.5 h-3.5" />
-                    {label || "View Rules"}
-                </Link>
-            </Button>
-        </div>
-    );
-
-    const gridCols = isPtpActive ? "lg:grid-cols-4" : "lg:grid-cols-3";
-
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-            <div className="space-y-1">
-                <h2 className="text-2xl font-bold text-white tracking-tight">Get Funded</h2>
-                <p className="text-gray-400 text-sm font-medium">Select your path to capital and secure your evaluation account.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Get Funded</h2>
+                    <p className="text-gray-400 text-sm font-medium">Select your market and secure your evaluation account.</p>
+                </div>
+
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-1 flex items-center h-12 shadow-2xl">
+                    <button 
+                        onClick={() => setMarketSegment('indian')}
+                        className={cn(
+                            "flex items-center gap-2 px-6 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            marketSegment === 'indian' ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-gray-300"
+                        )}
+                    >
+                        <LayoutGrid className="w-3.5 h-3.5" />
+                        Indian Market
+                    </button>
+                    <button 
+                        onClick={() => setMarketSegment('forex')}
+                        className={cn(
+                            "flex items-center gap-2 px-6 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            marketSegment === 'forex' ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-gray-300"
+                        )}
+                    >
+                        <Globe className="w-3.5 h-3.5" />
+                        Forex Arena
+                    </button>
+                </div>
             </div>
 
-            <Tabs defaultValue="instant" className="w-full">
-                <TabsList className={cn("grid w-full max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10", gridCols)}>
-                    <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
-                    <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
-                    <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
-                    {isPtpActive && <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-xs">PTP</TabsTrigger>}
-                </TabsList>
+            {marketSegment === 'indian' ? (
+                <Tabs defaultValue="instant" className="w-full">
+                    <TabsList className={cn("grid w-full max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10", isPtpActive ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
+                        <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
+                        <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
+                        <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
+                        {isPtpActive && <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-xs">PTP</TabsTrigger>}
+                    </TabsList>
 
-                <TabsContent value="instant" className="animate-in fade-in zoom-in-95">
-                    <RulesPill href="/rules/instant-funding" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />)}
-                    </div>
-                </TabsContent>
-                <TabsContent value="oneStep" className="animate-in fade-in zoom-in-95">
-                    <RulesPill href="/rules/one-step" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step" />)}
-                    </div>
-                </TabsContent>
-                <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
-                    <RulesPill href="/rules/two-step-evaluation" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}
-                    </div>
-                </TabsContent>
-                {isPtpActive && (
-                    <TabsContent value="ptp" className="animate-in fade-in zoom-in-95">
-                        <RulesPill href="/pass-then-pay" label="About PassThenPay" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                            {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
+                    <TabsContent value="instant" className="animate-in fade-in zoom-in-95">
+                        <div className="flex justify-center mb-8">
+                            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
+                                <Link href="/rules/instant-funding"><HelpCircle className="w-3.5 h-3.5" /> View Rules</Link>
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />)}
                         </div>
                     </TabsContent>
-                )}
-            </Tabs>
+                    <TabsContent value="oneStep" className="animate-in fade-in zoom-in-95">
+                        <div className="flex justify-center mb-8">
+                            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
+                                <Link href="/rules/one-step"><HelpCircle className="w-3.5 h-3.5" /> View Rules</Link>
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step" />)}
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="twoStep" className="animate-in fade-in zoom-in-95">
+                        <div className="flex justify-center mb-8">
+                            <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
+                                <Link href="/rules/two-step-evaluation"><HelpCircle className="w-3.5 h-3.5" /> View Rules</Link>
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step" />)}
+                        </div>
+                    </TabsContent>
+                    {isPtpActive && (
+                        <TabsContent value="ptp" className="animate-in fade-in zoom-in-95">
+                            <div className="flex justify-center mb-8">
+                                <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-6 py-1 h-9 text-xs font-bold gap-2">
+                                    <Link href="/pass-then-pay"><HelpCircle className="w-3.5 h-3.5" /> About PassThenPay</Link>
+                                </Button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                                {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PTP" />)}
+                            </div>
+                        </TabsContent>
+                    )}
+                </Tabs>
+            ) : (
+                <div className="animate-in fade-in zoom-in-95">
+                    <div className="flex justify-center mb-10">
+                        <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2">
+                            <Link href="/rules/forex-two-step"><Coins className="w-4 h-4" /> Forex Arena Protocols</Link>
+                        </Button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />)}
+                    </div>
+                    <GlassCard className="mt-12 p-8 border-primary/10 bg-primary/5 text-center">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.5em] mb-3">Expansion Alert</p>
+                        <h4 className="text-xl font-bold text-white mb-2 tracking-tight">Forex 1-Step and Instant coming soon.</h4>
+                        <p className="text-xs text-gray-500 max-w-md mx-auto">We are actively provisioning liquidity bridges for more Forex models. Stay tuned for updates.</p>
+                    </GlassCard>
+                </div>
+            )}
 
             {/* Premium Trial Banner */}
             <div className="pt-12">
@@ -516,16 +574,8 @@ export function ArenaView({
                             Experience the Broker <br /> <span className="text-primary">Trial for 48 Hours.</span>
                         </h3>
                         <p className="text-gray-400 max-w-md text-base font-medium">
-                            Test our high-fidelity institutional terminal with ₹5 Lakh simulated capital. Market-aware logic ensures your clock only ticks on trading days.
+                            Test our high-fidelity institutional terminal with ₹5 Lakh simulated capital.
                         </p>
-                        <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
-                            <div className="flex items-center gap-2 text-green-400 font-bold text-xs uppercase tracking-widest">
-                                <CheckCircle className="h-4 w-4" /> Instant Activation
-                            </div>
-                            <div className="flex items-center gap-2 text-green-400 font-bold text-xs uppercase tracking-widest">
-                                <CheckCircle className="h-4 w-4" /> No KYC Required
-                            </div>
-                        </div>
                     </div>
                     <div className="shrink-0 w-full md:w-auto relative z-10">
                         <Button 
@@ -535,7 +585,6 @@ export function ArenaView({
                         >
                             {isStartingTrial ? <Loader2 className="h-5 w-5 animate-spin"/> : "Start Free Trial"}
                         </Button>
-                        <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-widest mt-4">Valid once per trader session</p>
                     </div>
                 </GlassCard>
             </div>

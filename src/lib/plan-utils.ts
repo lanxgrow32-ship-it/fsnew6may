@@ -1,7 +1,8 @@
+
 /**
  * Consolidated utility functions for plan classification and balance parsing.
  * Shared between Admin, Welcome, and API routes to ensure Stockmint synchronization.
- * Follows SPEC v4.0
+ * Follows SPEC v4.1 (Forex Aware)
  */
 
 export function getAutoClassification(planName: string): string {
@@ -11,6 +12,12 @@ export function getAutoClassification(planName: string): string {
     if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
         return 'passthenpay';
     }
+    
+    // Forex plans are strictly 2-Step for now as per SPEC
+    if (name.includes('forex')) {
+        return 'two_step_phase_1';
+    }
+
     if (name.includes('instant')) return 'instant_live';
     
     if (name.includes('1-step') || name.includes('1step') || name.includes('one step') || name.includes('one-step')) {
@@ -26,7 +33,22 @@ export function getAutoClassification(planName: string): string {
 
 export function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
-    // Strip currency symbols and common noise
+    
+    // Handle USD Forex plans (e.g. "$100k Forex")
+    if (planName.includes('$')) {
+        const usdMatch = planName.match(/\$(\d+)\s*(k|m)?/i);
+        if (usdMatch) {
+            let amount = parseFloat(usdMatch[1]);
+            const unit = usdMatch[2]?.toLowerCase();
+            if (unit === 'k') amount *= 1000;
+            if (unit === 'm') amount *= 1000000;
+            // NOTE: We return the balance in USD if the plan is Forex. 
+            // The Stockmint API should be configured to interpret this based on classification.
+            return amount;
+        }
+    }
+
+    // Strip currency symbols and common noise for INR plans
     const name = planName.toLowerCase().replace(/[₹$,]/g, '').trim();
     
     // 1. Check for units like K, L, Cr, Lakh
