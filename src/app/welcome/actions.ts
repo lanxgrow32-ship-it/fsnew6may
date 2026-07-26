@@ -708,6 +708,15 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     return { success: true, transaction_id: event.is_free ? 'FREE' : txId, amount: event.is_free ? 0 : event.entry_fee };
 }
 
+export async function getCompetitionEvents() {
+    const { data } = await supabaseAdmin
+        .from('competition_events')
+        .select('*')
+        .eq('is_active', true)
+        .order('start_date', { ascending: true });
+    return data || [];
+}
+
 export async function startFreeTrial(userId: string) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return { error: 'Trader not found.' };
