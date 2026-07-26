@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect, useRef, useActionState } from 'react';
+import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, Megaphone, ShieldAlert } from 'lucide-react';
+import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, Megaphone, ShieldAlert, Globe, LayoutGrid } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { cn } from '@/lib/utils';
 
 function CreateAdminForm({ className }: { className?: string }) {
     const ref = useRef<HTMLFormElement>(null);
@@ -153,7 +154,20 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
   const [totalDbCount, setTotalDbCount] = useState(initialCount);
+  const [marketType, setMarketType] = useState<'indian' | 'forex'>('indian');
   const { toast } = useToast();
+  
+  // Persist market selection
+  useEffect(() => {
+    const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex';
+    if (saved) setMarketType(saved);
+  }, []);
+
+  const handleMarketSwitch = (type: 'indian' | 'forex') => {
+      setMarketType(type);
+      localStorage.setItem('fs_admin_market', type);
+      toast({ title: `Context Switched`, description: `Viewing ${type === 'indian' ? 'Indian Market' : 'Forex Arena'}` });
+  }
   
   useEffect(() => {
     setProfiles(initialProfiles);
@@ -213,11 +227,14 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
       fetchProfiles();
   }
 
-  const visibleProfiles = profiles;
+  const filteredProfiles = useMemo(() => {
+    return profiles.filter(p => p.market_type === marketType || (!p.market_type && marketType === 'indian'));
+  }, [profiles, marketType]);
+
   const stats = [
-    { title: "Total Users", value: totalDbCount || 0, icon: User },
-    { title: "Pending Approval", value: visibleProfiles.filter(p => !p.is_approved).length || 0, icon: User },
-    { title: "KYC Submitted", value: visibleProfiles.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
+    { title: "Total Traders", value: filteredProfiles.length || 0, icon: User },
+    { title: "Pending Approval", value: filteredProfiles.filter(p => !p.is_approved).length || 0, icon: User },
+    { title: "KYC Submitted", value: filteredProfiles.filter(p => p.kyc_status === 'submitted').length || 0, icon: User },
   ];
 
   return (
@@ -231,6 +248,32 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
+            <SidebarMenuItem>
+                <div className="px-2 py-4 space-y-4">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-2">Market Context</p>
+                    <div className="flex flex-col gap-1">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleMarketSwitch('indian')}
+                            className={cn("justify-start gap-2 h-10 px-3", marketType === 'indian' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
+                        >
+                            <LayoutGrid className="w-4 h-4" />
+                            Indian Market
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleMarketSwitch('forex')}
+                            className={cn("justify-start gap-2 h-10 px-3", marketType === 'forex' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
+                        >
+                            <Globe className="w-4 h-4" />
+                            Forex Arena
+                        </Button>
+                    </div>
+                    <Separator className="opacity-50" />
+                </div>
+            </SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" isActive tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/activation-hub" tooltip="Activation Hub"><ShieldAlert />Activation Hub</SidebarMenuButton></SidebarMenuItem>
@@ -250,20 +293,28 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
       </Sidebar>
       <SidebarInset>
         <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-           <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-semibold">User Management</h1></div>
+           <div className="flex items-center gap-4">
+                <SidebarTrigger className="md:hidden" />
+                <h1 className="text-xl font-bold uppercase tracking-tight flex items-center gap-3">
+                    User Management
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] font-black uppercase">
+                        {marketType === 'indian' ? 'Indian' : 'Forex'}
+                    </Badge>
+                </h1>
+           </div>
            <div className="flex items-center gap-4"><ThemeToggle /><CreateAdminForm className="hidden md:flex"/><ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}><AdminNav /></ClientOnly></div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
                 {stats.map(stat => (
-                    <Card key={stat.title} className="shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{stat.title}</CardTitle><stat.icon className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                        <CardContent><div className="text-2xl font-bold">{stat.value}</div></CardContent>
+                    <Card key={stat.title} className="shadow-sm border-white/5 bg-card">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.title}</CardTitle><stat.icon className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                        <CardContent><div className="text-3xl font-black text-foreground">{stat.value}</div></CardContent>
                     </Card>
                 ))}
             </div>
             <CreateAdminForm className="w-full md:hidden mb-6" />
-            <ClientOnly fallback={<UserTableSkeleton />}><UserTable profiles={visibleProfiles || []} onUserDelete={onUserDelete} onUserDeleteError={handleUserDeleteError} onUserUpdate={handleUserUpdate} /></ClientOnly>
+            <ClientOnly fallback={<UserTableSkeleton />}><UserTable profiles={filteredProfiles || []} onUserDelete={onUserDelete} onUserDeleteError={handleUserDeleteError} onUserUpdate={handleUserUpdate} /></ClientOnly>
         </main>
       </SidebarInset>
     </SidebarProvider>

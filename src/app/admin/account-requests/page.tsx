@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -39,6 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { approveAccount, deleteAccountRequest } from './actions';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 export default function AccountRequestsPage() {
     const supabase = createClient();
@@ -47,10 +47,23 @@ export default function AccountRequestsPage() {
     const [loading, setLoading] = useState(true);
     const [isPending, startTransition] = useTransition();
     
+    // Global Market Context
+    const [marketType, setMarketType] = useState<'indian' | 'forex'>('indian');
+
     // Search and Filter States
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('pending');
-    const [marketFilter, setMarketFilter] = useState('all');
+
+    useEffect(() => {
+        const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex';
+        if (saved) setMarketType(saved);
+    }, []);
+
+    const handleMarketSwitch = (type: 'indian' | 'forex') => {
+        setMarketType(type);
+        localStorage.setItem('fs_admin_market', type);
+        toast({ title: `Market Switched`, description: `Context updated to ${type === 'indian' ? 'Indian' : 'Forex'}` });
+    }
 
     const fetchRequests = async () => {
         setLoading(true);
@@ -70,6 +83,9 @@ export default function AccountRequestsPage() {
 
     const filteredRequests = useMemo(() => {
         return requests.filter(req => {
+            // Global Market Filter
+            if (req.market_type !== marketType && !(marketType === 'indian' && !req.market_type)) return false;
+
             const profile = req.profiles || {};
             const fullName = (profile.full_name || '').toLowerCase();
             const email = (profile.email || '').toLowerCase();
@@ -81,13 +97,9 @@ export default function AccountRequestsPage() {
             else if (statusFilter === 'approved') matchesStatus = req.is_approved;
             else if (statusFilter === 'rejected') matchesStatus = req.status === 'rejected';
 
-            let matchesMarket = true;
-            if (marketFilter === 'indian') matchesMarket = req.market_type === 'indian';
-            else if (marketFilter === 'forex') matchesMarket = req.market_type === 'forex';
-
-            return matchesSearch && matchesStatus && matchesMarket;
+            return matchesSearch && matchesStatus;
         });
-    }, [requests, searchTerm, statusFilter, marketFilter]);
+    }, [requests, searchTerm, statusFilter, marketType]);
 
     const handleApprove = (id: string) => {
         startTransition(async () => {
@@ -122,6 +134,32 @@ export default function AccountRequestsPage() {
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarMenu>
+                        <SidebarMenuItem>
+                            <div className="px-2 py-4 space-y-4">
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-2">Market Context</p>
+                                <div className="flex flex-col gap-1">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => handleMarketSwitch('indian')}
+                                        className={cn("justify-start gap-2 h-10 px-3", marketType === 'indian' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
+                                    >
+                                        <LayoutGrid className="w-4 h-4" />
+                                        Indian Market
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => handleMarketSwitch('forex')}
+                                        className={cn("justify-start gap-2 h-10 px-3", marketType === 'forex' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
+                                    >
+                                        <Globe className="w-4 h-4" />
+                                        Forex Arena
+                                    </Button>
+                                </div>
+                                <Separator className="opacity-50" />
+                            </div>
+                        </SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" isActive><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/activation-hub"><ShieldAlert />Activation Hub</SidebarMenuButton></SidebarMenuItem>
@@ -141,7 +179,15 @@ export default function AccountRequestsPage() {
             </Sidebar>
             <SidebarInset>
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
-                    <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold">Activation Ledger</h1></div>
+                    <div className="flex items-center gap-4">
+                        <SidebarTrigger className="md:hidden" />
+                        <h1 className="text-xl font-bold uppercase tracking-tight flex items-center gap-3">
+                            Activation Ledger
+                            <Badge className="bg-primary/5 text-primary border-primary/20 text-[10px] font-black uppercase">
+                                {marketType === 'indian' ? 'Indian' : 'Forex'}
+                            </Badge>
+                        </h1>
+                    </div>
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40 space-y-6">
@@ -156,19 +202,6 @@ export default function AccountRequestsPage() {
                             />
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <Select value={marketFilter} onValueChange={setMarketFilter}>
-                                <SelectTrigger className="w-[160px] h-11 bg-card">
-                                    <div className="flex items-center gap-2">
-                                        <Globe className="h-4 w-4 text-muted-foreground" />
-                                        <SelectValue placeholder="Market" />
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Markets</SelectItem>
-                                    <SelectItem value="indian">Indian Market</SelectItem>
-                                    <SelectItem value="forex">Forex Market</SelectItem>
-                                </SelectContent>
-                            </Select>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="w-[180px] h-11 bg-card">
                                     <div className="flex items-center gap-2">
@@ -189,7 +222,7 @@ export default function AccountRequestsPage() {
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>{statusFilter === 'pending' ? 'Pending Requests' : 'Activation History'}</CardTitle>
-                                <CardDescription>Managing {marketFilter !== 'all' ? marketFilter.toUpperCase() : 'Global'} manual verifications.</CardDescription>
+                                <CardDescription>Managing {marketType.toUpperCase()} manual verifications.</CardDescription>
                             </div>
                             <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-lg border border-white/5">
                                 <History className="w-4 h-4 text-gray-500" />
@@ -204,7 +237,6 @@ export default function AccountRequestsPage() {
                                             <TableHead>Arrival Time</TableHead>
                                             <TableHead>Trader</TableHead>
                                             <TableHead>Plan</TableHead>
-                                            <TableHead>Market</TableHead>
                                             <TableHead>Reference (UTR)</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
@@ -221,12 +253,6 @@ export default function AccountRequestsPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline" className="font-bold bg-black/20 text-primary border-primary/20 text-[10px]">{req.plan_name}</Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        {req.market_type === 'forex' ? <Globe className="w-3.5 h-3.5 text-blue-500" /> : <LayoutGrid className="w-3.5 h-3.5 text-green-600" />}
-                                                        <span className="text-[10px] font-black uppercase tracking-widest">{req.market_type || 'INDIAN'}</span>
-                                                    </div>
                                                 </TableCell>
                                                 <TableCell className="font-mono text-[10px] font-black text-gray-500 uppercase">
                                                     {req.transaction_id || 'N/A'}
@@ -249,18 +275,13 @@ export default function AccountRequestsPage() {
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
-                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">No requests found matching your filters.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={5} className="text-center py-20 text-muted-foreground font-medium italic">No requests found matching your filters.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
                             )}
                         </CardContent>
                     </Card>
-                    <div className="bg-muted p-4 rounded-xl border border-white/5">
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-center">
-                            Note: Market classification is automatically determined by the plan title.
-                        </p>
-                    </div>
                 </main>
             </SidebarInset>
         </SidebarProvider>
