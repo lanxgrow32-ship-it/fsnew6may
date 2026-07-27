@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -411,9 +410,7 @@ export async function validateCoupon(code: string) {
 export async function requestManualAccount(userId: string, planName: string, amountInr: number, utr: string) {
   if (!userId || !planName || !amountInr || !utr) return { error: 'Invalid request details.' };
   
-  const basePrice = amountInr;
-  const surcharge = basePrice * 0.25;
-  const finalPricePaid = basePrice + surcharge;
+  const finalPricePaid = amountInr; // Zero Fee v1.0
 
   const classification = getAutoClassification(planName);
   const marketType = getMarketType(planName);
@@ -450,15 +447,14 @@ export async function initiateGatewayPayment(userId: string, plan: any, gateway:
         else activeGateway = Math.random() > 0.5 ? 'lgpay' : 'watchpay';
     }
 
-    const baseAmount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
-    const finalAmount = baseAmount * 1.25;
+    const finalAmount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
 
     const order_sn = `FS_${Date.now()}_${randomBytes(3).toString('hex')}`;
 
     if (plan.title === 'WALLET_TOPUP') {
         await supabaseAdmin.from('wallet_transactions').insert({
             user_id: userId,
-            amount: baseAmount, 
+            amount: finalAmount, 
             type: 'deposit',
             status: 'pending',
             gateway_transaction_id: order_sn,
@@ -548,7 +544,6 @@ export async function topUpWallet(userId: string, amount: number, utr: string) {
   if (!userId || isNaN(amount) || amount < 10000 || !utr) {
     return { error: 'Minimum wallet deposit is ₹10,000.' };
   }
-  const finalPaid = amount * 1.25;
 
   const { error } = await supabaseAdmin.from('wallet_transactions').insert({
       user_id: userId, 
@@ -556,7 +551,7 @@ export async function topUpWallet(userId: string, amount: number, utr: string) {
       type: 'deposit', 
       gateway_transaction_id: utr,
       status: 'pending', 
-      description: `Wallet Top-up Request (Paid: ₹${finalPaid})`
+      description: `Wallet Top-up Request`
   });
   if (error) return { error: error.message };
   revalidatePath('/welcome');

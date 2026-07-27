@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -50,9 +49,8 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
     const parsedAmount = parseFloat(amount) || 0;
     const isBelowMin = parsedAmount > 0 && parsedAmount < 10000;
     
-    // Fee Calculations (v6.0)
-    const surchargeAmount = parsedAmount * 0.25;
-    const totalUpiToPay = parsedAmount + surchargeAmount;
+    // Fee Calculations (v7.0: Zero Fee Model)
+    const finalAmountToPay = parsedAmount;
     const cryptoUsdtToPay = parseFloat((parsedAmount / 96).toFixed(2));
 
     const activeGateway = paymentSettings?.active_payment_gateway || 'manual';
@@ -81,7 +79,6 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
         }
 
         startTransition(async () => {
-            // Note: initiateGatewayPayment handles the 25% surcharge calculation internally
             const res = await initiateGatewayPayment(profile.id, { title: 'WALLET_TOPUP', price: parsedAmount }, activeGateway);
             if (res.error) {
                 toast({ title: "Gateway Error", description: res.error, variant: "destructive" });
@@ -126,7 +123,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight uppercase">Recharge Center</h2>
-                    <p className="text-gray-400 text-sm font-medium">Recharge your wallet to purchase evaluation plans instantly.</p>
+                    <p className="text-gray-400 text-sm font-medium">Recharge your wallet to purchase evaluation plans instantly. Now with 0% Fees.</p>
                 </div>
 
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-1 flex items-center shadow-2xl">
@@ -143,7 +140,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                             <div className="p-3 rounded-2xl bg-primary/20 text-primary border border-primary/20 w-fit"><Zap className="w-6 h-6" /></div>
                             <div className="space-y-2">
                                 <h3 className="text-2xl font-black text-white uppercase tracking-tight">Standard Gateway</h3>
-                                <p className="text-gray-400 text-sm leading-relaxed">Deposit via automated UPI. Note: This method includes a **25% platform fee**.</p>
+                                <p className="text-gray-400 text-sm leading-relaxed">Deposit via automated UPI. Zero surcharges applied on this method.</p>
                             </div>
                             <div className="space-y-4 pt-2">
                                 <div className="space-y-2">
@@ -152,8 +149,8 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                                 </div>
                                 {parsedAmount >= 10000 && (
                                     <div className="bg-black/40 border border-white/10 rounded-2xl p-4 space-y-3">
-                                        <div className="flex justify-between text-xs font-bold"><span className="text-gray-500 uppercase">Gateway Fee (25%)</span><span className="text-amber-500">+ ₹{surchargeAmount.toLocaleString()}</span></div>
-                                        <div className="flex justify-between text-sm font-black border-t border-white/5 pt-3"><span className="text-white uppercase">Total to Pay</span><span className="text-primary">₹{totalUpiToPay.toLocaleString()}</span></div>
+                                        <div className="flex justify-between text-xs font-bold"><span className="text-gray-500 uppercase">Gateway Fee</span><span className="text-green-500">0%</span></div>
+                                        <div className="flex justify-between text-sm font-black border-t border-white/5 pt-3"><span className="text-white uppercase">Total to Pay</span><span className="text-primary">₹{finalAmountToPay.toLocaleString()}</span></div>
                                     </div>
                                 )}
                                 <Button onClick={handleAutoTopUp} disabled={isPending || !amount || isBelowMin} className="w-full h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20">
@@ -211,7 +208,7 @@ export function WalletView({ profile, paymentSettings }: { profile: any, payment
                                     <div className="space-y-2"><Label className={cn("text-[10px] font-black uppercase", isBelowMin ? "text-red-500" : "text-gray-500")}>Requested Credit (INR)</Label><Input type="number" placeholder="Min ₹10,000" value={amount} onChange={(e) => setAmount(e.target.value)} required className="bg-black/20 border-white/10 text-white h-12 text-sm font-bold" /></div>
                                     <div className="space-y-2"><Label className="text-[10px] font-black text-gray-500 uppercase">Transaction ID (UTR)</Label><Input placeholder="12-digit UPI reference" value={utr} onChange={(e) => setUtr(e.target.value)} required className="bg-black/20 border-white/10 text-white h-12 text-sm font-mono" /></div>
                                     {parsedAmount >= 10000 && (
-                                        <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl flex justify-between items-center"><span className="text-[10px] font-black text-amber-500 uppercase">Pay Exactly (UPI + 25%)</span><span className="text-sm font-black text-white">₹{totalUpiToPay.toLocaleString()}</span></div>
+                                        <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl flex justify-between items-center"><span className="text-[10px] font-black text-green-500 uppercase">Pay Exactly</span><span className="text-sm font-black text-white">₹{finalAmountToPay.toLocaleString()}</span></div>
                                     )}
                                 </div>
                                 <Button type="submit" disabled={isPending || !amount || !utr || isBelowMin} variant="outline" className="w-full h-12 font-black border-white/10 hover:bg-white/5 text-white text-[10px] uppercase tracking-widest">{isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <Send className="mr-2 h-3.5 w-3.5" />} Submit Request</Button>

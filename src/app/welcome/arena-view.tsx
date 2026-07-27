@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -162,14 +161,6 @@ export function ArenaView({
         return base;
     }
 
-    const calculateSurchargeAmount = () => {
-        return calculateFinalPrice() * 0.25;
-    }
-
-    const calculateUpiTotalPrice = () => {
-        return calculateFinalPrice() + calculateSurchargeAmount();
-    }
-
     const calculateUsdPrice = () => {
         if (!selectedPlan) return 0;
         if (marketSegment === 'forex') {
@@ -256,7 +247,7 @@ export function ArenaView({
                     <div className="space-y-4 flex-1">
                         <div className="space-y-1">
                             <h2 className="text-2xl font-bold text-white tracking-tight">Select Checkout Method</h2>
-                            <p className="text-gray-400 text-sm font-medium">Standard payment options for account activation.</p>
+                            <p className="text-gray-400 text-sm font-medium">Choose your preferred payment method. Now with 0% Fees across all options.</p>
                         </div>
 
                         {!isPTP && (
@@ -297,7 +288,7 @@ export function ArenaView({
                                 <div className="flex-1">
                                     <p className="text-base font-bold text-white">Wallet Balance</p>
                                     <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
-                                        <Timer className="w-3 h-3" /> No Fees • Instant Activation
+                                        <Timer className="w-3 h-3" /> 0% Fees • Instant Activation
                                     </p>
                                 </div>
                             </button>
@@ -314,14 +305,14 @@ export function ArenaView({
                                         <p className="text-base font-bold text-white">Crypto (USDT)</p>
                                         <Badge className="bg-green-500 text-white text-[8px] font-black h-4 px-1.5 uppercase">0% FEES</Badge>
                                     </div>
-                                    <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mt-1">Recommended: Save 25% on fees</p>
+                                    <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mt-1">Global Standard • No Surcharges</p>
                                 </div>
                             </button>
 
                             <div className="relative py-4">
                                 <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
                                 <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.3em] text-gray-700">
-                                    <span className="bg-slate-950 px-4">UPI Options (+25% Fee)</span>
+                                    <span className="bg-slate-950 px-4">UPI Checkout (0% Fees)</span>
                                 </div>
                             </div>
 
@@ -336,7 +327,7 @@ export function ArenaView({
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-base font-bold text-white">Automated UPI Gateway</p>
-                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Direct Bank Access • 25% Platform Fee</p>
+                                        <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider mt-1">Direct Bank Access • 0% Fees</p>
                                     </div>
                                 </button>
                             )}
@@ -351,7 +342,7 @@ export function ArenaView({
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-base font-bold text-white">Manual Transfer</p>
-                                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">QR Code Payment • 25% Platform Fee</p>
+                                        <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider mt-1">QR Code Payment • 0% Fees</p>
                                     </div>
                                 </button>
                             )}
@@ -368,20 +359,16 @@ export function ArenaView({
                                 </div>
                                 
                                 <div className="pt-4 border-t border-white/5 space-y-2">
-                                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Final Amount by Method</p>
+                                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Fee Comparison</p>
                                     <div className="flex justify-between items-center text-xs font-bold text-green-400">
-                                        <span>Crypto / Wallet</span>
-                                        <span>₹{calculateFinalPrice().toLocaleString('en-IN')}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs font-bold text-amber-500">
-                                        <span>UPI (+25% Fee)</span>
-                                        <span>₹{calculateUpiTotalPrice().toLocaleString('en-IN')}</span>
+                                        <span>UPI / Crypto</span>
+                                        <span>0% Fees</span>
                                     </div>
                                 </div>
 
                                 <div className="pt-6 border-t border-white/5 bg-primary/5 -mx-6 px-6 py-4 flex flex-col gap-1 items-center text-center">
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">You Pay Today (USDT)</p>
-                                    <p className="text-3xl font-black text-white">{calculateUsdPrice()} <span className="text-sm opacity-40">USDT</span></p>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">Final Amount to Pay</p>
+                                    <p className="text-3xl font-black text-white">₹{calculateFinalPrice().toLocaleString('en-IN')}</p>
                                 </div>
                             </div>
                         </GlassCard>
@@ -419,7 +406,7 @@ export function ArenaView({
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest text-center">Transfer to Address (TRC-20)</p>
+                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center">Transfer to Address (TRC-20)</p>
                                     <div className="p-4 bg-black/60 rounded-2xl border border-white/10 break-all text-xs font-mono font-bold text-white leading-relaxed text-center">
                                         {walletAddress}
                                     </div>
@@ -462,7 +449,7 @@ export function ArenaView({
         const isPTP = selectedPlan.title.toLowerCase().includes('ptp');
         const upiId = isPTP ? paymentSettings?.pay_later_upi_id : paymentSettings?.upi_id;
         const qrUrl = isPTP ? paymentSettings?.pay_later_qr_code_url : paymentSettings?.qr_code_url;
-        const finalUpiPrice = calculateUpiTotalPrice();
+        const finalPrice = calculateFinalPrice();
 
         return (
             <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
@@ -472,7 +459,7 @@ export function ArenaView({
 
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Manual Payment</h2>
-                    <p className="text-gray-400 text-sm font-medium">Verify your transfer by providing the reference ID.</p>
+                    <p className="text-gray-400 text-sm font-medium">Verify your transfer by providing the reference ID. Now with 0% Fees.</p>
                 </div>
 
                 <GlassCard className="p-0 border-primary/20">
@@ -480,7 +467,7 @@ export function ArenaView({
                         <div className="p-8 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 w-full md:w-[280px] shrink-0 flex flex-col items-center justify-center gap-6 text-center">
                             <div className="space-y-1">
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Pay Amount</p>
-                                <p className="text-3xl font-bold text-primary tracking-tight">₹{finalUpiPrice.toLocaleString('en-IN')}</p>
+                                <p className="text-3xl font-bold text-primary tracking-tight">₹{finalPrice.toLocaleString('en-IN')}</p>
                             </div>
 
                             <div className="bg-white p-2 rounded-xl shadow-2xl">
@@ -501,7 +488,7 @@ export function ArenaView({
                         </div>
                         <form onSubmit={handleDirectSubmit} className="flex-1 p-8 flex flex-col justify-center space-y-6">
                             <div className="space-y-3">
-                                <Label className="text-11px] font-bold text-gray-500 uppercase tracking-widest">Transaction Reference (UTR)</Label>
+                                <Label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Transaction Reference (UTR)</Label>
                                 <Input 
                                     placeholder="Enter 12-digit UPI reference" 
                                     value={utr} 
@@ -511,7 +498,7 @@ export function ArenaView({
                                 />
                                 <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium bg-white/5 p-2 rounded-lg border border-white/5">
                                     <CheckCircle className="h-3 w-3 text-green-500"/>
-                                    Verification required for manual transfers.
+                                    0% Platform Surcharge applied.
                                 </div>
                             </div>
                             <Button type="submit" disabled={isActionPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">
