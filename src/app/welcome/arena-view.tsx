@@ -277,22 +277,42 @@ export function ArenaView({
                         )}
 
                         <div className="grid grid-cols-1 gap-4">
-                            <button 
-                                onClick={handleWalletPurchase} 
-                                disabled={isActionPending}
-                                className="group relative flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50 shadow-2xl"
-                            >
-                                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(139,44,245,0.1)]">
-                                    <Wallet className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-base font-bold text-white">Wallet Balance</p>
-                                    <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
-                                        <Timer className="w-3 h-3" /> 0% Fees • Instant Activation
-                                    </p>
-                                </div>
-                            </button>
+                            {/* UPI METHODS FIRST */}
+                            {activeGateway !== 'manual' && activeGateway !== 'cashfree' && (
+                                <button 
+                                    onClick={handleGatewayPurchase}
+                                    disabled={isActionPending}
+                                    className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50 shadow-2xl"
+                                >
+                                    <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(139,44,245,0.1)]">
+                                        <Zap className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-base font-bold text-white">Automated UPI Gateway</p>
+                                            <Badge className="bg-green-500 text-white text-[8px] font-black h-4 px-1.5 uppercase">FASTEST</Badge>
+                                        </div>
+                                        <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider mt-1">Direct Bank Access • 0% Fees</p>
+                                    </div>
+                                </button>
+                            )}
 
+                            {activeGateway === 'manual' && (
+                                <button 
+                                    onClick={() => setCheckoutStep('direct-pay')}
+                                    className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50 shadow-2xl"
+                                >
+                                    <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                        <CreditCard className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-base font-bold text-white">Manual UPI Transfer</p>
+                                        <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider mt-1">QR Code Payment • 0% Fees</p>
+                                    </div>
+                                </button>
+                            )}
+
+                            {/* CRYPTO SECOND */}
                             <button 
                                 onClick={() => setCheckoutStep('crypto-pay')}
                                 className="group flex items-center gap-4 p-6 bg-green-500/10 border border-green-500/30 rounded-3xl text-left transition-all hover:bg-green-500/20 hover:border-green-400 shadow-2xl shadow-green-900/10"
@@ -309,43 +329,22 @@ export function ArenaView({
                                 </div>
                             </button>
 
-                            <div className="relative py-4">
-                                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
-                                <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.3em] text-gray-700">
-                                    <span className="bg-slate-950 px-4">UPI Checkout (0% Fees)</span>
+                            {/* WALLET BALANCE AT THE END */}
+                            <button 
+                                onClick={handleWalletPurchase} 
+                                disabled={isActionPending}
+                                className="group relative flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50 shadow-2xl"
+                            >
+                                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(139,44,245,0.1)]">
+                                    <Wallet className="w-6 h-6" />
                                 </div>
-                            </div>
-
-                            {activeGateway !== 'manual' && activeGateway !== 'cashfree' && (
-                                <button 
-                                    onClick={handleGatewayPurchase}
-                                    disabled={isActionPending}
-                                    className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
-                                >
-                                    <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <Zap className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Automated UPI Gateway</p>
-                                        <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider mt-1">Direct Bank Access • 0% Fees</p>
-                                    </div>
-                                </button>
-                            )}
-
-                            {activeGateway === 'manual' && (
-                                <button 
-                                    onClick={() => setCheckoutStep('direct-pay')}
-                                    className="group flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl text-left transition-all hover:bg-white/10 hover:border-primary/50"
-                                >
-                                    <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                                        <CreditCard className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-base font-bold text-white">Manual Transfer</p>
-                                        <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider mt-1">QR Code Payment • 0% Fees</p>
-                                    </div>
-                                </button>
-                            )}
+                                <div className="flex-1">
+                                    <p className="text-base font-bold text-white">Wallet Balance</p>
+                                    <p className="text-[11px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
+                                        <Timer className="w-3 h-3" /> 0% Fees • Instant Activation
+                                    </p>
+                                </div>
+                            </button>
                         </div>
                     </div>
 
@@ -361,7 +360,7 @@ export function ArenaView({
                                 <div className="pt-4 border-t border-white/5 space-y-2">
                                     <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Fee Comparison</p>
                                     <div className="flex justify-between items-center text-xs font-bold text-green-400">
-                                        <span>UPI / Crypto</span>
+                                        <span>All Methods</span>
                                         <span>0% Fees</span>
                                     </div>
                                 </div>
@@ -605,7 +604,7 @@ export function ArenaView({
 
             {marketSegment === 'indian' ? (
                 <Tabs value={activeTab} onValueChange={setActiveTab} key="indian-tabs" className="w-full">
-                    <TabsList className={cn("grid w-full max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10", isPtpActive ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
+                    <TabsList className={cn("grid w-full grid-cols-2 md:grid-cols-4 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10", isPtpActive ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
                         <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
                         <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
                         <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
