@@ -47,7 +47,7 @@ const plans = {
         { size: '2 Lakh', price: '9,999', title: '2L Instant' },
         { size: '5 Lakh', price: '17,999', title: '5L Instant' },
         { size: '10 Lakh', price: '28,999', title: '10L Instant' },
-        { size: '25 Lakh', price: '24,999', title: '25L Instant', isFlashSale: true },
+        { size: '25 Lakh', price: '49,999', title: '25L Instant' },
     ],
     oneStep: [
         { size: '1 Lakh', price: '4,599', title: '1L 1-Step' },

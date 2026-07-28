@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +16,7 @@ const instantFundingPlans = [
   { size: '2,00,000', title: '2L Instant Funding', price: '9,999' },
   { size: '5,00,000', title: '5L Instant Funding', price: '17,999' },
   { size: '10,00,000', title: '10L Instant Funding', price: '28,999' },
-  { size: '25,00,000', title: '25L Instant Funding', price: '24,999', isFlashSale: true },
+  { size: '25,00,000', title: '25L Instant Funding', price: '49,999' },
 ];
 
 const oneStepPlans = [
