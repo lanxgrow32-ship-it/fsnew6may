@@ -1,8 +1,7 @@
 /**
  * Consolidated utility functions for plan classification and balance parsing.
  * Shared between Admin, Welcome, and API routes to ensure Stockmint synchronization.
- * Follows SPEC v4.1 (Forex Aware)
- * UPDATED v11.0: Instant Pro Category & 15L Support
+ * Follows SPEC v11.0 (Instant Pro & Forex Aware)
  */
 
 export function getMarketType(planName: string): 'indian' | 'forex' {
@@ -12,12 +11,16 @@ export function getMarketType(planName: string): 'indian' | 'forex' {
     return 'indian';
 }
 
+/**
+ * Maps plan names to the official StockMint Hub classification.
+ * CRITICAL: Returns 'instant_pro' for all PRO category accounts.
+ */
 export function getAutoClassification(planName: string): string {
     if (!planName) return 'evaluation';
     const name = planName.toLowerCase();
     
-    // 1. INSTANT PRO PROTOCOL (v11.0)
-    // This defines the classification for the Hub Handshake
+    // 1. INSTANT PRO CATEGORY (v11.0)
+    // Direct status mapping for the Hub Handshake
     if (name.includes('pro')) {
         return 'instant_pro';
     }
@@ -26,7 +29,6 @@ export function getAutoClassification(planName: string): string {
         return 'passthenpay';
     }
     
-    // Forex plans are strictly 2-Step for now as per SPEC
     if (name.includes('forex')) {
         return 'two_step_phase_1';
     }
@@ -47,7 +49,6 @@ export function getAutoClassification(planName: string): string {
 export function getBalanceFromPlanName(planName: string): number {
     if (!planName) return 0;
     
-    // Handle USD Forex plans (e.g. "$100k Forex")
     if (planName.includes('$')) {
         const usdMatch = planName.match(/\$(\d+)\s*(k|m)?/i);
         if (usdMatch) {
@@ -59,10 +60,7 @@ export function getBalanceFromPlanName(planName: string): number {
         }
     }
 
-    // Strip currency symbols and common noise for INR plans
     const name = planName.toLowerCase().replace(/[₹$,]/g, '').trim();
-    
-    // 1. Check for units like K, L, Cr, Lakh
     const unitMatch = name.match(/([\d.]+)\s*(k|l|lakh|cr|crore)/);
     if (unitMatch) {
         let amount = parseFloat(unitMatch[1]);
@@ -73,7 +71,6 @@ export function getBalanceFromPlanName(planName: string): number {
         return amount;
     }
     
-    // 2. Search for any plain number in the string (e.g. "100000")
     const numberMatch = name.match(/\d+/);
     if (numberMatch) {
         return parseInt(numberMatch[0]);

@@ -1,14 +1,14 @@
-
-# FundedStock "Instant Pro" Category Specification (v1.1)
+# FundedStock "Instant Pro" Category Specification (v11.0)
 **Core Spec for StockMint Engine Synchronization**
 
 ## 1. Overview
 The "Instant Pro" category is a high-intensity account series designed for weekly execution targets. It bypasses evaluation phases but imposes strict validity deadlines and liquidity hurdles.
 
 ## 2. Business Logic (App Router Level)
+- **Official Classification**: `instant_pro` (Use this for API status mapping)
 - **Validity**: Exactly 7 Calendar Days from the timestamp of activation.
 - **Expiry Signal**: At `now() >= expires_at`, the portal triggers `POST /api/users/delete` to the Hub and updates the local state to `status: 'deleted'`.
-- **Market Segment**: Indian Market (NSE/BSE) and Forex Arena support.
+- **Market Segment**: Indian Market (NSE/BSE) and Forex Market support.
 
 ## 3. StockMint Hub Handshake (API v3.0)
 When provisioning an Instant Pro account, the following payload is sent to `https://stockmint.io/api/users/create`:
