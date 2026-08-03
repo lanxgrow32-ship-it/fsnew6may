@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, Check, Timer, TrendingUp, Zap, IndianRupee, Shield, Ban, Trophy, FileText } from 'lucide-react';
+import { ArrowLeft, Check, Timer, Zap, Shield, Ban, Trophy, FileText, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
@@ -78,15 +78,22 @@ export default function InstantProRulesPage() {
                     <Card className="bg-white/5 border-white/10">
                         <CardHeader>
                             <CardTitle className="text-xl flex items-center gap-3">
-                                <FileText className="text-primary w-6 h-6" /> Terms & Conditions
+                                <FileText className="text-primary w-6 h-6" /> Compliance
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 text-sm text-gray-400 leading-relaxed">
-                            <p>To be eligible for a performance reward disbursement on an Instant Pro account, the account balance must reach a minimum liquidity threshold of 1.5x the initial starting capital.</p>
-                            <p>All trades must be held for a minimum of 45 seconds from entry to exit. Any trade closed before this duration will be considered a violation of the execution policy and may lead to disqualification.</p>
-                            <p>The 7-day validity period begins immediately upon account activation. After the expiration of this period, the account will be automatically deactivated and any remaining positions closed.</p>
-                            <p>All Instant Pro accounts are 100% simulated environments. Performance Rewards are professional fees based on consistent execution and adherence to all risk protocols.</p>
+                            <p>All Instant Pro accounts are governed by our standard execution policies and weekly risk protocols. Please ensure you have reviewed the full terms before commencing trading.</p>
+                            <div className="pt-4">
+                                <Button asChild variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 text-white font-bold text-xs">
+                                    <Link href="/rules/terms-and-conditions" className="flex items-center gap-2">
+                                        View Full Terms & Conditions <ChevronRight className="w-4 h-4"/>
+                                    </Link>
+                                </Button>
+                            </div>
                         </CardContent>
+                        <CardFooter className="border-t border-white/5 bg-white/[0.01]">
+                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">T&C Apply</p>
+                        </CardFooter>
                     </Card>
 
                     <div className="text-center">
