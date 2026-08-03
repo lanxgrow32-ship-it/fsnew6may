@@ -145,9 +145,9 @@ export default function ForexPricingPage() {
         <main className="w-full px-4 md:px-12">
           <div className="text-center mb-16 pt-8">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] border border-primary/20 mb-6">
-                <Globe className="h-3 w-3" /> Global Forex & Crypto Arena
+                <Globe className="h-3 w-3" /> Global Forex Market
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight uppercase tracking-tighter">Forex Global Arena</h1>
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white !leading-tight uppercase tracking-tighter">Forex Arena</h1>
               <p className="mt-4 text-muted-foreground max-w-4xl mx-auto text-lg font-medium">
                 Access deep institutional liquidity for Forex, Commodities, and Crypto. Choose your capital size and start your evaluation.
               </p>
@@ -163,6 +163,23 @@ export default function ForexPricingPage() {
                   </TabsTrigger>
               </TabsList>
 
+              <TabsContent value="2-step" className="mt-8 animate-in fade-in duration-500">
+                  <div className="text-center mb-12">
+                      <h2 className="text-3xl font-bold text-white tracking-tight uppercase">Forex 2-Step Standard</h2>
+                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto font-medium">Access high-fidelity institutional capital for major pairs and global commodities.</p>
+                      <div className="flex justify-center mt-6">
+                        <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2">
+                            <Link href="/rules/forex-two-step"><HelpCircle className="w-4 h-4" /> View Arena Rules</Link>
+                        </Button>
+                      </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                      {forexPlans.map((plan) => (
+                          <PlanCard key={plan.title} {...plan} />
+                      ))}
+                  </div>
+              </TabsContent>
+
               <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
                   <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
                       <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
@@ -176,23 +193,6 @@ export default function ForexPricingPage() {
                       <Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
                       <h3 className="text-2xl font-bold text-white tracking-tight uppercase">1-Phase Model development.</h3>
                       <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Analysis Phase...</p>
-                  </div>
-              </TabsContent>
-              
-              <TabsContent value="2-step" className="mt-8 animate-in fade-in duration-500">
-                  <div className="text-center mb-12">
-                      <h2 className="text-3xl font-bold text-white tracking-tight uppercase">Forex 2-Step Standard</h2>
-                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto font-medium">Access high-fidelity institutional capital for major pairs and global commodities.</p>
-                      <div className="flex justify-center mt-6">
-                        <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2">
-                            <Link href="/rules/forex-two-step"><HelpCircle className="w-4 h-4" /> View Arena Protocols</Link>
-                        </Button>
-                      </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-                      {forexPlans.map((plan) => (
-                          <PlanCard key={plan.title} {...plan} />
-                      ))}
                   </div>
               </TabsContent>
           </Tabs>

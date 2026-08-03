@@ -1,3 +1,4 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -295,7 +296,7 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
     
     await supabaseAdmin.from('support_conversations').update(update).eq('id', convId);
     
-    // Neural Response Trigger
+    // System Response Trigger
     if (role === 'user') {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
         if (settings?.is_ai_support_enabled) {
@@ -377,7 +378,7 @@ export async function processCryptoWalletTopUp(userId: string, amountInr: number
         const { data: existing } = await supabaseAdmin.from('wallet_transactions').select('id').eq('gateway_transaction_id', txHash.trim()).single();
         if (existing) return { error: 'This transaction has already been processed.' };
 
-        // 2. Persistent Ledger Entry (In-Memory pending)
+        // 2. Persistent Ledger Entry
         const bonus = amountInr >= 10000 ? (amountInr * 0.05) : 0;
         const totalToAdd = amountInr + bonus;
 
@@ -386,7 +387,7 @@ export async function processCryptoWalletTopUp(userId: string, amountInr: number
             amount: amountInr,
             bonus_amount: bonus,
             type: 'deposit',
-            status: 'completed', // We mark as completed upon internal verification success
+            status: 'completed',
             gateway_transaction_id: txHash.trim(),
             description: 'Crypto Recharge (USDT)',
             processed_at: new Date().toISOString()

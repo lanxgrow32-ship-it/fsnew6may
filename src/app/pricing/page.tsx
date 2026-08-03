@@ -186,7 +186,7 @@ export default function PricingPage() {
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-primary/20 mb-6">
                 <Zap className="h-3 w-3" /> Select Your Path to Capital
               </div>
-              <h1 className="text-5xl font-black tracking-tighter text-white !leading-tight uppercase">Capital Funding Arena</h1>
+              <h1 className="text-5xl font-black tracking-tighter text-white !leading-tight uppercase">Arena</h1>
               <p className="mt-4 text-muted-foreground max-w-4xl mx-auto text-lg">
                 Choose the evaluation model that fits your trading style and secure your funded account today.
               </p>
