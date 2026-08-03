@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -32,7 +33,8 @@ import {
     Cpu,
     ArrowUpRight,
     AlertTriangle,
-    Lock
+    Lock,
+    Trophy
 } from 'lucide-react';
 import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial, initiateGatewayPayment, processCryptoPayment } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -42,6 +44,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const plans = {
+    pro: [
+        { size: '5 Lakh', price: '18,999', title: '5L Instant Pro' },
+        { size: '10 Lakh', price: '34,999', title: '10L Instant Pro' },
+        { size: '15 Lakh', price: '49,999', title: '15L Instant Pro' },
+        { size: '25 Lakh', price: '79,999', title: '25L Instant Pro' },
+        { size: '50 Lakh', price: '1,49,999', title: '50L Instant Pro' },
+    ],
     instant: [
         { size: '1 Lakh', price: '5,999', title: '1L Instant' },
         { size: '2 Lakh', price: '9,999', title: '2L Instant' },
@@ -120,7 +129,6 @@ export function ArenaView({
 
     const handleMarketSwitch = (market: 'indian' | 'forex') => {
         setMarketSegment(market);
-        // Force 2-step context for Forex as it is the only active model
         if (market === 'forex') {
             setActiveTab('twoStep');
         } else {
@@ -421,7 +429,7 @@ export function ArenaView({
                                 <div className="space-y-2.5">
                                     <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Transaction Hash (TxID)</Label>
                                     <Input 
-                                        placeholder="Paste the 64-character hash here" 
+                                        placeholder="Paste hash here" 
                                         value={txId} 
                                         onChange={(e) => setTxId(e.target.value)} 
                                         required 
@@ -500,7 +508,7 @@ export function ArenaView({
                                     0% Platform Surcharge applied.
                                 </div>
                             </div>
-                            <Button type="submit" disabled={isActionPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">
+                            <Button type="submit" disabled={isPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">
                                 {isActionPending ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : null}
                                 Submit Reference
                             </Button>
@@ -565,7 +573,7 @@ export function ArenaView({
     );
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+        <div className="space-y-12 animate-in fade-in duration-500 pb-20">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold text-white tracking-tight uppercase">
@@ -602,10 +610,34 @@ export function ArenaView({
                 </div>
             </div>
 
+            {/* INSTANT PRO FEATURED SECTION (v11.0) */}
+            {marketSegment === 'indian' && (
+                <section className="animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div className="max-w-6xl mx-auto border-2 border-primary/30 bg-primary/5 rounded-[40px] p-8 md:p-10 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12 -z-0"><Trophy className="w-48 h-48 text-primary"/></div>
+                        <div className="flex flex-col md:flex-row items-center gap-6 mb-10 relative z-10">
+                            <div className="h-12 w-12 rounded-2xl bg-primary/20 text-primary flex items-center justify-center border border-primary/30 shadow-[0_0_20px_rgba(139,44,245,0.2)]">
+                                <Zap className="h-6 w-6" />
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <div className="flex items-center justify-center md:justify-start gap-3">
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Instant PRO Series</h3>
+                                    <Badge className="bg-primary text-white text-[8px] font-black uppercase tracking-widest">NEW</Badge>
+                                </div>
+                                <p className="text-gray-400 text-sm font-medium mt-1">One-week high intensity funding. Withdraw at 1.5x balance. 7-Day Cycle.</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 relative z-10">
+                            {plans.pro.map(p => <PlanBox key={p.title} plan={p} category="Instant PRO" />)}
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {marketSegment === 'indian' ? (
                 <Tabs value={activeTab} onValueChange={setActiveTab} key="indian-tabs" className="w-full">
                     <TabsList className={cn("grid w-full grid-cols-2 md:grid-cols-4 max-w-2xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10", isPtpActive ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
-                        <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Instant</TabsTrigger>
+                        <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Standard Instant</TabsTrigger>
                         <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
                         <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
                         {isPtpActive && <TabsTrigger value="ptp" className="py-2.5 rounded-xl font-bold text-xs">PTP</TabsTrigger>}

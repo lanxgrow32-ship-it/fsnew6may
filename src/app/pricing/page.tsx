@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,11 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CheckCircle, ExternalLink, Timer, TrendingUp, Zap, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ExternalLink, Timer, TrendingUp, Zap, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
 import { ClientOnly } from '@/components/ui/client-only';
+
+const proPlans = [
+    { size: '5 Lakh', price: '18,999', title: '5L Instant Pro' },
+    { size: '10 Lakh', price: '34,999', title: '10L Instant Pro', isPopular: true },
+    { size: '15 Lakh', price: '49,999', title: '15L Instant Pro' },
+    { size: '25 Lakh', price: '79,999', title: '25L Instant Pro' },
+    { size: '50 Lakh', price: '1,49,999', title: '50L Instant Pro' },
+];
 
 const instantFundingPlans = [
   { size: '1,00,000', title: '1L Instant Funding', price: '5,999' },
@@ -82,68 +91,45 @@ const LiveViewersBanner = () => {
     );
 };
 
-const PlanCard = ({ size, title, price, isPopular, isFlashSale }: { size: string; title: string; price: string, isPopular?: boolean, isFlashSale?: boolean }) => {
+const PlanCard = ({ size, title, price, isPopular, isPro }: any) => {
   const currentPrice = parseFloat(price.replace(/,/g, ''));
-  const originalPrice = isFlashSale ? 49500 : currentPrice * 2;
-  const [purchasedToday, setPurchasedToday] = useState(0);
-  const [slotsRemaining, setSlotsRemaining] = useState(0);
-
-  useEffect(() => {
-    setPurchasedToday(Math.floor(Math.random() * 70) + 1);
-    setSlotsRemaining(isFlashSale ? Math.floor(Math.random() * 8) + 1 : Math.floor(Math.random() * 80) + 1);
-  }, [isFlashSale]);
+  const originalPrice = currentPrice * 2;
 
   return (
     <Card className={cn(
         "flex flex-col h-full hover:border-primary transition-all duration-300 bg-card/50 border-border relative", 
         isPopular && "border-primary/50 shadow-md shadow-primary/5",
-        isFlashSale && "border-primary border-2 shadow-[0_0_40px_rgba(139,44,245,0.3)] animate-pulse-subtle bg-primary/5"
+        isPro && "border-primary/20 bg-primary/[0.02]"
     )}>
-      {isPopular && !isFlashSale && <div className="text-xs font-bold bg-primary text-primary-foreground py-1 rounded-t-lg -mt-px text-center">🔥 Most Popular</div>}
-      {isFlashSale && (
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-1.5 rounded-full shadow-xl flex items-center gap-2 z-20 whitespace-nowrap">
-              <Sparkles className="w-3.5 h-3.5 animate-spin" /> Today Only: Flash Sale
-          </div>
-      )}
+      {isPopular && <div className="text-xs font-bold bg-primary text-primary-foreground py-1 rounded-t-lg -mt-px text-center">🔥 Most Popular</div>}
       <CardHeader className="pb-4 space-y-4 pt-8">
         <div className="flex justify-between items-start">
-            <CardTitle className={cn("text-2xl font-bold tracking-tight", isFlashSale && "text-primary text-3xl")}>₹{size}</CardTitle>
-            {isPopular && !isFlashSale && <Badge variant="default" className="text-[10px] font-bold">POPULAR</Badge>}
+            <CardTitle className="text-2xl font-bold tracking-tight">₹{size}</CardTitle>
+            {isPopular && <Badge variant="default" className="text-[10px] font-bold">POPULAR</Badge>}
         </div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</p>
-        
-        <div className="space-y-2">
-            <ClientOnly>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-green-500 bg-green-500/10 w-fit px-2 py-0.5 rounded border border-green-500/20">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>{isFlashSale ? purchasedToday + 120 : purchasedToday} purchased today</span>
-                </div>
-                <div className={cn(
-                    "flex items-center gap-2 text-[10px] font-bold px-2 py-0.5 rounded border",
-                    (slotsRemaining < 15 || isFlashSale) 
-                        ? "text-red-500 bg-red-500/10 border-red-500/20" 
-                        : "text-amber-500 bg-amber-500/10 border-amber-500/20"
-                )}>
-                    <Timer className="h-3 w-3" />
-                    <span>{isFlashSale ? `URGENT: Only ${slotsRemaining} left` : `Only ${slotsRemaining} slots remaining`}</span>
-                </div>
-            </ClientOnly>
-        </div>
       </CardHeader>
       <CardContent className="flex flex-col flex-grow space-y-6">
         <div className="space-y-3 text-sm border-t border-white/5 pt-4">
             <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-muted-foreground">Full Fee Refund On 3rd Payout</span>
+                <span className="text-muted-foreground">80% Performance Share</span>
             </div>
-            <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-muted-foreground">80% Profit Share</span>
-            </div>
-            {isFlashSale && (
+            {isPro ? (
+                <>
+                    <div className="flex items-center gap-2">
+                        <Timer className="h-4 w-4 text-primary" />
+                        <span className="text-white font-bold">7-Day Expiry Cycle</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        <span className="text-white font-bold">Withdraw at 1.5x Capital</span>
+                    </div>
+                </>
+            ) : (
                 <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span className="text-white font-bold">Max Allocation Limit Bypass</span>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-muted-foreground">Refund on 3rd Payout</span>
                 </div>
             )}
         </div>
@@ -151,14 +137,14 @@ const PlanCard = ({ size, title, price, isPopular, isFlashSale }: { size: string
         <div className="pt-4 border-t border-white/5">
             <div className="flex items-baseline gap-2">
                 <span className="text-lg text-muted-foreground line-through font-medium">₹{originalPrice.toLocaleString('en-IN')}</span>
-                <span className={cn("text-3xl font-bold text-primary", isFlashSale && "text-4xl text-white drop-shadow-[0_0_10px_rgba(139,44,245,0.8)]")}>₹{currentPrice.toLocaleString('en-IN')}</span>
+                <span className="text-3xl font-bold text-primary">₹{currentPrice.toLocaleString('en-IN')}</span>
             </div>
             <Badge variant="destructive" className="mt-2 text-[9px] font-bold tracking-widest">
-                {isFlashSale ? "FLASH SALE: 50% OFF" : "50% LIMITED DISCOUNT"}
+                LIMITED 50% DISCOUNT
             </Badge>
         </div>
 
-        <Button asChild className={cn("w-full mt-auto font-bold uppercase tracking-widest", isFlashSale ? "bg-white text-black hover:bg-gray-100" : "")} size="lg">
+        <Button asChild className="w-full mt-auto font-bold uppercase tracking-widest" size="lg">
           <Link href="/signup">Select Plan <ArrowLeft className="rotate-180 h-4 w-4 ml-2"/></Link>
         </Button>
       </CardContent>
@@ -177,13 +163,6 @@ export default function PricingPage() {
         }
         .animate-marquee {
             animation: marquee 40s linear infinite;
-        }
-        @keyframes pulse-subtle {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.95; transform: scale(1.01); }
-        }
-        .animate-pulse-subtle {
-            animation: pulse-subtle 3s ease-in-out infinite;
         }
       `}</style>
       <div className="bg-background min-h-screen text-foreground pb-24">
@@ -210,13 +189,46 @@ export default function PricingPage() {
               </p>
           </div>
 
+          {/* INSTANT PRO FEATURED SECTION (v11.0) */}
+          <section className="mb-24 animate-in fade-in slide-in-from-top-4 duration-1000">
+             <div className="max-w-6xl mx-auto border-2 border-primary/30 bg-primary/5 rounded-[40px] p-8 md:p-12 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-12 opacity-5 -rotate-12"><Zap className="w-64 h-64 text-primary"/></div>
+                
+                <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12 relative z-10">
+                    <div className="text-center md:text-left space-y-3">
+                        <div className="flex items-center justify-center md:justify-start gap-3">
+                            <Badge className="bg-primary text-white font-black text-[10px] px-4 py-1 rounded-full uppercase animate-pulse">NEW</Badge>
+                            <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter">Instant PRO Category</h2>
+                        </div>
+                        <p className="text-gray-400 text-lg font-medium max-w-xl">High-leverage weekly accounts. 7-Day validity for maximum execution intensity.</p>
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
+                            <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20">
+                                <ShieldCheck className="w-4 h-4"/> No Challenge
+                            </div>
+                            <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20">
+                                <Timer className="w-4 h-4"/> 7-Day Cycle
+                            </div>
+                        </div>
+                    </div>
+                    <div className="shrink-0">
+                        <Link href="/pass-then-pay" className="text-xs font-black text-primary hover:underline uppercase tracking-widest flex items-center gap-2">
+                            View Pro Protocols <ExternalLink className="w-4 h-4"/>
+                        </Link>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 relative z-10">
+                    {proPlans.map((plan) => (
+                        <PlanCard key={plan.title} {...plan} isPro />
+                    ))}
+                </div>
+             </div>
+          </section>
+
           <Tabs defaultValue="instant" className="w-full">
               <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-4xl mx-auto h-auto p-1 bg-muted border border-white/5 rounded-lg mb-16">
                   <TabsTrigger value="instant" className="py-2.5 text-sm font-bold rounded-md flex items-center gap-2">
-                    <span className="flex items-center gap-1">
-                        Instant Funding
-                        <Badge variant="destructive" className="text-[8px] h-4 px-1.5 font-black uppercase">🔥 Hot</Badge>
-                    </span>
+                    Standard Instant
                   </TabsTrigger>
                   <TabsTrigger value="1-step" className="py-2.5 text-sm font-bold rounded-md">1-Step Fast Track</TabsTrigger>
                   <TabsTrigger value="2-step" className="py-2.5 text-sm font-bold rounded-md">2-Step Standard</TabsTrigger>
@@ -224,7 +236,7 @@ export default function PricingPage() {
 
               <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
                   <div className="text-center mb-12">
-                      <h2 className="text-3xl font-bold text-white tracking-tight">Instant Funding</h2>
+                      <h2 className="text-3xl font-bold text-white tracking-tight">Standard Instant Funding</h2>
                       <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">No challenges. Trade live capital within 15 minutes of activation.</p>
                       <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-2">
                           <Link href="/rules/instant-funding">Execution Rules <ExternalLink className="ml-2 h-3 w-3" /></Link>

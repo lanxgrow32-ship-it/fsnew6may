@@ -3,6 +3,7 @@
  * Consolidated utility functions for plan classification and balance parsing.
  * Shared between Admin, Welcome, and API routes to ensure Stockmint synchronization.
  * Follows SPEC v4.1 (Forex Aware)
+ * UPDATED v11.0: Instant Pro Category & 15L Support
  */
 
 export function getMarketType(planName: string): 'indian' | 'forex' {
@@ -16,6 +17,11 @@ export function getAutoClassification(planName: string): string {
     if (!planName) return 'evaluation';
     const name = planName.toLowerCase();
     
+    // 1. INSTANT PRO PROTOCOL (v11.0)
+    if (name.includes('pro')) {
+        return 'instant_pro';
+    }
+
     if (name.includes('ptp') || name.includes('passthenpay') || name.includes('pass then pay')) {
         return 'passthenpay';
     }
