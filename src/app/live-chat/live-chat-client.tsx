@@ -45,14 +45,14 @@ const navItems = [
     { id: 'hub', href: "/welcome", label: "Portfolio", icon: LayoutDashboard },
     { id: 'marketplace', href: "/welcome?tab=marketplace", label: "Get Funded", icon: ShoppingCart },
     { id: 'competition', href: "/welcome?tab=competition", label: "Competition", icon: Trophy },
-    { id: 'wallet', href: "/welcome?tab=wallet", label: "Wallet", icon: Wallet },
+    { id: 'wallet', href: "/welcome?tab=wallet", label: "Wallet", icon: WalletIcon },
     { id: 'referrals', href: "/referrals", label: "Referrals", icon: Users },
     { id: 'transactions', href: "/welcome?tab=transactions", label: "History", icon: History },
     { id: 'support', href: "/live-chat", label: "Live Chat", icon: MessageSquare, active: true },
     { id: 'kyc', href: "/welcome?tab=kyc", label: "KYC", icon: FileCheck },
 ];
 
-function Wallet({ className }: { className?: string }) {
+function WalletIcon({ className }: { className?: string }) {
     return <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 7V11M1 7V17C1 18.1046 1.89543 19 3 19H19C20.1046 19 21 18.1046 21 17V16.25C21 15.1454 21.8954 14.25 23 14.25V9.75C21.8954 9.75 21 8.85457 21 7.75V7C21 5.89543 20.1046 5 19 5H3C1.89543 5 1 5.89543 1 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
 

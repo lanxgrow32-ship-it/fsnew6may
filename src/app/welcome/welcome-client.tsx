@@ -124,7 +124,6 @@ function WelcomeContent({
 
     const totalUnread = supportConversations.reduce((sum, conv) => sum + (conv.unread_count_user || 0), 0);
 
-    // REMOVED "Guide" from navItems as requested
     const navItems = [
         { id: 'hub', label: "Portfolio", icon: LayoutDashboard },
         { id: 'marketplace', label: "Get Funded", icon: ShoppingCart },
@@ -141,9 +140,108 @@ function WelcomeContent({
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 <header className="flex items-center justify-between mb-12 z-20 relative border-b border-white/5 pb-6">
-                    <div className="flex items-center gap-6"><Logo /><nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">{navItems.filter(item => item.id !== 'kyc').map((item) => { const commonClasses = cn("px-4 py-1.5 text-[11px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0 flex items-center gap-2", activeTab === item.id ? "bg-white/10 text-white border border-white/10 shadow-sm" : "text-gray-400 hover:text-white"); if (item.href) { return ( <Link key={item.id} href={item.href} className={cn(commonClasses, "relative")}> <item.icon className="w-3.5 h-3.5" /> {item.label} {item.hasBadge && ( <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" /> )} </Link> ); } return ( <button key={item.id} onClick={() => setActiveTab(item.id)} className={commonClasses} > <item.icon className="w-3.5 h-3.5" /> {item.label} </button> ); })}</nav></div>
-                    <div className="flex items-center gap-4"><div className="flex flex-col items-end mr-2 sm:mr-4"><span className="text-[8px] sm:text-[9px] font-bold text-gray-600 mb-0.5 uppercase tracking-widest leading-none">Balance</span><span className="text-primary font-bold text-sm sm:text-base leading-none">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span></div><div className="flex items-center gap-3"><Link href="/profile" className="relative group"><div className="h-9 w-9 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center group-hover:border-primary transition-all"><span className="text-primary font-bold text-xs">{profile.full_name?.[0]?.toUpperCase() || 'U'}</span></div></Link><form action={signOut} className="hidden lg:block"><Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2 h-9"><LogOut className="w-3.5 h-3.5" />Logout</Button></form></div>
-                        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}><SheetTrigger asChild><button className="h-9 w-9 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 lg:hidden transition-colors shadow-lg relative"><Menu className="h-4 w-4 text-gray-300" />{totalUnread > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-950" />}</button></SheetTrigger><SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col font-poppins"><SheetHeader className="p-6 border-b border-white/5"><SheetTitle className="sr-only">Navigation</SheetTitle><div className="flex items-center gap-3 text-left"><div className="bg-primary h-8 w-8 flex items-center justify-center rounded-lg shadow-lg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div><span className="text-white font-bold text-lg tracking-tight">FundedStock</span></div></SheetHeader><div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto"><div className="space-y-2">{navItems.map((item) => { const commonClasses = cn("w-full px-5 py-4 text-sm font-bold transition-all flex items-center gap-4 rounded-2xl relative", activeTab === item.id ? "bg-primary text-white border border-white shadow-xl shadow-primary/20" : "text-gray-400 hover:text-white hover:bg-white/5"); if (item.href) { return ( <Link key={item.id} href={item.href} className={commonClasses} onClick={() => setIsSidebarOpen(false)}> <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} /> {item.label} {item.hasBadge && ( <span className="absolute right-5 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full"> {totalUnread} </span> )} </Link> ); } return ( <button key={item.id} onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }} className={commonClasses} > <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} /> {item.label} </button> ); })}</div><div className="mt-auto pt-8 pb-8"><div className="pt-4 border-t border-white/5"><form action={signOut}><button type="submit" className="w-full px-5 py-4 text-sm font-bold text-red-400 hover:bg-red-500/10 transition-all rounded-2xl flex items-center gap-4 group"><LogOut className="w-5 h-5" />Logout Session</button></form></div></div></div></SheetContent></Sheet>
+                    <div className="flex items-center gap-6">
+                        <Logo />
+                        <nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">
+                            {navItems.filter(item => item.id !== 'kyc').map((item) => {
+                                const commonClasses = cn(
+                                    "px-4 py-1.5 text-[11px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0 flex items-center gap-2",
+                                    activeTab === item.id ? "bg-white/10 text-white border border-white/10 shadow-sm" : "text-gray-400 hover:text-white"
+                                );
+                                if (item.href) {
+                                    return (
+                                        <Link key={item.id} href={item.href} className={cn(commonClasses, "relative")}>
+                                            <item.icon className="w-3.5 h-3.5" />
+                                            {item.label}
+                                            {item.hasBadge && (
+                                                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                            )}
+                                        </Link>
+                                    );
+                                }
+                                return (
+                                    <button key={item.id} onClick={() => setActiveTab(item.id)} className={commonClasses}>
+                                        <item.icon className="w-3.5 h-3.5" />
+                                        {item.label}
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end mr-2 sm:mr-4">
+                            <span className="text-[8px] sm:text-[9px] font-bold text-gray-600 mb-0.5 uppercase tracking-widest leading-none">Balance</span>
+                            <span className="text-primary font-bold text-sm sm:text-base leading-none">₹{Number(profile.wallet_balance).toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Link href="/profile" className="relative group">
+                                <div className="h-9 w-9 rounded-full border border-white/10 overflow-hidden shadow-xl bg-primary/20 flex items-center justify-center group-hover:border-primary transition-all">
+                                    <span className="text-primary font-bold text-xs">{profile.full_name?.[0]?.toUpperCase() || 'U'}</span>
+                                </div>
+                            </Link>
+                            <form action={signOut} className="hidden lg:block">
+                                <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2 h-9">
+                                    <LogOut className="w-3.5 h-3.5" />Logout
+                                </Button>
+                            </form>
+                        </div>
+                        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                            <SheetTrigger asChild>
+                                <button className="h-9 w-9 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 lg:hidden transition-colors shadow-lg relative">
+                                    <Menu className="h-4 w-4 text-gray-300" />
+                                    {totalUnread > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-950" />}
+                                </button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="bg-slate-950 border-white/10 text-white w-72 p-0 flex flex-col font-poppins">
+                                <SheetHeader className="p-6 border-b border-white/5">
+                                    <SheetTitle className="sr-only">Navigation</SheetTitle>
+                                    <div className="flex items-center gap-3 text-left">
+                                        <div className="bg-primary h-8 w-8 flex items-center justify-center rounded-lg shadow-lg">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </div>
+                                        <span className="text-white font-bold text-lg tracking-tight">FundedStock</span>
+                                    </div>
+                                </SheetHeader>
+                                <div className="flex flex-col flex-1 p-5 gap-2 overflow-y-auto">
+                                    <div className="space-y-2">
+                                        {navItems.map((item) => {
+                                            const commonClasses = cn(
+                                                "w-full px-5 py-4 text-sm font-bold transition-all flex items-center gap-4 rounded-2xl relative",
+                                                activeTab === item.id ? "bg-primary text-white border border-white shadow-xl shadow-primary/20" : "text-gray-400 hover:text-white hover:bg-white/5"
+                                            );
+                                            if (item.href) {
+                                                return (
+                                                    <Link key={item.id} href={item.href} className={commonClasses} onClick={() => setIsSidebarOpen(false)}>
+                                                        <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
+                                                        {item.label}
+                                                        {item.hasBadge && (
+                                                            <span className="absolute right-5 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full"> {totalUnread} </span>
+                                                        )}
+                                                    </Link>
+                                                );
+                                            }
+                                            return (
+                                                <button key={item.id} onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }} className={commonClasses}>
+                                                    <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-white" : "text-gray-500")} />
+                                                    {item.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="mt-auto pt-8 pb-8">
+                                        <div className="pt-4 border-t border-white/5">
+                                            <form action={signOut}>
+                                                <button type="submit" className="w-full px-5 py-4 text-sm font-bold text-red-400 hover:bg-red-500/10 transition-all rounded-2xl flex items-center gap-4 group">
+                                                    <LogOut className="w-5 h-5" />Logout Session
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
                     </div>
                 </header>
 
@@ -178,6 +276,33 @@ function WelcomeContent({
                     </TabsContent>
                 </Tabs>
             </main>
+
+            {isDetailModalOpen && (
+                <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+                    <DialogContent className="bg-slate-900 border-white/10 text-white font-poppins">
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl font-bold">Complete Your Profile</DialogTitle>
+                            <DialogDescription className="text-gray-400">Please provide your full name and mobile number to access the portal.</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleOnboardingSubmit} className="space-y-6 pt-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="onboarding-name" className="text-xs font-bold text-gray-500 uppercase">Full Name</Label>
+                                <Input id="onboarding-name" value={onboardingName} onChange={(e) => setOnboardingName(e.target.value)} placeholder="Enter your full name" required className="bg-black/40 border-white/10 h-12" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="onboarding-mobile" className="text-xs font-bold text-gray-500 uppercase">Mobile Number</Label>
+                                <Input id="onboarding-mobile" value={onboardingMobile} onChange={(e) => setOnboardingMobile(e.target.value)} placeholder="10-digit number" required maxLength={10} className="bg-black/40 border-white/10 h-12" />
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit" disabled={isPending || !onboardingName.trim() || !onboardingMobile.trim()} className="w-full h-12 font-bold bg-primary hover:bg-primary/90 rounded-xl">
+                                    {isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : null}
+                                    Unlock Portfolio
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 }

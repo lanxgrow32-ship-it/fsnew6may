@@ -1,10 +1,22 @@
-
 'use client';
 
 import { useState, useActionState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Home, FileCheck, User, DollarSign, LogOut, BookUser, Gift, BrainCircuit, MessageSquare, Loader2, Menu, Search, Settings, Bell, Copy } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    ShoppingCart, 
+    Wallet, 
+    Trophy, 
+    FileCheck, 
+    LogOut, 
+    Menu,
+    History,
+    MessageSquare,
+    User,
+    Users,
+    Loader2
+} from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from '@/app/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,13 +36,13 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
 );
 
 const Logo = () => (
-    <div className="bg-slate-900 h-10 w-10 flex items-center justify-center rounded-lg text-2xl font-bold border border-white/10 shadow-inner shadow-black/50">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M2 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M22 7L12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M12 22V12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+    <div className="flex items-center gap-2">
+        <div className="bg-primary h-7 w-7 flex items-center justify-center rounded-lg shadow-lg shadow-primary/20">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+        </div>
+        <span className="font-poppins font-bold text-base tracking-tight text-white hidden lg:block">FundedStock</span>
     </div>
 );
 
@@ -79,30 +91,32 @@ function UserNav({ profile }: { profile: any}) {
 }
 
 const navItems = [
-    { href: "/welcome", label: "Account Overview" },
-    { href: "/guide", label: "Trading Guide" },
-    { href: "/referrals", label: "Referrals" },
-    { href: "/live-chat", label: "Live Chat" },
-    { href: "/mentor", label: "AI Mentor" },
-    { href: "/welcome?tab=marketplace", label: "Get Funded" },
+    { id: 'hub', href: "/welcome", label: "Portfolio", icon: LayoutDashboard },
+    { id: 'marketplace', href: "/welcome?tab=marketplace", label: "Get Funded", icon: ShoppingCart },
+    { id: 'competition', href: "/welcome?tab=competition", label: "Competition", icon: Trophy },
+    { id: 'wallet', href: "/welcome?tab=wallet", label: "Wallet", icon: Wallet },
+    { id: 'referrals', href: "/referrals", label: "Referrals", icon: Users },
+    { id: 'transactions', href: "/welcome?tab=transactions", label: "History", icon: History },
+    { id: 'support', href: "/live-chat", label: "Live Chat", icon: MessageSquare },
 ];
 
 const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string}) => (
-  <header className="flex items-center justify-between mb-8 z-20 relative">
-    <div className="flex items-center gap-8">
+  <header className="flex items-center justify-between mb-8 z-20 relative border-b border-white/5 pb-6">
+    <div className="flex items-center gap-6">
         <Logo />
-        <nav className="hidden md:flex items-center gap-1 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-full shadow-lg">
+        <nav className="hidden lg:flex items-center gap-0.5 bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl h-[40px]">
             {navItems.map((item) => (
                 <Link
-                    key={item.href}
+                    key={item.id}
                     href={item.href}
                     className={cn(
-                        "px-4 py-1.5 text-sm transition-colors",
+                        "px-4 py-1.5 text-[11px] font-bold transition-all rounded-full h-[32px] whitespace-nowrap shrink-0 flex items-center gap-2",
                         activePage === item.label
-                        ? "font-medium bg-white/10 rounded-full text-white shadow-md"
+                        ? "bg-white/10 text-white border border-white/10 shadow-sm"
                         : "text-gray-400 hover:text-white"
                     )}
                 >
+                    <item.icon className="w-3.5 h-3.5" />
                     {item.label}
                 </Link>
             ))}
@@ -110,9 +124,6 @@ const DashboardHeader = ({profile, activePage}: {profile:any, activePage: string
     </div>
     <div className="flex items-center gap-2">
       <UserNav profile={profile} />
-      <button className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden transition-colors">
-        <Menu className="h-5 w-5 text-gray-300" />
-      </button>
     </div>
   </header>
 );
@@ -164,11 +175,11 @@ export function ProfileClient({ initialProfile }: { initialProfile: any }) {
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden">
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             <div className="absolute inset-0 z-0">
-                <div className="absolute top-[-25%] left-[10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
+                <div className="absolute top-[-25%] left-[-10%] w-[50vw] h-[50vw] bg-purple-600 rounded-full filter blur-3xl opacity-20 " />
                 <div className="absolute bottom-[-25%] right-[-15%] w-[40vw] h-[40vw] bg-pink-600 rounded-full filter blur-3xl opacity-10" />
             </div>
           
-            <main className="relative z-10 p-4 sm:p-6 lg:p-8">
+            <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                 <DashboardHeader profile={profile} activePage="My Profile" />
                 <div className="max-w-2xl mx-auto space-y-6">
                     <GlassCard>
