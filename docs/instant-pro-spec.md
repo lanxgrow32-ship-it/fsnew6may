@@ -1,5 +1,5 @@
 
-# FundedStock "Instant Pro" Category Specification (v1.0)
+# FundedStock "Instant Pro" Category Specification (v1.1)
 **Core Spec for StockMint Engine Synchronization**
 
 ## 1. Overview
@@ -7,7 +7,7 @@ The "Instant Pro" category is a high-intensity account series designed for weekl
 
 ## 2. Business Logic (App Router Level)
 - **Validity**: Exactly 7 Calendar Days from the timestamp of activation.
-- **Expiry Signal**: At `now() >= expires_at`, the system triggers `POST /api/users/delete` and updates the local state to `status: 'deleted'`.
+- **Expiry Signal**: At `now() >= expires_at`, the portal triggers `POST /api/users/delete` to the Hub and updates the local state to `status: 'deleted'`.
 - **Market Segment**: Indian Market (NSE/BSE) and Forex Arena support.
 
 ## 3. StockMint Hub Handshake (API v3.0)

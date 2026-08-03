@@ -508,7 +508,7 @@ export function ArenaView({
                                     0% Platform Surcharge applied.
                                 </div>
                             </div>
-                            <Button type="submit" disabled={isPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">
+                            <Button type="submit" disabled={isActionPending || !utr} className="w-full h-12 font-bold rounded-xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest">
                                 {isActionPending ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : null}
                                 Submit Reference
                             </Button>
