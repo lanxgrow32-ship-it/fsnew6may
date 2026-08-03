@@ -1,4 +1,3 @@
-
 /**
  * Consolidated utility functions for plan classification and balance parsing.
  * Shared between Admin, Welcome, and API routes to ensure Stockmint synchronization.
@@ -18,6 +17,7 @@ export function getAutoClassification(planName: string): string {
     const name = planName.toLowerCase();
     
     // 1. INSTANT PRO PROTOCOL (v11.0)
+    // This defines the classification for the Hub Handshake
     if (name.includes('pro')) {
         return 'instant_pro';
     }

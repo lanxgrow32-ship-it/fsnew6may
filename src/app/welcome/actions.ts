@@ -1,17 +1,13 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { runSupportAi } from '@/ai/flows/support-agent-flow';
-import { verifyTransactionFlow } from '@/ai/flows/verify-transaction-flow';
 import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsername, calculateTrialExpiry, getMarketType } from '@/lib/plan-utils';
-import { generateLgPaySignature } from '@/lib/lg-pay';
-import { generateWatchPaySignature } from '@/lib/watchpay';
 import { randomBytes } from 'crypto';
-import { headers } from 'next/headers';
 import { differenceInSeconds, addDays } from 'date-fns';
+import { generateWatchPaySignature } from '@/lib/watchpay';
 
 /**
  * Global Session Cleanup Protocol (v11.0)
@@ -181,45 +177,6 @@ export async function purchaseWithWallet(userId: string, plan: any) {
   return { success: true, transaction_id: txId, amount: price };
 }
 
-export async function processCryptoPayment(userId: string, plan: any, txId: string) {
-    if (!userId || !plan || !txId) return { error: 'Incomplete request.' };
-    const { data: settings } = await supabaseAdmin.from('payment_details').select('usdt_wallet_address').eq('id', 1).single();
-    if (!settings?.usdt_wallet_address) return { error: 'Crypto gateway not configured.' };
-    const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
-    if (!profile) return { error: 'Profile not found.' };
-
-    const requiredUsdt = parseFloat((calculateFinalPrice(plan) / 96).toFixed(2));
-    const audit = await verifyTransactionFlow({ txId, claimedAmount: requiredUsdt, companyWallet: settings.usdt_wallet_address });
-    if (!audit.success) return { error: audit.error || 'Verification failed.' };
-
-    const classification = getAutoClassification(plan.title);
-    const marketType = getMarketType(plan.title);
-    const isPro = classification === 'instant_pro';
-
-    const insertData: any = {
-        user_id: userId, plan_name: plan.title, status: 'active', is_approved: true, transaction_id: txId,
-        final_amount_paid: calculateFinalPrice(plan), account_classification: classification, market_type: marketType,
-        account_model: classification === 'passthenpay' ? 'passthrupay' : 'normal'
-    };
-
-    if (isPro) insertData.expires_at = addDays(new Date(), 7).toISOString();
-
-    const { data: account } = await supabaseAdmin.from('user_accounts').insert(insertData).select().single();
-    if (!account) return { error: 'Ledger write failed.' };
-
-    const initialBalance = getBalanceFromPlanName(plan.title);
-    const username = generateStockmintUsername(profile.email, 0);
-    await fetchFromHub('users/create', 'POST', { fullName: profile.full_name, email: username, password: username, initialBalance, accountClassification: classification, marketType }, account.id);
-    await supabaseAdmin.from('user_accounts').update({ credentials_provided: true, trading_username: username, trading_password: username }).eq('id', account.id);
-
-    revalidatePath('/welcome');
-    return { success: true, transaction_id: txId, amount: requiredUsdt };
-}
-
-function calculateFinalPrice(plan: any) {
-    return typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
-}
-
 export async function validateCoupon(code: string) {
     if (!code) return { error: 'Please enter a code.' };
     const { data: coupon, error } = await supabaseAdmin.from('coupons').select('*').eq('code', code.toUpperCase()).single();
@@ -247,7 +204,8 @@ export async function requestManualAccount(userId: string, planName: string, amo
 export async function initiateGatewayPayment(userId: string, plan: any, gateway: string) {
     const { data: settings } = await supabaseAdmin.from('payment_details').select('*').eq('id', 1).single();
     if (!settings) return { error: 'Config error.' };
-    const finalAmount = calculateFinalPrice(plan);
+    
+    const finalAmount = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
     const order_sn = `FS_${Date.now()}_${randomBytes(3).toString('hex')}`;
 
     if (plan.title === 'WALLET_TOPUP') {
@@ -298,20 +256,8 @@ export async function sendSupportMessage(convId: string, senderId: string, role:
     if (role === 'admin') update.unread_count_user = (conv?.unread_count_user || 0) + 1;
     else update.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
     await supabaseAdmin.from('support_conversations').update(update).eq('id', convId);
-    if (role === 'user') await triggerAiResponse(convId, senderId, message.trim());
     revalidatePath('/welcome');
     return { error: null };
-}
-
-async function triggerAiResponse(convId: string, userId: string, message: string) {
-    const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
-    const { data: conv } = await supabaseAdmin.from('support_conversations').select('*, profiles(*)').eq('id', convId).single();
-    if (!settings?.is_ai_support_enabled || conv?.assigned_role !== 'ai') return;
-    const aiResponse = await runSupportAi({ conversationId: convId, userEmail: conv.profiles.email, userName: conv.profiles.full_name, userMessage: message });
-    if (!aiResponse) return;
-    await supabaseAdmin.from('support_messages').insert({ conversation_id: conv.id, sender_id: conv.user_id, sender_role: 'admin', message: aiResponse });
-    const { data: fresh } = await supabaseAdmin.from('support_conversations').select('unread_count_user').eq('id', convId).single();
-    await supabaseAdmin.from('support_conversations').update({ last_message_at: new Date().toISOString(), last_message_preview: aiResponse, unread_count_user: (fresh?.unread_count_user || 0) + 1 }).eq('id', convId);
 }
 
 export async function markSupportRead(convId: string, role: 'admin' | 'user') {
@@ -339,11 +285,6 @@ export async function purchaseTournamentEntry(userId: string, eventId: string) {
     return { success: true };
 }
 
-export async function getCompetitionEvents() {
-    const { data } = await supabaseAdmin.from('competition_events').select('*').eq('is_active', true).order('start_date', { ascending: true });
-    return data || [];
-}
-
 export async function startFreeTrial(userId: string) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
     const { count } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('is_trial', true);
@@ -356,17 +297,6 @@ export async function startFreeTrial(userId: string) {
     if (error) return { error: error.message };
     revalidatePath('/welcome');
     return { success: true };
-}
-
-export async function checkAndCleanTrial(accountId: string) {
-    const { data: acc } = await supabaseAdmin.from('user_accounts').select('*').eq('id', accountId).single();
-    if (!acc || acc.status === 'deleted' || !acc.expires_at) return { expired: false };
-    if (new Date() > new Date(acc.expires_at)) {
-        if (acc.trading_username && acc.trading_username !== 'EXPIRED') await fetchFromHub('users/delete', 'POST', { email: acc.trading_username });
-        await supabaseAdmin.from('user_accounts').update({ status: 'deleted', trading_username: 'EXPIRED', trading_password: 'EXPIRED' }).eq('id', accountId);
-        return { expired: true };
-    }
-    return { expired: false };
 }
 
 export async function cleanupAllTrials(userId: string) {
