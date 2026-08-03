@@ -3,12 +3,12 @@
 **Core Spec for StockMint Engine Synchronization**
 
 ## 1. Overview
-The "Instant Pro" category is a high-intensity account series designed for weekly execution targets. It bypasses evaluation phases but imposes strict validity deadlines.
+The "Instant Pro" category is a high-intensity account series designed for weekly execution targets. It bypasses evaluation phases but imposes strict validity deadlines and liquidity hurdles.
 
 ## 2. Business Logic (App Router Level)
 - **Validity**: Exactly 7 Calendar Days from the timestamp of activation.
 - **Expiry Signal**: At `now() >= expires_at`, the system triggers `POST /api/users/delete` and updates the local state to `status: 'deleted'`.
-- **Market Segment**: Strictly Indian Market (NSE/BSE) for initial release.
+- **Market Segment**: Indian Market (NSE/BSE) and Forex Arena support.
 
 ## 3. StockMint Hub Handshake (API v3.0)
 When provisioning an Instant Pro account, the following payload is sent to `https://stockmint.io/api/users/create`:
@@ -35,4 +35,4 @@ The system calculates a "Liquidity Hurdle" for all Pro accounts. Payouts are rej
 - **50L Pro**: Min balance 75L for withdrawal.
 
 ## 5. UI Placement
-Featured as an outlined featured section above standard tabs to drive high-tier conversions.
+Featured as an outlined featured section above standard tabs in the "Get Funded" arena to drive high-tier conversions.

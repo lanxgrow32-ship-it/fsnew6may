@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,7 +26,9 @@ import {
     CheckCircle,
     Timer,
     Zap,
-    FlaskConical
+    FlaskConical,
+    Trophy,
+    Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,6 +37,7 @@ import { signOut } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInSeconds } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
@@ -81,7 +85,7 @@ const StatCard = ({ title, value, icon, details, progress, progressColor, decora
   </GlassCard>
 );
 
-function CountdownTimer({ expiresAt }: { expiresAt: string }) {
+function CountdownTimer({ expiresAt, label = "Session Remaining" }: { expiresAt: string, label?: string }) {
     const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
 
     useEffect(() => {
@@ -113,7 +117,7 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
         <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex items-center justify-between gap-8 shadow-[0_0_30px_rgba(139,44,245,0.1)]">
             <div className="flex items-center gap-3">
                 <Timer className="h-5 w-5 text-primary animate-pulse" />
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Trial Session Remaining</p>
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">{label}</p>
             </div>
             <p className="text-2xl font-black text-white font-mono tracking-tighter">{timeLeft}</p>
         </div>
@@ -126,6 +130,10 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
     const pnlProgress = initialBalance > 0 ? (Math.abs(stats.totalPnl || 0) / initialBalance) * 100 : 0;
     const currentClassification = stats.accountClassification || account.account_classification || 'evaluation';
     const isTrial = account.is_trial;
+    const isPro = account.account_classification === 'instant_pro';
+
+    const withdrawalHurdle = isPro ? initialBalance * 1.5 : 0;
+    const canWithdraw = stats.balance >= withdrawalHurdle;
 
     const copyText = (text: string) => {
         if (!text) return;
@@ -200,7 +208,8 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Live Metrics & Hub Access</p>
                         </div>
                     </div>
-                    {isTrial && <CountdownTimer expiresAt={account.expires_at} />}
+                    {isTrial && <CountdownTimer expiresAt={account.expires_at} label="Trial Run Remaining" />}
+                    {isPro && account.expires_at && <CountdownTimer expiresAt={account.expires_at} label="Pro Cycle Validity" />}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -219,7 +228,7 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Engine Model</p>
-                                <p className="text-xs md:text-sm font-bold text-white mt-1 truncate capitalize">{isTrial ? 'Trial Run' : account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
+                                <p className="text-xs md:text-sm font-bold text-white mt-1 truncate capitalize">{isTrial ? 'Trial Run' : isPro ? 'Instant Pro' : account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
                                 <p className="text-[9px] text-gray-500 uppercase font-black truncate">Live Status</p>
@@ -232,6 +241,29 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                                 <p className={cn("text-xs md:text-sm font-bold mt-1 truncate capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>
+
+                        {/* PRO WITHDRAWAL TARGET UI */}
+                        {isPro && (
+                            <div className="mt-8 p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-bottom-2">
+                                <div className="flex items-center gap-4 text-center sm:text-left">
+                                    <div className="h-12 w-12 rounded-xl bg-amber-500/20 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                                        <Trophy className="h-6 w-6 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">Withdrawal Target (1.5x)</p>
+                                        <p className="text-lg font-black text-white">Target Balance: ₹{withdrawalHurdle.toLocaleString('en-IN')}</p>
+                                    </div>
+                                </div>
+                                {canWithdraw ? (
+                                    <Badge className="bg-green-500 text-white font-black px-4 py-1.5 rounded-full shadow-lg">TARGET REACHED</Badge>
+                                ) : (
+                                    <div className="flex flex-col items-center sm:items-end gap-1">
+                                        <Badge variant="outline" className="text-gray-500 border-white/10 font-black px-4 py-1.5 rounded-full uppercase">Capital Locked</Badge>
+                                        <p className="text-[8px] text-gray-600 font-bold uppercase">Reach target to unlock rewards</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </GlassCard>
                     <GlassCard className="p-8 text-center flex flex-col items-center justify-center gap-4">
                         <div className="bg-purple-600/20 p-4 rounded-full"><MessageSquare className="w-8 h-8 text-purple-400"/></div>
