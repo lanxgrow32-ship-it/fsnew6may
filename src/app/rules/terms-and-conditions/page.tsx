@@ -16,7 +16,8 @@ import {
     Gem,
     Rocket,
     IndianRupee,
-    HeartHandshake
+    HeartHandshake,
+    CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -10,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { purchaseTournamentEntry, getCompetitionEvents } from './actions';
+import { purchaseTournamentEntry } from './actions';
+import { getCompetitionEvents } from '@/app/competition/actions';
 
 type Registration = {
     id: string;
