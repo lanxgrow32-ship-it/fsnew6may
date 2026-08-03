@@ -132,9 +132,6 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
     const isTrial = account.is_trial;
     const isPro = account.account_classification === 'instant_pro';
 
-    const withdrawalHurdle = isPro ? initialBalance * 1.5 : 0;
-    const canWithdraw = stats.balance >= withdrawalHurdle;
-
     const copyText = (text: string) => {
         if (!text) return;
         navigator.clipboard.writeText(text);
@@ -241,29 +238,6 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                                 <p className={cn("text-xs md:text-sm font-bold mt-1 truncate capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>
-
-                        {/* PRO WITHDRAWAL TARGET UI */}
-                        {isPro && (
-                            <div className="mt-8 p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-bottom-2">
-                                <div className="flex items-center gap-4 text-center sm:text-left">
-                                    <div className="h-12 w-12 rounded-xl bg-amber-500/20 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-                                        <Trophy className="h-6 w-6 text-amber-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">Withdrawal Target (1.5x)</p>
-                                        <p className="text-lg font-black text-white">Target Balance: ₹{withdrawalHurdle.toLocaleString('en-IN')}</p>
-                                    </div>
-                                </div>
-                                {canWithdraw ? (
-                                    <Badge className="bg-green-500 text-white font-black px-4 py-1.5 rounded-full shadow-lg">TARGET REACHED</Badge>
-                                ) : (
-                                    <div className="flex flex-col items-center sm:items-end gap-1">
-                                        <Badge variant="outline" className="text-gray-500 border-white/10 font-black px-4 py-1.5 rounded-full uppercase">Capital Locked</Badge>
-                                        <p className="text-[8px] text-gray-600 font-bold uppercase">Reach target to unlock rewards</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
                     </GlassCard>
                     <GlassCard className="p-8 text-center flex flex-col items-center justify-center gap-4">
                         <div className="bg-purple-600/20 p-4 rounded-full"><MessageSquare className="w-8 h-8 text-purple-400"/></div>

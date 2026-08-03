@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Check, Timer, TrendingUp, Zap, IndianRupee, Shield, Ban } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { ArrowLeft, Check, Timer, TrendingUp, Zap, IndianRupee, Shield, Ban, Trophy, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
@@ -39,10 +39,10 @@ export default function InstantProRulesPage() {
                             <p className="text-[10px] text-gray-500 uppercase mt-1">One-Week Cycle</p>
                         </Card>
                         <Card className="bg-white/5 border-white/10 text-center p-6">
-                            <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-3" />
-                            <h3 className="font-bold text-white uppercase text-xs tracking-widest">Withdrawal Hurdle</h3>
-                            <p className="text-xl font-black text-white mt-1">1.5X</p>
-                            <p className="text-[10px] text-gray-500 uppercase mt-1">Min. Balance Target</p>
+                            <Trophy className="h-8 w-8 text-green-500 mx-auto mb-3" />
+                            <h3 className="font-bold text-white uppercase text-xs tracking-widest">Profit Share</h3>
+                            <p className="text-xl font-black text-white mt-1">80%</p>
+                            <p className="text-[10px] text-gray-500 uppercase mt-1">Trader Performance Reward</p>
                         </Card>
                     </div>
 
@@ -55,10 +55,9 @@ export default function InstantProRulesPage() {
                         <CardContent className="space-y-6">
                             <div className="space-y-3">
                                 <RuleItem><strong>Instant Activation:</strong> No challenge, no targets. Start trading live capital immediately.</RuleItem>
-                                <RuleItem><strong>Daily Payouts:</strong> Profits can be withdrawn every single day once the liquidity hurdle is met.</RuleItem>
-                                <RuleItem><strong>Liquidity Hurdle:</strong> To be eligible for withdrawal, your balance must be at least 1.5x your initial capital (e.g., 5L Pro requires 7.5L balance).</RuleItem>
+                                <RuleItem><strong>Daily Payouts:</strong> Profits can be withdrawn every single day once eligibility criteria are met.</RuleItem>
                                 <RuleItem><strong>Overall Drawdown:</strong> 10% Trailing. If equity drops below 10% of your peak balance, the account is breached.</RuleItem>
-                                <RuleItem><strong>Daily Drawdown:</strong> 5% per day based on the opening balance.</RuleItem>
+                                <RuleItem><strong>Daily Drawdown:</strong> 5% per day based on the opening balance of the session.</RuleItem>
                             </div>
                             
                             <Separator className="bg-white/5" />
@@ -70,13 +69,24 @@ export default function InstantProRulesPage() {
                                 <ul className="list-disc list-inside text-sm text-gray-400 space-y-2 ml-1">
                                     <li>News Trading is restricted ±5 minutes around high-impact events.</li>
                                     <li>Martingale, Hedging, and Signal Bots result in immediate termination.</li>
-                                    <li>Minimum holding time of 45 seconds per trade is mandatory.</li>
+                                    <li>Minimum holding time per individual position is mandatory.</li>
                                 </ul>
                             </div>
                         </CardContent>
-                        <CardFooter className="bg-primary/5 border-t border-white/5 p-6">
-                            <p className="text-xs text-gray-500 italic">All Instant Pro accounts are 100% simulated environments. Performance Rewards are professional fees based on consistent execution.</p>
-                        </CardFooter>
+                    </Card>
+
+                    <Card className="bg-white/5 border-white/10">
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-3">
+                                <FileText className="text-primary w-6 h-6" /> Terms & Conditions
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 text-sm text-gray-400 leading-relaxed">
+                            <p>To be eligible for a performance reward disbursement on an Instant Pro account, the account balance must reach a minimum liquidity threshold of 1.5x the initial starting capital.</p>
+                            <p>All trades must be held for a minimum of 45 seconds from entry to exit. Any trade closed before this duration will be considered a violation of the execution policy and may lead to disqualification.</p>
+                            <p>The 7-day validity period begins immediately upon account activation. After the expiration of this period, the account will be automatically deactivated and any remaining positions closed.</p>
+                            <p>All Instant Pro accounts are 100% simulated environments. Performance Rewards are professional fees based on consistent execution and adherence to all risk protocols.</p>
+                        </CardContent>
                     </Card>
 
                     <div className="text-center">
