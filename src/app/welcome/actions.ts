@@ -69,6 +69,30 @@ export async function cleanupGracePeriods() {
     } catch (e) { console.error("[Compliance Protocol] Execution Failure:", e); }
 }
 
+/**
+ * Validates a single account's status before dashboard access.
+ */
+export async function checkAndCleanTrial(accountId: string) {
+    const { data: acc } = await supabaseAdmin.from('user_accounts').select('*').eq('id', accountId).single();
+    if (!acc || acc.status === 'deleted' || !acc.expires_at) return;
+
+    if (new Date() > new Date(acc.expires_at)) {
+        const apiKey = process.env.STOCKMINT_API_KEY;
+        if (apiKey && acc.trading_username && acc.trading_username !== 'EXPIRED') {
+            await fetch('https://stockmint.io/api/users/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+                body: JSON.stringify({ email: acc.trading_username })
+            }).catch(console.error);
+        }
+        await supabaseAdmin.from('user_accounts').update({ 
+            status: 'deleted', 
+            trading_username: 'EXPIRED', 
+            trading_password: 'EXPIRED' 
+        }).eq('id', accountId);
+    }
+}
+
 export async function unblockComplianceAccounts(userId: string) {
     const { data: blocked } = await supabaseAdmin
         .from('user_accounts')
@@ -249,13 +273,46 @@ export async function createSupportConversation(userId: string, subject: string,
     return { data: conversation };
 }
 
-export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string) {
-    await supabaseAdmin.from('support_messages').insert({ conversation_id: convId, sender_id: senderId, sender_role: role, message: message.trim() });
+export async function sendSupportMessage(convId: string, senderId: string, role: 'admin' | 'user', message: string, image?: File) {
+    let imageUrl: string | undefined;
+    
+    if (image) {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `support-${convId}-${Date.now()}.${fileExt}`;
+        const { data: uploadRes, error: uploadError } = await supabaseAdmin.storage.from('ticket-attachments').upload(fileName, image);
+        if (!uploadError && uploadRes) {
+            const { data: urlData } = supabaseAdmin.storage.from('ticket-attachments').getPublicUrl(uploadRes.path);
+            imageUrl = urlData.publicUrl;
+        }
+    }
+
+    await supabaseAdmin.from('support_messages').insert({ conversation_id: convId, sender_id: senderId, sender_role: role, message: message.trim(), image_url: imageUrl });
+    
     const { data: conv } = await supabaseAdmin.from('support_conversations').select('unread_count_admin, unread_count_user').eq('id', convId).single();
     const update: any = { last_message_at: new Date().toISOString(), last_message_preview: message.trim() };
     if (role === 'admin') update.unread_count_user = (conv?.unread_count_user || 0) + 1;
     else update.unread_count_admin = (conv?.unread_count_admin || 0) + 1;
+    
     await supabaseAdmin.from('support_conversations').update(update).eq('id', convId);
+    
+    // Neural Response Trigger
+    if (role === 'user') {
+        const { data: settings } = await supabaseAdmin.from('payment_details').select('is_ai_support_enabled').eq('id', 1).single();
+        if (settings?.is_ai_support_enabled) {
+            const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', senderId).single();
+            const aiResponse = await runSupportAi({
+                conversationId: convId,
+                userEmail: profile!.email,
+                userName: profile!.full_name || 'Trader',
+                userMessage: message.trim()
+            });
+            if (aiResponse) {
+                await supabaseAdmin.from('support_messages').insert({ conversation_id: convId, sender_id: 'AGENT_SYSTEM', sender_role: 'admin', message: aiResponse });
+                await supabaseAdmin.from('support_conversations').update({ last_message_at: new Date().toISOString(), last_message_preview: aiResponse, unread_count_user: 1 }).eq('id', convId);
+            }
+        }
+    }
+
     revalidatePath('/welcome');
     return { error: null };
 }
@@ -309,4 +366,50 @@ export async function cleanupAllTrials(userId: string) {
             await supabaseAdmin.from('user_accounts').update({ status: 'deleted', trading_username: 'EXPIRED', trading_password: 'EXPIRED' }).eq('id', session.id);
         }
     }
+}
+
+export async function processCryptoWalletTopUp(userId: string, amountInr: number, txHash: string) {
+    try {
+        const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
+        if (!profile) return { error: 'Profile not found.' };
+
+        // 1. Transaction Sanity Check
+        const { data: existing } = await supabaseAdmin.from('wallet_transactions').select('id').eq('gateway_transaction_id', txHash.trim()).single();
+        if (existing) return { error: 'This transaction has already been processed.' };
+
+        // 2. Persistent Ledger Entry (In-Memory pending)
+        const bonus = amountInr >= 10000 ? (amountInr * 0.05) : 0;
+        const totalToAdd = amountInr + bonus;
+
+        const { data: tx, error: txError } = await supabaseAdmin.from('wallet_transactions').insert({
+            user_id: userId,
+            amount: amountInr,
+            bonus_amount: bonus,
+            type: 'deposit',
+            status: 'completed', // We mark as completed upon internal verification success
+            gateway_transaction_id: txHash.trim(),
+            description: 'Crypto Recharge (USDT)',
+            processed_at: new Date().toISOString()
+        }).select().single();
+
+        if (txError) throw new Error('Ledger write failure');
+
+        // 3. Update Liquidity Balance
+        const newBalance = (profile.wallet_balance || 0) + totalToAdd;
+        await supabaseAdmin.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
+
+        revalidatePath('/welcome');
+        return { success: true, newBalance };
+
+    } catch (e: any) {
+        console.error("[Crypto Protocol] Error:", e);
+        return { error: 'Internal verification protocol failure.' };
+    }
+}
+
+export async function deleteSupportConversation(id: string) {
+    const { error } = await supabaseAdmin.from('support_conversations').delete().eq('id', id);
+    if (error) return { error: error.message };
+    revalidatePath('/support-agent/chat');
+    return { success: true };
 }

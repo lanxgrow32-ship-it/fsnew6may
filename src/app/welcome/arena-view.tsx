@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -286,7 +285,7 @@ export function ArenaView({
                     {marketSegment === 'forex' ? plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />) : plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step Standard" />)}
                 </TabsContent>
                 <TabsContent value="ptp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {plans.ptp.map(p => <PlanBox key={p.title} plan={p} category="PassThenPay" />)}
+                    {plans.ptp.map(p => <PlanBox key={p.size} plan={p} category="PassThenPay" />)}
                 </TabsContent>
             </Tabs>
             
@@ -298,3 +297,4 @@ export function ArenaView({
         </div>
     );
 }
+
