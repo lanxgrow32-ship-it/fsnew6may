@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState } from 'react';
@@ -96,7 +95,7 @@ export default function LoginPage() {
                                     id="email" 
                                     name="email" 
                                     type="email" 
-                                    placeholder="userz@gmail.com" 
+                                    placeholder="user@gmail.com" 
                                     required 
                                     className="bg-black/20 border-white/10 text-white h-12 focus:ring-primary/50" 
                                 />
