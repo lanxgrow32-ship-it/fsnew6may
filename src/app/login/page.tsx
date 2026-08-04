@@ -96,7 +96,7 @@ export default function LoginPage() {
                                     id="email" 
                                     name="email" 
                                     type="email" 
-                                    placeholder="name@example.com" 
+                                    placeholder="userz@gmail.com" 
                                     required 
                                     className="bg-black/20 border-white/10 text-white h-12 focus:ring-primary/50" 
                                 />
