@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -78,7 +77,7 @@ export default function AccountRequestsPage() {
             .not('plan_name', 'ilike', '%pro%');
         
         if (currentMarket === 'indian') {
-            query = query.or('market_type.eq('indian'),market_type.is(null)');
+            query = query.or('market_type.eq.indian,market_type.is.null');
         } else if (currentMarket === 'forex') {
             query = query.eq('market_type', 'forex');
         }
