@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, Megaphone, ShieldAlert, Globe, LayoutGrid, Database } from 'lucide-react';
+import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, Megaphone, ShieldAlert, Globe, LayoutGrid, Database, RefreshCw } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -160,9 +160,9 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
   const [pendingCount, setPendingCount] = useState(0);
   const [kycCount, setKycCount] = useState(0);
   const [marketType, setMarketType] = useState<'indian' | 'forex' | 'all'>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   
-  // Persist market selection
   useEffect(() => {
     const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex' | 'all';
     if (saved) {
@@ -183,44 +183,62 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
   }, [initialProfiles, initialCount]);
 
   const fetchProfiles = async (targetMarket?: string) => {
+    setIsRefreshing(true);
     const client = await supabase;
     const currentMarket = targetMarket || marketType;
 
-    // PROTOCOL v11.3: NULL-Safe Role Filtering to ensure non-admin users with NULL roles are visible
-    let query = client.from('profiles').select('*', { count: 'exact' });
-    query = query.or('role.neq.admin,role.is.null');
-    
-    if (currentMarket === 'indian') {
-        query = query.or('market_type.eq.indian,market_type.is.null');
-    } else if (currentMarket === 'forex') {
-        query = query.eq('market_type', 'forex');
-    }
+    let allFetchedProfiles: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+    let finalCount = 0;
 
-    if (masterView) {
-      query = query.eq('is_hidden', true);
-    } else {
-      query = query.or('is_hidden.is.false,is_hidden.is.null');
-    }
-    
-    const { data: updatedProfiles, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(0, 49999);
+    try {
+        while (hasMore) {
+            let query = client.from('profiles').select('*', { count: 'exact' });
+            query = query.or('role.neq.admin,role.is.null');
+            
+            if (currentMarket === 'indian') {
+                query = query.or('market_type.eq.indian,market_type.is.null');
+            } else if (currentMarket === 'forex') {
+                query = query.eq('market_type', 'forex');
+            }
 
-    if (error) {
-        toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });
-    } else if (updatedProfiles) {
-        setProfiles(updatedProfiles);
-        
-        // Absolute Stats (Always including NULL roles)
-        if (currentMarket !== 'all') {
-            const { count: absoluteCount } = await client.from('profiles').select('id', { count: 'exact', head: true }).or('role.neq.admin,role.is.null');
-            setTotalDbCount(absoluteCount || initialCount);
-        } else {
-            setTotalDbCount(count || updatedProfiles.length);
+            if (masterView) {
+                query = query.eq('is_hidden', true);
+            } else {
+                query = query.or('is_hidden.is.false,is_hidden.is.null');
+            }
+            
+            const { data: chunk, error, count } = await query
+                .order('created_at', { ascending: false })
+                .range(page * pageSize, (page + 1) * pageSize - 1);
+
+            if (error) throw error;
+
+            if (chunk) {
+                allFetchedProfiles = [...allFetchedProfiles, ...chunk];
+                finalCount = count || allFetchedProfiles.length;
+                
+                if (chunk.length < pageSize || allFetchedProfiles.length >= finalCount) {
+                    hasMore = false;
+                } else {
+                    page++;
+                }
+            } else {
+                hasMore = false;
+            }
         }
 
-        setPendingCount(updatedProfiles.filter(p => !p.is_approved).length);
-        setKycCount(updatedProfiles.filter(p => p.kyc_status === 'submitted').length);
+        setProfiles(allFetchedProfiles);
+        setTotalDbCount(finalCount);
+        setPendingCount(allFetchedProfiles.filter(p => !p.is_approved).length);
+        setKycCount(allFetchedProfiles.filter(p => p.kyc_status === 'submitted').length);
+
+    } catch (error: any) {
+        toast({ title: 'Fetch Failure', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsRefreshing(false);
     }
   }
 
@@ -228,7 +246,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     const initSub = async () => {
         const client = await supabase;
         const channel = client
-          .channel('realtime-profiles-sync-v11')
+          .channel('realtime-profiles-sync-v12')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
             () => { fetchProfiles(); }
           )
@@ -337,7 +355,12 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
                     </Badge>
                 </h1>
            </div>
-           <div className="flex items-center gap-4"><ThemeToggle /><CreateAdminForm className="hidden md:flex"/><ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}><AdminNav /></ClientOnly></div>
+           <div className="flex items-center gap-4">
+            {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+            <ThemeToggle />
+            <CreateAdminForm className="hidden md:flex"/>
+            <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}><AdminNav /></ClientOnly>
+           </div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -25,36 +26,50 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const periodStart = startDate || new Date(0);
     const periodEnd = endDate || new Date();
     
-    let query = supabase
-        .from('profiles')
-        .select('id, full_name, email, final_amount_paid, plan_purchased, created_at, discount_amount, market_type')
-        .eq('is_approved', true)
-        .gt('final_amount_paid', 0)
-        .or('account_model.is.null,account_model.neq.passthrupay');
+    let allSales: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    if (masterView) {
-        query = query.eq('is_hidden', true);
-    } else {
-        query = query.or('is_hidden.is.false,is_hidden.is.null');
+    while (hasMore) {
+        let query = supabase
+            .from('profiles')
+            .select('id, full_name, email, final_amount_paid, plan_purchased, created_at, discount_amount, market_type')
+            .eq('is_approved', true)
+            .gt('final_amount_paid', 0)
+            .or('account_model.is.null,account_model.neq.passthrupay');
+
+        if (masterView) {
+            query = query.eq('is_hidden', true);
+        } else {
+            query = query.or('is_hidden.is.false,is_hidden.is.null');
+        }
+
+        if (marketFilter === 'indian') {
+            query = query.or('market_type.eq.indian,market_type.is.null');
+        } else if (marketFilter === 'forex') {
+            query = query.eq('market_type', 'forex');
+        }
+
+        const { data, error } = await query
+            .gte('created_at', periodStart.toISOString())
+            .lte('created_at', periodEnd.toISOString())
+            .order('created_at', { ascending: false })
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (error) {
+            console.error("Error fetching sales data chunk:", error);
+            hasMore = false;
+        } else if (data) {
+            allSales = [...allSales, ...data];
+            if (data.length < pageSize) hasMore = false;
+            else page++;
+        } else {
+            hasMore = false;
+        }
     }
 
-    if (marketFilter === 'indian') {
-        query = query.or('market_type.eq.indian,market_type.is.null');
-    } else if (marketFilter === 'forex') {
-        query = query.eq('market_type', 'forex');
-    }
-    // If marketFilter is 'all' or undefined, no market filter is applied.
-
-    const { data: sales, error } = await query
-        .gte('created_at', periodStart.toISOString())
-        .lte('created_at', periodEnd.toISOString())
-        .order('created_at', { ascending: false })
-        .range(0, 49999);
-
-    if (error || !sales) {
-        console.error("Error fetching sales data:", error);
-        return null;
-    }
+    if (allSales.length === 0) return null;
 
     let totalNetRevenue = 0;
     let totalDiscounts = 0;
@@ -65,7 +80,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     const salesByDayOfWeek: { [day: number]: number } = {};
     const salesByHour: { [hour: number]: number } = {};
     
-    sales.forEach(sale => {
+    allSales.forEach(sale => {
         const revenue = sale.final_amount_paid || 0;
         const discount = sale.discount_amount || 0;
         
@@ -107,8 +122,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         totalNetRevenue,
         totalGrossRevenue: totalNetRevenue + totalDiscounts,
         totalDiscounts,
-        totalSalesCount: sales.length,
-        arpu: sales.length > 0 ? totalNetRevenue / sales.length : 0,
+        totalSalesCount: allSales.length,
+        arpu: allSales.length > 0 ? totalNetRevenue / allSales.length : 0,
         salesByDate: Object.entries(salesByDay)
             .map(([date, { revenue, sales }]) => ({ date, revenue, sales }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
@@ -126,7 +141,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         allPlansBreakdown: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue),
-        recentSales: sales.slice(0, 25).map(s => ({ 
+        recentSales: allSales.slice(0, 25).map(s => ({ 
             id: s.id, 
             name: s.full_name, 
             email: s.email, 

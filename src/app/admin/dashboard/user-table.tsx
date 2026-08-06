@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, X, Download, Calendar as CalendarIcon, User as UserIcon, Filter } from 'lucide-react';
+import { Search, Trash2, Loader2, X, Download, Calendar as CalendarIcon, User as UserIcon, Filter, RefreshCw } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteMultipleUsers } from './actions';
@@ -50,10 +50,10 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
         return profiles.filter((p) => {
             // Simplified & Robust Search Protocol: Name, Email, ID (UUID), or Mobile
             const matchesSearch = !lowerSearch || (
-                (p.full_name || '').toLowerCase().includes(lowerSearch) || 
-                (p.email || '').toLowerCase().includes(lowerSearch) ||
-                (p.id || '').toLowerCase().includes(lowerSearch) ||
-                (p.mobile_number || '').toLowerCase().includes(lowerSearch)
+                String(p.full_name || '').toLowerCase().includes(lowerSearch) || 
+                String(p.email || '').toLowerCase().includes(lowerSearch) ||
+                String(p.id || '').toLowerCase().includes(lowerSearch) ||
+                String(p.mobile_number || '').toLowerCase().includes(lowerSearch)
             );
 
             const matchesKyc = filters.kyc === 'all' || p.kyc_status === filters.kyc;
@@ -116,6 +116,14 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                         onChange={(e) => setSearchTerm(e.target.value)} 
                         className="pl-10 h-11 bg-card shadow-sm" 
                     />
+                    {searchTerm && (
+                        <button 
+                            onClick={() => setSearchTerm('')} 
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Select value={filters.approval} onValueChange={(v) => setFilters(f => ({...f, approval: v}))}>
@@ -147,6 +155,12 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                     </Select>
                     <Button variant="outline" onClick={handleDownloadCSV} className="h-11 border-white/10"><Download className="h-4 w-4 mr-2"/>Export CSV</Button>
                 </div>
+            </div>
+
+            <div className="flex items-center justify-between px-1">
+                <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                    Showing {filteredProfiles.length} of {profiles.length} total traders
+                </p>
             </div>
 
             {selectedUserIds.length > 0 && (
