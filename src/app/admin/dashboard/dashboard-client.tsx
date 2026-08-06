@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, Megaphone, ShieldAlert, Globe, LayoutGrid } from 'lucide-react';
+import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, Megaphone, ShieldAlert, Globe, LayoutGrid, Database } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -158,21 +158,21 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
   const [totalDbCount, setTotalDbCount] = useState(initialCount);
   const [pendingCount, setPendingCount] = useState(0);
   const [kycCount, setKycCount] = useState(0);
-  const [marketType, setMarketType] = useState<'indian' | 'forex'>('indian');
+  const [marketType, setMarketType] = useState<'indian' | 'forex' | 'all'>('all');
   const { toast } = useToast();
   
   // Persist market selection
   useEffect(() => {
-    const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex';
+    const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex' | 'all';
     if (saved) {
         setMarketType(saved);
     }
   }, []);
 
-  const handleMarketSwitch = (type: 'indian' | 'forex') => {
+  const handleMarketSwitch = (type: 'indian' | 'forex' | 'all') => {
       setMarketType(type);
       localStorage.setItem('fs_admin_market', type);
-      toast({ title: `Context Switched`, description: `Viewing ${type === 'indian' ? 'Indian Market' : 'Forex Arena'}` });
+      toast({ title: `Context Switched`, description: `Viewing ${type === 'all' ? 'All Participants' : type === 'indian' ? 'Indian Market' : 'Forex Arena'}` });
       fetchProfiles(type);
   }
   
@@ -185,14 +185,15 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     const client = await supabase;
     const currentMarket = targetMarket || marketType;
 
-    // PROTOCOL v10.1: Massive Dataset Query with precise server-side market filtering
+    // PROTOCOL v11.2: Hardened fetch to ensure zero "lost" users
     let query = client.from('profiles').select('*', { count: 'exact' }).neq('role', 'admin');
     
     if (currentMarket === 'indian') {
         query = query.or('market_type.eq.indian,market_type.is.null');
-    } else {
+    } else if (currentMarket === 'forex') {
         query = query.eq('market_type', 'forex');
     }
+    // Note: if currentMarket is 'all', we don't append a market_type filter.
 
     if (masterView) {
       query = query.eq('is_hidden', true);
@@ -200,7 +201,6 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
       query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
     
-    // Explicitly fetching up to 50,000 records to bypass Supabase default limits
     const { data: updatedProfiles, error, count } = await query
         .order('created_at', { ascending: false })
         .range(0, 49999);
@@ -209,9 +209,16 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
         toast({ title: 'Error fetching profiles', description: error.message, variant: 'destructive' });
     } else if (updatedProfiles) {
         setProfiles(updatedProfiles);
-        setTotalDbCount(count || updatedProfiles.length);
         
-        // Recalculate secondary stats from the massive dataset
+        // Stats Calculation (Context-Independent for Total Traders)
+        // To get the absolute total count, we do a side query if we are filtered
+        if (currentMarket !== 'all') {
+            const { count: absoluteCount } = await client.from('profiles').select('id', { count: 'exact', head: true }).neq('role', 'admin');
+            setTotalDbCount(absoluteCount || initialCount);
+        } else {
+            setTotalDbCount(count || updatedProfiles.length);
+        }
+
         setPendingCount(updatedProfiles.filter(p => !p.is_approved).length);
         setKycCount(updatedProfiles.filter(p => p.kyc_status === 'submitted').length);
     }
@@ -221,7 +228,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     const initSub = async () => {
         const client = await supabase;
         const channel = client
-          .channel('realtime profiles main grid')
+          .channel('realtime-profiles-sync-v2')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
             () => { fetchProfiles(); }
           )
@@ -232,7 +239,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
         };
     }
     initSub();
-    fetchProfiles(); // Trigger first refined fetch
+    fetchProfiles();
   }, [supabase, masterView, marketType]);
   
   const onUserDelete = (deletedUserId: string) => {
@@ -251,9 +258,9 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
   }
 
   const stats = [
-    { title: "Total Traders", value: totalDbCount, icon: User },
-    { title: "Pending Approval", value: pendingCount, icon: User },
-    { title: "KYC Submitted", value: kycCount, icon: User },
+    { title: "Total Traders (DB)", value: totalDbCount, icon: Database },
+    { title: "Current Context Pending", value: pendingCount, icon: User },
+    { title: "KYC Review Required", value: kycCount, icon: ShieldAlert },
   ];
 
   return (
@@ -271,6 +278,15 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
                 <div className="px-2 py-4 space-y-4">
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-2">Market Context</p>
                     <div className="flex flex-col gap-1">
+                         <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleMarketSwitch('all')}
+                            className={cn("justify-start gap-2 h-10 px-3", marketType === 'all' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
+                        >
+                            <Users className="w-4 h-4" />
+                            All Participants
+                        </Button>
                         <Button 
                             variant="ghost" 
                             size="sm" 
@@ -317,7 +333,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
                 <h1 className="text-xl font-bold uppercase tracking-tight flex items-center gap-3">
                     User Management
                     <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] font-black uppercase">
-                        {marketType === 'indian' ? 'Indian' : 'Forex'}
+                        {marketType === 'all' ? 'Universal' : marketType === 'indian' ? 'Indian' : 'Forex'}
                     </Badge>
                 </h1>
            </div>

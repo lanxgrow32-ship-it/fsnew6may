@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -31,7 +30,7 @@ import {
     LayoutGrid,
     Zap
 } from 'lucide-react';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
@@ -50,21 +49,21 @@ export default function AccountRequestsPage() {
     const [isPending, startTransition] = useTransition();
     
     // Global Market Context
-    const [marketType, setMarketType] = useState<'indian' | 'forex'>('indian');
+    const [marketType, setMarketType] = useState<'indian' | 'forex' | 'all'>('all');
 
     // Search and Filter States
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('pending');
 
     useEffect(() => {
-        const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex';
+        const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex' | 'all';
         if (saved) setMarketType(saved);
     }, []);
 
-    const handleMarketSwitch = (type: 'indian' | 'forex') => {
+    const handleMarketSwitch = (type: 'indian' | 'forex' | 'all') => {
         setMarketType(type);
         localStorage.setItem('fs_admin_market', type);
-        toast({ title: `Market Switched`, description: `Context updated to ${type === 'indian' ? 'Indian' : 'Forex'}` });
+        toast({ title: `Market Switched`, description: `Context updated to ${type === 'all' ? 'Universal' : type === 'indian' ? 'Indian' : 'Forex'}` });
         fetchRequests(type);
     }
 
@@ -80,7 +79,7 @@ export default function AccountRequestsPage() {
         
         if (currentMarket === 'indian') {
             query = query.or('market_type.eq.indian,market_type.is.null');
-        } else {
+        } else if (currentMarket === 'forex') {
             query = query.eq('market_type', 'forex');
         }
 
@@ -154,6 +153,15 @@ export default function AccountRequestsPage() {
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
+                                        onClick={() => handleMarketSwitch('all')}
+                                        className={cn("justify-start gap-2 h-10 px-3", marketType === 'all' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
+                                    >
+                                        <Users className="w-4 h-4" />
+                                        All Participants
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
                                         onClick={() => handleMarketSwitch('indian')}
                                         className={cn("justify-start gap-2 h-10 px-3", marketType === 'indian' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
                                     >
@@ -198,7 +206,7 @@ export default function AccountRequestsPage() {
                         <h1 className="text-xl font-bold uppercase tracking-tight flex items-center gap-3">
                             Standard Ledger
                             <Badge className="bg-primary/5 text-primary border-primary/20 text-[10px] font-black uppercase">
-                                {marketType === 'indian' ? 'Indian' : 'Forex'}
+                                {marketType === 'all' ? 'Universal' : marketType === 'indian' ? 'Indian' : 'Forex'}
                             </Badge>
                         </h1>
                     </div>

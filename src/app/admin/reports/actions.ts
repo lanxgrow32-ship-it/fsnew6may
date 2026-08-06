@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -39,9 +38,12 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         query = query.or('is_hidden.is.false,is_hidden.is.null');
     }
 
-    if (marketFilter && marketFilter !== 'all') {
-        query = query.eq('market_type', marketFilter);
+    if (marketFilter === 'indian') {
+        query = query.or('market_type.eq.indian,market_type.is.null');
+    } else if (marketFilter === 'forex') {
+        query = query.eq('market_type', 'forex');
     }
+    // If marketFilter is 'all' or undefined, no market filter is applied.
 
     const { data: sales, error } = await query
         .gte('created_at', periodStart.toISOString())
