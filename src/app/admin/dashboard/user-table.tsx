@@ -40,15 +40,22 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
     const [filters, setFilters] = useState({
         classification: 'all',
         kyc: 'all',
-        approval: 'all' // Added approval status filter
+        approval: 'all'
     });
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     const filteredProfiles = useMemo(() => {
-        const lowerSearch = searchTerm.toLowerCase();
+        const lowerSearch = searchTerm.toLowerCase().trim();
         return profiles.filter((p) => {
-            const matchesSearch = p.full_name?.toLowerCase().includes(lowerSearch) || p.email?.toLowerCase().includes(lowerSearch);
+            // Simplified & Robust Search Protocol: Name, Email, ID (UUID), or Mobile
+            const matchesSearch = !lowerSearch || (
+                (p.full_name?.toLowerCase() || '').includes(lowerSearch) || 
+                (p.email?.toLowerCase() || '').includes(lowerSearch) ||
+                (p.id?.toLowerCase() || '').includes(lowerSearch) ||
+                (p.mobile_number?.toLowerCase() || '').includes(lowerSearch)
+            );
+
             const matchesKyc = filters.kyc === 'all' || p.kyc_status === filters.kyc;
             
             let matchesClass = true;
@@ -81,6 +88,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
     const handleDownloadCSV = () => {
         const data = filteredProfiles.map((p, i) => ({
             'S.No': i + 1,
+            'User ID': p.id,
             'Name': p.full_name,
             'Email': p.email,
             'Mobile': p.mobile_number,
@@ -93,7 +101,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'traders-export.csv';
+        link.download = `traders-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
         link.click();
     }
 
@@ -102,11 +110,16 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search trader by name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-11" />
+                    <Input 
+                        placeholder="Search by Name, Email, UUID, or Phone..." 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)} 
+                        className="pl-10 h-11 bg-card shadow-sm" 
+                    />
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Select value={filters.approval} onValueChange={(v) => setFilters(f => ({...f, approval: v}))}>
-                        <SelectTrigger className="w-[150px] h-11"><SelectValue placeholder="Approval" /></SelectTrigger>
+                        <SelectTrigger className="w-[150px] h-11 bg-card"><SelectValue placeholder="Approval" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Any Approval</SelectItem>
                             <SelectItem value="approved">Approved</SelectItem>
@@ -114,7 +127,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                         </SelectContent>
                     </Select>
                     <Select value={filters.classification} onValueChange={(v) => setFilters(f => ({...f, classification: v}))}>
-                        <SelectTrigger className="w-[160px] h-11"><SelectValue placeholder="Account Type" /></SelectTrigger>
+                        <SelectTrigger className="w-[160px] h-11 bg-card"><SelectValue placeholder="Account Type" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Account Types</SelectItem>
                             <SelectItem value="instant">Instant Live</SelectItem>
@@ -124,7 +137,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                         </SelectContent>
                     </Select>
                     <Select value={filters.kyc} onValueChange={(v) => setFilters(f => ({...f, kyc: v}))}>
-                        <SelectTrigger className="w-[150px] h-11"><SelectValue placeholder="KYC Status" /></SelectTrigger>
+                        <SelectTrigger className="w-[150px] h-11 bg-card"><SelectValue placeholder="KYC Status" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Any KYC</SelectItem>
                             <SelectItem value="verified">Verified</SelectItem>
@@ -132,7 +145,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                             <SelectItem value="submitted">Review Required</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" onClick={handleDownloadCSV} className="h-11"><Download className="h-4 w-4 mr-2"/>CSV</Button>
+                    <Button variant="outline" onClick={handleDownloadCSV} className="h-11 border-white/10"><Download className="h-4 w-4 mr-2"/>Export CSV</Button>
                 </div>
             </div>
 
@@ -174,9 +187,9 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">{p.full_name?.[0]}</div>
+                                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">{p.full_name?.[0] || 'U'}</div>
                                         <div className="min-w-0">
-                                            <p className="font-bold truncate text-sm text-foreground">{p.full_name}</p>
+                                            <p className="font-bold truncate text-sm text-foreground">{p.full_name || 'Incomplete Profile'}</p>
                                             <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                                         </div>
                                     </div>
@@ -200,7 +213,7 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                                 <TableCell className="text-right text-xs text-muted-foreground">{format(new Date(p.created_at), 'dd MMM yyyy')}</TableCell>
                             </TableRow>
                         )) : (
-                            <TableRow><TableCell colSpan={7} className="h-40 text-center text-muted-foreground">No traders match your current search and filter criteria.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={7} className="h-40 text-center text-muted-foreground italic">No traders match your current search and filter criteria.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>

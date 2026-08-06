@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -30,7 +31,7 @@ import {
     LayoutGrid,
     Zap
 } from 'lucide-react';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
@@ -72,13 +73,12 @@ export default function AccountRequestsPage() {
         const currentMarket = targetMarket || marketType;
         const client = await supabase;
         
-        // PROTOCOL v11.0: Filter out Pro accounts (they have their own ledger)
         let query = client.from('user_accounts')
-            .select('*, profiles(full_name, email, kyc_status, mobile_number)')
+            .select('*, profiles(id, full_name, email, kyc_status, mobile_number)')
             .not('plan_name', 'ilike', '%pro%');
         
         if (currentMarket === 'indian') {
-            query = query.or('market_type.eq.indian,market_type.is.null');
+            query = query.or('market_type.eq('indian'),market_type.is(null)');
         } else if (currentMarket === 'forex') {
             query = query.eq('market_type', 'forex');
         }
@@ -97,12 +97,18 @@ export default function AccountRequestsPage() {
     }, [marketType]);
 
     const filteredRequests = useMemo(() => {
+        const lowerSearch = searchTerm.toLowerCase().trim();
         return requests.filter(req => {
             const profile = req.profiles || {};
-            const fullName = (profile.full_name || '').toLowerCase();
-            const email = (profile.email || '').toLowerCase();
-            const search = searchTerm.toLowerCase();
-            const matchesSearch = fullName.includes(search) || email.includes(search) || (req.transaction_id || '').toLowerCase().includes(search);
+            
+            // Comprehensive Global Search: Name, Email, UUID, Mobile, or UTR
+            const matchesSearch = !lowerSearch || (
+                (profile.full_name || '').toLowerCase().includes(lowerSearch) || 
+                (profile.email || '').toLowerCase().includes(lowerSearch) || 
+                (profile.id || '').toLowerCase().includes(lowerSearch) ||
+                (profile.mobile_number || '').toLowerCase().includes(lowerSearch) ||
+                (req.transaction_id || '').toLowerCase().includes(lowerSearch)
+            );
 
             let matchesStatus = true;
             if (statusFilter === 'pending') matchesStatus = !req.is_approved && req.status !== 'rejected';
@@ -216,11 +222,11 @@ export default function AccountRequestsPage() {
                     <div className="flex flex-col lg:flex-row gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Search by trader name, email, or UTR..." 
+                            <input 
+                                placeholder="Search by Name, Email, UUID, or UTR..." 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
-                                className="pl-10 h-11 bg-card"
+                                className="flex h-11 w-full rounded-md border border-input bg-card px-10 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             />
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -270,7 +276,7 @@ export default function AccountRequestsPage() {
                                                     {format(new Date(req.created_at), 'dd MMM, HH:mm')}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="font-bold text-sm text-foreground">{req.profiles?.full_name || 'New User'}</div>
+                                                    <div className="font-bold text-sm text-foreground">{req.profiles?.full_name || 'Incomplete Profile'}</div>
                                                     <div className="text-[10px] text-muted-foreground font-medium">{req.profiles?.email}</div>
                                                 </TableCell>
                                                 <TableCell>
@@ -297,7 +303,7 @@ export default function AccountRequestsPage() {
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
-                                            <TableRow><TableCell colSpan={5} className="text-center py-20 text-muted-foreground font-medium italic">No requests found matching your filters.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={5} className="text-center py-20 text-muted-foreground font-medium italic">No requests found matching your search.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>

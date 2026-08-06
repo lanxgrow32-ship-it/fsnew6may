@@ -35,7 +35,6 @@ import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { useToast } from '@/hooks/use-toast';
 import { approveAccount } from '../account-requests/actions';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -57,7 +56,7 @@ export default function ActivationHubPage() {
         const client = await supabase;
         const { data } = await client
             .from('user_accounts')
-            .select('*, profiles(full_name, email, kyc_status, mobile_number)')
+            .select('*, profiles(id, full_name, email, kyc_status, mobile_number)')
             .order('created_at', { ascending: false })
             .range(0, 49999);
         setRequests(data || []);
@@ -69,12 +68,18 @@ export default function ActivationHubPage() {
     }, []);
 
     const filteredRequests = useMemo(() => {
+        const lowerSearch = searchTerm.toLowerCase().trim();
         return requests.filter(req => {
             const profile = req.profiles || {};
-            const fullName = (profile.full_name || '').toLowerCase();
-            const email = (profile.email || '').toLowerCase();
-            const search = searchTerm.toLowerCase();
-            const matchesSearch = fullName.includes(search) || email.includes(search) || (req.transaction_id || '').toLowerCase().includes(search);
+            
+            // Multi-Target Lookup: Name, Email, UUID, Mobile, or UTR
+            const matchesSearch = !lowerSearch || (
+                (profile.full_name || '').toLowerCase().includes(lowerSearch) || 
+                (profile.email || '').toLowerCase().includes(lowerSearch) || 
+                (profile.id || '').toLowerCase().includes(lowerSearch) ||
+                (profile.mobile_number || '').toLowerCase().includes(lowerSearch) ||
+                (req.transaction_id || '').toLowerCase().includes(lowerSearch)
+            );
 
             let matchesStatus = true;
             if (statusFilter === 'error') matchesStatus = !!req.activation_error;
@@ -135,10 +140,10 @@ export default function ActivationHubPage() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input 
-                                placeholder="Search by trader name or email..." 
+                                placeholder="Search by Name, Email, UUID, or Mobile..." 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
-                                className="pl-10 h-11 bg-card"
+                                className="pl-10 h-11 bg-card shadow-sm"
                             />
                         </div>
                         <div className="flex items-center gap-2">
@@ -238,7 +243,7 @@ export default function ActivationHubPage() {
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
-                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">No sync records found matching your filters.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground font-medium italic">No sync records found matching your search.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
