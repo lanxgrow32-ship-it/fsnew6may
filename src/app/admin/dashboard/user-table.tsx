@@ -50,10 +50,10 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
         return profiles.filter((p) => {
             // Simplified & Robust Search Protocol: Name, Email, ID (UUID), or Mobile
             const matchesSearch = !lowerSearch || (
-                (p.full_name?.toLowerCase() || '').includes(lowerSearch) || 
-                (p.email?.toLowerCase() || '').includes(lowerSearch) ||
-                (p.id?.toLowerCase() || '').includes(lowerSearch) ||
-                (p.mobile_number?.toLowerCase() || '').includes(lowerSearch)
+                (p.full_name || '').toLowerCase().includes(lowerSearch) || 
+                (p.email || '').toLowerCase().includes(lowerSearch) ||
+                (p.id || '').toLowerCase().includes(lowerSearch) ||
+                (p.mobile_number || '').toLowerCase().includes(lowerSearch)
             );
 
             const matchesKyc = filters.kyc === 'all' || p.kyc_status === filters.kyc;

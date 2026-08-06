@@ -1,14 +1,14 @@
+
 import { createClient } from '@/lib/supabase/server';
 import AdminDashboardClient from './dashboard-client';
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  // Load a massive dataset of all users (ignoring account_type restricts) 
-  // to ensure the "Full All" list is visible
+  // PROTOCOL v11.3: NULL-Safe Role Filtering to ensure non-admin users with NULL roles are visible
   const { data: profiles, error, count } = await supabase.from('profiles')
     .select('*', { count: 'exact' })
-    .neq('role', 'admin') // Only exclude actual admins
+    .or('role.neq.admin,role.is.null') // Only exclude actual admins, catch everyone else
     .order('created_at', { ascending: false })
     .range(0, 49999);
 

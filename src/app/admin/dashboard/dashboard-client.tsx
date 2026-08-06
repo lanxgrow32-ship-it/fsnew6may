@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -185,15 +186,15 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     const client = await supabase;
     const currentMarket = targetMarket || marketType;
 
-    // PROTOCOL v11.2: Hardened fetch to ensure zero "lost" users
-    let query = client.from('profiles').select('*', { count: 'exact' }).neq('role', 'admin');
+    // PROTOCOL v11.3: NULL-Safe Role Filtering to ensure non-admin users with NULL roles are visible
+    let query = client.from('profiles').select('*', { count: 'exact' });
+    query = query.or('role.neq.admin,role.is.null');
     
     if (currentMarket === 'indian') {
         query = query.or('market_type.eq.indian,market_type.is.null');
     } else if (currentMarket === 'forex') {
         query = query.eq('market_type', 'forex');
     }
-    // Note: if currentMarket is 'all', we don't append a market_type filter.
 
     if (masterView) {
       query = query.eq('is_hidden', true);
@@ -210,10 +211,9 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     } else if (updatedProfiles) {
         setProfiles(updatedProfiles);
         
-        // Stats Calculation (Context-Independent for Total Traders)
-        // To get the absolute total count, we do a side query if we are filtered
+        // Absolute Stats (Always including NULL roles)
         if (currentMarket !== 'all') {
-            const { count: absoluteCount } = await client.from('profiles').select('id', { count: 'exact', head: true }).neq('role', 'admin');
+            const { count: absoluteCount } = await client.from('profiles').select('id', { count: 'exact', head: true }).or('role.neq.admin,role.is.null');
             setTotalDbCount(absoluteCount || initialCount);
         } else {
             setTotalDbCount(count || updatedProfiles.length);
@@ -228,7 +228,7 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
     const initSub = async () => {
         const client = await supabase;
         const channel = client
-          .channel('realtime-profiles-sync-v2')
+          .channel('realtime-profiles-sync-v11')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
             () => { fetchProfiles(); }
           )
