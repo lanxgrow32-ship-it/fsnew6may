@@ -53,6 +53,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;

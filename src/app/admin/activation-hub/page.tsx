@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -39,6 +38,7 @@ import { approveAccount } from '../account-requests/actions';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ActivationHubPage() {
     const supabase = createClient();
@@ -54,13 +54,35 @@ export default function ActivationHubPage() {
     const fetchRequests = async () => {
         setLoading(true);
         const client = await supabase;
-        const { data } = await client
-            .from('user_accounts')
-            .select('*, profiles(id, full_name, email, kyc_status, mobile_number)')
-            .order('created_at', { ascending: false })
-            .range(0, 49999);
-        setRequests(data || []);
-        setLoading(false);
+        
+        let allFetched: any[] = [];
+        let page = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        try {
+            while (hasMore) {
+                const { data, error } = await client
+                    .from('user_accounts')
+                    .select('*, profiles(id, full_name, email, kyc_status, mobile_number)')
+                    .order('created_at', { ascending: false })
+                    .range(page * pageSize, (page + 1) * pageSize - 1);
+
+                if (error) throw error;
+                if (data) {
+                    allFetched = [...allFetched, ...data];
+                    if (data.length < pageSize) hasMore = false;
+                    else page++;
+                } else {
+                    hasMore = false;
+                }
+            }
+            setRequests(allFetched);
+        } catch (e) {
+            console.error("Hub Fetch Failure:", e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -135,7 +157,6 @@ export default function ActivationHubPage() {
                     <ThemeToggle />
                 </header>
                 <main className="p-4 md:p-8 bg-muted/40 space-y-6">
-                    {/* Search and Filters Bar */}
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
