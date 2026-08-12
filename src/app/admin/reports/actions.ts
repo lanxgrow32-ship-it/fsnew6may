@@ -20,6 +20,10 @@ export interface SalesData {
     recentSales: { id: string, name: string | null, email: string | null, plan: string, amount: number, date: string, market: string }[];
 }
 
+/**
+ * Global Sales Intelligence (v12.0)
+ * Aggregates data from user_accounts to support multi-account revenue tracking.
+ */
 export async function getSalesData(startDate?: Date, endDate?: Date, masterView?: boolean, marketFilter?: string): Promise<SalesData | null> {
     const supabase = await createClient();
     
@@ -32,19 +36,29 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     let hasMore = true;
 
     while (hasMore) {
+        // PROTOCOL v12.1: Query user_accounts instead of profiles to catch ALL purchases
         let query = supabase
-            .from('profiles')
-            .select('id, full_name, email, final_amount_paid, plan_purchased, created_at, discount_amount, market_type')
+            .from('user_accounts')
+            .select(`
+                id, 
+                plan_name, 
+                final_amount_paid, 
+                created_at, 
+                market_type,
+                account_classification,
+                profiles!inner(id, full_name, email, is_hidden)
+            `)
             .eq('is_approved', true)
-            .gt('final_amount_paid', 0)
-            .or('account_model.is.null,account_model.neq.passthrupay');
+            .gt('final_amount_paid', 0);
 
+        // Visibility Filters
         if (masterView) {
-            query = query.eq('is_hidden', true);
+            query = query.eq('profiles.is_hidden', true);
         } else {
-            query = query.or('is_hidden.is.false,is_hidden.is.null');
+            query = query.or('is_hidden.is.false,is_hidden.is.null', { referencedTable: 'profiles' });
         }
 
+        // Market Filters
         if (marketFilter === 'indian') {
             query = query.or('market_type.eq.indian,market_type.is.null');
         } else if (marketFilter === 'forex') {
@@ -58,7 +72,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
             .range(page * pageSize, (page + 1) * pageSize - 1);
 
         if (error) {
-            console.error("Error fetching sales data chunk:", error);
+            console.error("[Sales Engine] Data Fetch Error:", error);
             hasMore = false;
         } else if (data) {
             allSales = [...allSales, ...data];
@@ -72,20 +86,17 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
     if (allSales.length === 0) return null;
 
     let totalNetRevenue = 0;
-    let totalDiscounts = 0;
     const salesByDay: { [key: string]: { revenue: number, sales: number } } = {};
-    const planCategoryBreakdown: { [key: string]: number } = { 'Instant': 0, '1-Step': 0, '2-Step': 0 };
+    const planCategoryBreakdown: { [key: string]: number } = { 'Instant': 0, '1-Step': 0, '2-Step': 0, 'PTP': 0, 'Pro': 0 };
     const marketBreakdown: { [key: string]: number } = { 'Indian': 0, 'Forex': 0 };
     const planBreakdown: { [key: string]: { revenue: number, sales: number } } = {};
     const salesByDayOfWeek: { [day: number]: number } = {};
     const salesByHour: { [hour: number]: number } = {};
     
     allSales.forEach(sale => {
-        const revenue = sale.final_amount_paid || 0;
-        const discount = sale.discount_amount || 0;
+        const revenue = parseFloat(sale.final_amount_paid) || 0;
         
         totalNetRevenue += revenue;
-        totalDiscounts += discount;
         
         const dateObj = new Date(sale.created_at);
         const saleDateString = format(dateObj, 'yyyy-MM-dd');
@@ -105,11 +116,15 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         const market = sale.market_type === 'forex' ? 'Forex' : 'Indian';
         marketBreakdown[market] = (marketBreakdown[market] || 0) + revenue;
 
-        const plan = sale.plan_purchased || 'Unknown';
+        const plan = sale.plan_name || 'Unknown';
         const lowerPlanName = plan.toLowerCase();
-        if (lowerPlanName.includes('instant')) planCategoryBreakdown['Instant'] += revenue;
+        
+        // Categorization logic
+        if (lowerPlanName.includes('pro')) planCategoryBreakdown['Pro'] += revenue;
+        else if (lowerPlanName.includes('instant')) planCategoryBreakdown['Instant'] += revenue;
         else if (lowerPlanName.includes('1-step')) planCategoryBreakdown['1-Step'] += revenue;
         else if (lowerPlanName.includes('2-step')) planCategoryBreakdown['2-Step'] += revenue;
+        else if (lowerPlanName.includes('ptp') || lowerPlanName.includes('passthenpay')) planCategoryBreakdown['PTP'] += revenue;
         
         if (!planBreakdown[plan]) {
             planBreakdown[plan] = { revenue: 0, sales: 0 };
@@ -120,8 +135,8 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
 
     return {
         totalNetRevenue,
-        totalGrossRevenue: totalNetRevenue + totalDiscounts,
-        totalDiscounts,
+        totalGrossRevenue: totalNetRevenue, // Simplified as discounts are calculated at source
+        totalDiscounts: 0,
         totalSalesCount: allSales.length,
         arpu: allSales.length > 0 ? totalNetRevenue / allSales.length : 0,
         salesByDate: Object.entries(salesByDay)
@@ -132,7 +147,7 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         topPlans: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue)
-            .slice(0, 5),
+            .slice(0, 10),
         salesByDayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => ({ day, revenue: salesByDayOfWeek[i] || 0 })),
         salesByHour: Array.from({ length: 24 }, (_, i) => ({
             hour: `${i}:00`,
@@ -141,12 +156,12 @@ export async function getSalesData(startDate?: Date, endDate?: Date, masterView?
         allPlansBreakdown: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue),
-        recentSales: allSales.slice(0, 25).map(s => ({ 
+        recentSales: allSales.slice(0, 50).map(s => ({ 
             id: s.id, 
-            name: s.full_name, 
-            email: s.email, 
-            plan: s.plan_purchased || 'N/A', 
-            amount: s.final_amount_paid, 
+            name: s.profiles?.full_name, 
+            email: s.profiles?.email, 
+            plan: s.plan_name || 'N/A', 
+            amount: parseFloat(s.final_amount_paid), 
             date: s.created_at,
             market: s.market_type || 'indian'
         })),

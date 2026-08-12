@@ -19,23 +19,33 @@ export interface SalesData {
     recentSales: { id: string, name: string | null, email: string | null, plan: string, amount: number, date: string }[];
 }
 
+/**
+ * PTP Specific Intel (v12.0)
+ */
 export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, masterView?: boolean): Promise<SalesData | null> {
     const supabase = await createClient();
     
     const periodStart = startDate || new Date(0);
     const periodEnd = endDate || new Date();
     
+    // Fetch specifically from user_accounts where model is passthrupay
     let query = supabase
-        .from('profiles')
-        .select('id, full_name, email, final_amount_paid, plan_purchased, created_at, discount_amount')
+        .from('user_accounts')
+        .select(`
+            id, 
+            plan_name, 
+            final_amount_paid, 
+            created_at, 
+            profiles!inner(id, full_name, email, is_hidden)
+        `)
         .eq('is_approved', true)
         .gt('final_amount_paid', 0)
         .eq('account_model', 'passthrupay');
 
     if (masterView) {
-        query = query.eq('is_hidden', true);
+        query = query.eq('profiles.is_hidden', true);
     } else {
-        query = query.or('is_hidden.is.false,is_hidden.is.null');
+        query = query.or('is_hidden.is.false,is_hidden.is.null', { referencedTable: 'profiles' });
     }
 
     const { data: sales, error } = await query
@@ -45,24 +55,18 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         .range(0, 49999);
 
     if (error || !sales) {
-        console.error("Error fetching pay later sales data:", error);
+        console.error("[PTP Engine] Error fetching ledger:", error);
         return null;
     }
 
     let totalNetRevenue = 0;
-    let totalDiscounts = 0;
     const salesByDay: { [key: string]: { revenue: number, sales: number } } = {};
-    const planCategoryBreakdown: { [key: string]: number } = { 'Instant': 0, '1-Step': 0, '2-Step': 0, 'PassThenPay': 0 };
+    const planCategoryBreakdown: { [key: string]: number } = { 'PassThenPay': 0 };
     const planBreakdown: { [key: string]: { revenue: number, sales: number } } = {};
-    const salesByDayOfWeek: { [day: number]: number } = {};
-    const salesByHour: { [hour: number]: number } = {};
     
     sales.forEach(sale => {
-        const revenue = sale.final_amount_paid || 0;
-        const discount = sale.discount_amount || 0;
-        
+        const revenue = parseFloat(sale.final_amount_paid) || 0;
         totalNetRevenue += revenue;
-        totalDiscounts += discount;
         
         const dateObj = new Date(sale.created_at);
         const saleDateString = format(dateObj, 'yyyy-MM-dd');
@@ -73,18 +77,8 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         salesByDay[saleDateString].revenue += revenue;
         salesByDay[saleDateString].sales += 1;
 
-        const hourIndex = dateObj.getHours();
-        salesByHour[hourIndex] = (salesByHour[hourIndex] || 0) + revenue;
-        
-        const dayIndex = dateObj.getDay();
-        salesByDayOfWeek[dayIndex] = (salesByDayOfWeek[dayIndex] || 0) + revenue;
-        
-        const plan = sale.plan_purchased || 'Unknown';
-        const lowerPlanName = plan.toLowerCase();
-        if (lowerPlanName.includes('instant')) planCategoryBreakdown['Instant'] += revenue;
-        else if (lowerPlanName.includes('1-step')) planCategoryBreakdown['1-Step'] += revenue;
-        else if (lowerPlanName.includes('2-step')) planCategoryBreakdown['2-Step'] += revenue;
-        else if (lowerPlanName.includes('passthenpay')) planCategoryBreakdown['PassThenPay'] += revenue;
+        const plan = sale.plan_name || 'Unknown';
+        planCategoryBreakdown['PassThenPay'] += revenue;
 
         if (!planBreakdown[plan]) {
             planBreakdown[plan] = { revenue: 0, sales: 0 };
@@ -95,8 +89,8 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
 
     return {
         totalNetRevenue,
-        totalGrossRevenue: totalNetRevenue + totalDiscounts,
-        totalDiscounts,
+        totalGrossRevenue: totalNetRevenue,
+        totalDiscounts: 0,
         totalSalesCount: sales.length,
         arpu: sales.length > 0 ? totalNetRevenue / sales.length : 0,
         salesByDate: Object.entries(salesByDay)
@@ -106,15 +100,19 @@ export async function getPayLaterSalesData(startDate?: Date, endDate?: Date, mas
         topPlans: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue)
-            .slice(0, 5),
-        salesByDayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => ({ day, revenue: salesByDayOfWeek[i] || 0 })),
-        salesByHour: Array.from({ length: 24 }, (_, i) => ({
-            hour: `${i}:00`,
-            revenue: salesByHour[i] || 0,
-        })),
+            .slice(0, 10),
+        salesByDayOfWeek: [],
+        salesByHour: [],
         allPlansBreakdown: Object.entries(planBreakdown)
             .map(([name, { revenue, sales }]) => ({ name, revenue, sales }))
             .sort((a, b) => b.revenue - a.revenue),
-        recentSales: sales.slice(0, 25).map(s => ({ id: s.id, name: s.full_name, email: s.email, plan: s.plan_purchased || 'N/A', amount: s.final_amount_paid, date: s.created_at })),
+        recentSales: sales.slice(0, 50).map(s => ({ 
+            id: s.id, 
+            name: s.profiles?.full_name, 
+            email: s.profiles?.email, 
+            plan: s.plan_name || 'N/A', 
+            amount: parseFloat(s.final_amount_paid), 
+            date: s.created_at 
+        })),
     };
 }
