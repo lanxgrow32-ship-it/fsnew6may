@@ -41,6 +41,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useToast } from '@/hooks/use-toast';
 import { upsertPlan, deletePlan } from './actions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 export default function PlanManagerPage() {
     const supabase = createClient();
