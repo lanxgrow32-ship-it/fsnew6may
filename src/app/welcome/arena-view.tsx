@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -64,7 +63,7 @@ export function ArenaView({
     const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
     const usdtAddress = paymentSettings?.usdt_wallet_address || 'T...';
 
-    // Group plans by category for current market segment
+    // Filter plans by market and align category names
     const filteredPlans = plans.filter(p => p.market_type === marketSegment);
     
     const categories = {

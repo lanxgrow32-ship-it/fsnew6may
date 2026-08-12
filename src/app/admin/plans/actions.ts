@@ -1,4 +1,3 @@
-
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -65,15 +64,4 @@ export async function deletePlan(id: string) {
     revalidatePath('/admin/plans');
     revalidatePath('/welcome');
     return { success: true };
-}
-
-export async function getAllPlans() {
-    // Multi-page sweep not needed for plans usually, but keeping it broad
-    const { data, error } = await supabaseAdmin
-        .from('plans')
-        .select('*')
-        .order('sort_order', { ascending: true });
-    
-    if (error) return [];
-    return data || [];
 }

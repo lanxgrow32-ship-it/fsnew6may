@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -31,7 +30,8 @@ import {
     Banknote,
     LineChart,
     ShieldAlert,
-    Package
+    Package,
+    RefreshCw
 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
@@ -53,8 +53,13 @@ export default function PlanManagerPage() {
 
     const fetchPlans = async () => {
         setLoading(true);
-        const { data } = await supabase.from('plans').select('*').order('sort_order', { ascending: true });
-        setPlans(data || []);
+        const { data, error } = await supabase.from('plans').select('*').order('sort_order', { ascending: true });
+        if (error) {
+            console.error("Fetch plans error:", error);
+            toast({ title: "Fetch Failed", description: error.message, variant: "destructive" });
+        } else {
+            setPlans(data || []);
+        }
         setLoading(false);
     };
 
@@ -127,6 +132,7 @@ export default function PlanManagerPage() {
                 <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
                     <div className="flex items-center gap-4"><SidebarTrigger className="md:hidden" /><h1 className="text-xl font-bold uppercase tracking-tight">Market Orchestrator</h1></div>
                     <div className="flex items-center gap-4">
+                        <Button variant="outline" size="icon" onClick={fetchPlans} disabled={loading}><RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /></Button>
                         <Button onClick={openAdd}><Plus className="w-4 h-4 mr-2" /> Add New Plan</Button>
                         <ThemeToggle />
                     </div>
@@ -152,7 +158,7 @@ export default function PlanManagerPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {plans.map((p) => (
+                                        {plans.length > 0 ? plans.map((p) => (
                                             <TableRow key={p.id}>
                                                 <TableCell className="capitalize font-bold text-[10px]">
                                                     {p.market_type === 'forex' ? <Badge variant="outline" className="text-blue-500"><Globe className="w-3 h-3 mr-1"/> Forex</Badge> : <Badge variant="outline" className="text-orange-500"><LayoutGrid className="w-3 h-3 mr-1"/> Indian</Badge>}
@@ -169,7 +175,11 @@ export default function PlanManagerPage() {
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
-                                        ))}
+                                        )) : (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-20 text-muted-foreground italic">No plans found in the database. Add your first plan to populate the marketplace.</TableCell>
+                                            </TableRow>
+                                        )}
                                     </TableBody>
                                 </Table>
                             )}
