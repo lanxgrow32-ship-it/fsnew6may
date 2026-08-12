@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { LEGACY_PLANS } from '@/lib/legacy-plans';
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
@@ -63,8 +65,11 @@ export function ArenaView({
     const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
     const usdtAddress = paymentSettings?.usdt_wallet_address || 'T...';
 
+    // Merge Core Registry with Dynamic Plans
+    const allPlans = useMemo(() => [...LEGACY_PLANS, ...plans], [plans]);
+
     // Filter plans by market and align category names
-    const filteredPlans = plans.filter(p => p.market_type === marketSegment);
+    const filteredPlans = allPlans.filter(p => p.market_type === marketSegment);
     
     const categories = {
         pro: filteredPlans.filter(p => p.category === 'pro'),

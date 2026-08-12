@@ -10,8 +10,8 @@ import { ArrowLeft, CheckCircle, Timer, TrendingUp, Zap, Sparkles, ArrowRight, H
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
-import { ClientOnly } from '@/components/ui/client-only';
 import { createClient } from '@/lib/supabase/client';
+import { LEGACY_PLANS } from '@/lib/legacy-plans';
 
 const LiveViewersBanner = () => {
     const [viewers, setViewers] = useState(0);
@@ -137,7 +137,10 @@ export default function PricingPage() {
             .eq('market_type', 'indian')
             .eq('is_active', true)
             .order('sort_order', { ascending: true });
-          setPlans(data || []);
+          
+          // Merge Legacy Core Plans with Dynamic DB Plans
+          const allPlans = [...LEGACY_PLANS.filter(p => p.market_type === 'indian'), ...(data || [])];
+          setPlans(allPlans);
           setLoading(false);
       };
       fetchPlans();

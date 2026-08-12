@@ -12,6 +12,7 @@ import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
 import { ClientOnly } from '@/components/ui/client-only';
 import { createClient } from '@/lib/supabase/client';
+import { LEGACY_PLANS } from '@/lib/legacy-plans';
 
 const LiveViewersBanner = () => {
     const [viewers, setViewers] = useState(0);
@@ -115,7 +116,9 @@ export default function ForexPricingPage() {
             .eq('market_type', 'forex')
             .eq('is_active', true)
             .order('sort_order', { ascending: true });
-          setPlans(data || []);
+          
+          const allPlans = [...LEGACY_PLANS.filter(p => p.market_type === 'forex'), ...(data || [])];
+          setPlans(allPlans);
           setLoading(false);
       };
       fetchPlans();
@@ -225,7 +228,7 @@ export default function ForexPricingPage() {
           </Tabs>
 
           <div className="mt-32 text-center">
-              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 4,000+ Global Traders</p>
+              <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 4,000+ Global Traders</p>
           </div>
         </main>
       </div>
