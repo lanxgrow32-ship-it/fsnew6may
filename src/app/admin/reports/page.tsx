@@ -43,17 +43,19 @@ import {
     Newspaper, 
     UserCheck,
     Globe,
-    LayoutGrid
+    LayoutGrid,
+    ShieldAlert,
+    Package,
+    Zap,
+    History
 } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientOnly } from '@/components/ui/client-only';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -108,7 +110,6 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [date, setDate] = useState<DateRange | undefined>({ from: undefined, to: undefined });
     
-    // Global Market Context
     const [marketType, setMarketType] = useState<'indian' | 'forex'>('indian');
     const { toast } = useToast();
 
@@ -230,7 +231,9 @@ function SalesDashboard({ initialData, masterView }: { initialData: SalesData, m
                             </div>
                         </SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/plans" tooltip="Plan Manager"><Package />Plan Manager</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/instant-pro-requests" tooltip="Instant Pro Ledger"><Zap />Instant Pro Ledger</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/activation-hub" tooltip="Activation Hub"><ShieldAlert />Activation Hub</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
