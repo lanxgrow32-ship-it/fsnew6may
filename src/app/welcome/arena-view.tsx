@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -12,79 +13,24 @@ import {
     Loader2, 
     Zap,
     Wallet,
-    CreditCard,
-    ArrowRight,
     Copy,
     Send,
     ChevronLeft,
     HelpCircle,
-    Timer,
     Ticket,
-    Check,
     Globe,
     LayoutGrid,
     Coins,
     ShieldCheck,
-    Trophy,
     Sparkles,
     QrCode,
-    X,
-    Percent
+    X
 } from 'lucide-react';
-import { purchaseWithWallet, requestManualAccount, validateCoupon, startFreeTrial, initiateGatewayPayment } from './actions';
+import { purchaseWithWallet, requestManualAccount, validateCoupon, initiateGatewayPayment } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-const plans = {
-    pro: [
-        { size: '5 Lakh', price: '18,999', title: '5L Instant Pro' },
-        { size: '10 Lakh', price: '34,999', title: '10L Instant Pro' },
-        { size: '15 Lakh', price: '49,999', title: '15L Instant Pro' },
-        { size: '25 Lakh', price: '79,999', title: '25L Instant Pro' },
-        { size: '50 Lakh', price: '1,49,999', title: '50L Instant Pro' },
-    ],
-    instant: [
-        { size: '1 Lakh', price: '5,999', title: '1L Instant' },
-        { size: '2 Lakh', price: '9,999', title: '2L Instant' },
-        { size: '5 Lakh', price: '17,999', title: '5L Instant' },
-        { size: '10 Lakh', price: '28,999', title: '10L Instant' },
-        { size: '25 Lakh', price: '49,999', title: '25L Instant' },
-    ],
-    oneStep: [
-        { size: '1 Lakh', price: '4,599', title: '1L 1-Step' },
-        { size: '2 Lakh', price: '7,599', title: '2L 1-Step' },
-        { size: '5 Lakh', price: '12,599', title: '5L 1-Step' },
-        { size: '10 Lakh', price: '19,599', title: '10L 1-Step' },
-        { size: '25 Lakh', price: '34,999', title: '25L 1-Step' },
-        { size: '50 Lakh', price: '54,999', title: '50L 1-Step' },
-    ],
-    twoStep: [
-        { size: '1 Lakh', price: '2,999', title: '1L 2-Step' },
-        { size: '2 Lakh', price: '4,999', title: '2L 2-Step' },
-        { size: '5 Lakh', price: '7,999', title: '5L 2-Step' },
-        { size: '10 Lakh', price: '12,999', title: '10L 2-Step' },
-        { size: '25 Lakh', price: '21,999', title: '25L 2-Step' },
-        { size: '50 Lakh', price: '35,999', title: '50L 2-Step' },
-    ],
-    ptp: [
-        { size: '5 Lakh', price: '199', title: '5L PTP' },
-        { size: '10 Lakh', price: '299', title: '10L PTP' },
-        { size: '25 Lakh', price: '399', title: '25L PTP' },
-        { size: '50 Lakh', price: '499', title: '50L PTP' },
-    ],
-    forex: [
-        { size: '5,000', price: '2,999', usdPrice: '35', title: '$5k Forex 2-Step' },
-        { size: '10,000', price: '4,999', usdPrice: '60', title: '$10k Forex 2-Step' },
-        { size: '25,000', price: '9,999', usdPrice: '120', title: '$25k Forex 2-Step' },
-        { size: '50,000', price: '16,999', usdPrice: '200', title: '$50k Forex 2-Step', isPopular: true },
-        { size: '100,000', price: '29,999', usdPrice: '350', title: '$100k Forex 2-Step' },
-        { size: '200,000', price: '49,999', usdPrice: '600', title: '$200k Forex 2-Step' },
-        { size: '400,000', price: '89,999', usdPrice: '1,050', title: '$400k Forex 2-Step' },
-    ]
-};
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
     <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg overflow-hidden', className)}>
@@ -95,10 +41,12 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
 export function ArenaView({ 
     profile, 
     paymentSettings,
+    plans = [],
     onSwitchToWallet
 }: { 
     profile: any, 
     paymentSettings: any,
+    plans?: any[],
     onSwitchToWallet: () => void
 }) {
     const router = useRouter();
@@ -115,6 +63,17 @@ export function ArenaView({
 
     const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
     const usdtAddress = paymentSettings?.usdt_wallet_address || 'T...';
+
+    // Group plans by category for current market segment
+    const filteredPlans = plans.filter(p => p.market_type === marketSegment);
+    
+    const categories = {
+        pro: filteredPlans.filter(p => p.category === 'pro'),
+        instant: filteredPlans.filter(p => p.category === 'instant'),
+        oneStep: filteredPlans.filter(p => p.category === '1-step'),
+        twoStep: filteredPlans.filter(p => p.category === '2-step'),
+        ptp: filteredPlans.filter(p => p.category === 'ptp'),
+    };
 
     useEffect(() => {
         if (marketSegment === 'forex') setActiveTab('twoStep');
@@ -135,7 +94,7 @@ export function ArenaView({
 
     const calculateFinalPrice = () => {
         if (!selectedPlan) return 0;
-        const base = parseFloat(selectedPlan.price.replace(/,/g, ''));
+        const base = typeof selectedPlan.price === 'string' ? parseFloat(selectedPlan.price.replace(/,/g, '')) : selectedPlan.price;
         if (discount > 0) return Math.floor(base * (1 - discount / 100));
         return base;
     }
@@ -148,7 +107,7 @@ export function ArenaView({
             return;
         }
         startTransition(async () => {
-            const res = await purchaseWithWallet(profile.id, { ...selectedPlan, price: finalPrice.toString() });
+            const res = await purchaseWithWallet(profile.id, { ...selectedPlan, price: finalPrice });
             if (res.error) toast({ title: "Purchase Failed", description: res.error, variant: "destructive" });
             else router.push(`/purchase-success?id=${res.transaction_id}&amount=${res.amount}&plan=${encodeURIComponent(selectedPlan.title)}`);
         });
@@ -178,8 +137,8 @@ export function ArenaView({
         router.push(`/purchase-success?id=${cryptoTxId}&amount=${finalPrice}&plan=${encodeURIComponent(selectedPlan.title)}&method=crypto`);
     }
 
-    const PlanBox = ({ plan, category }: { plan: any, category: string }) => {
-        const isPro = category.includes('Pro');
+    const PlanBox = ({ plan }: { plan: any }) => {
+        const isPro = plan.category === 'pro';
         return (
             <Card className={cn(
                 "bg-card/50 transition-all duration-300 flex flex-col h-full border-border/50 group relative hover:border-primary",
@@ -189,7 +148,7 @@ export function ArenaView({
                     <div className="flex justify-between items-start">
                         <div>
                             <CardTitle className="text-lg font-bold">{marketSegment === 'forex' ? `$${plan.size}` : `₹${plan.size}`}</CardTitle>
-                            <CardDescription className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">{category}</CardDescription>
+                            <CardDescription className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">{plan.category.toUpperCase()}</CardDescription>
                         </div>
                         {isPro && <Badge className="bg-primary text-white text-[8px] font-black uppercase px-2 h-4">WEEKLY</Badge>}
                     </div>
@@ -214,7 +173,7 @@ export function ArenaView({
                     <div className="pt-4 border-t border-white/5">
                         <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Buy Price</p>
                         <p className="text-xl font-bold text-primary mt-0.5">
-                            {marketSegment === 'forex' ? `$${plan.usdPrice || plan.price}` : `₹${plan.price}`}
+                            {marketSegment === 'forex' ? `$${plan.usd_price || plan.price}` : `₹${plan.price.toLocaleString()}`}
                         </p>
                     </div>
                 </CardContent>
@@ -227,29 +186,27 @@ export function ArenaView({
 
     if (selectedPlan) {
         const finalPrice = calculateFinalPrice();
-        const isPtp = selectedPlan.title.toLowerCase().includes('ptp');
+        const isPtp = selectedPlan.category === 'ptp';
         const upiId = isPtp ? paymentSettings?.pay_later_upi_id : paymentSettings?.upi_id;
         const qrCode = isPtp ? paymentSettings?.pay_later_qr_code_url : paymentSettings?.qr_code_url;
 
         return (
-            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95 font-poppins">
+            <div className="max-w-xl mx-auto space-y-6 animate-in fade-in zoom-in-95 font-poppins">
                  <button onClick={() => { setSelectedPlan(null); setDiscount(0); setCouponCode(''); }} className="flex items-center text-gray-500 hover:text-white font-bold transition-colors">
                     <ChevronLeft className="mr-1 h-4 w-4" /> Back to Arena
                 </button>
                 
                 <GlassCard className="border-primary/20 bg-primary/5">
-                    <div className="p-8 space-y-10 flex flex-col items-center">
-                        {/* Header */}
+                    <div className="p-8 space-y-8 flex flex-col items-center">
                         <div className="text-center space-y-2">
-                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Secure Checkout</p>
-                            <h2 className="text-3xl font-black text-white uppercase tracking-tight">{selectedPlan.title}</h2>
+                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Checkout Protocol</p>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedPlan.title}</h2>
                             <p className="text-gray-500 text-sm">Final Amount: <span className="text-white font-bold">₹{finalPrice.toLocaleString()}</span></p>
                         </div>
 
-                        <div className="w-full max-w-md space-y-6">
-                            {/* Coupon Field */}
+                        <div className="w-full space-y-6">
                             <div className="bg-black/40 border border-white/5 rounded-2xl p-6 space-y-4">
-                                <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Discount Coupon</Label>
+                                <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Coupon Field</Label>
                                 <div className="flex gap-2">
                                     <div className="relative flex-grow">
                                         <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
@@ -269,125 +226,69 @@ export function ArenaView({
                                 )}
                             </div>
 
-                            {/* UPI View */}
                             {checkoutMode === 'upi' && (
-                                <div className="bg-black/40 rounded-[40px] p-10 border border-white/5 animate-in fade-in slide-in-from-bottom-2 flex flex-col items-center gap-10 shadow-2xl">
+                                <div className="bg-black/40 rounded-[32px] p-8 border border-white/5 flex flex-col items-center gap-8 shadow-2xl">
                                     <div className="space-y-6 text-center w-full">
-                                        <div className="bg-white p-4 rounded-3xl w-fit mx-auto shadow-[0_0_50px_rgba(255,255,255,0.1)]">
-                                            {qrCode ? (
-                                                <Image src={qrCode} alt="UPI QR" width={220} height={220} className="rounded-xl" />
-                                            ) : (
-                                                <div className="w-[220px] h-[220px] flex items-center justify-center bg-slate-100 text-slate-900 font-bold text-xs uppercase rounded-xl">QR Loading...</div>
-                                            )}
+                                        <div className="bg-white p-3 rounded-2xl w-fit mx-auto shadow-2xl">
+                                            {qrCode ? <Image src={qrCode} alt="UPI QR" width={200} height={200} className="rounded-lg" /> : <div className="w-[200px] h-[200px] flex items-center justify-center bg-slate-100 text-slate-900 font-bold text-xs uppercase rounded-lg">QR Offline</div>}
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-1">
                                             <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Official UPI ID</p>
                                             <div className="flex items-center justify-center gap-2">
                                                 <code className="text-white font-mono font-bold text-sm bg-black/40 px-4 py-2 rounded-xl border border-white/10">{upiId || 'pay@fundedstock'}</code>
-                                                <Button size="icon" variant="ghost" className="h-10 w-10 text-gray-500 hover:text-white" onClick={() => { navigator.clipboard.writeText(upiId || ''); toast({title: "Copied"}); }}>
-                                                    <Copy className="h-4 w-4" />
-                                                </Button>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-500 hover:text-white" onClick={() => { navigator.clipboard.writeText(upiId || ''); toast({title: "Copied"}); }}><Copy className="w-3.5 h-3.5" /></Button>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-8 w-full">
+                                    <div className="space-y-6 w-full">
                                         <div className="space-y-3">
                                             <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Enter Transaction ID (UTR)</Label>
-                                            <Input 
-                                                placeholder="12-digit UPI Ref Number" 
-                                                value={utr} 
-                                                onChange={(e) => setUtr(e.target.value)}
-                                                className="h-16 bg-black/60 border-white/10 text-white font-mono text-xl text-center rounded-2xl focus:ring-primary/50" 
-                                            />
-                                            <p className="text-[10px] text-gray-700 text-center font-bold uppercase tracking-tight">Manual verification takes 15-30 minutes.</p>
+                                            <Input placeholder="12-digit UPI reference" value={utr} onChange={(e) => setUtr(e.target.value)} className="h-14 bg-black/60 border-white/10 text-white font-mono text-center text-lg rounded-xl" />
                                         </div>
-                                        <Button onClick={handleUpiPurchase} disabled={isActionPending || !utr} className="w-full h-16 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
-                                            {isActionPending ? <Loader2 className="animate-spin h-6 w-6"/> : <Send className="mr-2 h-5 w-5" />} Submit Verification
+                                        <Button onClick={handleUpiPurchase} disabled={isActionPending || !utr} className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
+                                            {isActionPending ? <Loader2 className="animate-spin h-5 w-5"/> : 'Submit Verification'}
                                         </Button>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Crypto View */}
                             {checkoutMode === 'crypto' && (
-                                <div className="bg-black/40 rounded-[32px] p-8 border border-green-500/10 animate-in fade-in slide-in-from-bottom-2 space-y-8">
-                                    <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                                        <div className="h-12 w-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-400 border border-green-500/20">
-                                            <Coins className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-bold text-white uppercase">USDT (TRC-20)</h3>
-                                            <p className="text-xs text-gray-500 font-medium">Crypto Settlement</p>
-                                        </div>
+                                <div className="bg-black/40 rounded-[32px] p-8 border border-green-500/10 space-y-8 animate-in slide-in-from-bottom-2">
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center">Company USDT Address (TRC-20)</p>
+                                        <div className="p-4 bg-black/60 rounded-2xl border border-white/5 break-all text-xs font-mono font-bold text-white text-center leading-relaxed">{usdtAddress}</div>
+                                        <Button variant="outline" onClick={() => { navigator.clipboard.writeText(usdtAddress); toast({title: "Address Copied"}); }} className="w-full h-10 border-white/10 text-[10px] font-black uppercase">Copy Address</Button>
                                     </div>
-                                    <div className="space-y-6">
-                                        <div className="space-y-4">
-                                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center">Company Address</p>
-                                            <div className="p-5 bg-black/60 rounded-2xl border border-white/5 break-all text-xs font-mono font-bold text-white text-center leading-relaxed">
-                                                {walletAddress}
-                                            </div>
-                                            <Button variant="outline" onClick={() => { navigator.clipboard.writeText(walletAddress); toast({title: "Address Copied"}); }} className="w-full h-10 border-white/10 text-[10px] font-black uppercase">Copy Address</Button>
+                                    <div className="space-y-4 pt-4 border-t border-white/5">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black text-gray-500 uppercase">Transaction Hash (TxID)</Label>
+                                            <Input value={cryptoTxId} onChange={(e) => setCryptoTxId(e.target.value)} placeholder="Paste hash here" className="h-12 bg-black/60 border-white/10 font-mono text-xs rounded-xl" />
                                         </div>
-                                        <div className="space-y-6 pt-4 border-t border-white/5">
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-black text-gray-500 uppercase">Transaction Hash (TxID)</Label>
-                                                <Input value={cryptoTxId} onChange={(e) => setCryptoTxId(e.target.value)} placeholder="Paste hash here" className="h-12 bg-black/60 border-white/10 font-mono text-xs rounded-xl" />
-                                            </div>
-                                            <Button onClick={handleCryptoPurchase} disabled={!cryptoTxId || isActionPending} className="w-full h-12 bg-green-600 hover:bg-green-500 text-white font-black uppercase text-[10px] rounded-xl shadow-lg">Verify Crypto Payment</Button>
-                                        </div>
+                                        <Button onClick={handleCryptoPurchase} disabled={!cryptoTxId || isActionPending} className="w-full h-12 bg-green-600 hover:bg-green-500 text-white font-black uppercase text-[10px] rounded-xl shadow-lg">Verify Crypto Payment</Button>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Wallet View */}
                             {checkoutMode === 'wallet' && (
-                                <div className="bg-black/40 rounded-[32px] p-8 border border-white/5 animate-in fade-in slide-in-from-bottom-2 flex flex-col items-center text-center gap-8">
-                                    <div className="h-20 w-20 rounded-full bg-white/5 flex items-center justify-center text-white border border-white/10 shadow-2xl">
-                                        <Wallet className="h-10 w-10" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-2xl font-bold text-white uppercase tracking-tight">Internal Wallet</h3>
-                                        <p className="text-gray-400 text-sm">Activate instantly using your balance.</p>
-                                    </div>
-                                    <div className="w-full p-6 bg-black/60 rounded-3xl border border-white/5 flex items-center justify-between">
-                                        <div className="text-left">
-                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Balance</p>
-                                            <p className="text-xl font-bold text-white">₹{profile.wallet_balance.toLocaleString()}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Cost</p>
-                                            <p className="text-xl font-bold text-primary">₹{finalPrice.toLocaleString()}</p>
-                                        </div>
+                                <div className="bg-black/40 rounded-[32px] p-8 border border-white/5 flex flex-col items-center text-center gap-8 animate-in slide-in-from-bottom-2">
+                                    <div className="h-20 w-20 rounded-full bg-white/5 flex items-center justify-center text-white border border-white/10"><Wallet className="h-10 w-10" /></div>
+                                    <div className="w-full p-6 bg-black/60 rounded-2xl border border-white/5 flex items-center justify-between">
+                                        <div className="text-left"><p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Balance</p><p className="text-xl font-bold text-white">₹{profile.wallet_balance.toLocaleString()}</p></div>
+                                        <div className="text-right"><p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Cost</p><p className="text-xl font-bold text-primary">₹{finalPrice.toLocaleString()}</p></div>
                                     </div>
                                     <Button onClick={handleWalletPurchase} disabled={isActionPending || profile.wallet_balance < finalPrice} className="w-full h-14 bg-white text-black font-black uppercase tracking-widest rounded-2xl transition-all hover:scale-105 active:scale-95">
                                         {isActionPending ? <Loader2 className="animate-spin h-5 w-5"/> : 'Initialize Activation'}
                                     </Button>
-                                    {profile.wallet_balance < finalPrice && (
-                                        <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest">Insufficient balance.</p>
-                                    )}
                                 </div>
                             )}
                         </div>
 
-                        {/* Footer Options */}
                         <div className="flex flex-col items-center gap-4 pt-10 border-t border-white/5 w-full">
                             <p className="text-[9px] font-black text-gray-800 uppercase tracking-[0.4em]">Alternative Protocols</p>
                             <div className="flex flex-wrap justify-center gap-6">
-                                {checkoutMode !== 'upi' && (
-                                    <button onClick={() => setCheckoutMode('upi')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-widest">
-                                        <QrCode className="w-4 h-4" /> Pay with UPI
-                                    </button>
-                                )}
-                                {checkoutMode !== 'crypto' && (
-                                    <button onClick={() => setCheckoutMode('crypto')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-widest">
-                                        <Coins className="w-4 h-4" /> Pay with USDT
-                                    </button>
-                                )}
-                                {checkoutMode !== 'wallet' && (
-                                    <button onClick={() => setCheckoutMode('wallet')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-widest">
-                                        <Wallet className="w-4 h-4" /> Use Wallet Balance
-                                    </button>
-                                )}
+                                {checkoutMode !== 'upi' && <button onClick={() => setCheckoutMode('upi')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest"><QrCode className="w-4 h-4" /> Pay with UPI</button>}
+                                {checkoutMode !== 'crypto' && <button onClick={() => setCheckoutMode('crypto')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest"><Coins className="w-4 h-4" /> Pay with USDT</button>}
+                                {checkoutMode !== 'wallet' && <button onClick={() => setCheckoutMode('wallet')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest"><Wallet className="w-4 h-4" /> Use Wallet Balance</button>}
                             </div>
                         </div>
                     </div>
@@ -435,19 +336,24 @@ export function ArenaView({
                 </TabsList>
 
                 <TabsContent value="pro" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-                    {plans.pro.map(p => <PlanBox key={p.title} plan={p} category="Instant PRO" />)}
+                    {categories.pro.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.pro.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No Pro plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-                    {marketSegment === 'indian' ? plans.instant.map(p => <PlanBox key={p.title} plan={p} category="Instant" />) : <div className="col-span-full py-20 text-center"><Sparkles className="h-10 w-10 text-primary mx-auto opacity-20 mb-4"/><h3 className="text-xl font-bold uppercase">Forex Instant Coming Soon</h3></div>}
+                    {categories.instant.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.instant.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No Instant plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="oneStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {marketSegment === 'indian' ? plans.oneStep.map(p => <PlanBox key={p.title} plan={p} category="1-Step Fast Track" />) : <div className="col-span-full py-20 text-center"><h3 className="text-xl font-bold uppercase">In Optimization...</h3></div>}
+                    {categories.oneStep.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.oneStep.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No 1-Step plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="twoStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {marketSegment === 'forex' ? plans.forex.map(p => <PlanBox key={p.title} plan={p} category="Forex 2-Step" />) : plans.twoStep.map(p => <PlanBox key={p.title} plan={p} category="2-Step Standard" />)}
+                    {categories.twoStep.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.twoStep.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No 2-Step plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="ptp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {plans.ptp.map(p => <PlanBox key={p.size} plan={p} category="PassThenPay" />)}
+                    {categories.ptp.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.ptp.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No PTP plans available.</p></div>}
                 </TabsContent>
             </Tabs>
             

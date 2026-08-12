@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { WelcomeClient } from './welcome-client';
@@ -8,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function WelcomePage() {
     const supabase = await createClient();
-    // Use getUser() for reliable server-side auth check
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -17,24 +17,24 @@ export default async function WelcomePage() {
 
     const userId = user.id;
 
-    // 1. RUN CLEANUP PROTOCOL (Atomic Purge sweep for expired trials)
+    // 1. RUN CLEANUP PROTOCOL
     await cleanupAllTrials(userId);
 
-    // 2. Fetch comprehensive data
-    const [profileRes, accountsRes, walletRes, paymentSettingsRes, compRes, supportRes] = await Promise.all([
+    // 2. Fetch comprehensive data for the portal
+    const [profileRes, accountsRes, walletRes, paymentSettingsRes, compRes, supportRes, plansRes] = await Promise.all([
         supabaseAdmin.from('profiles').select('*').eq('id', userId).single(),
         supabaseAdmin.from('user_accounts').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
         supabaseAdmin.from('wallet_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
         supabaseAdmin.from('payment_details').select('*').eq('id', 1).single(),
         supabaseAdmin.from('competition_registrations').select('*, competition_events(*)').eq('user_id', userId).order('created_at', { ascending: false }),
-        supabaseAdmin.from('support_conversations').select('*').eq('user_id', userId).order('last_message_at', { ascending: false })
+        supabaseAdmin.from('support_conversations').select('*').eq('user_id', userId).order('last_message_at', { ascending: false }),
+        supabaseAdmin.from('plans').select('*').eq('is_active', true).order('sort_order', { ascending: true })
     ]);
 
     if (!profileRes.data) {
         return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Profile initialization error.</div>;
     }
 
-    // AUTO-GENERATE WALLET ID IF MISSING (Protocol v3.2)
     const profile = profileRes.data;
     if (!profile.wallet_id) {
         const newWalletId = Math.floor(Math.random() * 89999999 + 10000000);
@@ -50,6 +50,7 @@ export default async function WelcomePage() {
             paymentSettings={paymentSettingsRes.data}
             competitions={compRes.data || []}
             supportConversations={supportRes.data || []}
+            plans={plansRes.data || []}
         />
     );
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -28,7 +29,8 @@ import {
     History,
     Globe,
     LayoutGrid,
-    Zap
+    Zap,
+    Package
 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
 import Link from 'next/link';
@@ -187,6 +189,7 @@ export default function AccountRequestsPage() {
                             </div>
                         </SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
+                        <SidebarMenuItem><SidebarMenuButton href="/admin/plans"><Package />Plan Manager</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" isActive><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/instant-pro-requests"><Zap className="text-primary"/> Instant Pro Ledger</SidebarMenuButton></SidebarMenuItem>
                         <SidebarMenuItem><SidebarMenuButton href="/admin/activation-hub"><ShieldAlert />Activation Hub</SidebarMenuButton></SidebarMenuItem>

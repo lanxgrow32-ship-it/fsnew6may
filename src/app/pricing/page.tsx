@@ -6,45 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CheckCircle, ExternalLink, Timer, TrendingUp, Zap, Sparkles, ArrowRight, ShieldCheck, HelpCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Timer, TrendingUp, Zap, Sparkles, ArrowRight, HelpCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
 import { ClientOnly } from '@/components/ui/client-only';
-
-const proPlans = [
-    { size: '5 Lakh', price: '18,999', title: '5L Instant Pro' },
-    { size: '10 Lakh', price: '34,999', title: '10L Instant Pro' },
-    { size: '15 Lakh', price: '49,999', title: '15L Instant Pro' },
-    { size: '25 Lakh', price: '79,999', title: '25L Instant Pro' },
-    { size: '50 Lakh', price: '1,49,999', title: '50L Instant Pro' },
-];
-
-const instantFundingPlans = [
-  { size: '1,00,000', title: '1L Instant Funding', price: '5,999' },
-  { size: '2,00,000', title: '2L Instant Funding', price: '9,999' },
-  { size: '5,00,000', title: '5L Instant Funding', price: '17,999' },
-  { size: '10,00,000', title: '10L Instant Funding', price: '28,999' },
-  { size: '25,00,000', title: '25L Instant Funding', price: '49,999' },
-];
-
-const oneStepPlans = [
-    { size: '1,00,000', title: '1L 1-Step Fast Track', price: '4,599' },
-    { size: '2,00,000', title: '2L 1-Step Fast Track', price: '7,599' },
-    { size: '5,00,000', title: '5L 1-Step Fast Track', price: '12,599' },
-    { size: '10,00,000', title: '10L 1-Step Fast Track', price: '19,599' },
-    { size: '25,00,000', title: '25L 1-Step Fast Track', price: '34,999' },
-    { size: '50,00,000', title: '50L 1-Step Fast Track', price: '54,999' },
-];
-
-const twoStepPlans = [
-    { size: '1,00,000', title: '1L 2-Step', price: '2,999' },
-    { size: '2,00,000', title: '2L 2-Step', price: '4,999' },
-    { size: '5,00,000', title: '5L 2-Step', price: '7,999' },
-    { size: '10,00,000', title: '10L 2-Step', price: '12,999' },
-    { size: '25,00,000', title: '25L 2-Step', price: '21,999' },
-    { size: '50,00,000', title: '50L 2-Step', price: '35,999' },
-];
+import { createClient } from '@/lib/supabase/client';
 
 const LiveViewersBanner = () => {
     const [viewers, setViewers] = useState(0);
@@ -85,9 +52,10 @@ const LiveViewersBanner = () => {
     );
 };
 
-const PlanCard = ({ size, title, price, isPopular, isPro }: any) => {
-  const currentPrice = parseFloat(price.replace(/,/g, ''));
+const PlanCard = ({ size, title, price, isPopular, category }: any) => {
+  const currentPrice = typeof price === 'string' ? parseFloat(price.replace(/,/g, '')) : price;
   const originalPrice = currentPrice * 2;
+  const isPro = category === 'pro';
 
   return (
     <Card className={cn(
@@ -157,6 +125,29 @@ const PlanCard = ({ size, title, price, isPopular, isPro }: any) => {
 
 
 export default function PricingPage() {
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+      const fetchPlans = async () => {
+          const { data } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('market_type', 'indian')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true });
+          setPlans(data || []);
+          setLoading(false);
+      };
+      fetchPlans();
+  }, []);
+
+  const proPlans = plans.filter(p => p.category === 'pro');
+  const instantPlans = plans.filter(p => p.category === 'instant');
+  const oneStepPlans = plans.filter(p => p.category === '1-step');
+  const twoStepPlans = plans.filter(p => p.category === '2-step');
+
   return (
     <div className="dark">
       <style jsx global>{`
@@ -202,75 +193,79 @@ export default function PricingPage() {
                   <TabsTrigger value="2-step" className="py-3 text-xs font-black uppercase tracking-widest rounded-xl">2-Step Standard</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="pro" className="mt-8 animate-in fade-in duration-500">
-                  <div className="text-center mb-12 space-y-4">
-                      <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-2 rounded-full border border-primary/20">
-                        <Sparkles className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Weekly High-Intensity Cycle</span>
-                      </div>
-                      <h2 className="text-3xl font-black text-white tracking-tight uppercase">Instant PRO Series</h2>
-                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">High-leverage weekly accounts. 7-Day validity. No challenges.</p>
-                      <div className="flex justify-center pt-2">
-                        <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 h-10 px-8 text-[10px] font-black uppercase tracking-widest gap-2">
-                            <Link href="/rules/instant-pro"><HelpCircle className="w-4 h-4"/> View Pro Rules</Link>
-                        </Button>
-                      </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
-                      {proPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} isPro />
-                      ))}
-                  </div>
-              </TabsContent>
+              {loading ? <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto h-10 w-10 text-primary opacity-20"/></div> : (
+                  <>
+                    <TabsContent value="pro" className="mt-8 animate-in fade-in duration-500">
+                        <div className="text-center mb-12 space-y-4">
+                            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-2 rounded-full border border-primary/20">
+                                <Sparkles className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Weekly High-Intensity Cycle</span>
+                            </div>
+                            <h2 className="text-3xl font-black text-white tracking-tight uppercase">Instant PRO Series</h2>
+                            <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">High-leverage weekly accounts. 7-Day validity. No challenges.</p>
+                            <div className="flex justify-center pt-2">
+                                <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 h-10 px-8 text-[10px] font-black uppercase tracking-widest gap-2">
+                                    <Link href="/rules/instant-pro"><HelpCircle className="w-4 h-4"/> View Pro Rules</Link>
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
+                            {proPlans.map((plan) => (
+                            <PlanCard key={plan.id} {...plan} category="pro" />
+                            ))}
+                        </div>
+                    </TabsContent>
 
-              <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
-                  <div className="text-center mb-12">
-                      <h2 className="text-3xl font-bold text-white tracking-tight uppercase">Standard Instant Funding</h2>
-                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">No challenges. Trade live capital within 15 minutes of activation.</p>
-                      <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-4">
-                          <Link href="/rules/instant-funding">View Rules <ArrowRight className="ml-2 h-3 w-3" /></Link>
-                      </Button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
-                      {instantFundingPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} />
-                      ))}
-                  </div>
-              </TabsContent>
+                    <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold text-white tracking-tight uppercase">Standard Instant Funding</h2>
+                            <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">No challenges. Trade live capital within 15 minutes of activation.</p>
+                            <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-4">
+                                <Link href="/rules/instant-funding">View Rules <ArrowRight className="ml-2 h-3 w-3" /></Link>
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
+                            {instantPlans.map((plan) => (
+                            <PlanCard key={plan.id} {...plan} category="instant" />
+                            ))}
+                        </div>
+                    </TabsContent>
 
-              <TabsContent value="1-step" className="mt-8 animate-in fade-in duration-500">
-                  <div className="text-center mb-12">
-                      <h2 className="text-3xl font-bold text-white tracking-tight uppercase">1-Step Evaluation</h2>
-                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Achieve 10% profit target with no time limits to secure funding.</p>
-                      <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-4">
-                          <Link href="/rules/one-step">View Rules <ArrowRight className="ml-2 h-3 w-3" /></Link>
-                      </Button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-                      {oneStepPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} />
-                      ))}
-                  </div>
-              </TabsContent>
-              
-              <TabsContent value="2-step" className="mt-8 animate-in fade-in duration-500">
-                  <div className="text-center mb-12">
-                      <h2 className="text-3xl font-bold text-white tracking-tight uppercase">2-Step Standard</h2>
-                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Prove consistency across two phases to unlock maximum leverage.</p>
-                      <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-4">
-                          <Link href="/rules/two-step-evaluation">View Rules <ArrowRight className="ml-2 h-3 w-3" /></Link>
-                      </Button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-                      {twoStepPlans.map((plan) => (
-                      <PlanCard key={plan.title} {...plan} />
-                      ))}
-                  </div>
-              </TabsContent>
+                    <TabsContent value="1-step" className="mt-8 animate-in fade-in duration-500">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold text-white tracking-tight uppercase">1-Step Evaluation</h2>
+                            <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Achieve 10% profit target with no time limits to secure funding.</p>
+                            <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-4">
+                                <Link href="/rules/one-step">View Rules <ArrowRight className="ml-2 h-3 w-3" /></Link>
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                            {oneStepPlans.map((plan) => (
+                            <PlanCard key={plan.id} {...plan} category="1-step" />
+                            ))}
+                        </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="2-step" className="mt-8 animate-in fade-in duration-500">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold text-white tracking-tight uppercase">2-Step Standard</h2>
+                            <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">Prove consistency across two phases to unlock maximum leverage.</p>
+                            <Button variant="link" asChild className="text-primary font-bold text-xs uppercase tracking-widest mt-4">
+                                <Link href="/rules/two-step-evaluation">View Rules <ArrowRight className="ml-2 h-3 w-3" /></Link>
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                            {twoStepPlans.map((plan) => (
+                            <PlanCard key={plan.id} {...plan} category="2-step" />
+                            ))}
+                        </div>
+                    </TabsContent>
+                  </>
+              )}
           </Tabs>
 
           <div className="mt-32 text-center">
-              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 2,500+ Global Traders</p>
+              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 4,000+ Global Traders</p>
               <FundedStockLogo className="h-8 w-8 mx-auto opacity-20 grayscale" />
           </div>
         </main>

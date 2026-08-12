@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense, useTransition } from 'react';
@@ -63,14 +64,16 @@ function WelcomeContent({
     walletTransactions, 
     paymentSettings,
     competitions,
-    supportConversations: initialSupportConversations
+    supportConversations: initialSupportConversations,
+    plans = []
 }: { 
     profile: any, 
     accounts: any[], 
     walletTransactions: any[], 
     paymentSettings: any,
     competitions: any[],
-    supportConversations: any[]
+    supportConversations: any[],
+    plans?: any[]
 }) {
     const searchParams = useSearchParams();
     const tabParam = searchParams.get('tab');
@@ -250,7 +253,7 @@ function WelcomeContent({
                         <AccountsHub accounts={accounts} profile={profile} onSwitchToGetFunded={() => setActiveTab('marketplace')} />
                     </TabsContent>
                     <TabsContent value="marketplace" className="animate-in fade-in duration-300">
-                        <ArenaView profile={profile} paymentSettings={paymentSettings} onSwitchToWallet={() => setActiveTab('wallet')} />
+                        <ArenaView profile={profile} paymentSettings={paymentSettings} plans={plans} onSwitchToWallet={() => setActiveTab('wallet')} />
                     </TabsContent>
                     <TabsContent value="competition" className="animate-in fade-in duration-300">
                         <CompetitionView profile={profile} registrations={competitions} onSwitchToWallet={() => setActiveTab('wallet')} />

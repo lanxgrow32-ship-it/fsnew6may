@@ -11,16 +11,7 @@ import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
 import { ClientOnly } from '@/components/ui/client-only';
-
-const forexPlans = [
-  { size: '5,000', title: '$5k Forex 2-Step', price: '2,999', usdPrice: '35' },
-  { size: '10,000', title: '$10k Forex 2-Step', price: '4,999', usdPrice: '60' },
-  { size: '25,000', title: '$25k Forex 2-Step', price: '9,999', usdPrice: '120' },
-  { size: '50,000', title: '$50k Forex 2-Step', price: '16,999', usdPrice: '200', isPopular: true },
-  { size: '100,000', title: '$100k Forex 2-Step', price: '29,999', usdPrice: '350' },
-  { size: '200,000', title: '$200k Forex 2-Step', price: '49,999', usdPrice: '600' },
-  { size: '400,000', title: '$400k Forex 2-Step', price: '89,999', usdPrice: '1,050' },
-];
+import { createClient } from '@/lib/supabase/client';
 
 const LiveViewersBanner = () => {
     const [viewers, setViewers] = useState(0);
@@ -48,14 +39,8 @@ const LiveViewersBanner = () => {
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
                     🔥 {viewers} are currently viewing this page
                 </span>
-                <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🔥 {viewers} are currently viewing this page
-                </span>
             </div>
             <div className="animate-marquee inline-block" aria-hidden="true">
-                <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
-                    🔥 {viewers} are currently viewing this page
-                </span>
                 <span className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-[0.2em] px-8">
                     🔥 {viewers} are currently viewing this page
                 </span>
@@ -68,7 +53,7 @@ const LiveViewersBanner = () => {
 };
 
 const PlanCard = ({ size, title, price, usdPrice, isPopular }: any) => {
-  const currentPrice = parseFloat(price.replace(/,/g, ''));
+  const currentPrice = typeof price === 'string' ? parseFloat(price.replace(/,/g, '')) : price;
 
   return (
     <Card className={cn(
@@ -118,6 +103,28 @@ const PlanCard = ({ size, title, price, usdPrice, isPopular }: any) => {
 };
 
 export default function ForexPricingPage() {
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+      const fetchPlans = async () => {
+          const { data } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('market_type', 'forex')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true });
+          setPlans(data || []);
+          setLoading(false);
+      };
+      fetchPlans();
+  }, []);
+
+  const twoStepPlans = plans.filter(p => p.category === '2-step');
+  const oneStepPlans = plans.filter(p => p.category === '1-step');
+  const instantPlans = plans.filter(p => p.category === 'instant');
+
   return (
     <div className="dark">
       <style jsx global>{`
@@ -163,42 +170,62 @@ export default function ForexPricingPage() {
                   </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="2-step" className="mt-8 animate-in fade-in duration-500">
-                  <div className="text-center mb-12">
-                      <h2 className="text-3xl font-bold text-white tracking-tight uppercase">Forex 2-Step Standard</h2>
-                      <p className="mt-2 text-muted-foreground max-w-2xl mx-auto font-medium">Access high-fidelity institutional capital for major pairs and global commodities.</p>
-                      <div className="flex justify-center mt-6">
-                        <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2">
-                            <Link href="/rules/forex-two-step"><HelpCircle className="w-4 h-4" /> View Arena Rules</Link>
-                        </Button>
-                      </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-                      {forexPlans.map((plan) => (
-                          <PlanCard key={plan.title} {...plan} />
-                      ))}
-                  </div>
-              </TabsContent>
+              {loading ? <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto h-10 w-10 text-primary opacity-20"/></div> : (
+                  <>
+                    <TabsContent value="2-step" className="mt-8 animate-in fade-in duration-500">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold text-white tracking-tight uppercase">Forex 2-Step Standard</h2>
+                            <p className="mt-2 text-muted-foreground max-w-2xl mx-auto font-medium">Access high-fidelity institutional capital for major pairs and global commodities.</p>
+                            <div className="flex justify-center mt-6">
+                                <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-all px-8 py-1 h-10 text-[10px] font-black uppercase tracking-widest gap-2">
+                                    <Link href="/rules/forex-two-step"><HelpCircle className="w-4 h-4" /> View Arena Rules</Link>
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                            {twoStepPlans.map((plan) => (
+                                <PlanCard key={plan.id} {...plan} usdPrice={plan.usd_price} />
+                            ))}
+                        </div>
+                    </TabsContent>
 
-              <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
-                  <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
-                      <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
-                      <h3 className="text-2xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
-                      <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">System Optimization in Progress...</p>
-                  </div>
-              </TabsContent>
+                    <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
+                        {instantPlans.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                                {instantPlans.map((plan) => (
+                                    <PlanCard key={plan.id} {...plan} usdPrice={plan.usd_price} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
+                                <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
+                                <h3 className="text-2xl font-bold text-white tracking-tight uppercase">Forex Instant is coming.</h3>
+                                <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">System Optimization in Progress...</p>
+                            </div>
+                        )}
+                    </TabsContent>
 
-              <TabsContent value="1-step" className="mt-8 animate-in fade-in duration-500">
-                   <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
-                      <Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
-                      <h3 className="text-2xl font-bold text-white tracking-tight uppercase">1-Phase Model development.</h3>
-                      <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Analysis Phase...</p>
-                  </div>
-              </TabsContent>
+                    <TabsContent value="1-step" className="mt-8 animate-in fade-in duration-500">
+                        {oneStepPlans.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                                {oneStepPlans.map((plan) => (
+                                    <PlanCard key={plan.id} {...plan} usdPrice={plan.usd_price} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] max-w-4xl mx-auto">
+                                <Zap className="h-10 w-10 text-primary mx-auto mb-4 opacity-20" />
+                                <h3 className="text-2xl font-bold text-white tracking-tight uppercase">1-Phase Model development.</h3>
+                                <p className="text-gray-500 text-xs mt-2 uppercase font-black tracking-widest">Risk Analysis Phase...</p>
+                            </div>
+                        )}
+                    </TabsContent>
+                  </>
+              )}
           </Tabs>
 
           <div className="mt-32 text-center">
-              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 2,500+ Global Traders</p>
+              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 4,000+ Global Traders</p>
           </div>
         </main>
       </div>
