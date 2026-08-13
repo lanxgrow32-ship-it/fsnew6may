@@ -24,7 +24,8 @@ import {
     ShieldCheck,
     Sparkles,
     QrCode,
-    X
+    X,
+    ArrowRight
 } from 'lucide-react';
 import { purchaseWithWallet, requestManualAccount, validateCoupon, initiateGatewayPayment } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +39,66 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
         {children}
     </div>
 );
+
+// Extracted PlanBox for better performance and safety
+function PlanBox({ plan, marketSegment, onSelect }: { plan: any; marketSegment: string; onSelect: (plan: any) => void }) {
+    const isPro = plan.category === 'pro';
+    // Robust parsing for string or number prices
+    const displayPrice = typeof plan.price === 'string' 
+        ? parseFloat(plan.price.replace(/,/g, '')) 
+        : (plan.price || 0);
+
+    return (
+        <Card className={cn(
+            "bg-card/50 transition-all duration-300 flex flex-col h-full border-border/50 group relative hover:border-primary",
+            isPro && "border-primary/30 bg-primary/5"
+        )}>
+            <CardHeader className="pb-4">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-lg font-bold">
+                            {marketSegment === 'forex' ? `$${plan.size || '0'}` : `₹${plan.size || '0'}`}
+                        </CardTitle>
+                        <CardDescription className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                            {plan.category?.toUpperCase() || 'TRADING PLAN'}
+                        </CardDescription>
+                    </div>
+                    {isPro && <Badge className="bg-primary text-white text-[8px] font-black uppercase px-2 h-4">WEEKLY</Badge>}
+                </div>
+            </CardHeader>
+            <CardContent className="flex-grow space-y-4">
+                <div className="space-y-2 text-xs border-t border-white/5 pt-4">
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                        <span>80% Reward Share</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                        <span>{isPro ? '7-Day Validity' : 'No Profit Target'}</span>
+                    </div>
+                    {isPro && (
+                         <div className="flex items-center gap-2 text-white font-bold">
+                            <Zap className="h-3.5 w-3.5 text-primary" />
+                            <span>Daily Payouts Enabled</span>
+                        </div>
+                    )}
+                </div>
+                <div className="pt-4 border-t border-white/5">
+                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Buy Price</p>
+                    <p className="text-xl font-bold text-primary mt-0.5">
+                        {marketSegment === 'forex' 
+                            ? `$${plan.usd_price || displayPrice}` 
+                            : `₹${displayPrice.toLocaleString('en-IN')}`
+                        }
+                    </p>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button onClick={() => onSelect(plan)} className="w-full font-bold h-10 rounded-xl text-xs uppercase tracking-widest">Get Funded</Button>
+            </CardFooter>
+        </Card>
+    );
+}
 
 export function ArenaView({ 
     profile, 
@@ -65,8 +126,11 @@ export function ArenaView({
     const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
     const usdtAddress = paymentSettings?.usdt_wallet_address || 'T...';
 
-    // Merge Core Registry with Dynamic Plans
-    const allPlans = useMemo(() => [...LEGACY_PLANS, ...plans], [plans]);
+    // Merge Core Registry with Dynamic Plans safely
+    const allPlans = useMemo(() => {
+        const customPlans = Array.isArray(plans) ? plans : [];
+        return [...LEGACY_PLANS, ...customPlans];
+    }, [plans]);
 
     // Filter plans by market and align category names
     const filteredPlans = allPlans.filter(p => p.market_type === marketSegment);
@@ -98,7 +162,7 @@ export function ArenaView({
 
     const calculateFinalPrice = () => {
         if (!selectedPlan) return 0;
-        const base = typeof selectedPlan.price === 'string' ? parseFloat(selectedPlan.price.replace(/,/g, '')) : selectedPlan.price;
+        const base = typeof selectedPlan.price === 'string' ? parseFloat(selectedPlan.price.replace(/,/g, '')) : (selectedPlan.price || 0);
         if (discount > 0) return Math.floor(base * (1 - discount / 100));
         return base;
     }
@@ -139,53 +203,6 @@ export function ArenaView({
         }
         toast({ title: "Processing...", description: "Verification might take a few minutes." });
         router.push(`/purchase-success?id=${cryptoTxId}&amount=${finalPrice}&plan=${encodeURIComponent(selectedPlan.title)}&method=crypto`);
-    }
-
-    const PlanBox = ({ plan }: { plan: any }) => {
-        const isPro = plan.category === 'pro';
-        return (
-            <Card className={cn(
-                "bg-card/50 transition-all duration-300 flex flex-col h-full border-border/50 group relative hover:border-primary",
-                isPro && "border-primary/30 bg-primary/5"
-            )}>
-                <CardHeader className="pb-4">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle className="text-lg font-bold">{marketSegment === 'forex' ? `$${plan.size}` : `₹${plan.size}`}</CardTitle>
-                            <CardDescription className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">{plan.category.toUpperCase()}</CardDescription>
-                        </div>
-                        {isPro && <Badge className="bg-primary text-white text-[8px] font-black uppercase px-2 h-4">WEEKLY</Badge>}
-                    </div>
-                </CardHeader>
-                <CardContent className="flex-grow space-y-4">
-                    <div className="space-y-2 text-xs border-t border-white/5 pt-4">
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                            <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-                            <span>80% Reward Share</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                            <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-                            <span>{isPro ? '7-Day Validity' : 'No Profit Target'}</span>
-                        </div>
-                        {isPro && (
-                             <div className="flex items-center gap-2 text-white font-bold">
-                                <Zap className="h-3.5 w-3.5 text-primary" />
-                                <span>Daily Payouts Enabled</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="pt-4 border-t border-white/5">
-                        <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Buy Price</p>
-                        <p className="text-xl font-bold text-primary mt-0.5">
-                            {marketSegment === 'forex' ? `$${plan.usd_price || plan.price}` : `₹${plan.price.toLocaleString()}`}
-                        </p>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={() => { setSelectedPlan(plan); setCheckoutMode('upi'); }} className="w-full font-bold h-10 rounded-xl text-xs uppercase tracking-widest">Get Funded</Button>
-                </CardFooter>
-            </Card>
-        );
     }
 
     if (selectedPlan) {
@@ -340,23 +357,23 @@ export function ArenaView({
                 </TabsList>
 
                 <TabsContent value="pro" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-                    {categories.pro.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.pro.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.pro.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No Pro plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-                    {categories.instant.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.instant.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.instant.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No Instant plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="oneStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {categories.oneStep.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.oneStep.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.oneStep.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No 1-Step plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="twoStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {categories.twoStep.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.twoStep.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.twoStep.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No 2-Step plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="ptp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {categories.ptp.map(p => <PlanBox key={p.id} plan={p} />)}
+                    {categories.ptp.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.ptp.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No PTP plans available.</p></div>}
                 </TabsContent>
             </Tabs>
