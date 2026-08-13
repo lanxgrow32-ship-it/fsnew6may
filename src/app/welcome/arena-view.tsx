@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
@@ -31,6 +30,7 @@ import { purchaseWithWallet, requestManualAccount, validateCoupon, initiateGatew
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LEGACY_PLANS } from '@/lib/legacy-plans';
 
