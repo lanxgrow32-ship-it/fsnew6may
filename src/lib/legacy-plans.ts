@@ -7,9 +7,10 @@
 
 export const LEGACY_PLANS = [
     // --- INDIAN MARKET: INSTANT PRO ---
-    { id: 'legacy-pro-5l', title: '5 Lakh Pro', size: '5 Lakh', price: 22999, category: 'pro', market_type: 'indian', is_popular: false, is_active: true },
-    { id: 'legacy-pro-10l', title: '10 Lakh Pro', size: '10 Lakh', price: 38999, category: 'pro', market_type: 'indian', is_popular: true, is_active: true },
-    { id: 'legacy-pro-25l', title: '25 Lakh Pro', size: '25 Lakh', price: 54999, category: 'pro', market_type: 'indian', is_popular: false, is_active: true },
+    // Price Protocol: Set 20% lower than corresponding Normal Instant sizes
+    { id: 'legacy-pro-5l', title: '5 Lakh Pro', size: '5 Lakh', price: 14399, category: 'pro', market_type: 'indian', is_popular: false, is_active: true },
+    { id: 'legacy-pro-10l', title: '10 Lakh Pro', size: '10 Lakh', price: 23199, category: 'pro', market_type: 'indian', is_popular: true, is_active: true },
+    { id: 'legacy-pro-25l', title: '25 Lakh Pro', size: '25 Lakh', price: 39600, category: 'pro', market_type: 'indian', is_popular: false, is_active: true },
 
     // --- INDIAN MARKET: STANDARD INSTANT ---
     { id: 'legacy-inst-1l', title: '1 Lakh Instant', size: '1 Lakh', price: 5999, category: 'instant', market_type: 'indian', is_popular: false, is_active: true },
