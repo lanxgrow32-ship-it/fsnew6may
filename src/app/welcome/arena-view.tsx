@@ -40,13 +40,17 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
     </div>
 );
 
-// Extracted PlanBox for better performance and safety
+// Extracted PlanBox with Hardened Render Protocol
 function PlanBox({ plan, marketSegment, onSelect }: { plan: any; marketSegment: string; onSelect: (plan: any) => void }) {
+    if (!plan) return null;
+    
     const isPro = plan.category === 'pro';
-    // Robust parsing for string or number prices
-    const displayPrice = typeof plan.price === 'string' 
-        ? parseFloat(plan.price.replace(/,/g, '')) 
-        : (plan.price || 0);
+    
+    // Robust parsing for string or number prices (Supabase NUMERIC returns as string)
+    const rawPrice = plan.price;
+    const displayPrice = typeof rawPrice === 'string' 
+        ? parseFloat(rawPrice.replace(/,/g, '')) 
+        : (rawPrice || 0);
 
     return (
         <Card className={cn(
@@ -87,8 +91,8 @@ function PlanBox({ plan, marketSegment, onSelect }: { plan: any; marketSegment: 
                     <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Buy Price</p>
                     <p className="text-xl font-bold text-primary mt-0.5">
                         {marketSegment === 'forex' 
-                            ? `$${plan.usd_price || displayPrice}` 
-                            : `₹${displayPrice.toLocaleString('en-IN')}`
+                            ? `$${plan.usd_price || Number(displayPrice || 0).toFixed(0)}` 
+                            : `₹${Number(displayPrice || 0).toLocaleString('en-IN')}`
                         }
                     </p>
                 </div>
@@ -124,7 +128,7 @@ export function ArenaView({
     const [discount, setDiscount] = useState(0);
 
     const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
-    const usdtAddress = paymentSettings?.usdt_wallet_address || 'T...';
+    const usdtAddress = paymentSettings?.usdt_wallet_address || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 
     // Merge Core Registry with Dynamic Plans safely
     const allPlans = useMemo(() => {
@@ -133,15 +137,17 @@ export function ArenaView({
     }, [plans]);
 
     // Filter plans by market and align category names
-    const filteredPlans = allPlans.filter(p => p.market_type === marketSegment);
+    const filteredPlans = useMemo(() => {
+        return allPlans.filter(p => p?.market_type === marketSegment);
+    }, [allPlans, marketSegment]);
     
-    const categories = {
-        pro: filteredPlans.filter(p => p.category === 'pro'),
-        instant: filteredPlans.filter(p => p.category === 'instant'),
-        oneStep: filteredPlans.filter(p => p.category === '1-step'),
-        twoStep: filteredPlans.filter(p => p.category === '2-step'),
-        ptp: filteredPlans.filter(p => p.category === 'ptp'),
-    };
+    const categories = useMemo(() => ({
+        pro: filteredPlans.filter(p => p?.category === 'pro'),
+        instant: filteredPlans.filter(p => p?.category === 'instant'),
+        oneStep: filteredPlans.filter(p => p?.category === '1-step'),
+        twoStep: filteredPlans.filter(p => p?.category === '2-step'),
+        ptp: filteredPlans.filter(p => p?.category === 'ptp'),
+    }), [filteredPlans]);
 
     useEffect(() => {
         if (marketSegment === 'forex') setActiveTab('twoStep');
@@ -162,14 +168,17 @@ export function ArenaView({
 
     const calculateFinalPrice = () => {
         if (!selectedPlan) return 0;
-        const base = typeof selectedPlan.price === 'string' ? parseFloat(selectedPlan.price.replace(/,/g, '')) : (selectedPlan.price || 0);
+        const rawPrice = selectedPlan.price;
+        const base = typeof rawPrice === 'string' ? parseFloat(rawPrice.replace(/,/g, '')) : (rawPrice || 0);
         if (discount > 0) return Math.floor(base * (1 - discount / 100));
         return base;
     }
 
     const handleWalletPurchase = async () => {
         const finalPrice = calculateFinalPrice();
-        if (profile.wallet_balance < finalPrice) {
+        const currentBalance = Number(profile?.wallet_balance || 0);
+        
+        if (currentBalance < finalPrice) {
             toast({ title: "Insufficient Balance", variant: "destructive" });
             onSwitchToWallet();
             return;
@@ -207,7 +216,7 @@ export function ArenaView({
 
     if (selectedPlan) {
         const finalPrice = calculateFinalPrice();
-        const isPtp = selectedPlan.category === 'ptp';
+        const isPtp = selectedPlan?.category === 'ptp';
         const upiId = isPtp ? paymentSettings?.pay_later_upi_id : paymentSettings?.upi_id;
         const qrCode = isPtp ? paymentSettings?.pay_later_qr_code_url : paymentSettings?.qr_code_url;
 
@@ -221,8 +230,8 @@ export function ArenaView({
                     <div className="p-8 space-y-8 flex flex-col items-center">
                         <div className="text-center space-y-2">
                             <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Checkout Protocol</p>
-                            <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedPlan.title}</h2>
-                            <p className="text-gray-500 text-sm">Final Amount: <span className="text-white font-bold">₹{finalPrice.toLocaleString()}</span></p>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedPlan.title || 'TRADING PLAN'}</h2>
+                            <p className="text-gray-500 text-sm">Final Amount: <span className="text-white font-bold">₹{Number(finalPrice || 0).toLocaleString('en-IN')}</span></p>
                         </div>
 
                         <div className="w-full space-y-6">
@@ -251,7 +260,13 @@ export function ArenaView({
                                 <div className="bg-black/40 rounded-[32px] p-8 border border-white/5 flex flex-col items-center gap-8 shadow-2xl">
                                     <div className="space-y-6 text-center w-full">
                                         <div className="bg-white p-3 rounded-2xl w-fit mx-auto shadow-2xl">
-                                            {qrCode ? <Image src={qrCode} alt="UPI QR" width={200} height={200} className="rounded-lg" /> : <div className="w-[200px] h-[200px] flex items-center justify-center bg-slate-100 text-slate-900 font-bold text-xs uppercase rounded-lg">QR Offline</div>}
+                                            {qrCode ? (
+                                                <Image src={qrCode} alt="UPI QR" width={200} height={200} className="rounded-lg" />
+                                            ) : (
+                                                <div className="w-[200px] h-[200px] flex items-center justify-center bg-slate-100 text-slate-900 font-bold text-xs uppercase rounded-lg p-8 text-center">
+                                                    Official QR Gateway
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Official UPI ID</p>
@@ -266,7 +281,7 @@ export function ArenaView({
                                             <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Enter Transaction ID (UTR)</Label>
                                             <Input placeholder="12-digit UPI reference" value={utr} onChange={(e) => setUtr(e.target.value)} className="h-14 bg-black/60 border-white/10 text-white font-mono text-center text-lg rounded-xl" />
                                         </div>
-                                        <Button onClick={handleUpiPurchase} disabled={isActionPending || !utr} className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
+                                        <Button onClick={handleUpiPurchase} disabled={isActionPending || !utr} className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
                                             {isActionPending ? <Loader2 className="animate-spin h-5 w-5"/> : 'Submit Verification'}
                                         </Button>
                                     </div>
@@ -294,10 +309,10 @@ export function ArenaView({
                                 <div className="bg-black/40 rounded-[32px] p-8 border border-white/5 flex flex-col items-center text-center gap-8 animate-in slide-in-from-bottom-2">
                                     <div className="h-20 w-20 rounded-full bg-white/5 flex items-center justify-center text-white border border-white/10"><Wallet className="h-10 w-10" /></div>
                                     <div className="w-full p-6 bg-black/60 rounded-2xl border border-white/5 flex items-center justify-between">
-                                        <div className="text-left"><p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Balance</p><p className="text-xl font-bold text-white">₹{profile.wallet_balance.toLocaleString()}</p></div>
-                                        <div className="text-right"><p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Cost</p><p className="text-xl font-bold text-primary">₹{finalPrice.toLocaleString()}</p></div>
+                                        <div className="text-left"><p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Balance</p><p className="text-xl font-bold text-white">₹{Number(profile?.wallet_balance || 0).toLocaleString('en-IN')}</p></div>
+                                        <div className="text-right"><p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Cost</p><p className="text-xl font-bold text-primary">₹{Number(finalPrice || 0).toLocaleString('en-IN')}</p></div>
                                     </div>
-                                    <Button onClick={handleWalletPurchase} disabled={isActionPending || profile.wallet_balance < finalPrice} className="w-full h-14 bg-white text-black font-black uppercase tracking-widest rounded-2xl transition-all hover:scale-105 active:scale-95">
+                                    <Button onClick={handleWalletPurchase} disabled={isActionPending || Number(profile?.wallet_balance || 0) < finalPrice} className="w-full h-14 bg-white text-black font-black uppercase tracking-widest rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.95]">
                                         {isActionPending ? <Loader2 className="animate-spin h-5 w-5"/> : 'Initialize Activation'}
                                     </Button>
                                 </div>
@@ -307,9 +322,9 @@ export function ArenaView({
                         <div className="flex flex-col items-center gap-4 pt-10 border-t border-white/5 w-full">
                             <p className="text-[9px] font-black text-gray-800 uppercase tracking-[0.4em]">Alternative Protocols</p>
                             <div className="flex flex-wrap justify-center gap-6">
-                                {checkoutMode !== 'upi' && <button onClick={() => setCheckoutMode('upi')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest"><QrCode className="w-4 h-4" /> Pay with UPI</button>}
-                                {checkoutMode !== 'crypto' && <button onClick={() => setCheckoutMode('crypto')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest"><Coins className="w-4 h-4" /> Pay with USDT</button>}
-                                {checkoutMode !== 'wallet' && <button onClick={() => setCheckoutMode('wallet')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest"><Wallet className="w-4 h-4" /> Use Wallet Balance</button>}
+                                {checkoutMode !== 'upi' && <button onClick={() => setCheckoutMode('upi')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest transition-colors"><QrCode className="w-4 h-4" /> Pay with UPI</button>}
+                                {checkoutMode !== 'crypto' && <button onClick={() => setCheckoutMode('crypto')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest transition-colors"><Coins className="w-4 h-4" /> Pay with USDT</button>}
+                                {checkoutMode !== 'wallet' && <button onClick={() => setCheckoutMode('wallet')} className="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest transition-colors"><Wallet className="w-4 h-4" /> Use Wallet Balance</button>}
                             </div>
                         </div>
                     </div>
@@ -357,23 +372,23 @@ export function ArenaView({
                 </TabsList>
 
                 <TabsContent value="pro" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-                    {categories.pro.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
+                    {categories.pro.map((p, idx) => <PlanBox key={`pro-${idx}`} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.pro.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No Pro plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-                    {categories.instant.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
+                    {categories.instant.map((p, idx) => <PlanBox key={`inst-${idx}`} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.instant.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No Instant plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="oneStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {categories.oneStep.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
+                    {categories.oneStep.map((p, idx) => <PlanBox key={`1s-${idx}`} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.oneStep.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No 1-Step plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="twoStep" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {categories.twoStep.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
+                    {categories.twoStep.map((p, idx) => <PlanBox key={`2s-${idx}`} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.twoStep.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No 2-Step plans available.</p></div>}
                 </TabsContent>
                 <TabsContent value="ptp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {categories.ptp.map(p => <PlanBox key={p.id} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
+                    {categories.ptp.map((p, idx) => <PlanBox key={`ptp-${idx}`} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.ptp.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No PTP plans available.</p></div>}
                 </TabsContent>
             </Tabs>
