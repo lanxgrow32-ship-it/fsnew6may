@@ -9,6 +9,7 @@ import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsernam
 import { randomBytes } from 'crypto';
 import { differenceInSeconds, addDays } from 'date-fns';
 import { generateWatchPaySignature } from '@/lib/watchpay';
+import { verifyTransactionFlow } from '@/ai/flows/verify-transaction-flow';
 
 /**
  * Global Session Cleanup Protocol (v11.0)
@@ -371,6 +372,9 @@ export async function cleanupAllTrials(userId: string) {
 
 export async function processCryptoWalletTopUp(userId: string, amountInr: number, txHash: string) {
     try {
+        const { data: settings } = await supabaseAdmin.from('payment_details').select('usdt_wallet_address').eq('id', 1).single();
+        const companyWallet = settings?.usdt_wallet_address || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+
         const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
         if (!profile) return { error: 'Profile not found.' };
 
@@ -378,7 +382,19 @@ export async function processCryptoWalletTopUp(userId: string, amountInr: number
         const { data: existing } = await supabaseAdmin.from('wallet_transactions').select('id').eq('gateway_transaction_id', txHash.trim()).single();
         if (existing) return { error: 'This transaction has already been processed.' };
 
-        // 2. Persistent Ledger Entry
+        // 2. Blockchain Verification (AI Flow)
+        const claimedUsdt = amountInr / 96;
+        const verification = await verifyTransactionFlow({
+            txId: txHash.trim(),
+            claimedAmount: claimedUsdt,
+            companyWallet: companyWallet
+        });
+
+        if (!verification.success) {
+            return { error: verification.error || 'Blockchain verification failed.' };
+        }
+
+        // 3. Persistent Ledger Entry
         const bonus = amountInr >= 10000 ? (amountInr * 0.05) : 0;
         const totalToAdd = amountInr + bonus;
 
@@ -395,7 +411,7 @@ export async function processCryptoWalletTopUp(userId: string, amountInr: number
 
         if (txError) throw new Error('Ledger write failure');
 
-        // 3. Update Liquidity Balance
+        // 4. Update Liquidity Balance
         const newBalance = (profile.wallet_balance || 0) + totalToAdd;
         await supabaseAdmin.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
 
@@ -405,6 +421,79 @@ export async function processCryptoWalletTopUp(userId: string, amountInr: number
     } catch (e: any) {
         console.error("[Crypto Protocol] Error:", e);
         return { error: 'Internal verification protocol failure.' };
+    }
+}
+
+export async function purchasePlanWithCrypto(userId: string, plan: any, txHash: string) {
+    if (!userId || !plan || !txHash) return { error: 'Missing parameters.' };
+
+    try {
+        const { data: settings } = await supabaseAdmin.from('payment_details').select('*').eq('id', 1).single();
+        const companyWallet = settings?.usdt_wallet_address || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+
+        const basePrice = typeof plan.price === 'string' ? parseFloat(plan.price.replace(/,/g, '')) : plan.price;
+        const claimedUsdt = basePrice / 96;
+
+        // 1. AI Blockchain Verification
+        const verification = await verifyTransactionFlow({
+            txId: txHash.trim(),
+            claimedAmount: claimedUsdt,
+            companyWallet: companyWallet
+        });
+
+        if (!verification.success) {
+            return { error: verification.error || 'Blockchain verification failed.' };
+        }
+
+        // 2. Fetch Profile & Check for double use
+        const [pRes, existingRes] = await Promise.all([
+            supabaseAdmin.from('profiles').select('*').eq('id', userId).single(),
+            supabaseAdmin.from('user_accounts').select('id').eq('transaction_id', txHash.trim()).single()
+        ]);
+
+        if (!pRes.data) return { error: 'Profile mismatch.' };
+        if (existingRes.data) return { error: 'Transaction already used.' };
+
+        const profile = pRes.data;
+        const classification = getAutoClassification(plan.title);
+        const marketType = getMarketType(plan.title);
+        const isKycVerified = profile.kyc_status === 'verified';
+        const isPro = classification === 'instant_pro';
+
+        const { count: existingCount } = await supabaseAdmin.from('user_accounts').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('credentials_provided', true);
+
+        const updateData: any = {
+            user_id: userId, plan_name: plan.title, status: 'active', is_approved: true,
+            account_classification: classification, market_type: marketType,
+            final_amount_paid: basePrice, transaction_id: txHash.trim(),
+            account_model: classification === 'passthenpay' ? 'passthrupay' : 'normal'
+        };
+
+        if (isPro) updateData.expires_at = addDays(new Date(), 7).toISOString();
+        if (existingCount === 0 && !isKycVerified && classification !== 'passthenpay') {
+            const expiry = new Date();
+            expiry.setHours(expiry.getHours() + 48);
+            updateData.grace_period_expiry = expiry.toISOString();
+        }
+
+        const { data: account, error: accountError } = await supabaseAdmin.from('user_accounts').insert(updateData).select().single();
+        if (accountError || !account) return { error: 'Account provisioning failed.' };
+
+        const initialBalance = getBalanceFromPlanName(plan.title);
+        if (initialBalance > 0) {
+            const stockmintUsername = generateStockmintUsername(profile.email, existingCount || 0);
+            await fetchFromHub('users/create', 'POST', {
+                fullName: profile.full_name, email: stockmintUsername, password: stockmintUsername,
+                initialBalance, accountClassification: classification, marketType: marketType
+            }, account.id);
+            await supabaseAdmin.from('user_accounts').update({ credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername }).eq('id', account.id);
+        }
+
+        revalidatePath('/welcome');
+        return { success: true, transaction_id: txHash.trim(), amount: basePrice };
+    } catch (e: any) {
+        console.error("[Crypto Purchase] Error:", e);
+        return { error: 'Verification protocol timed out.' };
     }
 }
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
@@ -26,7 +27,7 @@ import {
     X,
     ArrowRight
 } from 'lucide-react';
-import { purchaseWithWallet, requestManualAccount, validateCoupon, initiateGatewayPayment } from './actions';
+import { purchaseWithWallet, requestManualAccount, validateCoupon, initiateGatewayPayment, purchasePlanWithCrypto } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -205,13 +206,21 @@ export function ArenaView({
     }
 
     const handleCryptoPurchase = async () => {
-        const finalPrice = calculateFinalPrice();
-        if (!cryptoTxId) {
+        if (!cryptoTxId.trim()) {
             toast({ title: "TxID Required", variant: "destructive" });
             return;
         }
-        toast({ title: "Processing...", description: "Verification might take a few minutes." });
-        router.push(`/purchase-success?id=${cryptoTxId}&amount=${finalPrice}&plan=${encodeURIComponent(selectedPlan.title)}&method=crypto`);
+
+        startTransition(async () => {
+            toast({ title: "Verifying Blockchain...", description: "Performing real-time audit. Please wait." });
+            const res = await purchasePlanWithCrypto(profile.id, selectedPlan, cryptoTxId);
+            
+            if (res.error) {
+                toast({ title: "Verification Failed", description: res.error, variant: "destructive" });
+            } else {
+                router.push(`/purchase-success?id=${res.transaction_id}&amount=${res.amount}&plan=${encodeURIComponent(selectedPlan.title)}&method=crypto`);
+            }
+        });
     }
 
     if (selectedPlan) {
@@ -300,7 +309,11 @@ export function ArenaView({
                                             <Label className="text-[10px] font-black text-gray-500 uppercase">Transaction Hash (TxID)</Label>
                                             <Input value={cryptoTxId} onChange={(e) => setCryptoTxId(e.target.value)} placeholder="Paste hash here" className="h-12 bg-black/60 border-white/10 font-mono text-xs rounded-xl" />
                                         </div>
-                                        <Button onClick={handleCryptoPurchase} disabled={!cryptoTxId || isActionPending} className="w-full h-12 bg-green-600 hover:bg-green-500 text-white font-black uppercase text-[10px] rounded-xl shadow-lg">Verify Crypto Payment</Button>
+                                        <Button onClick={handleCryptoPurchase} disabled={!cryptoTxId || isActionPending} className="w-full h-14 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-green-900/20">
+                                            {isActionPending ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <ShieldCheck className="h-5 w-5 mr-2" />}
+                                            Verify Crypto Payment
+                                        </Button>
+                                        <p className="text-[9px] text-center text-gray-600 font-bold uppercase italic">Real-time AI blockchain auditing enabled.</p>
                                     </div>
                                 </div>
                             )}
