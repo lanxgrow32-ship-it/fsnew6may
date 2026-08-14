@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, X, Download, Calendar as CalendarIcon, User as UserIcon, Filter, RefreshCw } from 'lucide-react';
+import { Search, Trash2, Loader2, X, Download, Calendar as CalendarIcon, User as UserIcon, Filter, RefreshCw, Phone } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteMultipleUsers } from './actions';
@@ -105,6 +105,21 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
         link.click();
     }
 
+    const handleDownloadNumbersCSV = () => {
+        const data = filteredProfiles.map((p, i) => ({
+            'S.No': i + 1,
+            'Name': p.full_name,
+            'Mobile Number': p.mobile_number || 'N/A'
+        }));
+        const csv = Papa.unparse(data);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `traders-contacts-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+        link.click();
+    }
+
     return (
         <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -153,7 +168,10 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                             <SelectItem value="submitted">Review Required</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" onClick={handleDownloadCSV} className="h-11 border-white/10"><Download className="h-4 w-4 mr-2"/>Export CSV</Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={handleDownloadCSV} className="h-11 border-white/10"><Download className="h-4 w-4 mr-2"/>Export CSV</Button>
+                        <Button variant="outline" onClick={handleDownloadNumbersCSV} className="h-11 border-white/10"><Phone className="h-4 w-4 mr-2"/>Export Numbers</Button>
+                    </div>
                 </div>
             </div>
 
