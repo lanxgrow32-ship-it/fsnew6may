@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 /**
  * CRUD Actions for the Trading Plans Protocol.
  * Syncs the public pricing and internal arena.
- * UPDATED: Added Spotlight Badges and Featured sorting.
+ * UPDATED v12.5: Added Coupon Eligibility Control.
  */
 
 export async function upsertPlan(formData: FormData) {
@@ -22,6 +22,7 @@ export async function upsertPlan(formData: FormData) {
     const isLimited = formData.get('is_limited') === 'on';
     const isFeatured = formData.get('is_featured') === 'on';
     const isActive = formData.get('is_active') === 'on';
+    const couponsEnabled = formData.get('coupons_enabled') === 'on';
     const sortOrder = parseInt(formData.get('sort_order') as string || '0');
 
     if (!title || !size || !category) {
@@ -40,6 +41,7 @@ export async function upsertPlan(formData: FormData) {
         is_limited: isLimited,
         is_featured: isFeatured,
         is_active: isActive,
+        coupons_enabled: couponsEnabled,
         sort_order: sortOrder
     };
 

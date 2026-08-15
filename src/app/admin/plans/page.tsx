@@ -176,6 +176,7 @@ export default function PlanManagerPage() {
                                                     <div className="flex gap-1 flex-wrap">
                                                         {p.is_new && <Badge variant="outline" className="text-green-500 text-[8px] uppercase">NEW</Badge>}
                                                         {p.is_limited && <Badge variant="outline" className="text-amber-500 text-[8px] uppercase">LIMITED</Badge>}
+                                                        {!p.coupons_enabled && <Badge variant="outline" className="text-red-500 text-[8px] uppercase">NO COUPONS</Badge>}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="font-black">₹{p.price.toLocaleString()}</TableCell>
@@ -279,6 +280,14 @@ export default function PlanManagerPage() {
                                     <Switch name="is_popular" defaultChecked={editingPlan?.is_popular} />
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="text-xs font-bold text-white flex items-center gap-2"><Ticket className="w-3.5 h-3.5" /> Coupons Eligible</Label>
+                                <p className="text-[9px] text-gray-500">Allow discount codes for this plan</p>
+                            </div>
+                            <Switch name="coupons_enabled" defaultChecked={editingPlan?.coupons_enabled ?? true} />
                         </div>
 
                         <div className="flex items-center justify-between pt-2">

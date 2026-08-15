@@ -26,7 +26,8 @@ import {
     X,
     ArrowRight,
     Star,
-    Timer
+    Timer,
+    AlertTriangle
 } from 'lucide-react';
 import { purchaseWithWallet, requestManualAccount, validateCoupon, initiateGatewayPayment, purchasePlanWithCrypto } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -251,6 +252,7 @@ export function ArenaView({
         const isPtp = selectedPlan?.category === 'ptp';
         const upiId = isPtp ? paymentSettings?.pay_later_upi_id : paymentSettings?.upi_id;
         const qrCode = isPtp ? paymentSettings?.pay_later_qr_code_url : paymentSettings?.qr_code_url;
+        const canUseCoupon = selectedPlan.coupons_enabled !== false;
 
         return (
             <div className="max-w-xl mx-auto space-y-6 animate-in fade-in zoom-in-95 font-poppins">
@@ -268,22 +270,33 @@ export function ArenaView({
 
                         <div className="w-full space-y-6">
                             <div className="bg-black/40 border border-white/5 rounded-2xl p-6 space-y-4">
-                                <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Coupon Field</Label>
-                                <div className="flex gap-2">
-                                    <div className="relative flex-grow">
-                                        <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
-                                        <Input 
-                                            placeholder="ENTER CODE" 
-                                            value={couponCode}
-                                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                            className="pl-10 h-11 bg-black/40 border-white/10 text-white font-mono text-xs uppercase"
-                                        />
-                                    </div>
-                                    <Button onClick={handleApplyCoupon} variant="outline" className="h-11 border-white/10 bg-white/5 font-bold text-xs uppercase">Apply</Button>
-                                </div>
-                                {discount > 0 && (
-                                    <div className="flex items-center gap-2 text-green-400 font-bold text-[10px] uppercase tracking-widest animate-in slide-in-from-top-1">
-                                        <CheckCircle className="h-3 w-3" /> {discount}% Discount Applied
+                                <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Coupon Module</Label>
+                                {canUseCoupon ? (
+                                    <>
+                                        <div className="flex gap-2">
+                                            <div className="relative flex-grow">
+                                                <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
+                                                <Input 
+                                                    placeholder="ENTER CODE" 
+                                                    value={couponCode}
+                                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                                    className="pl-10 h-11 bg-black/40 border-white/10 text-white font-mono text-xs uppercase"
+                                                />
+                                            </div>
+                                            <Button onClick={handleApplyCoupon} variant="outline" className="h-11 border-white/10 bg-white/5 font-bold text-xs uppercase">Apply</Button>
+                                        </div>
+                                        {discount > 0 && (
+                                            <div className="flex items-center gap-2 text-green-400 font-bold text-[10px] uppercase tracking-widest animate-in slide-in-from-top-1">
+                                                <CheckCircle className="h-3 w-3" /> {discount}% Discount Applied
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-in shake-1">
+                                        <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+                                        <p className="text-[10px] font-black text-red-500 uppercase tracking-widest leading-relaxed">
+                                            A COUPON NOT ELIGIBLE FOR THIS PLAN
+                                        </p>
                                     </div>
                                 )}
                             </div>
