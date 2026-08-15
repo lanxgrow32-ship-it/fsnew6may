@@ -31,7 +31,10 @@ import {
     LineChart,
     ShieldAlert,
     Package,
-    RefreshCw
+    RefreshCw,
+    Star,
+    Sparkles,
+    Timer
 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
@@ -152,7 +155,7 @@ export default function PlanManagerPage() {
                                             <TableHead>Market</TableHead>
                                             <TableHead>Category</TableHead>
                                             <TableHead>Title</TableHead>
-                                            <TableHead>Size</TableHead>
+                                            <TableHead>Spotlight</TableHead>
                                             <TableHead>Price (INR)</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
@@ -160,13 +163,21 @@ export default function PlanManagerPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {plans.length > 0 ? plans.map((p) => (
-                                            <TableRow key={p.id}>
+                                            <TableRow key={p.id} className={cn(p.is_featured && "bg-primary/5")}>
                                                 <TableCell className="capitalize font-bold text-[10px]">
                                                     {p.market_type === 'forex' ? <Badge variant="outline" className="text-blue-500"><Globe className="w-3 h-3 mr-1"/> Forex</Badge> : <Badge variant="outline" className="text-orange-500"><LayoutGrid className="w-3 h-3 mr-1"/> Indian</Badge>}
                                                 </TableCell>
                                                 <TableCell><Badge className="uppercase text-[9px] font-black">{p.category}</Badge></TableCell>
-                                                <TableCell className="font-bold text-sm">{p.title}</TableCell>
-                                                <TableCell className="font-mono text-xs">{p.size}</TableCell>
+                                                <TableCell className="font-bold text-sm">
+                                                    {p.title}
+                                                    {p.is_featured && <Star className="inline-block ml-2 w-3 h-3 text-primary fill-primary" />}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1 flex-wrap">
+                                                        {p.is_new && <Badge variant="outline" className="text-green-500 text-[8px] uppercase">NEW</Badge>}
+                                                        {p.is_limited && <Badge variant="outline" className="text-amber-500 text-[8px] uppercase">LIMITED</Badge>}
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell className="font-black">₹{p.price.toLocaleString()}</TableCell>
                                                 <TableCell>{p.is_active ? <Badge className="bg-green-500">Live</Badge> : <Badge variant="secondary">Disabled</Badge>}</TableCell>
                                                 <TableCell className="text-right">
@@ -222,13 +233,13 @@ export default function PlanManagerPage() {
 
                         <div className="space-y-2">
                             <Label>Full Title (Marketplace Label)</Label>
-                            <Input name="title" defaultValue={editingPlan?.title} placeholder="e.g. 10L Standard Evaluation" required />
+                            <Input name="title" defaultValue={editingPlan?.title} placeholder="e.g. 15L Master Strategy Plan" required />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Display Size</Label>
-                                <Input name="size" defaultValue={editingPlan?.size} placeholder="e.g. 10 Lakh or 10,000" required />
+                                <Input name="size" defaultValue={editingPlan?.size} placeholder="e.g. 15 Lakh" required />
                             </div>
                             <div className="space-y-2">
                                 <Label>Sort Order</Label>
@@ -247,20 +258,39 @@ export default function PlanManagerPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between border-t pt-4">
-                            <div className="flex items-center gap-2">
-                                <Switch name="is_popular" defaultChecked={editingPlan?.is_popular} />
-                                <Label>Feature as Popular</Label>
+                        <div className="grid grid-cols-2 gap-6 p-4 bg-muted/50 rounded-2xl border border-white/5">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <Label className="flex items-center gap-2 text-xs"><Star className="w-3 h-3 text-primary" /> Featured</Label>
+                                    <Switch name="is_featured" defaultChecked={editingPlan?.is_featured} />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <Label className="flex items-center gap-2 text-xs"><Sparkles className="w-3 h-3 text-green-500" /> New Badge</Label>
+                                    <Switch name="is_new" defaultChecked={editingPlan?.is_new} />
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <Label className="flex items-center gap-2 text-xs"><Timer className="w-3 h-3 text-amber-500" /> Limited</Label>
+                                    <Switch name="is_limited" defaultChecked={editingPlan?.is_limited} />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <Label className="flex items-center gap-2 text-xs">Popular</Label>
+                                    <Switch name="is_popular" defaultChecked={editingPlan?.is_popular} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                             <div className="flex items-center gap-2">
                                 <Switch name="is_active" defaultChecked={editingPlan?.is_active ?? true} />
-                                <Label>Active</Label>
+                                <Label>Active & Visible</Label>
                             </div>
                         </div>
 
                         <Button type="submit" className="w-full h-12 font-bold" disabled={isPending}>
                             {isPending ? <Loader2 className="animate-spin h-5 w-5 mr-2"/> : null}
-                            {editingPlan ? 'Update Plan' : 'Add to Marketplace'}
+                            {editingPlan ? 'Update Global Listing' : 'Launch in Marketplace'}
                         </Button>
                     </form>
                 </DialogContent>

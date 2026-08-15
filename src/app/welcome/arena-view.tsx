@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
@@ -25,7 +24,9 @@ import {
     Sparkles,
     QrCode,
     X,
-    ArrowRight
+    ArrowRight,
+    Star,
+    Timer
 } from 'lucide-react';
 import { purchaseWithWallet, requestManualAccount, validateCoupon, initiateGatewayPayment, purchasePlanWithCrypto } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -41,11 +42,12 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
     </div>
 );
 
-// Extracted PlanBox with Hardened Render Protocol
+// Extracted PlanBox with Hardened Render Protocol & Featured Logic
 function PlanBox({ plan, marketSegment, onSelect }: { plan: any; marketSegment: string; onSelect: (plan: any) => void }) {
     if (!plan) return null;
     
     const isPro = plan.category === 'pro';
+    const isFeatured = plan.is_featured;
     
     // Robust parsing for string or number prices (Supabase NUMERIC returns as string)
     const rawPrice = plan.price;
@@ -56,11 +58,24 @@ function PlanBox({ plan, marketSegment, onSelect }: { plan: any; marketSegment: 
     return (
         <Card className={cn(
             "bg-card/50 transition-all duration-300 flex flex-col h-full border-border/50 group relative hover:border-primary",
-            isPro && "border-primary/30 bg-primary/5"
+            isPro && "border-primary/30 bg-primary/5",
+            isFeatured && "border-primary ring-2 ring-primary/20 shadow-2xl shadow-primary/10"
         )}>
-            <CardHeader className="pb-4">
+            {isFeatured && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                    <Badge className="bg-primary text-white font-black px-4 py-1 text-[9px] uppercase tracking-[0.2em] border-2 border-slate-950">
+                        <Star className="w-3 h-3 mr-1.5 fill-white" /> Featured Plan
+                    </Badge>
+                </div>
+            )}
+            
+            <CardHeader className="pb-4 pt-8">
                 <div className="flex justify-between items-start">
                     <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                            {plan.is_new && <Badge className="bg-green-600 text-white text-[8px] font-black uppercase px-1.5 h-4">NEW</Badge>}
+                            {plan.is_limited && <Badge className="bg-amber-600 text-white text-[8px] font-black uppercase px-1.5 h-4 flex items-center gap-1"><Timer className="w-2.5 h-2.5" /> LIMITED</Badge>}
+                        </div>
                         <CardTitle className="text-lg font-bold">
                             {marketSegment === 'forex' ? `$${plan.size || '0'}` : `₹${plan.size || '0'}`}
                         </CardTitle>
@@ -99,7 +114,7 @@ function PlanBox({ plan, marketSegment, onSelect }: { plan: any; marketSegment: 
                 </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={() => onSelect(plan)} className="w-full font-bold h-10 rounded-xl text-xs uppercase tracking-widest">Get Funded</Button>
+                <Button onClick={() => onSelect(plan)} className={cn("w-full font-bold h-10 rounded-xl text-xs uppercase tracking-widest", isFeatured && "shadow-lg shadow-primary/20")}>Get Funded</Button>
             </CardFooter>
         </Card>
     );
@@ -131,10 +146,18 @@ export function ArenaView({
     const isPtpActive = paymentSettings?.is_ptp_enabled ?? true;
     const usdtAddress = paymentSettings?.usdt_wallet_address || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 
-    // Merge Core Registry with Dynamic Plans safely
+    // Merge Core Registry with Dynamic Plans safely and apply Featured Sorting
     const allPlans = useMemo(() => {
         const customPlans = Array.isArray(plans) ? plans : [];
-        return [...LEGACY_PLANS, ...customPlans];
+        const merged = [...LEGACY_PLANS, ...customPlans];
+        
+        // Spotlight Protocol: Featured plans come first
+        return merged.sort((a, b) => {
+            const featA = a.is_featured ? 1 : 0;
+            const featB = b.is_featured ? 1 : 0;
+            if (featA !== featB) return featB - featA;
+            return (a.sort_order || 0) - (b.sort_order || 0);
+        });
     }, [plans]);
 
     // Filter plans by market and align category names

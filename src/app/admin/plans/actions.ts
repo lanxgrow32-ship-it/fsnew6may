@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 /**
  * CRUD Actions for the Trading Plans Protocol.
  * Syncs the public pricing and internal arena.
+ * UPDATED: Added Spotlight Badges and Featured sorting.
  */
 
 export async function upsertPlan(formData: FormData) {
@@ -17,6 +18,9 @@ export async function upsertPlan(formData: FormData) {
     const category = formData.get('category') as string;
     const marketType = formData.get('market_type') as 'indian' | 'forex';
     const isPopular = formData.get('is_popular') === 'on';
+    const isNew = formData.get('is_new') === 'on';
+    const isLimited = formData.get('is_limited') === 'on';
+    const isFeatured = formData.get('is_featured') === 'on';
     const isActive = formData.get('is_active') === 'on';
     const sortOrder = parseInt(formData.get('sort_order') as string || '0');
 
@@ -32,6 +36,9 @@ export async function upsertPlan(formData: FormData) {
         category,
         market_type: marketType,
         is_popular: isPopular,
+        is_new: isNew,
+        is_limited: isLimited,
+        is_featured: isFeatured,
         is_active: isActive,
         sort_order: sortOrder
     };

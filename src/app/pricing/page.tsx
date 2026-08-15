@@ -1,12 +1,11 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CheckCircle, Timer, TrendingUp, Zap, Sparkles, ArrowRight, HelpCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Timer, TrendingUp, Zap, Sparkles, ArrowRight, HelpCircle, Loader2, Star } from 'lucide-react';
 import Link from 'next/link';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
@@ -52,7 +51,7 @@ const LiveViewersBanner = () => {
     );
 };
 
-const PlanCard = ({ size, title, price, isPopular, category }: any) => {
+const PlanCard = ({ size, title, price, isPopular, category, isNew, isLimited, isFeatured }: any) => {
   const currentPrice = typeof price === 'string' ? parseFloat(price.replace(/,/g, '')) : price;
   const originalPrice = currentPrice * 2;
   const isPro = category === 'pro';
@@ -61,12 +60,28 @@ const PlanCard = ({ size, title, price, isPopular, category }: any) => {
     <Card className={cn(
         "flex flex-col h-full hover:border-primary transition-all duration-300 bg-card/50 border-border relative", 
         isPopular && "border-primary/50 shadow-md shadow-primary/5",
-        isPro && "border-primary/30 bg-primary/5"
+        isPro && "border-primary/30 bg-primary/5",
+        isFeatured && "border-primary ring-2 ring-primary/20 shadow-2xl scale-[1.03] z-10"
     )}>
-      {isPopular && !isPro && <div className="text-xs font-bold bg-primary text-primary-foreground py-1 rounded-t-lg -mt-px text-center">🔥 Most Popular</div>}
+      {isFeatured && (
+           <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                <Badge className="bg-primary text-white font-black px-4 py-1 text-[8px] uppercase tracking-widest border-2 border-slate-950">
+                    <Star className="w-2.5 h-2.5 mr-1 fill-white" /> Featured
+                </Badge>
+            </div>
+      )}
+      
+      {isPopular && !isPro && !isFeatured && <div className="text-xs font-bold bg-primary text-primary-foreground py-1 rounded-t-lg -mt-px text-center">🔥 Most Popular</div>}
+      
       <CardHeader className="pb-4 space-y-4 pt-8">
         <div className="flex justify-between items-start">
-            <CardTitle className="text-2xl font-bold tracking-tight">₹{size}</CardTitle>
+            <div>
+                <div className="flex gap-1 flex-wrap mb-1">
+                    {isNew && <Badge className="bg-green-600 text-white text-[8px] font-black uppercase px-1.5 h-4">NEW</Badge>}
+                    {isLimited && <Badge className="bg-amber-600 text-white text-[8px] font-black uppercase px-1.5 h-4">LIMITED</Badge>}
+                </div>
+                <CardTitle className="text-2xl font-bold tracking-tight">₹{size}</CardTitle>
+            </div>
             {isPro && <Badge variant="default" className="bg-primary text-white text-[8px] font-black uppercase px-2 h-4">PRO</Badge>}
         </div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</p>
@@ -115,7 +130,7 @@ const PlanCard = ({ size, title, price, isPopular, category }: any) => {
             )}
         </div>
 
-        <Button asChild className="w-full mt-auto font-bold uppercase tracking-widest" size="lg">
+        <Button asChild className={cn("w-full mt-auto font-bold uppercase tracking-widest", isFeatured && "shadow-xl shadow-primary/20")} size="lg">
           <Link href="/signup">Select Plan <ArrowRight className="h-4 w-4 ml-2"/></Link>
         </Button>
       </CardContent>
@@ -125,7 +140,7 @@ const PlanCard = ({ size, title, price, isPopular, category }: any) => {
 
 
 export default function PricingPage() {
-  const [plans, setPlans] = useState<any[]>([]);
+  const [dbPlans, setDbPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -138,18 +153,27 @@ export default function PricingPage() {
             .eq('is_active', true)
             .order('sort_order', { ascending: true });
           
-          // Merge Legacy Core Plans with Dynamic DB Plans
-          const allPlans = [...LEGACY_PLANS.filter(p => p.market_type === 'indian'), ...(data || [])];
-          setPlans(allPlans);
+          setDbPlans(data || []);
           setLoading(false);
       };
       fetchPlans();
   }, []);
 
-  const proPlans = plans.filter(p => p.category === 'pro');
-  const instantPlans = plans.filter(p => p.category === 'instant');
-  const oneStepPlans = plans.filter(p => p.category === '1-step');
-  const twoStepPlans = plans.filter(p => p.category === '2-step');
+  const allPlans = useMemo(() => {
+      const merged = [...LEGACY_PLANS.filter(p => p.market_type === 'indian'), ...dbPlans];
+      // Spotlight Protocol: Sort by is_featured first
+      return merged.sort((a, b) => {
+          const featA = a.is_featured ? 1 : 0;
+          const featB = b.is_featured ? 1 : 0;
+          if (featA !== featB) return featB - featA;
+          return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+  }, [dbPlans]);
+
+  const proPlans = allPlans.filter(p => p.category === 'pro');
+  const instantPlans = allPlans.filter(p => p.category === 'instant');
+  const oneStepPlans = allPlans.filter(p => p.category === '1-step');
+  const twoStepPlans = allPlans.filter(p => p.category === '2-step');
 
   return (
     <div className="dark">
