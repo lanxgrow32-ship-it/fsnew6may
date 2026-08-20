@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use, useActionState, useTransition } from 'react';
@@ -25,10 +24,12 @@ import {
     KeyRound,
     ShieldCheck,
     Video,
-    RefreshCw
+    RefreshCw,
+    Lock,
+    Unlock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateProfile, resetPassword, sendBreachRecoveryEmail, syncAccountCredentials } from './actions';
+import { updateProfile, resetPassword, sendBreachRecoveryEmail, syncAccountCredentials, toggleAccountBlock } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
@@ -81,6 +82,42 @@ function ProvisionButton({ accountId }: { accountId: string }) {
     )
 }
 
+function AccountBlockToggle({ accountId, isBlocked }: { accountId: string, isBlocked: boolean }) {
+    const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
+
+    const handleToggle = () => {
+        const newStatus = !isBlocked;
+        startTransition(async () => {
+            const res = await toggleAccountBlock(accountId, newStatus);
+            if (res.error) toast({ title: "Update Failed", description: res.error, variant: "destructive" });
+            else toast({ title: newStatus ? "Account Blocked" : "Account Released", description: "Access rules updated globally." });
+        });
+    }
+
+    return (
+        <Button 
+            onClick={handleToggle} 
+            disabled={isPending}
+            variant={isBlocked ? "destructive" : "outline"}
+            size="sm" 
+            className={cn(
+                "h-7 px-3 text-[9px] font-black uppercase tracking-widest",
+                !isBlocked && "bg-white/5 border-white/10 text-gray-400 hover:text-white"
+            )}
+        >
+            {isPending ? (
+                <Loader2 className="w-3 h-3 animate-spin mr-1" />
+            ) : isBlocked ? (
+                <Unlock className="w-3 h-3 mr-1" />
+            ) : (
+                <Lock className="w-3 h-3 mr-1" />
+            )}
+            {isBlocked ? "Unblock Access" : "Block Access"}
+        </Button>
+    )
+}
+
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -121,7 +158,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   useEffect(() => {
     fetchData();
-    // Subscribe to account changes to refresh UI when provisioned
+    // Subscribe to account changes to refresh UI when provisioned or blocked
     const sub = supabase.channel('profile_sync').on('postgres_changes', { event: '*', schema: 'public', table: 'user_accounts', filter: `user_id=eq.${id}` }, fetchData).subscribe();
     return () => { supabase.removeChannel(sub); };
   }, [id, supabase]);
@@ -231,15 +268,23 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                         <Card className="bg-muted/10 border-white/5">
                             <CardHeader>
                                 <CardTitle className="text-white text-2xl font-bold">Portfolio Records</CardTitle>
-                                <CardDescription className="text-gray-400">Review all accounts associated with this trader.</CardDescription>
+                                <CardDescription className="text-gray-400">Review and control individual accounts.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
                                     {accounts.length > 0 ? accounts.map(acc => (
-                                        <div key={acc.id} className="p-5 bg-black/20 rounded-2xl border border-white/5 flex items-center justify-between group hover:bg-black/30 transition-all">
+                                        <div key={acc.id} className={cn(
+                                            "p-5 bg-black/20 rounded-2xl border flex items-center justify-between group transition-all",
+                                            acc.is_blocked ? "border-red-500/30 bg-red-500/[0.02]" : "border-white/5 hover:bg-black/30"
+                                        )}>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-3">
                                                     <p className="font-bold text-white text-base truncate">{acc.plan_name}</p>
+                                                    {acc.is_blocked && (
+                                                        <Badge className="bg-red-500 text-white text-[8px] font-black uppercase border-none px-1.5 h-4 flex items-center gap-1">
+                                                            <Lock className="w-2.5 h-2.5" /> Restricted
+                                                        </Badge>
+                                                    )}
                                                     <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black uppercase whitespace-nowrap">
                                                         {acc.account_classification?.replace(/_/g, ' ') || 'Evaluation'}
                                                     </Badge>
@@ -251,6 +296,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-3 ml-4">
+                                                <AccountBlockToggle accountId={acc.id} isBlocked={acc.is_blocked} />
                                                 {!acc.credentials_provided && acc.is_approved && (
                                                     <ProvisionButton accountId={acc.id} />
                                                 )}

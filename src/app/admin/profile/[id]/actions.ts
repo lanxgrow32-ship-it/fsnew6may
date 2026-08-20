@@ -98,6 +98,52 @@ export async function updateProfile(formData: FormData) {
   return { error: null };
 }
 
+/**
+ * Manual Override for Account Blocking (KYC Related)
+ * Toggles the is_blocked status and syncs with StockMint Hub
+ */
+export async function toggleAccountBlock(accountId: string, block: boolean) {
+    const { data: account, error: fetchError } = await supabaseAdmin
+        .from('user_accounts')
+        .select('*, profiles(id)')
+        .eq('id', accountId)
+        .single();
+    
+    if (fetchError || !account) return { error: 'Account not found.' };
+
+    const apiKey = process.env.STOCKMINT_API_KEY;
+    
+    // 1. Update Hub Status if Credentials Exist
+    if (apiKey && account.trading_username) {
+        try {
+            await fetch('https://stockmint.io/api/users/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+                body: JSON.stringify({ 
+                    email: account.trading_username, 
+                    status: block ? 'blocked' : 'active',
+                    reason: block ? 'MANUAL_ADMIN_BLOCK' : 'MANUAL_ADMIN_UNBLOCK'
+                })
+            });
+        } catch (e) {
+            console.error('[Hub Status Sync] Failure:', e);
+            // We continue anyway to update the local DB
+        }
+    }
+
+    // 2. Update Local Database
+    const { error } = await supabaseAdmin
+        .from('user_accounts')
+        .update({ is_blocked: block })
+        .eq('id', accountId);
+    
+    if (error) return { error: error.message };
+
+    revalidatePath(`/admin/profile/${account.profiles.id}`);
+    revalidatePath('/welcome');
+    return { success: true };
+}
+
 export async function resetPassword(prevState: any, formData: FormData) {
   const id = formData.get('id') as string;
   const password = formData.get('password') as string;
