@@ -90,20 +90,32 @@ export async function saveKycStep(step: number, formData: FormData) {
     const { data: updatedProfile, error: updateError } = await supabase.from('profiles').update(profileUpdateData).eq('id', user.id).select().single();
     if (updateError) return { error: updateError.message };
     
-    // --- FINAL HANDSHAKE PROTOCOL (SPEC v7.0 Compliance Unblock) ---
+    // --- FINAL HANDSHAKE PROTOCOL (SPEC v12.0 Atomic Unblock) ---
     if (isFinalStep && updatedProfile) {
-        // 1. Instantly unblock any accounts that were restricted during the 48h window
+        console.log(`[KYC Sync] Finalizing identity for ${updatedProfile.email}. Restoring account access...`);
+        // 1. Force release of all compliance-blocked accounts
         await unblockComplianceAccounts(user.id);
 
-        // 2. Trigger KYC Success Automation
+        // 2. Trigger Automation
         const kycWebhook = process.env.MAKE_KYC_VERIFIED_WEBHOOK_URL;
         if (kycWebhook) {
-            fetch(kycWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: updatedProfile.email, full_name: updatedProfile.full_name }) }).catch(e => console.error(e));
+            fetch(kycWebhook, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    email: updatedProfile.email, 
+                    full_name: updatedProfile.full_name 
+                }) 
+            }).catch(e => console.error("[KYC Sync] Webhook Failure:", e));
         }
     }
     
     revalidatePath('/kyc');
     revalidatePath('/welcome');
+    revalidatePath(`/welcome/dashboard/${user.id}`);
     return { success: true };
-  } catch (error: any) { return { error: error.message }; }
+  } catch (error: any) { 
+      console.error("[KYC Sync] Step Save Failure:", error);
+      return { error: error.message }; 
+  }
 }

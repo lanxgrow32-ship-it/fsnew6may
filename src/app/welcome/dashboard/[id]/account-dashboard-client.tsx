@@ -28,7 +28,9 @@ import {
     Zap,
     FlaskConical,
     Trophy,
-    Lock
+    Lock,
+    ShieldAlert,
+    ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -127,6 +129,7 @@ function CountdownTimer({ expiresAt, label = "Session Remaining" }: { expiresAt:
 export function AccountDashboardClient({ account, profile, stats, initialBalance }: { account: any, profile: any, stats: any, initialBalance: number }) {
     const { toast } = useToast();
     const router = useRouter();
+    const isBlocked = account.is_blocked;
     const pnlProgress = initialBalance > 0 ? (Math.abs(stats.totalPnl || 0) / initialBalance) * 100 : 0;
     const currentClassification = stats.accountClassification || account.account_classification || 'evaluation';
     const isTrial = account.is_trial;
@@ -140,9 +143,33 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
 
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
+            {/* Hardened Block Overlay */}
+            {isBlocked && (
+                <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 text-center animate-in fade-in">
+                    <Card className="w-full max-w-lg bg-slate-900 border-red-500/30 p-12 rounded-[40px] shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12"><Lock className="w-48 h-48 text-red-500"/></div>
+                        <div className="mx-auto w-24 h-24 rounded-full bg-red-600/10 flex items-center justify-center border border-red-500/20 shadow-[0_0_50px_rgba(220,38,38,0.2)] mb-8">
+                            <ShieldAlert className="h-12 w-12 text-red-500 animate-pulse" />
+                        </div>
+                        <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4">Account Restricted</h2>
+                        <p className="text-gray-400 text-lg font-medium leading-relaxed mb-10">
+                            Your 48-hour KYC grace period has expired. Access to trading credentials and terminal stats is restricted until identity verification is complete.
+                        </p>
+                        <div className="flex flex-col gap-4">
+                            <Button asChild size="lg" className="h-14 rounded-2xl bg-white text-black hover:bg-gray-200 font-black uppercase tracking-widest shadow-xl">
+                                <Link href="/kyc">Complete KYC Now</Link>
+                            </Button>
+                            <Button asChild variant="ghost" className="text-gray-500 hover:text-white font-bold">
+                                <Link href="/welcome" className="flex items-center gap-2"><ChevronLeft className="w-4 h-4"/> Back to Portfolio</Link>
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
             
-            <main className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            <main className={cn("relative z-10 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8", isBlocked && "blur-sm pointer-events-none")}>
                 <header className="flex items-center justify-between mb-8 z-20 relative">
                     <div className="flex items-center gap-8">
                         <Logo />

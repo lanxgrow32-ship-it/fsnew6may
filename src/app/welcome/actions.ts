@@ -12,14 +12,14 @@ import { generateWatchPaySignature } from '@/lib/watchpay';
 import { verifyTransactionFlow } from '@/ai/flows/verify-transaction-flow';
 
 /**
- * Global Session Cleanup Protocol (v11.0)
+ * Global Session Cleanup Protocol (v12.0)
  * Handles Grace Periods, Free Trials, and the new 7-Day "Pro" accounts.
  */
 export async function cleanupGracePeriods() {
     try {
         const now = new Date().toISOString();
         
-        // 1. KYC Grace Period Check
+        // 1. KYC Grace Period Check: Only block if not already verified
         const { data: expiredGrace } = await supabaseAdmin
             .from('user_accounts')
             .select('*, profiles(kyc_status)')
@@ -30,19 +30,25 @@ export async function cleanupGracePeriods() {
             const apiKey = process.env.STOCKMINT_API_KEY;
             for (const acc of expiredGrace) {
                 if (acc.profiles.kyc_status !== 'verified') {
+                    // Signal Hub to restrict access
                     if (apiKey && acc.trading_username) {
                         await fetch('https://stockmint.io/api/users/update-status', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-                            body: JSON.stringify({ email: acc.trading_username, status: 'blocked', reason: 'KYC_PENDING' })
-                        });
+                            body: JSON.stringify({ 
+                                email: acc.trading_username, 
+                                status: 'blocked', 
+                                reason: 'KYC_GRACE_PERIOD_EXPIRED' 
+                            })
+                        }).catch(e => console.error("[Compliance] Hub Block Signal Failure:", e));
                     }
+                    // Update Local State
                     await supabaseAdmin.from('user_accounts').update({ is_blocked: true }).eq('id', acc.id);
                 }
             }
         }
 
-        // 2. 7-Day PRO & TRIAL EXPRIY SWEEP (v11.0)
+        // 2. 7-Day PRO & TRIAL EXPRIY SWEEP
         const { data: expiredSessions } = await supabaseAdmin
             .from('user_accounts')
             .select('*')
@@ -57,7 +63,7 @@ export async function cleanupGracePeriods() {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
                         body: JSON.stringify({ email: acc.trading_username })
-                    });
+                    }).catch(e => console.error("[Compliance] Hub Delete Signal Failure:", e));
                 }
                 await supabaseAdmin.from('user_accounts').update({ 
                     status: 'deleted', 
@@ -69,6 +75,57 @@ export async function cleanupGracePeriods() {
 
         revalidatePath('/welcome');
     } catch (e) { console.error("[Compliance Protocol] Execution Failure:", e); }
+}
+
+/**
+ * Robust Unblock Protocol (v12.0)
+ * Triggered after successful KYC to restore all compliance-blocked accounts.
+ */
+export async function unblockComplianceAccounts(userId: string) {
+    if (!userId) return;
+
+    try {
+        const { data: blockedAccounts } = await supabaseAdmin
+            .from('user_accounts')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_blocked', true);
+        
+        if (!blockedAccounts || blockedAccounts.length === 0) return;
+
+        const apiKey = process.env.STOCKMINT_API_KEY;
+
+        for (const acc of blockedAccounts) {
+            // 1. Restore access on the StockMint Hub
+            if (apiKey && acc.trading_username && acc.trading_username !== 'EXPIRED') {
+                try {
+                    await fetch('https://stockmint.io/api/users/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+                        body: JSON.stringify({ 
+                            email: acc.trading_username, 
+                            status: 'active', 
+                            reason: 'KYC_VERIFICATION_COMPLETE' 
+                        })
+                    });
+                } catch (e) {
+                    console.error(`[Restore Protocol] Hub Sync Failed for ${acc.trading_username}:`, e);
+                }
+            }
+            
+            // 2. Remove block in local database
+            await supabaseAdmin
+                .from('user_accounts')
+                .update({ is_blocked: false })
+                .eq('id', acc.id);
+        }
+
+        console.log(`[Restore Protocol] Successfully unblocked ${blockedAccounts.length} accounts for user ${userId}`);
+        revalidatePath('/welcome');
+        revalidatePath(`/welcome/dashboard/${userId}`);
+    } catch (error) {
+        console.error("[Restore Protocol] Critical Failure:", error);
+    }
 }
 
 /**
@@ -93,30 +150,6 @@ export async function checkAndCleanTrial(accountId: string) {
             trading_password: 'EXPIRED' 
         }).eq('id', accountId);
     }
-}
-
-export async function unblockComplianceAccounts(userId: string) {
-    const { data: blocked } = await supabaseAdmin
-        .from('user_accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_blocked', true);
-    
-    if (!blocked || blocked.length === 0) return;
-
-    const apiKey = process.env.STOCKMINT_API_KEY;
-
-    for (const acc of blocked) {
-        if (apiKey && acc.trading_username) {
-            await fetch('https://stockmint.io/api/users/update-status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-                body: JSON.stringify({ email: acc.trading_username, status: 'active', reason: 'KYC_COMPLETED' })
-            }).catch(e => console.error("Hub Signal Failed:", e));
-        }
-        await supabaseAdmin.from('user_accounts').update({ is_blocked: false }).eq('id', acc.id);
-    }
-    revalidatePath('/welcome');
 }
 
 export async function updateProfileDetails(userId: string, fullName: string, mobile: string) {
