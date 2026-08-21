@@ -7,7 +7,7 @@ import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsernam
 
 /**
  * Approves an individual account request from the Activation Ledger.
- * UPDATED v8.0: Includes Market Segmentation (StockMint v3.0 Sync).
+ * UPDATED v9.0: Robust Retry Logic & Error Clearing.
  */
 export async function approveAccount(accountId: string) {
     const { data: account, error: fetchError } = await supabaseAdmin
@@ -39,7 +39,7 @@ export async function approveAccount(accountId: string) {
 
     const isFirstAccount = (existingCount || 0) === 0;
 
-    if (isFirstAccount && !isKycDone && !isPTP) {
+    if (isFirstAccount && !isKycDone && !isPTP && !account.grace_period_expiry) {
         const expiry = new Date();
         expiry.setHours(expiry.getHours() + 48);
         updateData.grace_period_expiry = expiry.toISOString();
@@ -48,7 +48,7 @@ export async function approveAccount(accountId: string) {
     const { error: approveError } = await supabaseAdmin.from('user_accounts').update(updateData).eq('id', accountId);
     if (approveError) return { error: approveError.message };
 
-    // 3. REFERRAL ENGINE
+    // 3. REFERRAL ENGINE (Safety checked by profile flag)
     if (profile.referred_by && !profile.referral_commission_paid && !account.is_trial && account.final_amount_paid > 0) {
         const { data: settings } = await supabaseAdmin.from('payment_details').select('referral_commission_percentage').eq('id', 1).single();
         const commPercent = settings?.referral_commission_percentage || 10;
@@ -72,6 +72,8 @@ export async function approveAccount(accountId: string) {
     
     if (stockmintApiKey && initialBalance > 0) {
         try {
+            console.log(`[Hub Sync] Initiating handshake for ${stockmintUsername} (Plan: ${account.plan_name})`);
+            
             const payload = { 
                 fullName: profile.full_name || profile.email.split('@')[0], 
                 email: stockmintUsername, 
@@ -79,7 +81,7 @@ export async function approveAccount(accountId: string) {
                 initialBalance, 
                 accountClassification: classification, 
                 accountModel: isPTP ? 'passthenpay' : 'normal',
-                marketType: marketType // NEW v3.0 FIELD
+                marketType: marketType 
             };
 
             const res = await fetch('https://stockmint.io/api/users/create', {
@@ -89,20 +91,30 @@ export async function approveAccount(accountId: string) {
             });
 
             if (res.ok) {
+                // SUCCESS: Clear error and save credentials
                 await supabaseAdmin.from('user_accounts').update({
-                    credentials_provided: true, trading_username: stockmintUsername, trading_password: stockmintUsername, status: 'active'
+                    credentials_provided: true, 
+                    trading_username: stockmintUsername, 
+                    trading_password: stockmintUsername, 
+                    status: 'active',
+                    activation_error: null // CLEAR PREVIOUS ERRORS
                 }).eq('id', accountId);
             } else {
                 const errorBody = await res.text();
+                console.error(`[Hub Sync] Stockmint Rejected Request: ${res.status} - ${errorBody}`);
                 await supabaseAdmin.from('user_accounts').update({ 
-                    activation_error: `Stockmint Handover Error (${res.status}): ${errorBody}` 
+                    activation_error: `Stockmint Error (${res.status}): ${errorBody || 'Unknown API rejection'}` 
                 }).eq('id', accountId);
             }
         } catch (e: any) { 
+            console.error(`[Hub Sync] Connectivity failure: ${e.message}`);
             await supabaseAdmin.from('user_accounts').update({ 
                 activation_error: `Hub Connectivity Failure: ${e.message}` 
             }).eq('id', accountId);
         }
+    } else {
+        if (!stockmintApiKey) console.warn("[Hub Sync] Warning: STOCKMINT_API_KEY is not configured.");
+        if (initialBalance <= 0) console.warn(`[Hub Sync] Warning: Could not parse balance for plan "${account.plan_name}".`);
     }
 
     // Webhook Automation
@@ -119,7 +131,7 @@ export async function approveAccount(accountId: string) {
                 password: stockmintUsername,
                 needsKyc: !isKycDone && !isPTP && isFirstAccount
             })
-        }).catch(e => console.error(e));
+        }).catch(e => console.error("[Automation] Webhook trigger failed:", e));
     }
 
     revalidatePath('/admin/account-requests');
