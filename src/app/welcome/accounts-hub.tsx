@@ -155,7 +155,7 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                 {isDeleted ? (
                     <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-700">Session Expired</Button>
                 ) : !paymentApproved ? (
-                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600">Checking Reference</Button>
+                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600">Verifying Reference</Button>
                 ) : (
                     <Button asChild className={cn(
                         "w-full h-11 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]", 
@@ -175,8 +175,8 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
 
 export function AccountsHub({ accounts, profile, onSwitchToGetFunded }: { accounts: any[], profile: any, onSwitchToGetFunded: () => void }) {
     const kycVerified = profile.kyc_status === 'verified';
-    // FILTER: Hide unapproved automated/ghost accounts from the grid
-    const visibleAccounts = accounts.filter(a => a.is_approved === true);
+    // PROTOCOL v13.0: Display ALL user accounts, including those awaiting approval, to provide immediate feedback.
+    const visibleAccounts = accounts;
     
     const activeCount = visibleAccounts.filter(a => a.status === 'active' && !a.is_blocked).length;
     const pendingCount = visibleAccounts.filter(a => a.status === 'pending' || !a.is_approved).length;

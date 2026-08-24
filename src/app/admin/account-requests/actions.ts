@@ -7,7 +7,7 @@ import { getAutoClassification, getBalanceFromPlanName, generateStockmintUsernam
 
 /**
  * Approves an individual account request from the Activation Ledger.
- * UPDATED v9.0: Robust Retry Logic & Error Clearing.
+ * UPDATED v13.0: Unified Handshake & Revalidation Protocol.
  */
 export async function approveAccount(accountId: string) {
     const { data: account, error: fetchError } = await supabaseAdmin
@@ -27,7 +27,8 @@ export async function approveAccount(accountId: string) {
         is_approved: true, 
         status: 'active', 
         account_classification: classification,
-        market_type: marketType
+        market_type: marketType,
+        activation_error: null // CLEAR PREVIOUS ERRORS
     };
 
     // 2. GRACE PERIOD PROTOCOL (First purchase only)
@@ -97,7 +98,7 @@ export async function approveAccount(accountId: string) {
                     trading_username: stockmintUsername, 
                     trading_password: stockmintUsername, 
                     status: 'active',
-                    activation_error: null // CLEAR PREVIOUS ERRORS
+                    activation_error: null 
                 }).eq('id', accountId);
             } else {
                 const errorBody = await res.text();
@@ -112,31 +113,14 @@ export async function approveAccount(accountId: string) {
                 activation_error: `Hub Connectivity Failure: ${e.message}` 
             }).eq('id', accountId);
         }
-    } else {
-        if (!stockmintApiKey) console.warn("[Hub Sync] Warning: STOCKMINT_API_KEY is not configured.");
-        if (initialBalance <= 0) console.warn(`[Hub Sync] Warning: Could not parse balance for plan "${account.plan_name}".`);
     }
 
-    // Webhook Automation
-    const webhookUrl = process.env.MAKE_PURCHASE_WEBHOOK_URL;
-    if (webhookUrl) {
-        fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: profile.email,
-                full_name: profile.full_name || profile.email.split('@')[0],
-                plan_name: account.plan_name,
-                username: stockmintUsername,
-                password: stockmintUsername,
-                needsKyc: !isKycDone && !isPTP && isFirstAccount
-            })
-        }).catch(e => console.error("[Automation] Webhook trigger failed:", e));
-    }
-
+    // Trigger Revalidation across the entire stack
     revalidatePath('/admin/account-requests');
     revalidatePath('/admin/activation-hub');
     revalidatePath('/welcome');
+    revalidatePath(`/welcome/dashboard/${account.id}`);
+    
     return { success: true };
 }
 

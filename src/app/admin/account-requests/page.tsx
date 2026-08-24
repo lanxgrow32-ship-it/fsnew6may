@@ -74,9 +74,9 @@ export default function AccountRequestsPage() {
         const currentMarket = targetMarket || marketType;
         const client = await supabase;
         
+        // PROTOCOL v13.0: Universal query to fetch all account requests.
         let query = client.from('user_accounts')
-            .select('*, profiles(id, full_name, email, kyc_status, mobile_number)')
-            .not('plan_name', 'ilike', '%pro%');
+            .select('*, profiles(id, full_name, email, kyc_status, mobile_number)');
         
         if (currentMarket === 'indian') {
             query = query.or('market_type.eq.indian,market_type.is.null');
