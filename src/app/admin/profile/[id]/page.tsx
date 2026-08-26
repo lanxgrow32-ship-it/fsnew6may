@@ -26,7 +26,8 @@ import {
     Video,
     RefreshCw,
     Lock,
-    Unlock
+    Unlock,
+    ExternalLink
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile, resetPassword, sendBreachRecoveryEmail, syncAccountCredentials, toggleAccountBlock } from './actions';
@@ -35,6 +36,7 @@ import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: string | number, icon: any, color: string }) => (
     <Card className="bg-muted/20 border-white/5">
@@ -158,7 +160,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   useEffect(() => {
     fetchData();
-    // Subscribe to account changes to refresh UI when provisioned or blocked
     const sub = supabase.channel('profile_sync').on('postgres_changes', { event: '*', schema: 'public', table: 'user_accounts', filter: `user_id=eq.${id}` }, fetchData).subscribe();
     return () => { supabase.removeChannel(sub); };
   }, [id, supabase]);
@@ -201,7 +202,23 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="lg:col-span-2 space-y-8">
                     <form onSubmit={handleSubmit} className="space-y-8">
                         <Card className="bg-muted/10 border-white/5">
-                            <CardHeader><CardTitle className="text-white text-2xl font-bold">KYC & Verification</CardTitle></CardHeader>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle className="text-white text-2xl font-bold">KYC & Verification</CardTitle>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button asChild variant="outline" className="h-10 px-6 bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 font-black text-[10px] uppercase tracking-[0.2em] rounded-xl shadow-xl shadow-primary/20">
+                                                <a href={`https://stockmint.io/admin/users?search=${encodeURIComponent(profile.email)}`} target="_blank" rel="noopener noreferrer">
+                                                    <ExternalLink className="mr-2 h-4 w-4" /> Open Hub Profile
+                                                </a>
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-slate-900 text-white border-white/10">
+                                            <p className="text-[10px] font-bold uppercase">View this user in StockMint Admin</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="grid grid-cols-2 gap-8">
                                     <div className="space-y-1">
@@ -285,7 +302,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                                             <Lock className="w-2.5 h-2.5" /> Restricted
                                                         </Badge>
                                                     )}
-                                                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black uppercase whitespace-nowrap">
+                                                    <Badge variant="outline" className={cn("bg-primary/5 text-primary border-primary/20 text-[9px] font-black uppercase whitespace-nowrap", acc.trading_username && "cursor-pointer hover:bg-primary/10")} onClick={() => { if(acc.trading_username) window.open(`https://stockmint.io/admin/users?search=${encodeURIComponent(acc.trading_username)}`, '_blank'); }}>
                                                         {acc.account_classification?.replace(/_/g, ' ') || 'Evaluation'}
                                                     </Badge>
                                                 </div>
@@ -311,7 +328,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 </div>
 
                 <div className="space-y-8">
-                    {/* Access Controls */}
                     <Card className="bg-muted/10 border-white/5">
                         <CardHeader><CardTitle className="text-white text-xl font-bold">Admin Controls</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
@@ -331,7 +347,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                         </CardContent>
                     </Card>
 
-                    {/* Security & Recovery Actions */}
                     <Card className="bg-muted/10 border-white/5 shadow-2xl border-primary/10">
                         <CardHeader>
                             <CardTitle className="text-white text-xl font-bold flex items-center gap-2">
@@ -339,7 +354,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-8">
-                            {/* Breach Email Action */}
                             <div className="space-y-3">
                                 <Label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Breach Protocol</Label>
                                 <form action={recoveryAction}>
@@ -359,7 +373,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                             <Separator className="bg-white/5" />
 
-                            {/* Password Reset Action */}
                             <div className="space-y-4">
                                 <Label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Authentication Override</Label>
                                 <form action={pwAction} className="space-y-3">

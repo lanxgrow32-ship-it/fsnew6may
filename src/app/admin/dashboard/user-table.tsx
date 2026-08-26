@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Trash2, Loader2, X, Download, Calendar as CalendarIcon, User as UserIcon, Filter, RefreshCw, Phone } from 'lucide-react';
+import { Search, Trash2, Loader2, X, Download, Calendar as CalendarIcon, User as UserIcon, Filter, RefreshCw, Phone, ExternalLink } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteMultipleUsers } from './actions';
@@ -20,6 +19,7 @@ import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Profile = {
     id: string;
@@ -48,7 +48,6 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
     const filteredProfiles = useMemo(() => {
         const lowerSearch = searchTerm.toLowerCase().trim();
         return profiles.filter((p) => {
-            // Simplified & Robust Search Protocol: Name, Email, ID (UUID), or Mobile
             const matchesSearch = !lowerSearch || (
                 String(p.full_name || '').toLowerCase().includes(lowerSearch) || 
                 String(p.email || '').toLowerCase().includes(lowerSearch) ||
@@ -221,7 +220,27 @@ export function UserTable({ profiles }: { profiles: Profile[] }) {
                                     <div className="flex items-center gap-3">
                                         <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">{p.full_name?.[0] || 'U'}</div>
                                         <div className="min-w-0">
-                                            <p className="font-bold truncate text-sm text-foreground">{p.full_name || 'Incomplete Profile'}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-bold truncate text-sm text-foreground">{p.full_name || 'Incomplete Profile'}</p>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <a 
+                                                                href={`https://stockmint.io/admin/users?search=${encodeURIComponent(p.email)}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary/80"
+                                                            >
+                                                                <ExternalLink className="h-3 w-3" />
+                                                            </a>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent className="bg-slate-900 text-white border-white/10">
+                                                            <p className="text-[10px] font-bold uppercase">Jump to StockMint Hub</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
                                             <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                                         </div>
                                     </div>
