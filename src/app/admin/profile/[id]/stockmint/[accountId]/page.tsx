@@ -83,7 +83,7 @@ function TerminalInsight({ email }: { email: string }) {
         if (res.error) {
             toast({ title: "Sync Failed", description: res.error, variant: "destructive" });
         } else {
-            // Integration Update (v1.3): Parse data from engine response
+            // Integration Update (v1.4): Detailed parsing
             const actualData = res.data || (res.success ? res.data : res);
             setSyncData(actualData);
             setLastSync(new Date());
@@ -110,7 +110,7 @@ function TerminalInsight({ email }: { email: string }) {
     if (loading) return (
         <div className="py-40 text-center space-y-4">
             <Loader2 className="animate-spin h-10 w-10 mx-auto text-primary opacity-30"/>
-            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Establishing v1.3 Secure Sync...</p>
+            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Establishing v1.4 Detail Sync...</p>
         </div>
     );
 
@@ -127,18 +127,16 @@ function TerminalInsight({ email }: { email: string }) {
         );
     }
 
-    // PROTOCOL v1.3: Hardened Data Mapping using camelCase nested keys
+    // PROTOCOL v1.3/v1.4: Hardened Data Mapping
     const balance = syncData.financials?.cashBalance ?? syncData.balance ?? 0;
     const highWaterMark = syncData.financials?.highWaterMark ?? syncData.highWaterMark ?? 0;
     const overallLossLimit = syncData.risk?.overallLossLimit ?? syncData.maxDrawdownPct ?? '--';
-    
-    // v1.3 Specific Risk Mappings
     const dailyLoss = syncData.risk?.dailyLossLimit ?? syncData.dailyLossPct ?? '--';
     const perTrade = syncData.risk?.perTradeLossLimit ?? syncData.perTradePct ?? '--';
     
-    // v1.3 Ledger Mappings
-    const trades = syncData.ledger?.executionStream ?? syncData.executionRequests ?? [];
-    const pnlRecords = syncData.ledger?.pnlHistory ?? syncData.pnlRecords ?? [];
+    // v1.4 Unified Detail Ledger Mappings
+    const trades = syncData.ledger?.executionStream ?? [];
+    const pnlRecords = syncData.ledger?.pnlHistory ?? [];
     
     const openingBalance = syncData.openingBalance ?? syncData.opening_balance ?? 0;
 
@@ -148,7 +146,7 @@ function TerminalInsight({ email }: { email: string }) {
             <div className="flex items-center justify-between px-6 py-3 bg-white/[0.02] border border-white/5 rounded-2xl">
                 <div className="flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal (v1.3 Synchronized)</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal (v1.4 Detail Sync Active)</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Wifi className="w-3 h-3 text-gray-700" />
@@ -280,19 +278,31 @@ function TerminalInsight({ email }: { email: string }) {
                             </TableHeader>
                             <TableBody>
                                 {trades.length > 0 ? trades.map((req: any, i: number) => (
-                                    <TableRow key={i} className="h-16 border-white/5 hover:bg-white/[0.03] transition-colors">
-                                        <TableCell className="text-[11px] font-mono text-gray-400 pl-8">{req.createdAt ? format(new Date(req.createdAt), 'dd MMM, HH:mm:ss') : 'N/A'}</TableCell>
-                                        <TableCell className="text-[11px] font-black text-white">{req.symbol}</TableCell>
+                                    <TableRow key={i} className="h-20 border-white/5 hover:bg-white/[0.03] transition-colors">
+                                        <TableCell className="text-[11px] font-mono text-gray-400 pl-8">
+                                            {req.timestamp ? format(new Date(req.timestamp), 'dd MMM, HH:mm:ss') : 'N/A'}
+                                        </TableCell>
+                                        <TableCell className="text-[11px] font-black text-white">{req.symbol || '---'}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className={cn("text-[9px] font-black uppercase px-3 h-6", req.side === 'BUY' ? "text-green-400 border-green-500/20 bg-green-500/5" : "text-red-400 border-red-500/20 bg-red-500/5")}>
-                                                {req.side}
+                                                {req.side || '---'}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-[11px] font-bold text-gray-300">₹{req.price}</TableCell>
+                                        <TableCell className="text-[11px] font-bold text-gray-300">₹{req.price || 0}</TableCell>
                                         <TableCell className="text-right pr-8">
-                                            <span className={cn("text-[10px] font-black uppercase tracking-widest", req.status === 'FILLED' ? "text-green-500" : "text-gray-500")}>
-                                                {req.status}
-                                            </span>
+                                            <div className="flex flex-col items-end">
+                                                <span className={cn("text-[10px] font-black uppercase tracking-widest", 
+                                                    req.result === 'COMPLETED' ? "text-green-500" : 
+                                                    req.result === 'CANCELLED' ? "text-gray-500" : "text-red-400"
+                                                )}>
+                                                    {req.result || 'PENDING'}
+                                                </span>
+                                                {req.reason && (
+                                                    <span className="text-[9px] text-gray-600 font-bold uppercase mt-1 italic">
+                                                        {req.reason}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 )) : <TableRow><TableCell colSpan={5} className="py-20 text-center text-gray-700 font-black uppercase text-[10px] tracking-widest">No terminal activity found</TableCell></TableRow>}
