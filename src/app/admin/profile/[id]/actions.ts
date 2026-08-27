@@ -77,7 +77,6 @@ export async function updateProfile(formData: FormData) {
 
 /**
  * MASTER COMMAND: Purge Account from StockMint Hub
- * Admin can now delete from terminal without leaving the portal.
  */
 export async function purgeHubAccount(accountId: string) {
     const { data: account, error: fetchError } = await supabaseAdmin
@@ -190,7 +189,7 @@ export async function syncAccountCredentials(accountId: string) {
 
 /**
  * Generates a secure SSO teleport URL for the StockMint Admin Bridge.
- * Updated to include admin_email in payload as per developer spec.
+ * Payloads matches StockMint developer specification precisely.
  */
 export async function getHubSsoUrl(tradingUsername: string) {
     const secret = process.env.FS_ADMIN_BRIDGE_SECRET;
@@ -207,7 +206,7 @@ export async function getHubSsoUrl(tradingUsername: string) {
 
     try {
         // Updated payload according to StockMint developer spec
-        // iat is automatically added by sign()
+        // iat is automatically added by jwt.sign()
         const token = jwt.sign(
             { 
                 admin_email: user.email,

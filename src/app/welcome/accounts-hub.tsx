@@ -155,7 +155,10 @@ const AccountCard = ({ account, kycVerified }: { account: any, kycVerified: bool
                 {isDeleted ? (
                     <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-700">Session Expired</Button>
                 ) : !paymentApproved ? (
-                    <Button disabled className="w-full h-11 bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600">Verifying Reference</Button>
+                    <Button disabled className="w-full h-11 bg-slate-900 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-500/80 flex items-center justify-center gap-2">
+                        <Clock className="w-3.5 h-3.5 animate-pulse" />
+                        Verifying Reference
+                    </Button>
                 ) : (
                     <Button asChild className={cn(
                         "w-full h-11 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]", 
