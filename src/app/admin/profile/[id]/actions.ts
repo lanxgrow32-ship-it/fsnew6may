@@ -206,7 +206,8 @@ export async function getHubSsoUrl(tradingUsername: string) {
 
         const token = jwt.sign(payload, secret);
         
-        // Protocol Sync: Using the www. prefix as per user example to ensure domain alignment
+        // Redirection Protocol: Sends the admin to the SSO gate.
+        // StockMint will resolve the tradingUsername internally to their own UUID and redirect to the dashboard.
         const ssoUrl = `https://www.stockmint.io/admin/sso-bypass?token=${token}`;
         
         return { url: ssoUrl };
