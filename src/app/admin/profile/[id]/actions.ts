@@ -129,7 +129,7 @@ export async function toggleAccountBlock(accountId: string, block: boolean) {
         }).catch(console.error);
     }
 
-    const { error } = await supabaseAdmin.from('user_accounts').update({ is_blocked: block }).eq('id', accountId);
+    const { error = null } = await supabaseAdmin.from('user_accounts').update({ is_blocked: block }).eq('id', accountId);
     if (error) return { error: error.message };
 
     revalidatePath(`/admin/profile/${account.profiles.id}`);
@@ -205,7 +205,9 @@ export async function getHubSsoUrl(tradingUsername: string) {
         };
 
         const token = jwt.sign(payload, secret);
-        const ssoUrl = `https://stockmint.io/admin/sso-bypass?token=${token}`;
+        
+        // Protocol Sync: Using the www. prefix as per user example to ensure domain alignment
+        const ssoUrl = `https://www.stockmint.io/admin/sso-bypass?token=${token}`;
         
         return { url: ssoUrl };
     } catch (e: any) {
