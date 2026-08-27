@@ -189,7 +189,7 @@ export async function syncAccountCredentials(accountId: string) {
 
 /**
  * Generates a secure SSO teleport URL for the StockMint Admin Bridge.
- * @param tradingUsername The specific trading account to access.
+ * Hardened v1.2: Uses standardized JWT signing and explicit production URL.
  */
 export async function getHubSsoUrl(tradingUsername: string) {
     const secret = process.env.FS_ADMIN_BRIDGE_SECRET;
@@ -198,16 +198,14 @@ export async function getHubSsoUrl(tradingUsername: string) {
     }
 
     try {
-        const payload = {
-            target_trading_username: tradingUsername,
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 60 // 60-second hard expiry
-        };
-
-        const token = jwt.sign(payload, secret);
+        // Standard JWT generation with 60-second expiry
+        const token = jwt.sign(
+            { target_trading_username: tradingUsername },
+            secret,
+            { expiresIn: '60s' }
+        );
         
-        // Redirection Protocol: Sends the admin to the SSO gate.
-        // StockMint will resolve the tradingUsername internally to their own UUID and redirect to the dashboard.
+        // Redirection Protocol: Points exactly to the path provided by the Hub developer.
         const ssoUrl = `https://www.stockmint.io/admin/sso-bypass?token=${token}`;
         
         return { url: ssoUrl };
