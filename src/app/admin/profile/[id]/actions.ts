@@ -15,6 +15,8 @@ async function callStockmint(endpoint: string, method: string, body?: any) {
     if (!apiKey) return { error: 'STOCKMINT_API_KEY is missing in server configuration.' };
 
     try {
+        console.log(`[Hub Handshake] Initializing ${method} request to ${endpoint}`);
+        
         const response = await fetch(`${STOCKMINT_BASE_URL}${endpoint}`, {
             method,
             headers: {
@@ -27,12 +29,15 @@ async function callStockmint(endpoint: string, method: string, body?: any) {
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`[Hub Handshake] Engine Rejected Request: ${response.status} - ${errorText}`);
             return { error: `Engine Error (${response.status}): ${errorText || 'Unknown rejection'}` };
         }
 
-        return await response.json();
+        const json = await response.json();
+        console.log(`[Hub Handshake] Success. Received payload for endpoint: ${endpoint}`);
+        return json;
     } catch (e: any) {
-        console.error(`[Engine Handshake] Failure at ${endpoint}:`, e.message);
+        console.error(`[Hub Handshake] Critical Connectivity Failure at ${endpoint}:`, e.message);
         return { error: `Connectivity Failure: ${e.message}` };
     }
 }
