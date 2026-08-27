@@ -26,7 +26,8 @@ import {
     ArrowDownRight,
     IndianRupee,
     LayoutGrid,
-    Target as TargetIcon
+    Target as TargetIcon,
+    Wifi
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -67,6 +68,7 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: s
 function TerminalInsight({ email }: { email: string }) {
     const [syncData, setSyncData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [lastSync, setLastSync] = useState<Date>(new Date());
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
@@ -81,6 +83,7 @@ function TerminalInsight({ email }: { email: string }) {
             // Handle both {success, data} wrapper and direct payload
             const actualData = res.data || (res.success ? res.data : res);
             setSyncData(actualData);
+            setLastSync(new Date());
         }
         setLoading(false);
     };
@@ -133,6 +136,18 @@ function TerminalInsight({ email }: { email: string }) {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Sync Heartbeat Bar */}
+            <div className="flex items-center justify-between px-6 py-3 bg-white/[0.02] border border-white/5 rounded-2xl">
+                <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Wifi className="w-3 h-3 text-gray-700" />
+                    <p className="text-[9px] font-bold text-gray-700 uppercase tracking-widest">Last Signal: {format(lastSync, 'HH:mm:ss')}</p>
+                </div>
+            </div>
+
             {/* Live Financial Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard title="Live Cash Balance" value={`₹${Number(balance).toLocaleString()}`} icon={IndianRupee} color="text-white" />

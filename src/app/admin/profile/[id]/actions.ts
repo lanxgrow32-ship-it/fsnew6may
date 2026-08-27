@@ -9,15 +9,20 @@ const STOCKMINT_BASE_URL = 'https://www.stockmint.io';
 /**
  * Common fetch utility for the StockMint Stateless Data Bridge.
  * Enforces the x-api-key security protocol.
+ * UPDATED v14.0: Enhanced "Signal/Response" logging for diagnostic visibility.
  */
 async function callStockmint(endpoint: string, method: string, body?: any) {
     const apiKey = process.env.STOCKMINT_API_KEY;
-    if (!apiKey) return { error: 'STOCKMINT_API_KEY is missing in server configuration.' };
+    if (!apiKey) {
+        console.error("[Bridge Protocol] FAILED: STOCKMINT_API_KEY missing in .env");
+        return { error: 'STOCKMINT_API_KEY is missing in server configuration.' };
+    }
 
     try {
-        console.log(`[Hub Handshake] Initializing ${method} request to ${endpoint}`);
+        const url = `${STOCKMINT_BASE_URL}${endpoint}`;
+        console.log(`[Bridge Signal] -> THROWING request to StockMint: ${method} ${url}`);
         
-        const response = await fetch(`${STOCKMINT_BASE_URL}${endpoint}`, {
+        const response = await fetch(url, {
             method,
             headers: {
                 'Content-Type': 'application/json',
@@ -29,15 +34,15 @@ async function callStockmint(endpoint: string, method: string, body?: any) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[Hub Handshake] Engine Rejected Request: ${response.status} - ${errorText}`);
+            console.error(`[Bridge Signal] <- REJECTED by Engine: ${response.status} - ${errorText}`);
             return { error: `Engine Error (${response.status}): ${errorText || 'Unknown rejection'}` };
         }
 
         const json = await response.json();
-        console.log(`[Hub Handshake] Success. Received payload for endpoint: ${endpoint}`);
+        console.log(`[Bridge Signal] <- CATCHING response from Engine: Success payload received.`);
         return json;
     } catch (e: any) {
-        console.error(`[Hub Handshake] Critical Connectivity Failure at ${endpoint}:`, e.message);
+        console.error(`[Bridge Protocol] CRITICAL failure:`, e.message);
         return { error: `Connectivity Failure: ${e.message}` };
     }
 }
