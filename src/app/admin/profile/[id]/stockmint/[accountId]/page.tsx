@@ -29,7 +29,8 @@ import {
     Target as TargetIcon,
     Wifi,
     Copy,
-    ExternalLink
+    ExternalLink,
+    BrainCircuit
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -77,13 +78,12 @@ function TerminalInsight({ email }: { email: string }) {
     const fetchSync = async () => {
         if (!email) return;
         setLoading(true);
-        // Ensure email is trimmed and lowercased for exact matching
         const res = await getMasterSync(email.trim().toLowerCase());
         
         if (res.error) {
             toast({ title: "Sync Failed", description: res.error, variant: "destructive" });
         } else {
-            // PROTOCOL v1.2: StockMint Engine typically returns { success: true, data: { ... } }
+            // Integration Update (v1.3): Parse data from engine response
             const actualData = res.data || (res.success ? res.data : res);
             setSyncData(actualData);
             setLastSync(new Date());
@@ -110,7 +110,7 @@ function TerminalInsight({ email }: { email: string }) {
     if (loading) return (
         <div className="py-40 text-center space-y-4">
             <Loader2 className="animate-spin h-10 w-10 mx-auto text-primary opacity-30"/>
-            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Establishing Secure Sync...</p>
+            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Establishing v1.3 Secure Sync...</p>
         </div>
     );
 
@@ -127,17 +127,20 @@ function TerminalInsight({ email }: { email: string }) {
         );
     }
 
-    // PROTOCOL v1.2: Hardened Data Mapping using developers specific nested keys
-    const balance = syncData.financials?.cashBalance ?? syncData.balance ?? syncData.live_cash_balance ?? 0;
-    const highWaterMark = syncData.financials?.highWaterMark ?? syncData.highWaterMark ?? syncData.high_water_mark ?? 0;
-    const overallLossLimit = syncData.risk?.overallLossLimit ?? syncData.maxDrawdownPct ?? syncData.max_drawdown_pct ?? '--';
+    // PROTOCOL v1.3: Hardened Data Mapping using camelCase nested keys
+    const balance = syncData.financials?.cashBalance ?? syncData.balance ?? 0;
+    const highWaterMark = syncData.financials?.highWaterMark ?? syncData.highWaterMark ?? 0;
+    const overallLossLimit = syncData.risk?.overallLossLimit ?? syncData.maxDrawdownPct ?? '--';
     
-    // Auxiliary Mappings
+    // v1.3 Specific Risk Mappings
+    const dailyLoss = syncData.risk?.dailyLossLimit ?? syncData.dailyLossPct ?? '--';
+    const perTrade = syncData.risk?.perTradeLossLimit ?? syncData.perTradePct ?? '--';
+    
+    // v1.3 Ledger Mappings
+    const trades = syncData.ledger?.executionStream ?? syncData.executionRequests ?? [];
+    const pnlRecords = syncData.ledger?.pnlHistory ?? syncData.pnlRecords ?? [];
+    
     const openingBalance = syncData.openingBalance ?? syncData.opening_balance ?? 0;
-    const dailyLoss = syncData.dailyLossPct ?? syncData.daily_loss_pct ?? '--';
-    const perTrade = syncData.perTradePct ?? syncData.per_trade_pct ?? '--';
-    const trades = syncData.executionRequests ?? syncData.execution_requests ?? [];
-    const pnlRecords = syncData.pnlRecords ?? syncData.pnl_records ?? [];
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -145,7 +148,7 @@ function TerminalInsight({ email }: { email: string }) {
             <div className="flex items-center justify-between px-6 py-3 bg-white/[0.02] border border-white/5 rounded-2xl">
                 <div className="flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal (v1.2)</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal (v1.3 Synchronized)</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Wifi className="w-3 h-3 text-gray-700" />
@@ -260,7 +263,7 @@ function TerminalInsight({ email }: { email: string }) {
             <Tabs defaultValue="trades" className="w-full">
                 <TabsList className="bg-black/60 border border-white/5 p-1 h-12 rounded-[20px] mb-6">
                     <TabsTrigger value="trades" className="px-8 text-[10px] font-black uppercase tracking-widest rounded-[14px] data-[state=active]:bg-primary data-[state=active]:text-white">Execution Stream (Last 50)</TabsTrigger>
-                    <TabsTrigger value="pnl" className="px-8 text-[10px] font-black uppercase tracking-widest rounded-[14px] data-[state=active]:bg-primary data-[state=active]:text-white">Historical P&L</TabsTrigger>
+                    <TabsTrigger value="pnl" className="px-8 text-[10px] font-black uppercase tracking-widest rounded-[14px] data-[state=active]:bg-primary data-[state=active]:text-white">Historical P&L History</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="trades" className="animate-in slide-in-from-bottom-2">
