@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use, useActionState, useTransition } from 'react';
@@ -29,10 +30,11 @@ import {
     Unlock,
     ExternalLink,
     Trash2,
-    Activity
+    Activity,
+    Briefcase
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateProfile, resetPassword, sendBreachRecoveryEmail, syncAccountCredentials, toggleAccountBlock, purgeHubAccount } from './actions';
+import { updateProfile, resetPassword, syncAccountCredentials, toggleAccountBlock, purgeHubAccount, getHubSsoUrl } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -54,6 +56,38 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: s
         </CardContent>
     </Card>
 );
+
+function TerminalJumpButton({ tradingUsername }: { tradingUsername: string }) {
+    const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
+
+    const handleJump = () => {
+        if (!tradingUsername || tradingUsername === 'PURGED_ON_HUB') return;
+        
+        startTransition(async () => {
+            const res = await getHubSsoUrl(tradingUsername);
+            if (res.error) {
+                toast({ title: "Portal Error", description: res.error, variant: "destructive" });
+            } else if (res.url) {
+                window.open(res.url, '_blank');
+                toast({ title: "Bypass Initialized", description: "Teleporting to terminal dashboard." });
+            }
+        });
+    }
+
+    return (
+        <Button 
+            onClick={handleJump} 
+            disabled={isPending || !tradingUsername || tradingUsername === 'PURGED_ON_HUB'}
+            variant="outline" 
+            size="sm" 
+            className="h-7 px-3 bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/20 text-[9px] font-black uppercase tracking-widest"
+        >
+            {isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1"/> : <Zap className="w-3 h-3 mr-1" />}
+            View in Hub
+        </Button>
+    )
+}
 
 function MasterPurgeButton({ accountId }: { accountId: string }) {
     const [isPending, startTransition] = useTransition();
@@ -254,6 +288,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                                     <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest mt-1">Hub UID: {acc.trading_username || 'Pending'}</p>
                                                 </div>
                                                 <div className="flex items-center gap-3 ml-4">
+                                                    {acc.trading_username && <TerminalJumpButton tradingUsername={acc.trading_username} />}
                                                     <AccountBlockToggle accountId={acc.id} isBlocked={acc.is_blocked} />
                                                     {!acc.credentials_provided && acc.is_approved && <ProvisionButton accountId={acc.id} />}
                                                     <MasterPurgeButton accountId={acc.id} />

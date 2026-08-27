@@ -1,10 +1,14 @@
+
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { generateStockmintUsername, getBalanceFromPlanName, getAutoClassification } from '@/lib/plan-utils';
+import jwt from 'jsonwebtoken';
 
 async function uploadBreachProof(file: File, userId: string) {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
   const fileExt = file.name.split('.').pop();
   const fileName = `breach-proof-${userId}-${Date.now()}.${fileExt}`;
   const { data, error } = await supabaseAdmin.storage.from('breach-proofs').upload(fileName, buffer, {
@@ -181,4 +185,31 @@ export async function syncAccountCredentials(accountId: string) {
         }
         return { error: 'Hub API Rejection' };
     } catch (e: any) { return { error: e.message }; }
+}
+
+/**
+ * Generates a secure SSO teleport URL for the StockMint Admin Bridge.
+ * @param tradingUsername The specific trading account to access.
+ */
+export async function getHubSsoUrl(tradingUsername: string) {
+    const secret = process.env.FS_ADMIN_BRIDGE_SECRET;
+    if (!secret) {
+        return { error: 'Admin Bridge Security Secret is not configured in .env' };
+    }
+
+    try {
+        const payload = {
+            target_trading_username: tradingUsername,
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 60 // 60-second hard expiry
+        };
+
+        const token = jwt.sign(payload, secret);
+        const ssoUrl = `https://stockmint.io/admin/sso-bypass?token=${token}`;
+        
+        return { url: ssoUrl };
+    } catch (e: any) {
+        console.error("[SSO Bridge] Signing Failure:", e);
+        return { error: 'Failed to generate secure access token.' };
+    }
 }
