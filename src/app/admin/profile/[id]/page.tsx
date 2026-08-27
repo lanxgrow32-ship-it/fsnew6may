@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use, useTransition, useActionState } from 'react';
@@ -16,41 +17,26 @@ import {
     CheckCircle, 
     XCircle, 
     User as UserIcon, 
-    Trophy, 
     IndianRupee, 
     LayoutGrid, 
     Zap,
-    Mail,
     KeyRound,
     ShieldCheck,
-    RefreshCw,
     Lock,
     Unlock,
     Activity,
     Briefcase,
     History,
-    TrendingUp,
-    Target,
-    Database,
-    Shield,
+    FileCheck,
+    Video,
+    ExternalLink,
+    Users,
     ChevronRight,
-    ArrowUpRight,
-    ArrowDownRight,
-    Users
+    Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-    updateProfile, 
-    resetPassword, 
-    getMasterSync, 
-    resetAccount, 
-    calibrateAccount, 
-    updateClassification, 
-    updateTerminalStatus 
-} from './actions';
+import { updateProfile, resetPassword } from './actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -72,221 +58,6 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: s
     </Card>
 );
 
-function TerminalInsight({ email }: { email: string }) {
-    const [syncData, setSyncData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [isPending, startTransition] = useTransition();
-    const { toast } = useToast();
-
-    const fetchSync = async () => {
-        if (!email) return;
-        setLoading(true);
-        const res = await getMasterSync(email);
-        if (res.error) {
-            toast({ title: "Sync Failed", description: res.error, variant: "destructive" });
-        } else {
-            setSyncData(res.data);
-        }
-        setLoading(false);
-    };
-
-    useEffect(() => { 
-        fetchSync(); 
-    }, [email]);
-
-    const handleAction = (action: () => Promise<any>, successMsg: string) => {
-        startTransition(async () => {
-            const res = await action();
-            if (res.error) {
-                toast({ title: "Action Failed", description: res.error, variant: "destructive" });
-            } else {
-                toast({ title: successMsg });
-                fetchSync();
-            }
-        });
-    };
-
-    if (loading) return <div className="py-20 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto text-primary opacity-20"/></div>;
-    if (!syncData) return <div className="py-20 text-center text-gray-500 font-bold uppercase text-[10px]">No Engine Connection</div>;
-
-    return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Live Financial Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-black/40 border-white/5">
-                    <CardHeader className="py-4"><CardTitle className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Live Cash Balance</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-black text-white">₹{syncData.balance?.toLocaleString()}</p></CardContent>
-                </Card>
-                <Card className="bg-black/40 border-white/5">
-                    <CardHeader className="py-4"><CardTitle className="text-[10px] font-black uppercase text-gray-500 tracking-widest">High Water Mark</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-black text-primary">₹{syncData.highWaterMark?.toLocaleString()}</p></CardContent>
-                </Card>
-                <Card className="bg-black/40 border-white/5">
-                    <CardHeader className="py-4"><CardTitle className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Today's Opening</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-black text-white">₹{syncData.openingBalance?.toLocaleString()}</p></CardContent>
-                </Card>
-            </div>
-
-            {/* Risk Tiers */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-muted/10 rounded-2xl border border-white/5 flex items-center justify-between">
-                    <div className="space-y-0.5">
-                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Max Drawdown</p>
-                        <p className="text-sm font-bold text-red-400">{syncData.maxDrawdownPct}%</p>
-                    </div>
-                    <ShieldAlert className="w-4 h-4 text-red-500 opacity-20" />
-                </div>
-                <div className="p-4 bg-muted/10 rounded-2xl border border-white/5 flex items-center justify-between">
-                    <div className="space-y-0.5">
-                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Daily Loss</p>
-                        <p className="text-sm font-bold text-amber-400">{syncData.dailyLossPct}%</p>
-                    </div>
-                    <Activity className="w-4 h-4 text-amber-500 opacity-20" />
-                </div>
-                <div className="p-4 bg-muted/10 rounded-2xl border border-white/5 flex items-center justify-between">
-                    <div className="space-y-0.5">
-                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Per Trade</p>
-                        <p className="text-sm font-bold text-blue-400">{syncData.perTradePct}%</p>
-                    </div>
-                    <Target className="w-4 h-4 text-blue-500 opacity-20" />
-                </div>
-            </div>
-
-            {/* Command Bar */}
-            <div className="flex flex-wrap gap-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                        const bal = prompt("Enter Reset Balance:", syncData.balance);
-                        if(bal) handleAction(() => resetAccount(email, parseFloat(bal)), "Engine Reset Complete");
-                    }}
-                    className="h-8 text-[9px] font-black uppercase tracking-widest bg-black/20 border-white/10"
-                    disabled={isPending}
-                >
-                    <RefreshCw className={cn("w-3 h-3 mr-1.5", isPending && "animate-spin")} /> Reset Account
-                </Button>
-                
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                        const bal = prompt("New Balance:", syncData.balance);
-                        const hwm = prompt("New HWM:", syncData.highWaterMark);
-                        if(bal && hwm) handleAction(() => calibrateAccount(email, parseFloat(bal), parseFloat(hwm)), "Calibration Successful");
-                    }}
-                    className="h-8 text-[9px] font-black uppercase tracking-widest bg-black/20 border-white/10"
-                    disabled={isPending}
-                >
-                    <Zap className="w-3 h-3 mr-1.5" /> Calibrate
-                </Button>
-
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                        const status = syncData.status === 'active' ? 'blocked' : 'active';
-                        handleAction(() => updateTerminalStatus(email, status, "ADMIN_OVERRIDE"), `Terminal status: ${status}`);
-                    }}
-                    className={cn(
-                        "h-8 text-[9px] font-black uppercase tracking-widest",
-                        syncData.status === 'active' ? "text-red-400 hover:text-red-300 border-red-500/20" : "text-green-400 hover:text-green-300 border-green-500/20"
-                    )}
-                    disabled={isPending}
-                >
-                    {syncData.status === 'active' ? <Lock className="w-3 h-3 mr-1.5" /> : <Unlock className="w-3 h-3 mr-1.5" />}
-                    {syncData.status === 'active' ? 'Freeze Terminal' : 'Release Terminal'}
-                </Button>
-
-                <div className="ml-auto">
-                    <Select onValueChange={(val) => handleAction(() => updateClassification(email, val), `Promoted to ${val}`)}>
-                        <SelectTrigger className="h-8 text-[9px] font-black uppercase tracking-widest w-40 bg-black/40 border-white/10">
-                            <SelectValue placeholder="PROMOTION" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="evaluation">Evaluation</SelectItem>
-                            <SelectItem value="one_step_live">1-Step Live</SelectItem>
-                            <SelectItem value="two_step_phase_2">2-Step P2</SelectItem>
-                            <SelectItem value="two_step_live">2-Step Live</SelectItem>
-                            <SelectItem value="instant_pro">Instant Pro</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            {/* Terminal Ledgers */}
-            <Tabs defaultValue="trades" className="w-full">
-                <TabsList className="bg-black/40 border border-white/5 p-1 h-10 rounded-xl mb-4">
-                    <TabsTrigger value="trades" className="text-[9px] font-black uppercase tracking-widest">Executions (Last 50)</TabsTrigger>
-                    <TabsTrigger value="pnl" className="text-[9px] font-black uppercase tracking-widest">P&L Records</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="trades">
-                    <div className="rounded-2xl border border-white/5 bg-black/20 overflow-hidden">
-                        <Table>
-                            <TableHeader className="bg-white/5">
-                                <TableRow>
-                                    <TableHead className="text-[9px] font-bold uppercase text-gray-500">Timestamp</TableHead>
-                                    <TableHead className="text-[9px] font-bold uppercase text-gray-500">Asset</TableHead>
-                                    <TableHead className="text-[9px] font-bold uppercase text-gray-500">Type</TableHead>
-                                    <TableHead className="text-[9px] font-bold uppercase text-gray-500">Price</TableHead>
-                                    <TableHead className="text-right text-[9px] font-bold uppercase text-gray-500">Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {syncData.executionRequests?.length > 0 ? syncData.executionRequests.map((req: any, i: number) => (
-                                    <TableRow key={i} className="border-white/5 hover:bg-white/[0.02]">
-                                        <TableCell className="text-[10px] font-mono text-gray-400">{req.createdAt ? format(new Date(req.createdAt), 'dd MMM, HH:mm:ss') : 'N/A'}</TableCell>
-                                        <TableCell className="text-[10px] font-black text-white">{req.symbol}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className={cn("text-[8px] font-black uppercase px-2", req.side === 'BUY' ? "text-green-400 border-green-500/20" : "text-red-400 border-red-500/20")}>
-                                                {req.side}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-[10px] font-bold text-gray-300">₹{req.price}</TableCell>
-                                        <TableCell className="text-right">
-                                            <span className={cn("text-[9px] font-bold uppercase", req.status === 'FILLED' ? "text-green-500" : "text-gray-500")}>
-                                                {req.status}
-                                            </span>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : <TableRow><TableCell colSpan={5} className="py-10 text-center text-gray-600 font-bold uppercase text-[9px]">No trade history</TableCell></TableRow>}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="pnl">
-                    <div className="rounded-2xl border border-white/5 bg-black/20 overflow-hidden">
-                        <Table>
-                            <TableHeader className="bg-white/5">
-                                <TableRow>
-                                    <TableHead className="text-[9px] font-bold uppercase text-gray-500">Trading Date</TableHead>
-                                    <TableHead className="text-[9px] font-bold uppercase text-gray-500">Starting</TableHead>
-                                    <TableHead className="text-[9px] font-bold uppercase text-gray-500">Closing</TableHead>
-                                    <TableHead className="text-right text-[9px] font-bold uppercase text-gray-500">Net Profit</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {syncData.pnlRecords?.length > 0 ? syncData.pnlRecords.map((rec: any, i: number) => (
-                                    <TableRow key={i} className="border-white/5 hover:bg-white/[0.02]">
-                                        <TableCell className="text-[10px] font-bold text-gray-400">{rec.date ? format(new Date(rec.date), 'dd MMM yyyy') : 'N/A'}</TableCell>
-                                        <TableCell className="text-[10px] font-medium">₹{rec.startBalance?.toLocaleString()}</TableCell>
-                                        <TableCell className="text-[10px] font-medium">₹{rec.endBalance?.toLocaleString()}</TableCell>
-                                        <TableCell className={cn("text-right text-[10px] font-black", rec.netPnl >= 0 ? "text-green-400" : "text-red-400")}>
-                                            {rec.netPnl >= 0 ? '+' : ''}₹{rec.netPnl?.toLocaleString()}
-                                        </TableCell>
-                                    </TableRow>
-                                )) : <TableRow><TableCell colSpan={4} className="py-10 text-center text-gray-600 font-bold uppercase text-[9px]">No daily records</TableCell></TableRow>}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </TabsContent>
-            </Tabs>
-        </div>
-    );
-}
-
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -295,7 +66,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   
   const [profile, setProfile] = useState<any>(null);
   const [accounts, setAccounts] = useState<any[]>([]);
-  const [activeAccount, setActiveAccount] = useState<any>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -307,10 +77,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       supabase.from('user_accounts').select('*').eq('user_id', id).order('created_at', { ascending: false })
     ]);
     if (pRes.data) setProfile(pRes.data);
-    if (aRes.data) {
-        setAccounts(aRes.data);
-        if (aRes.data.length > 0 && !activeAccount) setActiveAccount(aRes.data[0]);
-    }
+    if (aRes.data) setAccounts(aRes.data);
     setIsFetching(false);
   };
 
@@ -328,6 +95,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         toast({ title: "Error", description: res.error, variant: "destructive" });
     } else {
         toast({ title: "Profile Updated" });
+        fetchData();
     }
     setIsSaving(false);
   };
@@ -340,7 +108,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full text-white"><ArrowLeft className="h-5 w-5"/></Button>
             {profile && (
                 <div>
-                    <h1 className="text-xl font-bold tracking-tight text-white">{profile.full_name}</h1>
+                    <h1 className="text-xl font-bold tracking-tight text-white">{profile.full_name || 'Incomplete Profile'}</h1>
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{profile.email}</p>
                 </div>
             )}
@@ -355,41 +123,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
         <main className="max-w-7xl mx-auto p-6 space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left: Engine Command Center */}
+                {/* Left Column: Core Identity & KYC */}
                 <div className="lg:col-span-2 space-y-6">
-                    <Card className="bg-muted/10 border-white/5 overflow-hidden">
-                        <CardHeader className="border-b border-white/5 bg-white/[0.01] flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-white text-xl font-black flex items-center gap-3">
-                                    <Database className="text-primary h-5 w-5" /> TERMINAL ORCHESTRATION
-                                </CardTitle>
-                                <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Real-time Stateless Data Bridge</CardDescription>
-                            </div>
-                            <div className="flex gap-1 bg-black/40 p-1 rounded-xl">
-                                {accounts.map(acc => (
-                                    <button 
-                                        key={acc.id} 
-                                        onClick={() => setActiveAccount(acc)}
-                                        className={cn(
-                                            "px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all",
-                                            activeAccount?.id === acc.id ? "bg-primary text-white" : "text-gray-500 hover:text-gray-300"
-                                        )}
-                                    >
-                                        {acc.plan_name?.split(' ')[0]}
-                                    </button>
-                                ))}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            {activeAccount ? (
-                                <TerminalInsight email={activeAccount.trading_username} key={activeAccount.id} />
-                            ) : (
-                                <div className="py-20 text-center text-gray-600 font-bold uppercase text-[10px]">No trading accounts detected</div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Standard Database Sync Form */}
                     <Card className="bg-muted/10 border-white/5">
                         <CardHeader><CardTitle className="text-white text-lg font-bold">Profile Identity</CardTitle></CardHeader>
                         <CardContent>
@@ -420,15 +155,89 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                             </form>
                         </CardContent>
                     </Card>
+
+                    {/* KYC Documents Section */}
+                    <Card className="bg-muted/10 border-white/5">
+                        <CardHeader>
+                            <CardTitle className="text-white text-lg font-bold flex items-center gap-2">
+                                <FileCheck className="text-primary w-5 h-5"/> Identity Evidence
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <p className="text-[9px] font-black text-gray-500 uppercase">Selfie / Aadhaar</p>
+                                {profile?.selfie_url ? (
+                                    <div className="relative aspect-video rounded-xl border border-white/5 overflow-hidden group">
+                                        <Image src={profile.selfie_url} alt="KYC 1" fill className="object-cover" />
+                                        <a href={profile.selfie_url} target="_blank" className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                            <ExternalLink className="w-5 h-5 text-white" />
+                                        </a>
+                                    </div>
+                                ) : <div className="aspect-video rounded-xl bg-black/40 border border-dashed border-white/10 flex items-center justify-center text-[10px] text-gray-600 font-bold uppercase">No Document</div>}
+                            </div>
+                            <div className="space-y-2">
+                                <p className="text-[9px] font-black text-gray-500 uppercase">Selfie with Aadhaar</p>
+                                {profile?.selfie_with_aadhaar_url ? (
+                                    <div className="relative aspect-video rounded-xl border border-white/5 overflow-hidden group">
+                                        <Image src={profile.selfie_with_aadhaar_url} alt="KYC 2" fill className="object-cover" />
+                                        <a href={profile.selfie_with_aadhaar_url} target="_blank" className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                            <ExternalLink className="w-5 h-5 text-white" />
+                                        </a>
+                                    </div>
+                                ) : <div className="aspect-video rounded-xl bg-black/40 border border-dashed border-white/10 flex items-center justify-center text-[10px] text-gray-600 font-bold uppercase">No Document</div>}
+                            </div>
+                            <div className="space-y-2">
+                                <p className="text-[9px] font-black text-gray-500 uppercase">Video KYC</p>
+                                {profile?.video_kyc_url ? (
+                                    <div className="relative aspect-video rounded-xl border border-white/5 overflow-hidden group bg-black/20 flex items-center justify-center">
+                                        <Video className="w-8 h-8 text-gray-700" />
+                                        <a href={profile.video_kyc_url} target="_blank" className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                            <Badge variant="outline" className="text-white border-white/20">Open Video</Badge>
+                                        </a>
+                                    </div>
+                                ) : <div className="aspect-video rounded-xl bg-black/40 border border-dashed border-white/10 flex items-center justify-center text-[10px] text-gray-600 font-bold uppercase">No Video</div>}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Account Ledger Section */}
+                    <Card className="bg-muted/10 border-white/5">
+                        <CardHeader>
+                            <CardTitle className="text-white text-lg font-bold flex items-center gap-2">
+                                <Activity className="text-primary w-5 h-5"/> Account Lifecycle
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {accounts.length > 0 ? accounts.map((acc) => (
+                                    <div key={acc.id} className="p-4 bg-black/40 rounded-2xl border border-white/5 flex items-center justify-between group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-2.5 rounded-xl bg-white/5 text-gray-400 group-hover:text-primary transition-colors">
+                                                <Briefcase className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-white">{acc.plan_name}</p>
+                                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest">{acc.id.substring(0, 8)} · {acc.status}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {acc.is_blocked && <Badge className="bg-red-600 text-white text-[8px] font-black uppercase">Blocked</Badge>}
+                                            <Badge variant="outline" className="text-[9px] font-bold border-white/10 capitalize">{acc.account_classification?.replace(/_/g, ' ') || 'Evaluation'}</Badge>
+                                        </div>
+                                    </div>
+                                )) : <div className="py-10 text-center text-[10px] text-gray-600 font-black uppercase tracking-[0.2em]">No trading history found</div>}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
-                {/* Right: Privilege & Security */}
+                {/* Right Column: Balances & Security */}
                 <div className="space-y-6">
                     <Card className="bg-muted/10 border-white/5">
                         <CardHeader><CardTitle className="text-white text-lg font-bold">Market Access</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            <StatCard title="Wallet Balance" value={`₹${profile?.wallet_balance?.toLocaleString()}`} icon={IndianRupee} color="text-green-400" />
-                            <StatCard title="Referral Credit" value={`₹${profile?.referral_balance?.toLocaleString()}`} icon={Users} color="text-amber-400" />
+                            <StatCard title="Wallet Balance" value={`₹${profile?.wallet_balance?.toLocaleString() || 0}`} icon={IndianRupee} color="text-green-400" />
+                            <StatCard title="Referral Credit" value={`₹${profile?.referral_balance?.toLocaleString() || 0}`} icon={Users} color="text-amber-400" />
                         </CardContent>
                     </Card>
 
@@ -444,6 +253,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                 <Button type="submit" disabled={isPwPending} className="w-full h-10 bg-white/5 border border-white/10 text-white hover:bg-white/10 font-bold text-[10px] uppercase">
                                     {isPwPending ? <Loader2 className="animate-spin h-3.5 w-3.5 mr-2"/> : <KeyRound className="w-3.5 h-3.5 mr-2" />} Update Access Key
                                 </Button>
+                                {pwState?.success && <p className="text-[10px] text-green-400 font-bold text-center">Password successfully overwritten.</p>}
                             </form>
                         </CardContent>
                     </Card>
@@ -461,6 +271,47 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                             </div>
                         </CardContent>
                     </Card>
+                </div>
+            </div>
+
+            {/* Bottom Section: StockMint Terminal Insight Access */}
+            <div className="max-w-7xl mx-auto px-0 pt-10 border-t border-white/5 mt-10">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-[0_0_30px_rgba(139,44,245,0.1)]">
+                        <LayoutGrid className="w-5 h-5"/>
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Terminal Orchestration</h2>
+                        <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.4em]">Engine State Mirroring Grid</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {accounts.filter(a => a.credentials_provided).map(acc => (
+                        <GlassCard key={acc.id} className="p-6 border-white/5 bg-slate-900/40 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity"><Zap className="w-20 h-20 text-primary" /></div>
+                            <div className="relative space-y-6">
+                                <div>
+                                    <h3 className="text-lg font-black text-white truncate">{acc.plan_name}</h3>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">HUB ID: {acc.trading_username}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Badge variant="outline" className="bg-black/40 border-white/5 text-[8px] font-black uppercase">{acc.account_classification?.replace(/_/g, ' ') || 'Evaluation'}</Badge>
+                                    <Badge className="bg-primary/20 text-primary border-none text-[8px] font-black uppercase">Mirror Ready</Badge>
+                                </div>
+                                <Button asChild className="w-full h-11 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">
+                                    <Link href={`/admin/profile/${id}/stockmint/${acc.id}`}>
+                                        View StockMint Info <ChevronRight className="ml-2 w-4 h-4"/>
+                                    </Link>
+                                </Button>
+                            </div>
+                        </GlassCard>
+                    ))}
+                    {accounts.filter(a => a.credentials_provided).length === 0 && (
+                        <div className="col-span-full py-20 text-center border-2 border-dashed border-white/5 rounded-[40px] bg-white/[0.01]">
+                            <p className="text-gray-600 font-black uppercase text-[10px] tracking-[0.3em]">No Hub sessions active for this profile</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </main>
