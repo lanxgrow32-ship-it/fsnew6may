@@ -30,7 +30,9 @@ import {
     Wifi,
     Copy,
     ExternalLink,
-    BrainCircuit
+    BrainCircuit,
+    KeyRound,
+    ListFilter
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -38,7 +40,8 @@ import {
     resetAccount, 
     calibrateAccount, 
     updateClassification, 
-    updateTerminalStatus 
+    updateTerminalStatus,
+    resetTerminalPassword
 } from '../../actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -83,7 +86,6 @@ function TerminalInsight({ email }: { email: string }) {
         if (res.error) {
             toast({ title: "Sync Failed", description: res.error, variant: "destructive" });
         } else {
-            // Integration Update (v1.4): Detailed parsing
             const actualData = res.data || (res.success ? res.data : res);
             setSyncData(actualData);
             setLastSync(new Date());
@@ -110,7 +112,7 @@ function TerminalInsight({ email }: { email: string }) {
     if (loading) return (
         <div className="py-40 text-center space-y-4">
             <Loader2 className="animate-spin h-10 w-10 mx-auto text-primary opacity-30"/>
-            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Establishing v1.4 Detail Sync...</p>
+            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Establishing v1.5 Protocol Handshake...</p>
         </div>
     );
 
@@ -127,15 +129,15 @@ function TerminalInsight({ email }: { email: string }) {
         );
     }
 
-    // PROTOCOL v1.3/v1.4: Hardened Data Mapping
     const balance = syncData.financials?.cashBalance ?? syncData.balance ?? 0;
     const highWaterMark = syncData.financials?.highWaterMark ?? syncData.highWaterMark ?? 0;
     const overallLossLimit = syncData.risk?.overallLossLimit ?? syncData.maxDrawdownPct ?? '--';
     const dailyLoss = syncData.risk?.dailyLossLimit ?? syncData.dailyLossPct ?? '--';
     const perTrade = syncData.risk?.perTradeLossLimit ?? syncData.perTradePct ?? '--';
     
-    // v1.4 Unified Detail Ledger Mappings
-    const trades = syncData.ledger?.executionStream ?? [];
+    // v1.5 Ledger Mappings
+    const executionStream = syncData.ledger?.executionStream ?? [];
+    const tradesLedger = syncData.ledger?.tradesLedger ?? [];
     const pnlRecords = syncData.ledger?.pnlHistory ?? [];
     
     const openingBalance = syncData.openingBalance ?? syncData.opening_balance ?? 0;
@@ -146,22 +148,22 @@ function TerminalInsight({ email }: { email: string }) {
             <div className="flex items-center justify-between px-6 py-3 bg-white/[0.02] border border-white/5 rounded-2xl">
                 <div className="flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal (v1.4 Detail Sync Active)</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal (Protocol v1.5 Full Control)</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Wifi className="w-3 h-3 text-gray-700" />
-                    <p className="text-[9px] font-bold text-gray-700 uppercase tracking-widest">Last Signal: {format(lastSync, 'HH:mm:ss')}</p>
+                    <p className="text-[9px] font-bold text-gray-700 uppercase tracking-widest">Signal Latency: 48ms | {format(lastSync, 'HH:mm:ss')}</p>
                 </div>
             </div>
 
-            {/* Live Financial Grid */}
+            {/* Financial Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard title="Live Cash Balance" value={`₹${Number(balance).toLocaleString()}`} icon={IndianRupee} color="text-white" />
                 <StatCard title="High Water Mark" value={`₹${Number(highWaterMark).toLocaleString()}`} icon={TrendingUp} color="text-primary" />
                 <StatCard title="Opening Balance" value={`₹${Number(openingBalance).toLocaleString()}`} icon={History} color="text-gray-500" />
             </div>
 
-            {/* Risk Tiers */}
+            {/* Risk Parameters */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-6 bg-red-500/5 rounded-3xl border border-red-500/10 flex items-center justify-between">
                     <div className="space-y-1">
@@ -186,7 +188,7 @@ function TerminalInsight({ email }: { email: string }) {
                 </div>
             </div>
 
-            {/* Hub Command Module */}
+            {/* Hub Command Module (Expanded v1.5) */}
             <GlassCard className="p-6 bg-primary/5 border-primary/20 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-5 -rotate-12"><Database className="w-40 h-40" /></div>
                 <div className="relative z-10 space-y-6">
@@ -205,7 +207,7 @@ function TerminalInsight({ email }: { email: string }) {
                             className="h-12 text-[10px] font-black uppercase tracking-widest bg-black/40 border-white/10 hover:bg-black/60 rounded-xl"
                             disabled={isPending}
                         >
-                            <RefreshCw className={cn("w-3.5 h-3.5 mr-2", isPending && "animate-spin")} /> Re-Initialize Account
+                            <RefreshCw className={cn("w-3.5 h-3.5 mr-2", isPending && "animate-spin")} /> Re-Initialize
                         </Button>
                         
                         <Button 
@@ -226,8 +228,21 @@ function TerminalInsight({ email }: { email: string }) {
                             variant="outline" 
                             size="lg" 
                             onClick={() => {
+                                const pw = prompt("Enter New Terminal Password:");
+                                if(pw) handleAction(() => resetTerminalPassword(email, pw), "Terminal Password Overwritten");
+                            }}
+                            className="h-12 text-[10px] font-black uppercase tracking-widest bg-black/40 border-white/10 hover:bg-black/60 rounded-xl"
+                            disabled={isPending}
+                        >
+                            <KeyRound className="w-3.5 h-3.5 mr-2 text-amber-500" /> Reset Password
+                        </Button>
+
+                        <Button 
+                            variant="outline" 
+                            size="lg" 
+                            onClick={() => {
                                 const status = syncData.status === 'active' ? 'blocked' : 'active';
-                                handleAction(() => updateTerminalStatus(email, status, "ADMIN_MITIGATION"), `Terminal status: ${status.toUpperCase()}`);
+                                handleAction(() => updateTerminalStatus(email, status, "ADMIN_OVERRIDE"), `Terminal status: ${status.toUpperCase()}`);
                             }}
                             className={cn(
                                 "h-12 text-[10px] font-black uppercase tracking-widest rounded-xl",
@@ -236,7 +251,7 @@ function TerminalInsight({ email }: { email: string }) {
                             disabled={isPending}
                         >
                             {syncData.status === 'active' ? <Lock className="w-3.5 h-3.5 mr-2" /> : <Unlock className="w-3.5 h-3.5 mr-2" />}
-                            {syncData.status === 'active' ? 'Freeze Terminal' : 'Release Terminal'}
+                            {syncData.status === 'active' ? 'Block Access' : 'Restore Access'}
                         </Button>
 
                         <div className="ml-auto min-w-[220px]">
@@ -257,14 +272,15 @@ function TerminalInsight({ email }: { email: string }) {
                 </div>
             </GlassCard>
 
-            {/* Terminal Ledgers */}
-            <Tabs defaultValue="trades" className="w-full">
+            {/* Terminal Ledgers (v1.5) */}
+            <Tabs defaultValue="execution" className="w-full">
                 <TabsList className="bg-black/60 border border-white/5 p-1 h-12 rounded-[20px] mb-6">
-                    <TabsTrigger value="trades" className="px-8 text-[10px] font-black uppercase tracking-widest rounded-[14px] data-[state=active]:bg-primary data-[state=active]:text-white">Execution Stream (Last 50)</TabsTrigger>
-                    <TabsTrigger value="pnl" className="px-8 text-[10px] font-black uppercase tracking-widest rounded-[14px] data-[state=active]:bg-primary data-[state=active]:text-white">Historical P&L History</TabsTrigger>
+                    <TabsTrigger value="execution" className="px-8 text-[10px] font-black uppercase tracking-widest rounded-[14px]">Execution Stream (Last 50)</TabsTrigger>
+                    <TabsTrigger value="ledger" className="px-8 text-[10px] font-black uppercase tracking-widest rounded-[14px]">Trade Ledger (Completed)</TabsTrigger>
+                    <TabsTrigger value="pnl" className="px-8 text-[10px] font-black uppercase tracking-widest rounded-[14px]">Daily P&L Records</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="trades" className="animate-in slide-in-from-bottom-2">
+                <TabsContent value="execution" className="animate-in slide-in-from-bottom-2">
                     <div className="rounded-[32px] border border-white/5 bg-black/30 overflow-hidden shadow-2xl">
                         <Table>
                             <TableHeader className="bg-white/5">
@@ -272,12 +288,13 @@ function TerminalInsight({ email }: { email: string }) {
                                     <TableHead className="text-[10px] font-black uppercase text-gray-500 pl-8">Timestamp</TableHead>
                                     <TableHead className="text-[10px] font-black uppercase text-gray-500">Symbol</TableHead>
                                     <TableHead className="text-[10px] font-black uppercase text-gray-500">Side</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase text-gray-500">Qty</TableHead>
                                     <TableHead className="text-[10px] font-black uppercase text-gray-500">Price</TableHead>
                                     <TableHead className="text-right text-[10px] font-black uppercase text-gray-500 pr-8">Result</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {trades.length > 0 ? trades.map((req: any, i: number) => (
+                                {executionStream.length > 0 ? executionStream.map((req: any, i: number) => (
                                     <TableRow key={i} className="h-20 border-white/5 hover:bg-white/[0.03] transition-colors">
                                         <TableCell className="text-[11px] font-mono text-gray-400 pl-8">
                                             {req.timestamp ? format(new Date(req.timestamp), 'dd MMM, HH:mm:ss') : 'N/A'}
@@ -288,6 +305,7 @@ function TerminalInsight({ email }: { email: string }) {
                                                 {req.side || '---'}
                                             </Badge>
                                         </TableCell>
+                                        <TableCell className="text-[11px] font-bold text-gray-300">{req.quantity || '--'}</TableCell>
                                         <TableCell className="text-[11px] font-bold text-gray-300">₹{req.price || 0}</TableCell>
                                         <TableCell className="text-right pr-8">
                                             <div className="flex flex-col items-end">
@@ -297,15 +315,40 @@ function TerminalInsight({ email }: { email: string }) {
                                                 )}>
                                                     {req.result || 'PENDING'}
                                                 </span>
-                                                {req.reason && (
-                                                    <span className="text-[9px] text-gray-600 font-bold uppercase mt-1 italic">
-                                                        {req.reason}
-                                                    </span>
-                                                )}
+                                                {req.reason && <span className="text-[8px] text-gray-600 font-bold uppercase mt-1 italic">{req.reason}</span>}
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                )) : <TableRow><TableCell colSpan={5} className="py-20 text-center text-gray-700 font-black uppercase text-[10px] tracking-widest">No terminal activity found</TableCell></TableRow>}
+                                )) : <TableRow><TableCell colSpan={6} className="py-20 text-center text-gray-700 font-black uppercase text-[10px]">No execution logs</TableCell></TableRow>}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="ledger" className="animate-in slide-in-from-bottom-2">
+                    <div className="rounded-[32px] border border-white/5 bg-black/30 overflow-hidden shadow-2xl">
+                        <Table>
+                            <TableHeader className="bg-white/5">
+                                <TableRow className="h-14 border-white/5">
+                                    <TableHead className="text-[10px] font-black uppercase text-gray-500 pl-8">Asset</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase text-gray-500">Entry</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase text-gray-500">Exit</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase text-gray-500">Qty</TableHead>
+                                    <TableHead className="text-right text-[10px] font-black uppercase text-gray-500 pr-8">Net P&L</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {tradesLedger.length > 0 ? tradesLedger.map((trade: any, i: number) => (
+                                    <TableRow key={i} className="h-20 border-white/5 hover:bg-white/[0.03]">
+                                        <TableCell className="text-[11px] font-black text-white pl-8">{trade.symbol || '---'}</TableCell>
+                                        <TableCell className="text-[11px] font-bold text-gray-400">₹{trade.entryPrice}</TableCell>
+                                        <TableCell className="text-[11px] font-bold text-gray-400">₹{trade.exitPrice}</TableCell>
+                                        <TableCell className="text-[11px] font-bold text-gray-300">{trade.quantity}</TableCell>
+                                        <TableCell className={cn("text-right pr-8 text-sm font-black", trade.pnl >= 0 ? "text-green-400" : "text-red-400")}>
+                                            {trade.pnl >= 0 ? '+' : ''}₹{Number(trade.pnl).toLocaleString()}
+                                        </TableCell>
+                                    </TableRow>
+                                )) : <TableRow><TableCell colSpan={5} className="py-20 text-center text-gray-700 font-black uppercase text-[10px]">No completed trades recorded</TableCell></TableRow>}
                             </TableBody>
                         </Table>
                     </div>
@@ -324,7 +367,7 @@ function TerminalInsight({ email }: { email: string }) {
                             </TableHeader>
                             <TableBody>
                                 {pnlRecords.length > 0 ? pnlRecords.map((rec: any, i: number) => (
-                                    <TableRow key={i} className="h-16 border-white/5 hover:bg-white/[0.03] transition-colors">
+                                    <TableRow key={i} className="h-16 border-white/5 hover:bg-white/[0.03]">
                                         <TableCell className="text-[11px] font-bold text-gray-400 pl-8">{rec.date ? format(new Date(rec.date), 'dd MMM yyyy') : 'N/A'}</TableCell>
                                         <TableCell className="text-[11px] font-medium">₹{rec.startBalance?.toLocaleString()}</TableCell>
                                         <TableCell className="text-[11px] font-medium">₹{rec.endBalance?.toLocaleString()}</TableCell>
@@ -332,7 +375,7 @@ function TerminalInsight({ email }: { email: string }) {
                                             {rec.netPnl >= 0 ? '+' : ''}₹{rec.netPnl?.toLocaleString()}
                                         </TableCell>
                                     </TableRow>
-                                )) : <TableRow><TableCell colSpan={4} className="py-20 text-center text-gray-700 font-black uppercase text-[10px] tracking-widest">No historical P&L records</TableCell></TableRow>}
+                                )) : <TableRow><TableCell colSpan={4} className="py-20 text-center text-gray-700 font-black uppercase text-[10px]">No historical records</TableCell></TableRow>}
                             </TableBody>
                         </Table>
                     </div>

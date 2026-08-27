@@ -98,6 +98,16 @@ export async function updateTerminalStatus(email: string, status: 'active' | 'bl
     });
 }
 
+/**
+ * Force Overwrite Terminal Access Key (v1.5)
+ */
+export async function resetTerminalPassword(email: string, newPassword: string) {
+    return await callStockmint('/api/users/reset-password', 'POST', {
+        email,
+        newPassword
+    });
+}
+
 export async function updateProfile(formData: FormData) {
   const id = formData.get('id') as string;
   const fullName = formData.get('full_name') as string;
