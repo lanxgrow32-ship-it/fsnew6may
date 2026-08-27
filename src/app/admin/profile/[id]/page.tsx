@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, use, useTransition } from 'react';
+import { useState, useEffect, use, useTransition, useActionState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -117,8 +117,7 @@ function TerminalInsight({ email }: { email: string }) {
                 <Card className="bg-black/40 border-white/5">
                     <CardHeader className="py-4"><CardTitle className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Today's Opening</CardTitle></CardHeader>
                     <CardContent><p className="text-2xl font-black text-white">₹{syncData.openingBalance?.toLocaleString()}</p></CardContent>
-                </Card>
-            </div>
+                </div>
 
             {/* Risk Tiers */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
