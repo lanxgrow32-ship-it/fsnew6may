@@ -2,6 +2,7 @@
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { generateStockmintUsername, getBalanceFromPlanName, getAutoClassification } from '@/lib/plan-utils';
 import jwt from 'jsonwebtoken';
@@ -189,7 +190,7 @@ export async function syncAccountCredentials(accountId: string) {
 
 /**
  * Generates a secure SSO teleport URL for the StockMint Admin Bridge.
- * Hardened v1.2: Uses standardized JWT signing and explicit production URL.
+ * Updated to include admin_email in payload as per developer spec.
  */
 export async function getHubSsoUrl(tradingUsername: string) {
     const secret = process.env.FS_ADMIN_BRIDGE_SECRET;
@@ -197,10 +198,21 @@ export async function getHubSsoUrl(tradingUsername: string) {
         return { error: 'Admin Bridge Security Secret is not configured in .env' };
     }
 
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'Unauthorized: Admin session required.' };
+    }
+
     try {
-        // Standard JWT generation with 60-second expiry
+        // Updated payload according to StockMint developer spec
+        // iat is automatically added by sign()
         const token = jwt.sign(
-            { target_trading_username: tradingUsername },
+            { 
+                admin_email: user.email,
+                target_trading_username: tradingUsername 
+            },
             secret,
             { expiresIn: '60s' }
         );
