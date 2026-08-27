@@ -27,7 +27,9 @@ import {
     IndianRupee,
     LayoutGrid,
     Target as TargetIcon,
-    Wifi
+    Wifi,
+    Copy,
+    ExternalLink
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -75,12 +77,13 @@ function TerminalInsight({ email }: { email: string }) {
     const fetchSync = async () => {
         if (!email) return;
         setLoading(true);
-        const res = await getMasterSync(email);
+        // Ensure email is trimmed and lowercased for exact matching
+        const res = await getMasterSync(email.trim().toLowerCase());
         
         if (res.error) {
             toast({ title: "Sync Failed", description: res.error, variant: "destructive" });
         } else {
-            // Handle both {success, data} wrapper and direct payload
+            // PROTOCOL v1.2: StockMint Engine typically returns { success: true, data: { ... } }
             const actualData = res.data || (res.success ? res.data : res);
             setSyncData(actualData);
             setLastSync(new Date());
@@ -124,11 +127,13 @@ function TerminalInsight({ email }: { email: string }) {
         );
     }
 
-    // Normalized Data Mapping (supports multiple API versions)
-    const balance = syncData.balance ?? syncData.live_cash_balance ?? 0;
-    const highWaterMark = syncData.highWaterMark ?? syncData.high_water_mark ?? 0;
+    // PROTOCOL v1.2: Hardened Data Mapping using developers specific nested keys
+    const balance = syncData.financials?.cashBalance ?? syncData.balance ?? syncData.live_cash_balance ?? 0;
+    const highWaterMark = syncData.financials?.highWaterMark ?? syncData.highWaterMark ?? syncData.high_water_mark ?? 0;
+    const overallLossLimit = syncData.risk?.overallLossLimit ?? syncData.maxDrawdownPct ?? syncData.max_drawdown_pct ?? '--';
+    
+    // Auxiliary Mappings
     const openingBalance = syncData.openingBalance ?? syncData.opening_balance ?? 0;
-    const maxDrawdown = syncData.maxDrawdownPct ?? syncData.max_drawdown_pct ?? '--';
     const dailyLoss = syncData.dailyLossPct ?? syncData.daily_loss_pct ?? '--';
     const perTrade = syncData.perTradePct ?? syncData.per_trade_pct ?? '--';
     const trades = syncData.executionRequests ?? syncData.execution_requests ?? [];
@@ -140,7 +145,7 @@ function TerminalInsight({ email }: { email: string }) {
             <div className="flex items-center justify-between px-6 py-3 bg-white/[0.02] border border-white/5 rounded-2xl">
                 <div className="flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Connection: Nominal (v1.2)</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Wifi className="w-3 h-3 text-gray-700" />
@@ -159,8 +164,8 @@ function TerminalInsight({ email }: { email: string }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-6 bg-red-500/5 rounded-3xl border border-red-500/10 flex items-center justify-between">
                     <div className="space-y-1">
-                        <p className="text-[9px] font-black text-red-400 uppercase tracking-widest">Max Drawdown</p>
-                        <p className="text-xl font-bold text-white">{maxDrawdown}%</p>
+                        <p className="text-[9px] font-black text-red-400 uppercase tracking-widest">Overall Risk Limit</p>
+                        <p className="text-xl font-bold text-white">{overallLossLimit}%</p>
                     </div>
                     <ShieldAlert className="w-5 h-5 text-red-500 opacity-30" />
                 </div>
@@ -330,6 +335,7 @@ export default function StockmintInfoPage({ params }: { params: Promise<{ id: st
   const supabase = createClient();
   const [account, setAccount] = useState<any>(null);
   const [isFetching, setIsFetching] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchAccount = async () => {
