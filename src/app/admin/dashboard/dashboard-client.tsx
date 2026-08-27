@@ -3,12 +3,36 @@
 import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, Ticket, User, LogOut, Wallet, UserPlus, Loader2, Banknote, LineChart, Swords, Users, Newspaper, UserCheck, Megaphone, ShieldAlert, Globe, LayoutGrid, Database, RefreshCw, Package, Zap } from 'lucide-react';
+import { 
+    Home, 
+    Ticket, 
+    User, 
+    LogOut, 
+    Wallet, 
+    UserPlus, 
+    Loader2, 
+    Banknote, 
+    LineChart, 
+    Swords, 
+    Users, 
+    Newspaper, 
+    UserCheck, 
+    ShieldAlert, 
+    Globe, 
+    LayoutGrid, 
+    Database, 
+    RefreshCw, 
+    Package, 
+    Zap,
+    Link2,
+    ShieldCheck,
+    XCircle
+} from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -153,7 +177,17 @@ function UserTableSkeleton() {
     )
 }
 
-export default function AdminDashboardClient({ initialProfiles, initialCount, masterView }: { initialProfiles: any[], initialCount: number, masterView: boolean }) {
+export default function AdminDashboardClient({ 
+    initialProfiles, 
+    initialCount, 
+    masterView,
+    isBridgeConfigured
+}: { 
+    initialProfiles: any[], 
+    initialCount: number, 
+    masterView: boolean,
+    isBridgeConfigured: boolean
+}) {
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
   const [totalDbCount, setTotalDbCount] = useState(initialCount);
@@ -363,17 +397,42 @@ export default function AdminDashboardClient({ initialProfiles, initialCount, ma
             <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}><AdminNav /></ClientOnly>
            </div>
         </header>
-        <main className="p-4 md:p-8 bg-muted/40">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        <main className="p-4 md:p-8 bg-muted/40 space-y-8">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {stats.map(stat => (
                     <Card key={stat.title} className="shadow-sm border-white/5 bg-card">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.title}</CardTitle><stat.icon className="h-4 w-4 text-muted-foreground" /></CardHeader>
                         <CardContent><div className="text-3xl font-black text-foreground">{stat.value}</div></CardContent>
                     </Card>
                 ))}
+                
+                {/* SSO Bridge Status Widget */}
+                <Card className={cn("shadow-sm border-white/5", isBridgeConfigured ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20")}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Hub Bridge Status</CardTitle>
+                        {isBridgeConfigured ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
+                    </CardHeader>
+                    <CardContent>
+                        <div className={cn("text-lg font-black uppercase tracking-tighter", isBridgeConfigured ? "text-green-400" : "text-red-400")}>
+                            {isBridgeConfigured ? "SECURE TUNNEL" : "BRIDGE OFFLINE"}
+                        </div>
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                            {isBridgeConfigured ? "Handshake Key Detected" : "Secret Missing in .env"}
+                        </p>
+                    </CardContent>
+                </Card>
             </div>
-            <CreateAdminForm className="w-full md:hidden mb-6" />
-            <ClientOnly fallback={<UserTableSkeleton />}><UserTable profiles={profiles || []} onUserDelete={onUserDelete} onUserDeleteError={handleUserDeleteError} onUserUpdate={handleUserUpdate} /></ClientOnly>
+            
+            <CreateAdminForm className="w-full md:hidden" />
+            
+            <ClientOnly fallback={<UserTableSkeleton />}>
+                <UserTable 
+                    profiles={profiles || []} 
+                    onUserDelete={onUserDelete} 
+                    onUserDeleteError={handleUserDeleteError} 
+                    onUserUpdate={handleUserUpdate} 
+                />
+            </ClientOnly>
         </main>
       </SidebarInset>
     </SidebarProvider>
