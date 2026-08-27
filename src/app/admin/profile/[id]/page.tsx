@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use, useTransition, useActionState } from 'react';
@@ -32,7 +31,8 @@ import {
     ExternalLink,
     Users,
     ChevronRight,
-    Eye
+    Eye,
+    EyeOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile, resetPassword } from './actions';
@@ -41,6 +41,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string; }) => (
+    <div className={cn('bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg', className)}>
+        {children}
+    </div>
+);
 
 const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: string | number, icon: any, color: string }) => (
     <Card className="bg-muted/20 border-white/5">
@@ -236,8 +242,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     <Card className="bg-muted/10 border-white/5">
                         <CardHeader><CardTitle className="text-white text-lg font-bold">Market Access</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            <StatCard title="Wallet Balance" value={`₹${profile?.wallet_balance?.toLocaleString() || 0}`} icon={IndianRupee} color="text-green-400" />
-                            <StatCard title="Referral Credit" value={`₹${profile?.referral_balance?.toLocaleString() || 0}`} icon={Users} color="text-amber-400" />
+                            <StatCard title="Wallet Balance" value={`₹${(profile?.wallet_balance || 0).toLocaleString()}`} icon={IndianRupee} color="text-green-400" />
+                            <StatCard title="Referral Credit" value={`₹${(profile?.referral_balance || 0).toLocaleString()}`} icon={Users} color="text-amber-400" />
                         </CardContent>
                     </Card>
 
