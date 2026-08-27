@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use, useTransition, useActionState } from 'react';
@@ -79,20 +78,27 @@ function TerminalInsight({ email }: { email: string }) {
     const { toast } = useToast();
 
     const fetchSync = async () => {
+        if (!email) return;
         setLoading(true);
         const res = await getMasterSync(email);
-        if (res.error) toast({ title: "Sync Failed", description: res.error, variant: "destructive" });
-        else setSyncData(res.data);
+        if (res.error) {
+            toast({ title: "Sync Failed", description: res.error, variant: "destructive" });
+        } else {
+            setSyncData(res.data);
+        }
         setLoading(false);
     };
 
-    useEffect(() => { fetchSync(); }, [email]);
+    useEffect(() => { 
+        fetchSync(); 
+    }, [email]);
 
     const handleAction = (action: () => Promise<any>, successMsg: string) => {
         startTransition(async () => {
             const res = await action();
-            if (res.error) toast({ title: "Action Failed", description: res.error, variant: "destructive" });
-            else {
+            if (res.error) {
+                toast({ title: "Action Failed", description: res.error, variant: "destructive" });
+            } else {
                 toast({ title: successMsg });
                 fetchSync();
             }
@@ -117,7 +123,8 @@ function TerminalInsight({ email }: { email: string }) {
                 <Card className="bg-black/40 border-white/5">
                     <CardHeader className="py-4"><CardTitle className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Today's Opening</CardTitle></CardHeader>
                     <CardContent><p className="text-2xl font-black text-white">₹{syncData.openingBalance?.toLocaleString()}</p></CardContent>
-                </div>
+                </Card>
+            </div>
 
             {/* Risk Tiers */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -228,7 +235,7 @@ function TerminalInsight({ email }: { email: string }) {
                             <TableBody>
                                 {syncData.executionRequests?.length > 0 ? syncData.executionRequests.map((req: any, i: number) => (
                                     <TableRow key={i} className="border-white/5 hover:bg-white/[0.02]">
-                                        <TableCell className="text-[10px] font-mono text-gray-400">{format(new Date(req.createdAt), 'dd MMM, HH:mm:ss')}</TableCell>
+                                        <TableCell className="text-[10px] font-mono text-gray-400">{req.createdAt ? format(new Date(req.createdAt), 'dd MMM, HH:mm:ss') : 'N/A'}</TableCell>
                                         <TableCell className="text-[10px] font-black text-white">{req.symbol}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className={cn("text-[8px] font-black uppercase px-2", req.side === 'BUY' ? "text-green-400 border-green-500/20" : "text-red-400 border-red-500/20")}>
@@ -262,7 +269,7 @@ function TerminalInsight({ email }: { email: string }) {
                             <TableBody>
                                 {syncData.pnlRecords?.length > 0 ? syncData.pnlRecords.map((rec: any, i: number) => (
                                     <TableRow key={i} className="border-white/5 hover:bg-white/[0.02]">
-                                        <TableCell className="text-[10px] font-bold text-gray-400">{format(new Date(rec.date), 'dd MMM yyyy')}</TableCell>
+                                        <TableCell className="text-[10px] font-bold text-gray-400">{rec.date ? format(new Date(rec.date), 'dd MMM yyyy') : 'N/A'}</TableCell>
                                         <TableCell className="text-[10px] font-medium">₹{rec.startBalance?.toLocaleString()}</TableCell>
                                         <TableCell className="text-[10px] font-medium">₹{rec.endBalance?.toLocaleString()}</TableCell>
                                         <TableCell className={cn("text-right text-[10px] font-black", rec.netPnl >= 0 ? "text-green-400" : "text-red-400")}>
@@ -316,8 +323,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     const formData = new FormData(e.currentTarget);
     formData.append('id', id);
     const res = await updateProfile(formData);
-    if (res.error) toast({ title: "Error", description: res.error, variant: "destructive" });
-    else toast({ title: "Profile Updated" });
+    if (res.error) {
+        toast({ title: "Error", description: res.error, variant: "destructive" });
+    } else {
+        toast({ title: "Profile Updated" });
+    }
     setIsSaving(false);
   };
 
@@ -327,14 +337,18 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     <div className="bg-slate-950 min-h-screen font-poppins pb-20 text-gray-200">
         <header className="flex h-16 items-center gap-4 px-6 border-b border-white/5 bg-slate-900/50 sticky top-0 z-50">
             <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full text-white"><ArrowLeft className="h-5 w-5"/></Button>
-            <div>
-                <h1 className="text-xl font-bold tracking-tight text-white">{profile.full_name}</h1>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{profile.email}</p>
-            </div>
+            {profile && (
+                <div>
+                    <h1 className="text-xl font-bold tracking-tight text-white">{profile.full_name}</h1>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{profile.email}</p>
+                </div>
+            )}
             <div className="ml-auto flex items-center gap-3">
-                <Badge variant="outline" className={cn("text-[9px] font-black border-none px-3", profile.kyc_status === 'verified' ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400")}>
-                    {profile.kyc_status.toUpperCase()}
-                </Badge>
+                {profile && (
+                    <Badge variant="outline" className={cn("text-[9px] font-black border-none px-3", profile.kyc_status === 'verified' ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400")}>
+                        {profile.kyc_status?.toUpperCase()}
+                    </Badge>
+                )}
             </div>
         </header>
 
@@ -382,11 +396,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label className="text-[10px] text-gray-500 font-bold uppercase">Full Name</Label>
-                                        <Input name="full_name" defaultValue={profile.full_name} className="bg-black/40 border-white/10 text-white h-11" />
+                                        <Input name="full_name" defaultValue={profile?.full_name} className="bg-black/40 border-white/10 text-white h-11" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] text-gray-500 font-bold uppercase">KYC Protocol</Label>
-                                        <Select name="kyc_status" defaultValue={profile.kyc_status}>
+                                        <Select name="kyc_status" defaultValue={profile?.kyc_status}>
                                             <SelectTrigger className="bg-black/40 border-white/10 text-white h-11"><SelectValue/></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="pending">Pending</SelectItem>
@@ -412,8 +426,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     <Card className="bg-muted/10 border-white/5">
                         <CardHeader><CardTitle className="text-white text-lg font-bold">Market Access</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            <StatCard title="Wallet Balance" value={`₹${profile.wallet_balance?.toLocaleString()}`} icon={IndianRupee} color="text-green-400" />
-                            <StatCard title="Referral Credit" value={`₹${profile.referral_balance?.toLocaleString()}`} icon={Users} color="text-amber-400" />
+                            <StatCard title="Wallet Balance" value={`₹${profile?.wallet_balance?.toLocaleString()}`} icon={IndianRupee} color="text-green-400" />
+                            <StatCard title="Referral Credit" value={`₹${profile?.referral_balance?.toLocaleString()}`} icon={Users} color="text-amber-400" />
                         </CardContent>
                     </Card>
 
@@ -438,11 +452,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                         <CardContent className="space-y-4">
                             <div className="flex items-center justify-between p-4 bg-black/40 rounded-xl border border-red-500/10">
                                 <Label className="font-bold text-red-400 text-xs">Flag as Breached</Label>
-                                <Switch checked={profile.is_breached} readOnly />
+                                <Switch checked={profile?.is_breached} readOnly />
                             </div>
                             <div className="p-3 bg-red-500/10 rounded-lg">
                                 <p className="text-[9px] font-bold text-red-400 uppercase tracking-widest">Breach Context</p>
-                                <p className="text-xs text-gray-400 mt-1 italic">"{profile.breach_reason || 'No breach recorded'}"</p>
+                                <p className="text-xs text-gray-400 mt-1 italic">"{profile?.breach_reason || 'No breach recorded'}"</p>
                             </div>
                         </CardContent>
                     </Card>
