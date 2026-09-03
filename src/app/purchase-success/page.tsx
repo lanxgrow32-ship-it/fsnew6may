@@ -72,7 +72,7 @@ function SuccessContent() {
                             <div className="space-y-4">
                                 <div className="flex justify-between items-start">
                                     <div className="min-w-0">
-                                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Account info</p>
+                                        <p className="text-[9px] font-bold text-gray-500 tracking-widest mb-1">Account info</p>
                                         <p className="text-sm font-bold text-white truncate">{planName}</p>
                                     </div>
                                     <p className="text-sm font-bold text-primary">₹{Number(amount).toLocaleString()}</p>
@@ -84,13 +84,13 @@ function SuccessContent() {
 
                     <ReceiptPrinter.Output>
                         <ReceiptPrinter.Paper>
-                            <div className="space-y-6 text-center">
+                            <div className="space-y-4 md:space-y-6 text-center">
                                 <div className="space-y-1">
-                                    <h2 className="text-2xl font-black tracking-tighter italic text-slate-950">FundedStock</h2>
-                                    <p className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.4em]">Payment receipt</p>
+                                    <h2 className="text-xl md:text-2xl font-black tracking-tighter italic text-slate-950">FundedStock</h2>
+                                    <p className="text-[8px] font-bold text-gray-500 tracking-[0.2em]">Payment receipt</p>
                                 </div>
                                 
-                                <div className="border-y border-dashed border-slate-300 py-6 space-y-4">
+                                <div className="border-y border-dashed border-slate-300 py-3 md:py-6 space-y-3 md:space-y-4">
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Trading plan</span><span className="text-slate-950">{planName}</span></div>
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Paid using</span><span className="text-slate-950">{method}</span></div>
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Order ID</span><span className="text-slate-950 font-mono text-[9px]">{transactionId.substring(0, 14)}</span></div>
@@ -99,25 +99,25 @@ function SuccessContent() {
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-end">
                                         <p className="text-[10px] font-bold text-slate-950">Total paid</p>
-                                        <p className="text-3xl font-black italic text-slate-950">₹{Number(amount).toLocaleString()}</p>
+                                        <p className="text-2xl md:text-3xl font-black italic text-slate-950">₹{Number(amount).toLocaleString()}</p>
                                     </div>
                                     
                                     {isManual ? (
-                                        <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 text-left">
-                                            <p className="text-[11px] font-bold text-amber-600 uppercase">Status: Being checked</p>
-                                            <p className="text-[9px] text-amber-500 mt-1 leading-relaxed">Our payment team is checking your transaction ID. This usually takes 15-60 minutes. Please check your dashboard soon.</p>
+                                        <div className="bg-amber-500/10 p-3 md:p-4 rounded-xl border border-amber-500/20 text-left">
+                                            <p className="text-[10px] md:text-[11px] font-bold text-amber-600">Status: Being checked</p>
+                                            <p className="text-[9px] text-amber-500 mt-1 leading-relaxed">Our payment team is checking your transaction ID. This usually takes 15-60 minutes.</p>
                                         </div>
                                     ) : (
-                                        <div className="bg-green-500/10 p-4 rounded-2xl border border-green-500/20 text-left">
-                                            <p className="text-[11px] font-bold text-green-600 uppercase">Status: Ready to trade</p>
+                                        <div className="bg-green-500/10 p-3 md:p-4 rounded-xl border border-green-500/20 text-left">
+                                            <p className="text-[10px] md:text-[11px] font-bold text-green-600">Status: Ready to trade</p>
                                             <p className="text-[9px] text-green-500 mt-1 leading-relaxed">Your account is ready! You can find your login details in your trader dashboard.</p>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="pt-6 flex flex-col items-center gap-2">
-                                    <div className="w-full h-10 bg-slate-950 flex items-center justify-center">
-                                        <p className="text-[10px] text-white font-mono tracking-[0.4em]">{transactionId.substring(0, 12).toUpperCase()}</p>
+                                <div className="pt-4 md:pt-6 flex flex-col items-center gap-2">
+                                    <div className="w-full h-8 md:h-10 bg-slate-950 flex items-center justify-center">
+                                        <p className="text-[9px] md:text-[10px] text-white font-mono tracking-[0.4em]">{transactionId.substring(0, 12).toUpperCase()}</p>
                                     </div>
                                     <p className="text-[8px] text-gray-400 font-bold">Thank you for joining</p>
                                 </div>
@@ -126,7 +126,7 @@ function SuccessContent() {
                     </ReceiptPrinter.Output>
                 </ReceiptPrinter.Root>
 
-                <div className={cn("mt-12 space-y-4 transition-all duration-1000", stage === 'complete' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
+                <div className={cn("mt-8 md:mt-12 space-y-4 transition-all duration-1000", stage === 'complete' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
                     <Button asChild size="lg" className="w-full h-14 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/30">
                         <Link href="/welcome">
                             <LayoutDashboard className="mr-3 h-5 w-5" />

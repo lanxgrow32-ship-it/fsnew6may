@@ -222,7 +222,7 @@ function ReceiptPrinterStatus({ children, className, ...props }: ReceiptPrinterS
 function ReceiptPrinterPaper({ children, className, style, ...props }: ReceiptPrinterPaperProps) {
   return (
     <article
-      className={cn("relative z-10 min-h-64 md:min-h-80 bg-white px-6 md:px-8 pt-8 md:pt-10 pb-10 md:pb-12 font-mono text-slate-950 shadow-sm", className)}
+      className={cn("relative z-10 min-h-48 md:min-h-80 bg-white px-4 md:px-8 pt-6 md:pt-10 pb-8 md:pb-12 font-mono text-slate-950 shadow-sm", className)}
       style={{ clipPath: receiptClipPath, ...style }}
       {...props}
     >
@@ -238,7 +238,7 @@ function ReceiptPrinterOutput({ children, className, ...props }: ReceiptPrinterO
   const shouldUseSteppedFeed = feedMotion === "stepped" && stage === "printing" && shouldMove;
 
   return (
-    <div className={cn("relative z-50 -mt-4 h-[28rem] md:h-[35rem] w-[calc(90%+1rem)] md:w-[calc(85%+3rem)] max-w-full overflow-hidden px-4 md:px-6", className)} {...props}>
+    <div className={cn("relative z-50 -mt-4 h-[24rem] md:h-[35rem] w-[calc(90%+1rem)] md:w-[calc(85%+3rem)] max-w-full overflow-hidden px-4 md:px-6", className)} {...props}>
       {isReceiptVisible ? (
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-6 -top-1 z-20 h-2 bg-black/50 blur-[4px]" />
       ) : null}
