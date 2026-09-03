@@ -6,7 +6,7 @@ import { ReceiptPrinter, type ReceiptPrinterStage } from '@/components/ui/receip
 import { Button } from '@/components/ui/button';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Play, ShieldAlert, MessageSquare } from 'lucide-react';
+import { RefreshCw, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function ReceiptTester() {
@@ -38,9 +38,9 @@ export default function ReceiptTester() {
                         <ReceiptPrinter.Screen className={cn(stage === 'complete' && "border-green-500/20")}>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="text-[9px] font-bold text-gray-500 tracking-widest mb-1">Session target</p>
-                                        <p className="text-sm font-bold text-white">10 Lakh Evaluation</p>
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-bold text-gray-500 tracking-widest mb-1">Account info</p>
+                                        <p className="text-sm font-bold text-white truncate">10 Lakh Evaluation</p>
                                     </div>
                                     <p className="text-sm font-bold text-primary">₹12,999</p>
                                 </div>
@@ -58,27 +58,27 @@ export default function ReceiptTester() {
                                 </div>
                                 
                                 <div className="border-y border-dashed border-slate-300 py-3 md:py-6 space-y-3 md:space-y-4">
-                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Product</span><span className="text-slate-950">10L Evaluation</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Trading plan</span><span className="text-slate-950">10L Evaluation</span></div>
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Method</span><span className="text-slate-950">Manual UPI</span></div>
-                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">UTR Ref</span><span className="text-slate-950 font-mono text-[9px]">992104558231</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Order ID</span><span className="text-slate-950 font-mono text-[9px]">992104558231</span></div>
                                 </div>
 
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-end">
-                                        <p className="text-[10px] font-bold text-slate-950">Final cost</p>
+                                        <p className="text-[10px] font-bold text-slate-950">Total paid</p>
                                         <p className="text-2xl md:text-3xl font-black italic text-slate-950">₹12,999</p>
                                     </div>
                                     <div className="bg-amber-500/10 p-3 md:p-4 rounded-xl border border-amber-500/20 text-left">
                                         <p className="text-[10px] md:text-[11px] font-bold text-amber-600">Status: Being checked</p>
-                                        <p className="text-[9px] text-amber-500 mt-1">Our payment team will verify your UTR shortly.</p>
+                                        <p className="text-[9px] text-amber-500 mt-1">Our payment team will verify your transaction shortly.</p>
                                     </div>
                                 </div>
 
                                 <div className="pt-4 md:pt-6 flex flex-col items-center gap-2">
                                     <div className="w-full h-8 md:h-10 bg-slate-950 flex items-center justify-center">
-                                        <p className="text-[9px] md:text-[10px] text-white font-mono tracking-[0.4em]">FS2-MOBILE-READY</p>
+                                        <p className="text-[9px] md:text-[10px] text-white font-mono tracking-[0.4em]">992104558231</p>
                                     </div>
-                                    <p className="text-[8px] text-gray-400 font-bold">Digital fingerprint verified</p>
+                                    <p className="text-[8px] text-gray-400 font-bold">Thank you for joining</p>
                                 </div>
                             </div>
                         </ReceiptPrinter.Paper>

@@ -10,13 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { 
     LayoutDashboard, 
     MessageSquare, 
-    ArrowRight, 
     Loader2, 
-    Sparkles, 
-    ShieldCheck, 
     CheckCircle,
-    ChevronRight,
-    Home
+    ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -92,7 +88,7 @@ function SuccessContent() {
                                 
                                 <div className="border-y border-dashed border-slate-300 py-3 md:py-6 space-y-3 md:space-y-4">
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Trading plan</span><span className="text-slate-950">{planName}</span></div>
-                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Paid using</span><span className="text-slate-950">{method}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Method</span><span className="text-slate-950">{method}</span></div>
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Order ID</span><span className="text-slate-950 font-mono text-[9px]">{transactionId.substring(0, 14)}</span></div>
                                 </div>
 

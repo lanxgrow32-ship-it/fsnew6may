@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ReceiptPrinter, type ReceiptPrinterStage } from '@/components/ui/receipt-printer';
-import { MessageSquare, LogOut, ChevronLeft, ShieldAlert } from 'lucide-react';
+import { MessageSquare, LogOut } from 'lucide-react';
 import { signOut } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -57,7 +57,7 @@ export function PendingView({ profile, pendingAccount }: { profile: any, pending
                                 </div>
                                 
                                 <div className="border-y border-dashed border-slate-300 py-3 md:py-4 space-y-3">
-                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Item</span><span className="text-slate-900">{planName}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Trading plan</span><span className="text-slate-900">{planName}</span></div>
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Date</span><span className="text-slate-900">{date}</span></div>
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Order ID</span><span className="text-slate-900 font-mono text-[9px]">{utr}</span></div>
                                 </div>
@@ -68,15 +68,15 @@ export function PendingView({ profile, pendingAccount }: { profile: any, pending
                                         <p className="text-2xl font-black italic text-slate-900">₹{amountPaid.toLocaleString()}</p>
                                     </div>
                                     
-                                    <div className="bg-slate-100 p-3 md:p-4 rounded-xl border border-slate-200">
+                                    <div className="bg-slate-100 p-3 md:p-4 rounded-xl border border-slate-200 text-left">
                                         <p className="text-[10px] md:text-[11px] font-bold text-slate-900 tracking-tight">Status: Being checked</p>
-                                        <p className="text-[9px] text-slate-500 mt-1 leading-relaxed">Our team is checking your transaction ID. We will give you access soon.</p>
+                                        <p className="text-[9px] text-slate-500 mt-1 leading-relaxed">Our payment team is checking your transaction ID. We will give you access soon.</p>
                                     </div>
                                 </div>
 
                                 <div className="pt-4 flex flex-col items-center gap-2">
                                     <div className="w-full h-8 bg-slate-950 flex items-center justify-center">
-                                        <p className="text-[9px] text-white font-mono tracking-[0.4em]">SECURE-ID-READY</p>
+                                        <p className="text-[9px] text-white font-mono tracking-[0.4em]">{utr.substring(0, 12).toUpperCase()}</p>
                                     </div>
                                     <p className="text-[8px] text-gray-400 font-bold">Thank you for joining</p>
                                 </div>
