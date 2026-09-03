@@ -93,9 +93,9 @@ const printingKeyframeTimes = [
 ];
 
 const statusLabels: Record<ReceiptPrinterStage, ReactNode> = {
-  processing: "Securing Transaction",
-  printing: "Printing Receipt",
-  complete: "Protocol Finalized",
+  processing: "Checking details",
+  printing: "Making receipt",
+  complete: "All done",
 };
 
 function useReceiptPrinter(component: string) {
@@ -205,7 +205,7 @@ function ReceiptPrinterStatus({ children, className, ...props }: ReceiptPrinterS
         <AnimatePresence initial={false} mode="sync">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="col-start-1 row-start-1 truncate font-black text-gray-500 text-[10px] uppercase tracking-[0.2em] leading-none"
+            className="col-start-1 row-start-1 truncate font-black text-gray-500 text-[10px] uppercase tracking-widest leading-none"
             exit={{ opacity: animate ? 0 : 1, y: shouldMove ? -4 : 0 }}
             initial={{ opacity: animate ? 0 : 1, y: shouldMove ? 4 : 0 }}
             key={stage}
