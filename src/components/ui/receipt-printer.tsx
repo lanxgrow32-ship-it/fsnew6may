@@ -137,7 +137,7 @@ function ReceiptPrinterRoot({
 
 function ReceiptPrinterMachine({ children, className, ...props }: ReceiptPrinterMachineProps) {
   return (
-    <div className={cn("relative isolate w-full overflow-hidden rounded-[40px] border border-white/10 bg-slate-900 p-3 pb-8 shadow-2xl [--printer-radius:1.5rem] [--printer-inset:0.75rem] [--printer-inner-radius:calc(var(--printer-radius)-var(--printer-inset))]", className)} {...props}>
+    <div className={cn("relative isolate w-full overflow-hidden rounded-[32px] md:rounded-[40px] border border-white/10 bg-slate-900 p-3 pb-6 md:pb-8 shadow-2xl [--printer-radius:1.5rem] [--printer-inset:0.75rem] [--printer-inner-radius:calc(var(--printer-radius)-var(--printer-inset))]", className)} {...props}>
       {children}
       <div
         aria-hidden="true"
@@ -149,7 +149,7 @@ function ReceiptPrinterMachine({ children, className, ...props }: ReceiptPrinter
 
 function ReceiptPrinterHeader({ children, className, ...props }: ReceiptPrinterHeaderProps) {
   return (
-    <div className={cn("relative z-10 flex h-11 items-start justify-between px-2", className)} {...props}>
+    <div className={cn("relative z-10 flex h-10 md:h-11 items-start justify-between px-2", className)} {...props}>
       {children}
     </div>
   );
@@ -205,7 +205,7 @@ function ReceiptPrinterStatus({ children, className, ...props }: ReceiptPrinterS
         <AnimatePresence initial={false} mode="sync">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="col-start-1 row-start-1 truncate font-black text-gray-500 text-[10px] uppercase tracking-widest leading-none"
+            className="col-start-1 row-start-1 truncate font-bold text-gray-500 text-[10px] leading-none"
             exit={{ opacity: animate ? 0 : 1, y: shouldMove ? -4 : 0 }}
             initial={{ opacity: animate ? 0 : 1, y: shouldMove ? 4 : 0 }}
             key={stage}
@@ -222,7 +222,7 @@ function ReceiptPrinterStatus({ children, className, ...props }: ReceiptPrinterS
 function ReceiptPrinterPaper({ children, className, style, ...props }: ReceiptPrinterPaperProps) {
   return (
     <article
-      className={cn("relative z-10 min-h-80 bg-white px-8 pt-10 pb-12 font-mono text-slate-950 shadow-sm", className)}
+      className={cn("relative z-10 min-h-64 md:min-h-80 bg-white px-6 md:px-8 pt-8 md:pt-10 pb-10 md:pb-12 font-mono text-slate-950 shadow-sm", className)}
       style={{ clipPath: receiptClipPath, ...style }}
       {...props}
     >
@@ -238,7 +238,7 @@ function ReceiptPrinterOutput({ children, className, ...props }: ReceiptPrinterO
   const shouldUseSteppedFeed = feedMotion === "stepped" && stage === "printing" && shouldMove;
 
   return (
-    <div className={cn("relative z-50 -mt-4 h-[35rem] w-[calc(85%+3rem)] max-w-full overflow-hidden px-6", className)} {...props}>
+    <div className={cn("relative z-50 -mt-4 h-[28rem] md:h-[35rem] w-[calc(90%+1rem)] md:w-[calc(85%+3rem)] max-w-full overflow-hidden px-4 md:px-6", className)} {...props}>
       {isReceiptVisible ? (
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-6 -top-1 z-20 h-2 bg-black/50 blur-[4px]" />
       ) : null}

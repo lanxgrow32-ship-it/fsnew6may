@@ -14,13 +14,12 @@ export function PendingView({ profile, pendingAccount }: { profile: any, pending
     const [stage, setStage] = useState<ReceiptPrinterStage>("processing");
 
     useEffect(() => {
-        // Animation sequence logic
         const timer1 = setTimeout(() => setStage("printing"), 1500);
         const timer2 = setTimeout(() => setStage("complete"), 4500);
         return () => { clearTimeout(timer1); clearTimeout(timer2); };
     }, []);
 
-    const planName = pendingAccount?.plan_name || "Evaluation Plan";
+    const planName = pendingAccount?.plan_name || "Evaluation plan";
     const amountPaid = pendingAccount?.final_amount_paid || 0;
     const utr = pendingAccount?.transaction_id || "N/A";
     const date = new Date().toLocaleDateString('en-IN');
@@ -32,17 +31,17 @@ export function PendingView({ profile, pendingAccount }: { profile: any, pending
                     <ReceiptPrinter.Machine>
                         <ReceiptPrinter.Header>
                             <FundedStockLogo className="h-6 w-6 text-primary opacity-50" />
-                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-white/10 opacity-30">Account Status</Badge>
+                            <Badge variant="outline" className="text-[8px] font-bold border-white/10 opacity-30">Account status</Badge>
                         </ReceiptPrinter.Header>
 
                         <ReceiptPrinter.Screen className={cn(stage === 'complete' && "border-green-500/30 shadow-[inset_0_0_20px_rgba(34,197,94,0.1)]")}>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-start">
                                     <div className="min-w-0">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Status</p>
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Status</p>
                                         <p className="text-sm font-bold text-white truncate">{planName}</p>
                                     </div>
-                                    <p className="text-sm font-black text-primary">₹{amountPaid.toLocaleString()}</p>
+                                    <p className="text-sm font-bold text-primary">₹{amountPaid.toLocaleString()}</p>
                                 </div>
                                 <ReceiptPrinter.Status />
                             </div>
@@ -54,23 +53,23 @@ export function PendingView({ profile, pendingAccount }: { profile: any, pending
                             <div className="space-y-6 text-center">
                                 <div className="space-y-1">
                                     <h2 className="text-xl font-black uppercase tracking-tighter italic">FundedStock</h2>
-                                    <p className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.4em]">Official Receipt</p>
+                                    <p className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.4em]">Official receipt</p>
                                 </div>
                                 
                                 <div className="border-y border-dashed border-slate-300 py-4 space-y-3">
-                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500 uppercase">Item</span><span className="text-slate-900 uppercase">{planName}</span></div>
-                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500 uppercase">Date</span><span className="text-slate-900">{date}</span></div>
-                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500 uppercase">Order ID</span><span className="text-slate-900 font-mono">{utr}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Item</span><span className="text-slate-900">{planName}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Date</span><span className="text-slate-900">{date}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500">Order ID</span><span className="text-slate-900 font-mono text-[9px]">{utr}</span></div>
                                 </div>
 
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-end">
-                                        <p className="text-[10px] font-black uppercase">Total Paid</p>
+                                        <p className="text-[10px] font-bold text-slate-900">Total paid</p>
                                         <p className="text-2xl font-black italic">₹{amountPaid.toLocaleString()}</p>
                                     </div>
                                     
                                     <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
-                                        <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Status: Being Checked</p>
+                                        <p className="text-[11px] font-bold text-slate-900 uppercase tracking-tight">Status: Being checked</p>
                                         <p className="text-[9px] text-slate-500 mt-1 leading-relaxed">Our team is checking your transaction ID. We will give you access as soon as it is verified.</p>
                                     </div>
                                 </div>
@@ -79,7 +78,7 @@ export function PendingView({ profile, pendingAccount }: { profile: any, pending
                                     <div className="w-full h-8 bg-slate-950 flex items-center justify-center">
                                         <p className="text-[9px] text-white font-mono tracking-[0.4em]">SECURE-ID-READY</p>
                                     </div>
-                                    <p className="text-[8px] text-gray-400 uppercase font-bold">Thank you for joining</p>
+                                    <p className="text-[8px] text-gray-400 font-bold uppercase">Thank you for joining</p>
                                 </div>
                             </div>
                         </ReceiptPrinter.Paper>
@@ -88,13 +87,13 @@ export function PendingView({ profile, pendingAccount }: { profile: any, pending
 
                 <div className={cn("mt-12 space-y-4 transition-all duration-1000", stage === 'complete' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
                     <div className="flex flex-col sm:flex-row gap-3">
-                        <Button asChild className="flex-1 h-12 bg-white text-black hover:bg-gray-100 font-black uppercase text-[10px] tracking-widest rounded-2xl">
+                        <Button asChild className="flex-1 h-12 bg-white text-black hover:bg-gray-100 font-bold rounded-2xl">
                             <Link href="/live-chat">
-                                <MessageSquare className="mr-2 h-4 w-4" /> Message Team
+                                <MessageSquare className="mr-2 h-4 w-4" /> Message team
                             </Link>
                         </Button>
                         <form action={signOut} className="flex-1">
-                            <Button variant="outline" className="w-full h-12 bg-black/20 border-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-2xl">
+                            <Button variant="outline" className="w-full h-12 bg-black/20 border-white/10 text-white font-bold rounded-2xl">
                                 <LogOut className="mr-2 h-4 w-4"/> Logout
                             </Button>
                         </form>

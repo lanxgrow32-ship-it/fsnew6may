@@ -87,29 +87,24 @@ const StatCard = ({ title, value, icon, details, progress, progressColor, decora
   </GlassCard>
 );
 
-function CountdownTimer({ expiresAt, label = "Session Remaining" }: { expiresAt: string, label?: string }) {
+function CountdownTimer({ expiresAt, label = "Session remaining" }: { expiresAt: string, label?: string }) {
     const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
 
     useEffect(() => {
         const target = new Date(expiresAt);
-        
         const update = () => {
             const now = new Date();
             const diff = differenceInSeconds(target, now);
-            
             if (diff <= 0) {
                 setTimeLeft('EXPIRED');
                 window.location.reload();
                 return;
             }
-
             const hours = Math.floor(diff / 3600);
             const minutes = Math.floor((diff % 3600) / 60);
             const seconds = diff % 60;
-
             setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
         };
-
         const interval = setInterval(update, 1000);
         update();
         return () => clearInterval(interval);
@@ -119,7 +114,7 @@ function CountdownTimer({ expiresAt, label = "Session Remaining" }: { expiresAt:
         <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex items-center justify-between gap-8 shadow-[0_0_30px_rgba(139,44,245,0.1)]">
             <div className="flex items-center gap-3">
                 <Timer className="h-5 w-5 text-primary animate-pulse" />
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">{label}</p>
+                <p className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">{label}</p>
             </div>
             <p className="text-2xl font-black text-white font-mono tracking-tighter">{timeLeft}</p>
         </div>
@@ -143,7 +138,6 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
 
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
-            {/* Hardened Block Overlay */}
             {isBlocked && (
                 <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 text-center animate-in fade-in">
                     <Card className="w-full max-w-lg bg-slate-900 border-red-500/30 p-12 rounded-[40px] shadow-2xl relative overflow-hidden">
@@ -151,13 +145,13 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                         <div className="mx-auto w-24 h-24 rounded-full bg-red-600/10 flex items-center justify-center border border-red-500/20 shadow-[0_0_50px_rgba(220,38,38,0.2)] mb-8">
                             <ShieldAlert className="h-12 w-12 text-red-500 animate-pulse" />
                         </div>
-                        <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4">Account Restricted</h2>
+                        <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4">Account restricted</h2>
                         <p className="text-gray-400 text-lg font-medium leading-relaxed mb-10">
                             Your 48-hour KYC grace period has expired. Access to trading credentials and terminal stats is restricted until identity verification is complete.
                         </p>
                         <div className="flex flex-col gap-4">
-                            <Button asChild size="lg" className="h-14 rounded-2xl bg-white text-black hover:bg-gray-200 font-black uppercase tracking-widest shadow-xl">
-                                <Link href="/kyc">Complete KYC Now</Link>
+                            <Button asChild size="lg" className="h-14 rounded-2xl bg-white text-black hover:bg-gray-200 font-bold uppercase tracking-widest shadow-xl">
+                                <Link href="/kyc">Complete KYC now</Link>
                             </Button>
                             <Button asChild variant="ghost" className="text-gray-500 hover:text-white font-bold">
                                 <Link href="/welcome" className="flex items-center gap-2"><ChevronLeft className="w-4 h-4"/> Back to Portfolio</Link>
@@ -182,12 +176,6 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                         </nav>
                     </div>
                     <div className="flex items-center gap-3">
-                        <form action={signOut} className="hidden lg:block">
-                            <Button variant="ghost" type="submit" size="sm" className="text-gray-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest gap-2 h-9">
-                                <LogOut className="w-3.5 h-3.5" />
-                                Logout
-                            </Button>
-                        </form>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -229,11 +217,11 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                         <Button variant="outline" size="icon" asChild className="bg-black/20 border-white/10 hover:bg-white/20"><Link href="/welcome"><Grid3x3 className="w-4 h-4"/></Link></Button>
                         <div>
                             <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">{account.plan_name}</h1>
-                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Live Metrics & Hub Access</p>
+                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Live metrics & hub access</p>
                         </div>
                     </div>
-                    {isTrial && <CountdownTimer expiresAt={account.expires_at} label="Trial Run Remaining" />}
-                    {isPro && account.expires_at && <CountdownTimer expiresAt={account.expires_at} label="Pro Cycle Validity" />}
+                    {isTrial && <CountdownTimer expiresAt={account.expires_at} label="Trial run remaining" />}
+                    {isPro && account.expires_at && <CountdownTimer expiresAt={account.expires_at} label="Pro cycle validity" />}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -247,48 +235,48 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
-                                <p className="text-[9px] text-gray-500 uppercase font-black truncate">Initial Capital</p>
+                                <p className="text-[9px] text-gray-500 uppercase font-bold truncate">Initial capital</p>
                                 <p className="text-xs md:text-sm font-bold text-white mt-1 truncate">₹{initialBalance.toLocaleString('en-IN')}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
-                                <p className="text-[9px] text-gray-500 uppercase font-black truncate">Engine Model</p>
-                                <p className="text-xs md:text-sm font-bold text-white mt-1 truncate capitalize">{isTrial ? 'Trial Run' : isPro ? 'Instant Pro' : account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
+                                <p className="text-[9px] text-gray-500 uppercase font-bold truncate">Engine model</p>
+                                <p className="text-xs md:text-sm font-bold text-white mt-1 truncate capitalize">{isTrial ? 'Trial run' : isPro ? 'Instant pro' : account.account_model === 'passthrupay' ? 'PTP' : 'Standard'}</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
-                                <p className="text-[9px] text-gray-500 uppercase font-black truncate">Live Status</p>
-                                <p className="text-[11px] md:text-sm font-bold text-primary mt-1 truncate capitalize whitespace-nowrap overflow-hidden">
-                                    {currentClassification === 'passthenpay' ? 'PassThenPay' : currentClassification.replace(/_/g, ' ')}
+                                <p className="text-[9px] text-gray-500 uppercase font-bold truncate">Live status</p>
+                                <p className="text-[11px] md:text-sm font-bold text-primary mt-1 truncate capitalize">
+                                    {currentClassification === 'passthenpay' ? 'PTP' : currentClassification.replace(/_/g, ' ')}
                                 </p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 min-w-0">
-                                <p className="text-[9px] text-gray-500 uppercase font-black truncate">Account Hub</p>
+                                <p className="text-[9px] text-gray-500 uppercase font-bold truncate">Account hub</p>
                                 <p className={cn("text-xs md:text-sm font-bold mt-1 truncate capitalize", account.status === 'active' ? "text-green-400" : "text-red-400")}>{account.status}</p>
                             </div>
                         </div>
                     </GlassCard>
                     <GlassCard className="p-8 text-center flex flex-col items-center justify-center gap-4">
                         <div className="bg-purple-600/20 p-4 rounded-full"><MessageSquare className="w-8 h-8 text-purple-400"/></div>
-                        <h3 className="text-lg font-bold text-white">Direct Support</h3>
+                        <h3 className="text-lg font-bold text-white">Direct support</h3>
                         <p className="text-sm text-gray-400">Contact our traders desk for account resets or technical help.</p>
-                        <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 border border-purple-400/50 shadow-xl shadow-purple-900/20"><Link href="/welcome?tab=support">Start Session</Link></Button>
+                        <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 border border-purple-400/50 shadow-xl shadow-purple-900/20"><Link href="/welcome?tab=support">Start session</Link></Button>
                     </GlassCard>
                 </div>
 
                 <GlassCard className="p-6 md:p-8 col-span-full relative">
                     <div className="relative z-10">
-                        <h3 className="font-bold mb-4 text-white text-base tracking-wide uppercase">Terminal Credentials</h3>
+                        <h3 className="font-bold mb-4 text-white text-base tracking-wide uppercase">Terminal credentials</h3>
                         <div className="space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div className="bg-black/20 p-4 rounded-xl flex justify-between items-center border border-white/5 overflow-hidden">
-                                    <div className="min-w-0"><p className="text-[10px] text-gray-600 uppercase font-black">Login ID</p><p className="font-bold font-mono text-white mt-1 truncate text-sm">{account.trading_username || 'Verifying Hub...'}</p></div>
+                                    <div className="min-w-0"><p className="text-[10px] text-gray-600 uppercase font-bold">Login ID</p><p className="font-bold font-mono text-white mt-1 truncate text-sm">{account.trading_username || 'Verifying hub...'}</p></div>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-white shrink-0 ml-2" onClick={() => copyText(account.trading_username)}><Copy className="w-4 h-4"/></Button>
                                 </div>
                                 <div className="bg-black/20 p-4 rounded-xl border border-white/5 overflow-hidden">
-                                    <p className="text-[10px] text-gray-600 uppercase font-black">Master Password</p>
+                                    <p className="text-[10px] text-gray-600 uppercase font-bold">Master password</p>
                                     <p className="font-bold font-mono text-white text-sm mt-1 truncate">{account.trading_password || '••••••••'}</p>
                                 </div>
                                 <div className="bg-black/20 p-4 rounded-xl border border-white/5 overflow-hidden">
-                                    <p className="text-[10px] text-gray-600 uppercase font-black">Gateway</p>
+                                    <p className="text-[10px] text-gray-600 uppercase font-bold">Gateway</p>
                                     <a href="https://stockmint.io" target="_blank" rel="noopener noreferrer" className="font-bold text-white hover:text-primary transition-colors flex items-center gap-2 mt-1 truncate text-sm">Stockmint.io <ExternalLink className="w-3.5 h-3.5" /></a>
                                 </div>
                             </div>
@@ -299,8 +287,8 @@ export function AccountDashboardClient({ account, profile, stats, initialBalance
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                      <StatCard title="Balance" value={`₹${(stats.balance || 0).toLocaleString('en-IN')}`} details="Current Balance" progress={initialBalance > 0 ? ((stats.balance || 0) / initialBalance) * 100 : 100} icon={<DollarSign className="w-4 h-4 text-gray-400" />} progressColor="bg-purple-500/20 text-purple-300" decorativeImage="/a.png" isPrimary={true} />
                      <StatCard title="Profit / Loss" value={(stats.totalPnl || 0) >= 0 ? `+₹${(stats.totalPnl || 0).toLocaleString('en-IN')}` : `-₹${Math.abs(stats.totalPnl || 0).toLocaleString('en-IN')}`} details="Total Performance" progress={pnlProgress} icon={<LineChart className="w-4 h-4 text-gray-400"/>} progressColor={(stats.totalPnl || 0) >= 0 ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"} decorativeImage="/b.png" isLoss={(stats.totalPnl || 0) < 0} />
-                    <StatCard title="Win Rate" value={`${stats.winRate || 0}%`} details="Statistical Accuracy" progress={stats.winRate || 0} icon={<Briefcase className="w-4 h-4 text-gray-400"/>} progressColor="bg-sky-500/20 text-sky-300" decorativeImage="/c.png" />
-                    <StatCard title="Trading Days" value={`${stats.activeTradingDays || 0}`} details="Verified Sessions" progress={((stats.activeTradingDays || 0) / 30) * 100} icon={<Calendar className="w-4 h-4 text-gray-400"/>} progressColor="bg-amber-500/20 text-amber-300" decorativeImage="/d.png" />
+                    <StatCard title="Win rate" value={`${stats.winRate || 0}%`} details="Statistical Accuracy" progress={stats.winRate || 0} icon={<Briefcase className="w-4 h-4 text-gray-400"/>} progressColor="bg-sky-500/20 text-sky-300" decorativeImage="/c.png" />
+                    <StatCard title="Trading days" value={`${stats.activeTradingDays || 0}`} details="Verified Sessions" progress={((stats.activeTradingDays || 0) / 30) * 100} icon={<Calendar className="w-4 h-4 text-gray-400"/>} progressColor="bg-amber-500/20 text-amber-300" decorativeImage="/d.png" />
                 </div>
             </main>
         </div>
