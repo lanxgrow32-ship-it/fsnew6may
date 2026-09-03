@@ -2,28 +2,38 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { ReceiptPrinter, type ReceiptPrinterStage } from '@/components/ui/receipt-printer';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ArrowRight, LayoutDashboard, Sparkles, ShieldCheck, Loader2 } from 'lucide-react';
+import { FundedStockLogo } from '@/components/ui/logo';
+import { Badge } from '@/components/ui/badge';
+import { 
+    LayoutDashboard, 
+    MessageSquare, 
+    ArrowRight, 
+    Loader2, 
+    Sparkles, 
+    ShieldCheck, 
+    CheckCircle,
+    ChevronRight,
+    Home
+} from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 function SuccessContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const [mounted, setMounted] = useState(false);
+    const [stage, setStage] = useState<ReceiptPrinterStage>("processing");
     
-    // Values that might cause hydration mismatch if computed during render
     const [transactionId, setTransactionId] = useState<string>('');
     const [amount, setAmount] = useState<string>('0');
     const [planName, setPlanName] = useState<string>('Evaluation Plan');
     const [method, setMethod] = useState<string>('wallet');
 
     useEffect(() => {
-        // Signal that we are on the client
         setMounted(true);
-        
-        // Compute values from URL or fallback
-        // Date.now() must be inside useEffect to avoid hydration mismatch
         const id = searchParams.get('id') || `TX_${Date.now()}`;
         const amt = searchParams.get('amount') || '0';
         const plan = searchParams.get('plan') || 'Evaluation Plan';
@@ -34,11 +44,12 @@ function SuccessContent() {
         setPlanName(plan);
         setMethod(meth);
 
-        // --- GOOGLE TAG MANAGER HANDSHAKE ---
-        // Ensure dataLayer exists
+        // Sequence Animation
+        const timer1 = setTimeout(() => setStage("printing"), 1200);
+        const timer2 = setTimeout(() => setStage("complete"), 4500);
+
+        // GTM Tracking
         (window as any).dataLayer = (window as any).dataLayer || [];
-        
-        // Push the purchase event
         (window as any).dataLayer.push({
             event: "purchase_complete",
             transaction_id: id,
@@ -46,89 +57,101 @@ function SuccessContent() {
             currency: "INR"
         });
 
-        // Set global variables for "Extract data from your page" config
-        (window as any).purchase_transaction_id = id;
-        (window as any).purchase_value = parseFloat(amt) || 0;
-        (window as any).purchase_currency = "INR";
-
-        console.log(`[Conversion Tracking] Dispatched signal for TX: ${id} | Value: ${amt}`);
+        return () => { clearTimeout(timer1); clearTimeout(timer2); };
     }, [searchParams]);
 
-    // Avoid rendering dynamic content that causes mismatches until after hydration
     if (!mounted) {
-        return (
-            <div className="dark min-h-screen bg-slate-950 flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
+        return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
 
+    const isManual = method === 'manual' || method === 'automated';
+
     return (
-        <div className="dark min-h-screen bg-slate-950 font-poppins text-gray-200 relative overflow-hidden flex items-center justify-center p-4">
-            {/* Conversion Data - Hidden IDs for CSS Selector Extraction */}
-            <span id="gtm-transaction-id" className="hidden">{transactionId}</span>
-            <span id="gtm-value" className="hidden">{amount}</span>
-            <span id="gtm-currency" className="hidden">INR</span>
-
-            {/* Background Decor */}
+        <div className="dark min-h-screen bg-slate-950 font-poppins text-gray-200 relative overflow-hidden flex flex-col items-center justify-center p-4">
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-            <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full filter blur-3xl opacity-20" />
+            
+            <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-700">
+                <ReceiptPrinter.Root stage={stage}>
+                    <ReceiptPrinter.Machine>
+                        <ReceiptPrinter.Header>
+                            <FundedStockLogo className="h-6 w-6 text-primary" />
+                            <Badge variant="outline" className="text-[8px] font-black uppercase border-white/10 text-gray-500">Security protocol v2.0</Badge>
+                        </ReceiptPrinter.Header>
 
-            <div className="w-full max-w-xl relative z-10 animate-in fade-in zoom-in-95 duration-500">
-                <Card className="bg-white/5 backdrop-blur-2xl border-white/10 rounded-[40px] shadow-2xl overflow-hidden text-center">
-                    <CardHeader className="pt-12 pb-6">
-                        <div className="mx-auto w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20 shadow-[0_0_50px_rgba(34,197,94,0.2)] mb-6">
-                            <CheckCircle className="h-12 w-12 text-green-400" />
-                        </div>
-                        <CardTitle className="text-4xl font-black text-white tracking-tighter">Purchase Successful</CardTitle>
-                        <CardDescription className="text-gray-400 text-lg mt-2">Your account is being activated.</CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-8 px-10">
-                        <div className="bg-black/40 border border-white/5 rounded-3xl p-8 space-y-6">
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Plan Name</p>
-                                <p className="text-xl font-bold text-white">{planName}</p>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
-                                <div className="text-left space-y-1">
-                                    <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest">Amount Paid</p>
-                                    <p className="text-lg font-bold text-primary">₹{(parseFloat(amount) || 0).toLocaleString('en-IN')}</p>
+                        <ReceiptPrinter.Screen className={cn(stage === 'complete' && "border-green-500/20")}>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-start">
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Terminal Status</p>
+                                        <p className="text-sm font-bold text-white truncate uppercase">{planName}</p>
+                                    </div>
+                                    <p className="text-sm font-black text-primary">₹{Number(amount).toLocaleString()}</p>
                                 </div>
-                                <div className="text-right space-y-1">
-                                    <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest">Transaction ID</p>
-                                    <p className="text-sm font-mono font-bold text-gray-400 truncate">{transactionId.substring(0, 14)}</p>
+                                <ReceiptPrinter.Status />
+                            </div>
+                        </ReceiptPrinter.Screen>
+                    </ReceiptPrinter.Machine>
+
+                    <ReceiptPrinter.Output>
+                        <ReceiptPrinter.Paper>
+                            <div className="space-y-6 text-center">
+                                <div className="space-y-1">
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter italic">FundedStock</h2>
+                                    <p className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.4em]">Official Purchase Receipt</p>
+                                </div>
+                                
+                                <div className="border-y border-dashed border-slate-300 py-6 space-y-4">
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500 uppercase">Target Plan</span><span className="text-slate-950 uppercase">{planName}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500 uppercase">Payment Method</span><span className="text-slate-950 uppercase">{method}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500 uppercase">Reference</span><span className="text-slate-950 font-mono">{transactionId.substring(0, 14)}</span></div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-end">
+                                        <p className="text-[10px] font-black uppercase">Final Cost</p>
+                                        <p className="text-3xl font-black italic">₹{Number(amount).toLocaleString()}</p>
+                                    </div>
+                                    
+                                    {isManual ? (
+                                        <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 text-left">
+                                            <p className="text-[11px] font-black text-amber-600 uppercase">Status: PENDING REVIEW</p>
+                                            <p className="text-[9px] text-amber-500 mt-1 leading-relaxed">Our risk desk will verify your reference ID within 15-60 minutes. Check your dashboard for activation.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-green-500/10 p-4 rounded-2xl border border-green-500/20 text-left">
+                                            <p className="text-[11px] font-black text-green-600 uppercase">Status: ACTIVE SESSION</p>
+                                            <p className="text-[9px] text-green-500 mt-1 leading-relaxed">Your credentials have been released and are visible in your portfolio hub.</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="pt-6 flex flex-col items-center gap-2">
+                                    <div className="w-full h-10 bg-slate-950 flex items-center justify-center">
+                                        <p className="text-[10px] text-white font-mono tracking-[0.5em]">{transactionId.substring(0, 12).toUpperCase()}</p>
+                                    </div>
+                                    <p className="text-[8px] text-gray-400 uppercase font-bold">Secure Verification Chain</p>
                                 </div>
                             </div>
-                        </div>
+                        </ReceiptPrinter.Paper>
+                    </ReceiptPrinter.Output>
+                </ReceiptPrinter.Root>
 
-                        {method === 'manual' ? (
-                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-4 text-left">
-                                <ShieldCheck className="h-6 w-6 text-amber-500 shrink-0" />
-                                <p className="text-xs text-amber-400 font-medium">Your manual payment is now in the verification queue. Credentials will be released once the reference ID is verified by our team.</p>
-                            </div>
-                        ) : (
-                            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-4 text-left">
-                                <Sparkles className="h-6 w-6 text-primary shrink-0" />
-                                <p className="text-xs text-primary font-medium">Account activated instantly! You can now access your credentials in the Portfolio hub.</p>
-                            </div>
-                        )}
-                    </CardContent>
-
-                    <CardFooter className="pb-12 pt-4 px-10">
-                        <Button asChild size="lg" className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                            <Link href="/welcome">
-                                <LayoutDashboard className="mr-3 h-5 w-5" />
-                                Enter Portfolio Hub
-                            </Link>
+                <div className={cn("mt-12 space-y-4 transition-all duration-1000", stage === 'complete' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
+                    <Button asChild size="lg" className="w-full h-14 bg-primary text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/30">
+                        <Link href="/welcome">
+                            <LayoutDashboard className="mr-3 h-5 w-5" />
+                            Enter Portfolio Hub
+                        </Link>
+                    </Button>
+                    <div className="flex gap-3">
+                        <Button asChild variant="outline" className="flex-1 h-12 bg-white/5 border-white/10 text-white font-bold text-[10px] uppercase rounded-xl">
+                            <Link href="/live-chat">Support Desk</Link>
                         </Button>
-                    </CardFooter>
-                </Card>
-                
-                <p className="mt-8 text-center text-gray-600 text-[10px] font-bold uppercase tracking-[0.4em]">
-                    Secure Payment Gateway · FundedStock
-                </p>
+                        <Button asChild variant="outline" className="flex-1 h-12 bg-white/5 border-white/10 text-white font-bold text-[10px] uppercase rounded-xl">
+                            <Link href="/welcome?tab=marketplace">Buy Another</Link>
+                        </Button>
+                    </div>
+                </div>
             </div>
         </div>
     );

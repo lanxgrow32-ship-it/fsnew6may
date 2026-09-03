@@ -93,9 +93,9 @@ const printingKeyframeTimes = [
 ];
 
 const statusLabels: Record<ReceiptPrinterStage, ReactNode> = {
-  processing: "Validating submission...",
-  printing: "Generating receipt...",
-  complete: "Protocol finalized",
+  processing: "Securing Transaction",
+  printing: "Printing Receipt",
+  complete: "Protocol Finalized",
 };
 
 function useReceiptPrinter(component: string) {
@@ -137,11 +137,11 @@ function ReceiptPrinterRoot({
 
 function ReceiptPrinterMachine({ children, className, ...props }: ReceiptPrinterMachineProps) {
   return (
-    <div className={cn("relative isolate w-full overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 p-3 pb-8 shadow-2xl [--printer-radius:1.5rem] [--printer-inset:0.75rem] [--printer-inner-radius:calc(var(--printer-radius)-var(--printer-inset))]", className)} {...props}>
+    <div className={cn("relative isolate w-full overflow-hidden rounded-[40px] border border-white/5 bg-slate-900 p-3 pb-8 shadow-2xl [--printer-radius:1.5rem] [--printer-inset:0.75rem] [--printer-inner-radius:calc(var(--printer-radius)-var(--printer-inset))]", className)} {...props}>
       {children}
       <div
         aria-hidden="true"
-        className="absolute inset-x-6 bottom-[var(--printer-inset)] z-40 h-2 rounded-full border border-slate-950 bg-slate-950 shadow-inner"
+        className="absolute inset-x-6 bottom-[var(--printer-inset)] z-40 h-2 rounded-full border border-slate-950 bg-slate-950 shadow-inner shadow-white/5"
       />
     </div>
   );
@@ -157,7 +157,7 @@ function ReceiptPrinterHeader({ children, className, ...props }: ReceiptPrinterH
 
 function ReceiptPrinterScreen({ children, className, ...props }: ReceiptPrinterScreenProps) {
   return (
-    <div className={cn("relative z-10 isolate overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-4 text-slate-100 shadow-inner after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] after:shadow-[inset_0_0_24px_4px_rgba(0,0,0,0.5)] after:content-['']", className)} {...props}>
+    <div className={cn("relative z-10 isolate overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-4 text-slate-100 shadow-inner after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] after:shadow-[inset_0_0_24px_4px_rgba(0,0,0,0.5)] after:content-['']", className)} {...props}>
       <div className="relative z-10">{children}</div>
     </div>
   );
@@ -205,7 +205,7 @@ function ReceiptPrinterStatus({ children, className, ...props }: ReceiptPrinterS
         <AnimatePresence initial={false} mode="sync">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="col-start-1 row-start-1 truncate font-bold text-slate-400 text-[10px] uppercase tracking-widest leading-none"
+            className="col-start-1 row-start-1 truncate font-black text-gray-500 text-[10px] uppercase tracking-[0.2em] leading-none"
             exit={{ opacity: animate ? 0 : 1, y: shouldMove ? -4 : 0 }}
             initial={{ opacity: animate ? 0 : 1, y: shouldMove ? 4 : 0 }}
             key={stage}
@@ -222,11 +222,11 @@ function ReceiptPrinterStatus({ children, className, ...props }: ReceiptPrinterS
 function ReceiptPrinterPaper({ children, className, style, ...props }: ReceiptPrinterPaperProps) {
   return (
     <article
-      className={cn("relative z-10 min-h-80 bg-white px-6 pt-7 pb-8 font-mono text-slate-950 shadow-sm", className)}
+      className={cn("relative z-10 min-h-80 bg-white px-8 pt-10 pb-12 font-mono text-slate-950 shadow-sm", className)}
       style={{ clipPath: receiptClipPath, ...style }}
       {...props}
     >
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')" }} />
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')" }} />
       {children}
     </article>
   );
@@ -238,7 +238,7 @@ function ReceiptPrinterOutput({ children, className, ...props }: ReceiptPrinterO
   const shouldUseSteppedFeed = feedMotion === "stepped" && stage === "printing" && shouldMove;
 
   return (
-    <div className={cn("relative z-50 -mt-4 h-[28rem] w-[calc(80%+3rem)] max-w-full overflow-hidden px-6", className)} {...props}>
+    <div className={cn("relative z-50 -mt-4 h-[35rem] w-[calc(85%+3rem)] max-w-full overflow-hidden px-6", className)} {...props}>
       {isReceiptVisible ? (
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-6 -top-1 z-20 h-2 bg-black/50 blur-[4px]" />
       ) : null}
