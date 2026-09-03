@@ -46,6 +46,7 @@ import { ArenaView } from './arena-view';
 import { WalletView } from './wallet-view';
 import { TransactionsView } from './transactions-view';
 import { CompetitionView } from './competition-view';
+import { PendingView } from './pending-view';
 
 const Logo = () => (
     <div className="flex items-center gap-2">
@@ -87,6 +88,10 @@ function WelcomeContent({
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [onboardingName, setOnboardingName] = useState(profile.full_name || '');
     const [onboardingMobile, setOnboardingMobile] = useState(profile.mobile_number || '');
+
+    // PROTOCOL v13.5: Detect global pending state (Manual Payment Queue)
+    const hasOnlyPendingAccounts = accounts.length > 0 && accounts.every(a => !a.is_approved && a.status !== 'rejected');
+    const mostRecentPending = accounts.find(a => !a.is_approved);
 
     useEffect(() => {
         if (!profile.full_name || !profile.mobile_number) {
@@ -137,6 +142,10 @@ function WelcomeContent({
         { id: 'support', label: "Live Chat", icon: MessageSquare, href: '/live-chat', hasBadge: totalUnread > 0 },
         { id: 'kyc', label: "KYC", icon: FileCheck },
     ];
+
+    if (hasOnlyPendingAccounts && activeTab === 'hub') {
+        return <PendingView profile={profile} pendingAccount={mostRecentPending} />;
+    }
 
     return (
         <div className="dark min-h-screen bg-slate-950 text-gray-200 font-poppins relative overflow-hidden pb-20">
