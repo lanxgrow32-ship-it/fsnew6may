@@ -23,7 +23,6 @@ import { cn } from '@/lib/utils';
 
 function SuccessContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
     const [mounted, setMounted] = useState(false);
     const [stage, setStage] = useState<ReceiptPrinterStage>("processing");
     
@@ -96,7 +95,7 @@ function SuccessContent() {
                         <ReceiptPrinter.Paper>
                             <div className="space-y-6 text-center">
                                 <div className="space-y-1">
-                                    <h2 className="text-2xl font-black uppercase tracking-tighter italic">FundedStock</h2>
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter italic text-slate-950">FundedStock</h2>
                                     <p className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.4em]">Official Purchase Receipt</p>
                                 </div>
                                 
@@ -108,8 +107,8 @@ function SuccessContent() {
 
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-end">
-                                        <p className="text-[10px] font-black uppercase">Final Cost</p>
-                                        <p className="text-3xl font-black italic">₹{Number(amount).toLocaleString()}</p>
+                                        <p className="text-[10px] font-black uppercase text-slate-950">Final Cost</p>
+                                        <p className="text-3xl font-black italic text-slate-950">₹{Number(amount).toLocaleString()}</p>
                                     </div>
                                     
                                     {isManual ? (

@@ -7,14 +7,17 @@ import { Button } from '@/components/ui/button';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Play, ShieldAlert, MessageSquare } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function ReceiptTester() {
     const [stage, setStage] = useState<ReceiptPrinterStage>("processing");
 
     const startAnimation = () => {
         setStage("processing");
-        setTimeout(() => setStage("printing"), 1000);
-        setTimeout(() => setStage("complete"), 4000);
+        // Start printing after delay
+        setTimeout(() => setStage("printing"), 1200);
+        // Complete printing after animation duration
+        setTimeout(() => setStage("complete"), 4500);
     };
 
     return (
@@ -24,7 +27,7 @@ export default function ReceiptTester() {
                 <p className="text-xs text-gray-600 font-bold uppercase tracking-widest">Protocol v2.1 Test Grid</p>
             </div>
 
-            <div className="space-y-12 w-full max-w-md flex flex-col items-center">
+            <div className="space-y-12 w-full max-w-md flex flex-col items-center relative z-10">
                 <ReceiptPrinter.Root stage={stage}>
                     <ReceiptPrinter.Machine>
                         <ReceiptPrinter.Header>
@@ -32,7 +35,7 @@ export default function ReceiptTester() {
                             <Badge variant="outline" className="text-[8px] font-black uppercase border-white/10 text-gray-500">Manual verification</Badge>
                         </ReceiptPrinter.Header>
 
-                        <ReceiptPrinter.Screen>
+                        <ReceiptPrinter.Screen className={cn(stage === 'complete' && "border-green-500/20")}>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-start">
                                     <div>
@@ -50,7 +53,7 @@ export default function ReceiptTester() {
                         <ReceiptPrinter.Paper>
                             <div className="space-y-6 text-center">
                                 <div className="space-y-1">
-                                    <h2 className="text-2xl font-black uppercase tracking-tighter italic">FundedStock</h2>
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter italic text-slate-950">FundedStock</h2>
                                     <p className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.4em]">Official Submission Receipt</p>
                                 </div>
                                 
@@ -60,14 +63,14 @@ export default function ReceiptTester() {
                                     <div className="flex justify-between text-[10px] font-bold"><span className="text-gray-500 uppercase">UTR Ref</span><span className="text-slate-950 font-mono">992104558231</span></div>
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     <div className="flex justify-between items-end">
-                                        <p className="text-[10px] font-black uppercase">Final Cost</p>
-                                        <p className="text-3xl font-black italic">₹12,999</p>
+                                        <p className="text-[10px] font-black uppercase text-slate-950">Final Cost</p>
+                                        <p className="text-3xl font-black italic text-slate-950">₹12,999</p>
                                     </div>
-                                    <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
-                                        <p className="text-[11px] font-black text-slate-950 uppercase">Status: PENDING REVIEW</p>
-                                        <p className="text-[9px] text-gray-500 mt-1">Our risk desk will verify your UTR shortly.</p>
+                                    <div className="bg-amber-500/10 p-4 rounded-xl border border-amber-500/20 text-left">
+                                        <p className="text-[11px] font-black text-amber-600 uppercase">Status: PENDING REVIEW</p>
+                                        <p className="text-[9px] text-amber-500 mt-1">Our risk desk will verify your UTR shortly.</p>
                                     </div>
                                 </div>
 

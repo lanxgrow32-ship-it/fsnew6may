@@ -137,7 +137,7 @@ function ReceiptPrinterRoot({
 
 function ReceiptPrinterMachine({ children, className, ...props }: ReceiptPrinterMachineProps) {
   return (
-    <div className={cn("relative isolate w-full overflow-hidden rounded-[40px] border border-white/5 bg-slate-900 p-3 pb-8 shadow-2xl [--printer-radius:1.5rem] [--printer-inset:0.75rem] [--printer-inner-radius:calc(var(--printer-radius)-var(--printer-inset))]", className)} {...props}>
+    <div className={cn("relative isolate w-full overflow-hidden rounded-[40px] border border-white/10 bg-slate-900 p-3 pb-8 shadow-2xl [--printer-radius:1.5rem] [--printer-inset:0.75rem] [--printer-inner-radius:calc(var(--printer-radius)-var(--printer-inset))]", className)} {...props}>
       {children}
       <div
         aria-hidden="true"
@@ -157,7 +157,7 @@ function ReceiptPrinterHeader({ children, className, ...props }: ReceiptPrinterH
 
 function ReceiptPrinterScreen({ children, className, ...props }: ReceiptPrinterScreenProps) {
   return (
-    <div className={cn("relative z-10 isolate overflow-hidden rounded-2xl border border-white/5 bg-slate-950 p-4 text-slate-100 shadow-inner after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] after:shadow-[inset_0_0_24px_4px_rgba(0,0,0,0.5)] after:content-['']", className)} {...props}>
+    <div className={cn("relative z-10 isolate overflow-hidden rounded-2xl border border-white/10 bg-slate-950 p-4 text-slate-100 shadow-inner after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] after:shadow-[inset_0_0_24px_4px_rgba(0,0,0,0.8)] after:content-['']", className)} {...props}>
       <div className="relative z-10">{children}</div>
     </div>
   );
