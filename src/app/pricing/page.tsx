@@ -170,7 +170,8 @@ export default function PricingPage() {
       });
   }, [dbPlans]);
 
-  const proPlans = allPlans.filter(p => p.category === 'pro');
+  // Hide proPlans temporarily
+  const proPlans = []; 
   const instantPlans = allPlans.filter(p => p.category === 'instant');
   const oneStepPlans = allPlans.filter(p => p.category === '1-step');
   const twoStepPlans = allPlans.filter(p => p.category === '2-step');
@@ -210,11 +211,9 @@ export default function PricingPage() {
               </p>
           </div>
 
-          <Tabs defaultValue="pro" className="w-full">
-              <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 max-w-5xl mx-auto h-auto p-1 bg-muted border border-white/5 rounded-2xl mb-16">
-                  <TabsTrigger value="pro" className="py-3 text-xs font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white border-2 border-transparent data-[state=active]:border-white/20">
-                    ⚡ Instant Pro
-                  </TabsTrigger>
+          <Tabs defaultValue="instant" className="w-full">
+              <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 max-w-4xl mx-auto h-auto p-1 bg-muted border border-white/5 rounded-2xl mb-16">
+                  {/* Temporarily hidden: ⚡ Instant Pro */}
                   <TabsTrigger value="instant" className="py-3 text-xs font-black uppercase tracking-widest rounded-xl">Standard Instant</TabsTrigger>
                   <TabsTrigger value="1-step" className="py-3 text-xs font-black uppercase tracking-widest rounded-xl">1-Step Fast Track</TabsTrigger>
                   <TabsTrigger value="2-step" className="py-3 text-xs font-black uppercase tracking-widest rounded-xl">2-Step Standard</TabsTrigger>
@@ -222,27 +221,6 @@ export default function PricingPage() {
 
               {loading ? <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto h-10 w-10 text-primary opacity-20"/></div> : (
                   <>
-                    <TabsContent value="pro" className="mt-8 animate-in fade-in duration-500">
-                        <div className="text-center mb-12 space-y-4">
-                            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-2 rounded-full border border-primary/20">
-                                <Sparkles className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Weekly High-Intensity Cycle</span>
-                            </div>
-                            <h2 className="text-3xl font-black text-white tracking-tight uppercase">Instant PRO Series</h2>
-                            <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">High-leverage weekly accounts. 7-Day validity. No challenges.</p>
-                            <div className="flex justify-center pt-2">
-                                <Button asChild variant="outline" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 h-10 px-8 text-[10px] font-black uppercase tracking-widest gap-2">
-                                    <Link href="/rules/instant-pro"><HelpCircle className="w-4 h-4"/> View Pro Rules</Link>
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
-                            {proPlans.map((plan) => (
-                            <PlanCard key={plan.id} {...plan} category="pro" />
-                            ))}
-                        </div>
-                    </TabsContent>
-
                     <TabsContent value="instant" className="mt-8 animate-in fade-in duration-500">
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold text-white tracking-tight uppercase">Standard Instant Funding</h2>
@@ -292,7 +270,7 @@ export default function PricingPage() {
           </Tabs>
 
           <div className="mt-32 text-center">
-              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 4,000+ Global Traders</p>
+              <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.5em] mb-4">Trusted by 4,000+ Global Traders</p>
               <FundedStockLogo className="h-8 w-8 mx-auto opacity-20 grayscale" />
           </div>
         </main>

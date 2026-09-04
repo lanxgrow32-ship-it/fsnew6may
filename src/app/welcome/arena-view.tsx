@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
@@ -135,7 +134,7 @@ export function ArenaView({
     const { toast } = useToast();
     const [isActionPending, startTransition] = useTransition();
     const [marketSegment, setMarketSegment] = useState<'indian' | 'forex'>('indian');
-    const [activeTab, setActiveTab] = useState('pro');
+    const [activeTab, setActiveTab] = useState('instant');
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
     const [checkoutMode, setCheckoutMode] = useState<'upi' | 'crypto' | 'wallet'>('upi');
     const [utr, setUtr] = useState('');
@@ -162,7 +161,8 @@ export function ArenaView({
     }, [allPlans, marketSegment]);
     
     const categories = useMemo(() => ({
-        pro: filteredPlans.filter(p => p?.category === 'pro'),
+        // Hide Pro plans temporarily
+        pro: [], 
         instant: filteredPlans.filter(p => p?.category === 'instant'),
         oneStep: filteredPlans.filter(p => p?.category === '1-step'),
         twoStep: filteredPlans.filter(p => p?.category === '2-step'),
@@ -171,7 +171,7 @@ export function ArenaView({
 
     useEffect(() => {
         if (marketSegment === 'forex') setActiveTab('twoStep');
-        else setActiveTab('pro');
+        else setActiveTab('instant'); // Changed from 'pro' to 'instant'
     }, [marketSegment]);
 
     const handleApplyCoupon = async () => {
@@ -299,7 +299,7 @@ export function ArenaView({
                             {checkoutMode === 'upi' && (
                                 <div className="bg-black/40 rounded-[32px] p-8 border border-white/5 flex flex-col items-center gap-8 shadow-2xl">
                                     <div className="space-y-6 text-center w-full">
-                                        <div className="bg-white p-3 rounded-2xl w-fit mx-auto shadow-2xl">
+                                        <div className="bg-white p-3 rounded-2xl w-fit mx-auto md:mx-0 shadow-2xl">
                                             {qrCode ? (
                                                 <Image src={qrCode} alt="UPI QR" width={200} height={200} className="rounded-lg" />
                                             ) : (
@@ -390,11 +390,11 @@ export function ArenaView({
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 max-w-4xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-4xl mx-auto h-auto p-1 bg-black/40 border border-white/10 rounded-2xl mb-10">
                     {marketSegment === 'indian' ? (
                         <>
-                            <TabsTrigger value="pro" className="py-2.5 rounded-xl font-bold text-xs data-[state=active]:bg-primary data-[state=active]:text-white">⚡ Instant Pro</TabsTrigger>
-                            <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Standard Instant</TabsTrigger>
+                            {/* Temporarily hidden: ⚡ Instant Pro */}
+                            <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs data-[state=active]:bg-primary data-[state=active]:text-white">Standard Instant</TabsTrigger>
                             <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step</TabsTrigger>
                             <TabsTrigger value="twoStep" className="py-2.5 rounded-xl font-bold text-xs">2-Step</TabsTrigger>
                             {isPtpActive ? (
@@ -409,15 +409,11 @@ export function ArenaView({
                             <TabsTrigger value="oneStep" className="py-2.5 rounded-xl font-bold text-xs">1-Step Fast Track</TabsTrigger>
                             <TabsTrigger value="instant" className="py-2.5 rounded-xl font-bold text-xs">Forex Instant</TabsTrigger>
                             <div className="opacity-20 pointer-events-none flex items-center justify-center text-[10px] font-bold uppercase">Pro Soon</div>
-                            <div className="opacity-20 pointer-events-none flex items-center justify-center text-[10px] font-bold uppercase">PTP Soon</div>
                         </>
                     )}
                 </TabsList>
 
-                <TabsContent value="pro" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-                    {categories.pro.map((p, idx) => <PlanBox key={`pro-${idx}`} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
-                    {categories.pro.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No Pro plans available.</p></div>}
-                </TabsContent>
+                {/* Instant Content */}
                 <TabsContent value="instant" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
                     {categories.instant.map((p, idx) => <PlanBox key={`inst-${idx}`} plan={p} marketSegment={marketSegment} onSelect={setSelectedPlan} />)}
                     {categories.instant.length === 0 && <div className="col-span-full py-20 text-center"><p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No Instant plans available.</p></div>}
