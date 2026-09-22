@@ -136,3 +136,51 @@ export async function approveUserPayment(userId: string) {
     revalidatePath('/referrals');
     return { success: true };
 }
+
+/**
+ * TEMPORARY: Signup Hourly Velocity Action (IST)
+ * Fetches all non-admin signups and groups them into 24-hour bins.
+ */
+export async function getSignupHourlyStats() {
+    try {
+        const { data: profiles, error } = await supabaseAdmin
+            .from('profiles')
+            .select('created_at')
+            .neq('role', 'admin')
+            .range(0, 49999);
+        
+        if (error) throw error;
+        if (!profiles) return { data: [] };
+
+        // 24 bins for 24 hours
+        const bins = Array(24).fill(0);
+
+        profiles.forEach(p => {
+            const utcDate = new Date(p.created_at);
+            // IST is UTC + 5:30
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const istDate = new Date(utcDate.getTime() + istOffset);
+            const hour = istDate.getHours(); // 0-23
+            bins[hour]++;
+        });
+
+        // Format for CSV
+        const report = bins.map((count, hour) => {
+            const startStr = hour.toString().padStart(2, '0') + ':00';
+            const endHour = (hour + 1) % 24;
+            const endStr = endHour.toString().padStart(2, '0') + ':00';
+            const label = hour < 12 ? 'AM' : 'PM';
+            const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+            
+            return {
+                'Time Slot (IST)': `${displayHour} ${label} - ${(endHour === 0 ? 12 : endHour > 12 ? endHour - 12 : endHour)} ${endHour < 12 ? 'AM' : 'PM'}`,
+                'Total Signups': count
+            };
+        });
+
+        return { data: report };
+    } catch (e: any) {
+        console.error("[Report Action] Error:", e);
+        return { error: e.message };
+    }
+}

@@ -31,7 +31,8 @@ import {
     Zap,
     Link2,
     ShieldCheck,
-    XCircle
+    XCircle,
+    FileBarChart
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -39,7 +40,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createAdmin } from './actions';
+import { createAdmin, getSignupHourlyStats } from './actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
 import { ClientOnly } from '@/components/ui/client-only';
@@ -48,6 +49,7 @@ import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
+import Papa from 'papaparse';
 
 function CreateAdminForm({ className }: { className?: string }) {
     const ref = useRef<HTMLFormElement>(null);
@@ -85,32 +87,32 @@ function CreateAdminForm({ className }: { className?: string }) {
     return (
        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button className={className}>
+                <Button className={className} variant="outline" size="sm">
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Create New Admin
+                    New Admin
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] bg-slate-950 border-white/10 text-white">
                  <form ref={ref} action={formAction} className="space-y-6">
                     <DialogHeader>
-                        <DialogTitle>Create New Admin User</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-xl font-bold">Create New Admin User</DialogTitle>
+                        <DialogDescription className="text-gray-400">
                             Enter the details for the new admin. They will be able to log in with this email and password.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="full_name">Full Name</Label>
-                            <Input id="full_name" name="full_name" placeholder="Jane Doe" required />
+                            <Label htmlFor="full_name" className="text-xs font-bold uppercase text-gray-500">Full Name</Label>
+                            <Input id="full_name" name="full_name" placeholder="Jane Doe" required className="bg-black/40 border-white/10 h-11" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" placeholder="admin@example.com" required />
+                            <Label htmlFor="email" className="text-xs font-bold uppercase text-gray-500">Email</Label>
+                            <Input id="email" name="email" type="email" placeholder="admin@example.com" required className="bg-black/40 border-white/10 h-11" />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="password">Temporary Password</Label>
-                            <Input id="password" name="password" type="password" required />
-                             <p className="text-xs text-muted-foreground">Must be at least 6 characters long.</p>
+                            <Label htmlFor="password" title="password" className="text-xs font-bold uppercase text-gray-500">Temporary Password</Label>
+                            <Input id="password" name="password" type="password" required className="bg-black/40 border-white/10 h-11" />
+                             <p className="text-[10px] text-gray-600 font-bold uppercase">Must be at least 6 characters long.</p>
                         </div>
                     </div>
                     <DialogFooter>
@@ -195,6 +197,7 @@ export default function AdminDashboardClient({
   const [kycCount, setKycCount] = useState(0);
   const [marketType, setMarketType] = useState<'indian' | 'forex' | 'all'>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isGeneratingHourly, setIsGeneratingHourly] = useState(false);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -275,6 +278,27 @@ export default function AdminDashboardClient({
         setIsRefreshing(false);
     }
   }
+
+  const downloadHourlyReport = async () => {
+    setIsGeneratingHourly(true);
+    toast({ title: "Analyzing Traffic", description: "Calculating IST signup velocity across 24-hour blocks..." });
+    
+    const res = await getSignupHourlyStats();
+    
+    if (res.error) {
+        toast({ title: "Report Failed", description: res.error, variant: "destructive" });
+    } else if (res.data) {
+        const csv = Papa.unparse(res.data);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Hourly_Signup_Report_IST_${new Date().toISOString().split('T')[0]}.csv`);
+        link.click();
+        toast({ title: "Report Ready", description: "Velocity grid downloaded successfully." });
+    }
+    setIsGeneratingHourly(false);
+  };
 
   useEffect(() => {
     const initSub = async () => {
@@ -390,8 +414,20 @@ export default function AdminDashboardClient({
                     </Badge>
                 </h1>
            </div>
-           <div className="flex items-center gap-4">
+           <div className="flex items-center gap-3">
             {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+            
+            <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={downloadHourlyReport} 
+                disabled={isGeneratingHourly}
+                className="hidden lg:flex h-9 border-amber-500/20 text-amber-500 hover:bg-amber-500/5 font-black text-[10px] uppercase tracking-widest"
+            >
+                {isGeneratingHourly ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <FileBarChart className="mr-2 h-3 w-3" />}
+                Hourly Report (IST)
+            </Button>
+
             <ThemeToggle />
             <CreateAdminForm className="hidden md:flex"/>
             <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}><AdminNav /></ClientOnly>
@@ -423,7 +459,19 @@ export default function AdminDashboardClient({
                 </Card>
             </div>
             
-            <CreateAdminForm className="w-full md:hidden" />
+            <div className="flex gap-2 md:hidden">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={downloadHourlyReport} 
+                    disabled={isGeneratingHourly}
+                    className="flex-1 h-11 border-amber-500/20 text-amber-500 hover:bg-amber-500/5 font-black text-[10px] uppercase tracking-widest"
+                >
+                    {isGeneratingHourly ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <FileBarChart className="mr-2 h-3 w-3" />}
+                    Hourly IST
+                </Button>
+                <CreateAdminForm className="flex-1" />
+            </div>
             
             <ClientOnly fallback={<UserTableSkeleton />}>
                 <UserTable 
