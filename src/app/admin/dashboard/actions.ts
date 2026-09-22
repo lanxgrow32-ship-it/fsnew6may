@@ -138,8 +138,8 @@ export async function approveUserPayment(userId: string) {
 }
 
 /**
- * TEMPORARY: Signup Hourly Velocity Action (IST)
- * HARDENED v2.0: Now exhaustively fetches ALL users to match exact Auth numbers.
+ * Signup Hourly Velocity Action (IST)
+ * HARDENED v3.0: Now includes a "Cumulative Total" column to track growth across the day.
  */
 export async function getSignupHourlyStats() {
     try {
@@ -148,47 +148,42 @@ export async function getSignupHourlyStats() {
         const pageSize = 1000;
         let hasMore = true;
 
-        console.log("[Report Engine] Starting deep-scan of trader database...");
+        console.log("[Report Engine] Initiating full deep-scan for 5000+ users...");
 
         while (hasMore) {
             const { data: chunk, error } = await supabaseAdmin
                 .from('profiles')
                 .select('created_at')
-                .neq('role', 'admin') // Filter out system admins
+                .neq('role', 'admin')
                 .range(page * pageSize, (page + 1) * pageSize - 1);
             
             if (error) throw error;
 
             if (chunk && chunk.length > 0) {
                 allProfiles = [...allProfiles, ...chunk];
-                console.log(`[Report Engine] Chunk received: ${chunk.length} users. Total so far: ${allProfiles.length}`);
-                
-                if (chunk.length < pageSize) {
-                    hasMore = false;
-                } else {
-                    page++;
-                }
+                if (chunk.length < pageSize) hasMore = false;
+                else page++;
             } else {
                 hasMore = false;
             }
         }
-
-        console.log(`[Report Engine] Deep-scan complete. Processing ${allProfiles.length} traders into IST velocity grid.`);
 
         // 24 bins for 24 hours
         const bins = Array(24).fill(0);
 
         allProfiles.forEach(p => {
             const utcDate = new Date(p.created_at);
-            // IST is UTC + 5:30
+            // Convert to IST: UTC + 5:30
             const istOffset = 5.5 * 60 * 60 * 1000;
             const istDate = new Date(utcDate.getTime() + istOffset);
-            const hour = istDate.getHours(); // 0-23
+            const hour = istDate.getHours();
             bins[hour]++;
         });
 
-        // Format for CSV with clear IST labeling
+        // Generate report with Hourly Volume and Cumulative Total
+        let cumulativeRunningTotal = 0;
         const report = bins.map((count, hour) => {
+            cumulativeRunningTotal += count;
             const startHour = hour;
             const endHour = (hour + 1) % 24;
 
@@ -200,7 +195,8 @@ export async function getSignupHourlyStats() {
             
             return {
                 'Time Slot (IST)': `${formatHour(startHour)} - ${formatHour(endHour)}`,
-                'Total Signups': count
+                'Hourly Volume': count,
+                'Cumulative Total (Till this hour)': cumulativeRunningTotal
             };
         });
 
