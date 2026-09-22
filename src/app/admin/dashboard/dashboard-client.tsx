@@ -281,7 +281,7 @@ export default function AdminDashboardClient({
 
   const downloadHourlyReport = async () => {
     setIsGeneratingHourly(true);
-    toast({ title: "Analyzing Traffic", description: "Calculating IST signup velocity across 24-hour blocks..." });
+    toast({ title: "Analyzing Traffic", description: "Calculating isolated hourly slots (IST)..." });
     
     const res = await getSignupHourlyStats();
     
@@ -293,9 +293,9 @@ export default function AdminDashboardClient({
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `Hourly_Signup_Report_IST_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `Signup_Window_Report_IST_${new Date().toISOString().split('T')[0]}.csv`);
         link.click();
-        toast({ title: "Report Ready", description: "Velocity grid downloaded successfully." });
+        toast({ title: "Report Ready", description: "Hourly activity grid downloaded successfully." });
     }
     setIsGeneratingHourly(false);
   };

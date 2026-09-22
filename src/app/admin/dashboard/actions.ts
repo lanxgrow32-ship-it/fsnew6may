@@ -139,7 +139,7 @@ export async function approveUserPayment(userId: string) {
 
 /**
  * Signup Hourly Velocity Action (IST)
- * HARDENED v3.0: Now includes a "Cumulative Total" column to track growth across the day.
+ * UPDATED v4.0: Focuses strictly on isolated hourly windows without cumulative summing.
  */
 export async function getSignupHourlyStats() {
     try {
@@ -148,7 +148,7 @@ export async function getSignupHourlyStats() {
         const pageSize = 1000;
         let hasMore = true;
 
-        console.log("[Report Engine] Initiating full deep-scan for 5000+ users...");
+        console.log("[Report Engine] Initiating full deep-scan for total user accuracy...");
 
         while (hasMore) {
             const { data: chunk, error } = await supabaseAdmin
@@ -180,10 +180,8 @@ export async function getSignupHourlyStats() {
             bins[hour]++;
         });
 
-        // Generate report with Hourly Volume and Cumulative Total
-        let cumulativeRunningTotal = 0;
+        // Generate report with isolated Hourly Volume only
         const report = bins.map((count, hour) => {
-            cumulativeRunningTotal += count;
             const startHour = hour;
             const endHour = (hour + 1) % 24;
 
@@ -195,8 +193,7 @@ export async function getSignupHourlyStats() {
             
             return {
                 'Time Slot (IST)': `${formatHour(startHour)} - ${formatHour(endHour)}`,
-                'Hourly Volume': count,
-                'Cumulative Total (Till this hour)': cumulativeRunningTotal
+                'Signup Count': count
             };
         });
 
