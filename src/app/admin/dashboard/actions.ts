@@ -139,23 +139,46 @@ export async function approveUserPayment(userId: string) {
 
 /**
  * TEMPORARY: Signup Hourly Velocity Action (IST)
- * Fetches all non-admin signups and groups them into 24-hour bins.
+ * HARDENED v2.0: Now exhaustively fetches ALL users to match exact Auth numbers.
  */
 export async function getSignupHourlyStats() {
     try {
-        const { data: profiles, error } = await supabaseAdmin
-            .from('profiles')
-            .select('created_at')
-            .neq('role', 'admin')
-            .range(0, 49999);
-        
-        if (error) throw error;
-        if (!profiles) return { data: [] };
+        let allProfiles: any[] = [];
+        let page = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        console.log("[Report Engine] Starting deep-scan of trader database...");
+
+        while (hasMore) {
+            const { data: chunk, error } = await supabaseAdmin
+                .from('profiles')
+                .select('created_at')
+                .neq('role', 'admin') // Filter out system admins
+                .range(page * pageSize, (page + 1) * pageSize - 1);
+            
+            if (error) throw error;
+
+            if (chunk && chunk.length > 0) {
+                allProfiles = [...allProfiles, ...chunk];
+                console.log(`[Report Engine] Chunk received: ${chunk.length} users. Total so far: ${allProfiles.length}`);
+                
+                if (chunk.length < pageSize) {
+                    hasMore = false;
+                } else {
+                    page++;
+                }
+            } else {
+                hasMore = false;
+            }
+        }
+
+        console.log(`[Report Engine] Deep-scan complete. Processing ${allProfiles.length} traders into IST velocity grid.`);
 
         // 24 bins for 24 hours
         const bins = Array(24).fill(0);
 
-        profiles.forEach(p => {
+        allProfiles.forEach(p => {
             const utcDate = new Date(p.created_at);
             // IST is UTC + 5:30
             const istOffset = 5.5 * 60 * 60 * 1000;
@@ -164,21 +187,24 @@ export async function getSignupHourlyStats() {
             bins[hour]++;
         });
 
-        // Format for CSV
+        // Format for CSV with clear IST labeling
         const report = bins.map((count, hour) => {
-            const startStr = hour.toString().padStart(2, '0') + ':00';
+            const startHour = hour;
             const endHour = (hour + 1) % 24;
-            const endStr = endHour.toString().padStart(2, '0') + ':00';
-            const label = hour < 12 ? 'AM' : 'PM';
-            const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+
+            const formatHour = (h: number) => {
+                const label = h < 12 ? 'AM' : 'PM';
+                const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                return `${displayH} ${label}`;
+            };
             
             return {
-                'Time Slot (IST)': `${displayHour} ${label} - ${(endHour === 0 ? 12 : endHour > 12 ? endHour - 12 : endHour)} ${endHour < 12 ? 'AM' : 'PM'}`,
+                'Time Slot (IST)': `${formatHour(startHour)} - ${formatHour(endHour)}`,
                 'Total Signups': count
             };
         });
 
-        return { data: report };
+        return { data: report, totalCaptured: allProfiles.length };
     } catch (e: any) {
         console.error("[Report Action] Error:", e);
         return { error: e.message };
