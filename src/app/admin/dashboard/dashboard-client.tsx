@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -28,11 +29,9 @@ import {
     RefreshCw, 
     Package, 
     Zap,
-    Link2,
     ShieldCheck,
     XCircle,
-    FileBarChart,
-    Archive
+    FileBarChart
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -41,7 +40,7 @@ import { Label } from '@/components/ui/label';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createAdmin, getSignupHourlyStats } from './actions';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -58,18 +57,9 @@ function CreateAdminForm({ className }: { className?: string }) {
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
-        if (state.error) {
-            toast({
-                title: "Error Creating Admin",
-                description: state.error,
-                variant: "destructive",
-            });
-        }
+        if (state.error) toast({ title: "Error", description: state.error, variant: "destructive" });
         if (state.success) {
-            toast({
-                title: "Success",
-                description: "Admin user created successfully.",
-            });
+            toast({ title: "Admin created" });
             ref.current?.reset();
             setIsOpen(false);
         }
@@ -79,7 +69,7 @@ function CreateAdminForm({ className }: { className?: string }) {
         const { pending } = useFormStatus();
         return (
             <Button type="submit" disabled={pending}>
-                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Create Admin User'}
+                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Working...</> : 'Create admin'}
             </Button>
         );
     }
@@ -89,136 +79,53 @@ function CreateAdminForm({ className }: { className?: string }) {
             <DialogTrigger asChild>
                 <Button className={className} variant="outline" size="sm">
                     <UserPlus className="mr-2 h-4 w-4" />
-                    New Admin
+                    New admin
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-slate-950 border-white/10 text-white">
+            <DialogContent className="sm:max-w-[425px]">
                  <form ref={ref} action={formAction} className="space-y-6">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold">Create New Admin User</DialogTitle>
-                        <DialogDescription className="text-gray-400">
-                            Enter the details for the new admin. They will be able to log in with this email and password.
-                        </DialogDescription>
+                        <DialogTitle>Add new admin</DialogTitle>
+                        <DialogDescription>Enter details for the new staff member.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="full_name" className="text-xs font-bold uppercase text-gray-500">Full Name</Label>
-                            <Input id="full_name" name="full_name" placeholder="Jane Doe" required className="bg-black/40 border-white/10 h-11" />
+                            <Label htmlFor="full_name">Full name</Label>
+                            <Input id="full_name" name="full_name" required />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-xs font-bold uppercase text-gray-500">Email</Label>
-                            <Input id="email" name="email" type="email" placeholder="admin@example.com" required className="bg-black/40 border-white/10 h-11" />
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" name="email" type="email" required />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="password" title="password" className="text-xs font-bold uppercase text-gray-500">Temporary Password</Label>
-                            <Input id="password" name="password" type="password" required className="bg-black/40 border-white/10 h-11" />
-                             <p className="text-[10px] text-gray-600 font-bold uppercase">Must be at least 6 characters long.</p>
+                            <Label htmlFor="password">Temporary password</Label>
+                            <Input id="password" name="password" type="password" required />
                         </div>
                     </div>
-                    <DialogFooter>
-                        <SubmitButton />
-                    </DialogFooter>
+                    <DialogFooter><SubmitButton /></DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>
     )
 }
 
-
-function AdminNav() {
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10 border">
-                        <AvatarFallback>A</AvatarFallback>
-                    </Avatar>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">Admin</p>
-                        <p className="text-xs leading-none text-muted-foreground">admin@fundedstock.com</p>
-                    </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <form action={signOut}>
-                    <DropdownMenuItem asChild>
-                        <button type="submit" className="w-full text-left">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
-                        </button>
-                    </DropdownMenuItem>
-                </form>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
-}
-
-function UserTableSkeleton() {
-    return (
-        <Card className="shadow-sm">
-            <CardHeader className="flex-row items-center justify-between">
-              <div>
-                <Skeleton className="h-7 w-32" />
-                <Skeleton className="h-4 w-64 mt-2" />
-              </div>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
-                   <div className="space-y-4">
-                       <Skeleton className="h-12 w-full" />
-                       <Skeleton className="h-12 w-full" />
-                       <Skeleton className="h-12 w-full" />
-                       <Skeleton className="h-12 w-full" />
-                   </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
-}
-
 export default function AdminDashboardClient({ 
     initialProfiles, 
     initialCount, 
-    masterView,
     isBridgeConfigured
 }: { 
     initialProfiles: any[], 
     initialCount: number, 
-    masterView: boolean,
     isBridgeConfigured: boolean
 }) {
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
   const [totalDbCount, setTotalDbCount] = useState(initialCount);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [kycCount, setKycCount] = useState(0);
   const [marketType, setMarketType] = useState<'indian' | 'forex' | 'all'>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isGeneratingHourly, setIsGeneratingHourly] = useState(false);
   const { toast } = useToast();
   
-  useEffect(() => {
-    const saved = localStorage.getItem('fs_admin_market') as 'indian' | 'forex' | 'all';
-    if (saved) {
-        setMarketType(saved);
-    }
-  }, []);
-
-  const handleMarketSwitch = (type: 'indian' | 'forex' | 'all') => {
-      setMarketType(type);
-      localStorage.setItem('fs_admin_market', type);
-      toast({ title: `Context Switched`, description: `Viewing ${type === 'all' ? 'All Participants' : type === 'indian' ? 'Indian Market' : 'Forex Arena'}` });
-      fetchProfiles(type);
-  }
-  
-  useEffect(() => {
-    setProfiles(initialProfiles);
-    setTotalDbCount(initialCount);
-  }, [initialProfiles, initialCount]);
-
   const fetchProfiles = async (targetMarket?: string) => {
     setIsRefreshing(true);
     const client = await supabase;
@@ -235,109 +142,56 @@ export default function AdminDashboardClient({
             let query = client.from('profiles').select('*', { count: 'exact' });
             query = query.or('role.neq.admin,role.is.null');
             
-            if (currentMarket === 'indian') {
-                query = query.or('market_type.eq.indian,market_type.is.null');
-            } else if (currentMarket === 'forex') {
-                query = query.eq('market_type', 'forex');
-            }
+            if (currentMarket === 'indian') query = query.or('market_type.eq.indian,market_type.is.null');
+            else if (currentMarket === 'forex') query = query.eq('market_type', 'forex');
 
-            if (masterView) {
-                query = query.eq('is_hidden', true);
-            } else {
-                query = query.or('is_hidden.is.false,is_hidden.is.null');
-            }
-            
             const { data: chunk, error, count } = await query
                 .order('created_at', { ascending: false })
                 .range(page * pageSize, (page + 1) * pageSize - 1);
 
             if (error) throw error;
-
             if (chunk) {
                 allFetchedProfiles = [...allFetchedProfiles, ...chunk];
                 finalCount = count || allFetchedProfiles.length;
-                
-                if (chunk.length < pageSize || allFetchedProfiles.length >= finalCount) {
-                    hasMore = false;
-                } else {
-                    page++;
-                }
-            } else {
-                hasMore = false;
-            }
+                if (chunk.length < pageSize) hasMore = false;
+                else page++;
+            } else hasMore = false;
         }
-
         setProfiles(allFetchedProfiles);
         setTotalDbCount(finalCount);
-        setPendingCount(allFetchedProfiles.filter(p => !p.is_approved).length);
-        setKycCount(allFetchedProfiles.filter(p => p.kyc_status === 'submitted').length);
-
     } catch (error: any) {
-        toast({ title: 'Fetch Failure', description: error.message, variant: 'destructive' });
+        console.error(error);
     } finally {
         setIsRefreshing(false);
     }
   }
 
+  useEffect(() => {
+    const saved = localStorage.getItem('fs_admin_market') as any;
+    if (saved) setMarketType(saved);
+    fetchProfiles(saved);
+  }, []);
+
+  const handleMarketSwitch = (type: any) => {
+      setMarketType(type);
+      localStorage.setItem('fs_admin_market', type);
+      fetchProfiles(type);
+  }
+
   const downloadHourlyReport = async () => {
     setIsGeneratingHourly(true);
-    toast({ title: "Analyzing Traffic", description: "Calculating isolated hourly slots (IST)..." });
-    
     const res = await getSignupHourlyStats();
-    
-    if (res.error) {
-        toast({ title: "Report Failed", description: res.error, variant: "destructive" });
-    } else if (res.data) {
+    if (res.data) {
         const csv = Papa.unparse(res.data);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csv], { type: 'text/csv' });
         const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `Signup_Window_Report_IST_${new Date().toISOString().split('T')[0]}.csv`);
+        link.href = URL.createObjectURL(blob);
+        link.download = `hourly_signups_ist.csv`;
         link.click();
-        toast({ title: "Report Ready", description: "Hourly activity grid downloaded successfully." });
+        toast({ title: "Report downloaded" });
     }
     setIsGeneratingHourly(false);
   };
-
-  useEffect(() => {
-    const initSub = async () => {
-        const client = await supabase;
-        const channel = client
-          .channel('realtime-profiles-sync-v12')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
-            () => { fetchProfiles(); }
-          )
-          .subscribe();
-
-        return () => {
-          client.removeChannel(channel);
-        };
-    }
-    initSub();
-    fetchProfiles();
-  }, [supabase, masterView, marketType]);
-  
-  const onUserDelete = (deletedUserId: string) => {
-    setProfiles(prevProfiles => prevProfiles.filter(p => p.id !== deletedUserId));
-    setTotalDbCount(prev => prev - 1);
-    toast({ title: 'User deleted successfully' });
-  };
-
-  const handleUserDeleteError = (errorMessage: string) => {
-    toast({ title: 'Error Deleting User', description: errorMessage, variant: 'destructive' });
-  };
-  
-  const handleUserUpdate = () => {
-      toast({ title: 'User data updated successfully' });
-      fetchProfiles();
-  }
-
-  const stats = [
-    { title: "Total Traders (DB)", value: totalDbCount, icon: Database },
-    { title: "Current Context Pending", value: pendingCount, icon: User },
-    { title: "KYC Review Required", value: kycCount, icon: ShieldAlert },
-  ];
 
   return (
     <SidebarProvider>
@@ -352,139 +206,58 @@ export default function AdminDashboardClient({
           <SidebarMenu>
             <SidebarMenuItem>
                 <div className="px-2 py-4 space-y-4">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">Market Context</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">Market context</p>
                     <div className="flex flex-col gap-1">
-                         <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleMarketSwitch('all')}
-                            className={cn("justify-start gap-2 h-10 px-3", marketType === 'all' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
-                        >
-                            <Users className="w-4 h-4" />
-                            All Participants
-                        </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleMarketSwitch('indian')}
-                            className={cn("justify-start gap-2 h-10 px-3", marketType === 'indian' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
-                        >
-                            <LayoutGrid className="w-4 h-4" />
-                            Indian Market
-                        </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleMarketSwitch('forex')}
-                            className={cn("justify-start gap-2 h-10 px-3", marketType === 'forex' ? "bg-primary text-white hover:bg-primary" : "text-muted-foreground")}
-                        >
-                            <Globe className="w-4 h-4" />
-                            Forex Arena
-                        </Button>
+                         <Button variant="ghost" size="sm" onClick={() => handleMarketSwitch('all')} className={cn("justify-start gap-2 h-10 px-3", marketType === 'all' ? "bg-primary text-white" : "text-muted-foreground")}><Users className="w-4 h-4" /> All traders</Button>
+                         <Button variant="ghost" size="sm" onClick={() => handleMarketSwitch('indian')} className={cn("justify-start gap-2 h-10 px-3", marketType === 'indian' ? "bg-primary text-white" : "text-muted-foreground")}><LayoutGrid className="w-4 h-4" /> Indian market</Button>
+                         <Button variant="ghost" size="sm" onClick={() => handleMarketSwitch('forex')} className={cn("justify-start gap-2 h-10 px-3", marketType === 'forex' ? "bg-primary text-white" : "text-muted-foreground")}><Globe className="w-4 h-4" /> Forex arena</Button>
                     </div>
                     <Separator className="opacity-50" />
                 </div>
             </SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/dashboard" isActive tooltip="Dashboard"><Home />Dashboard</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/plans" tooltip="Plan Manager"><Package />Plan Manager</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Account Requests"><UserCheck />Account Requests</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/activation-hub" tooltip="Activation Hub"><ShieldAlert />Activation Hub</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competition"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/pay-later" tooltip="Pay Later Users"><Users />Pay Later Users</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/plans" tooltip="Plans"><Package />Plan manager</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/account-requests" tooltip="Requests"><UserCheck />Account requests</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/activation-hub" tooltip="Hub"><ShieldAlert />Activation hub</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competitions"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet Requests"><Wallet />Wallet Requests</SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet"><Wallet />Wallet requests</SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/payment-settings" tooltip="Payment Settings"><Wallet />Settings</SidebarMenuButton></SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="border-t p-2">
-            <SidebarMenu><SidebarMenuItem><form action={signOut} className="w-full"><SidebarMenuButton tooltip="Logout" asChild><button type="submit" className="w-full"><LogOut />Logout</button></SidebarMenuButton></form></SidebarMenuItem></SidebarMenu>
+            <SidebarMenu><SidebarMenuItem><form action={signOut} className="w-full"><SidebarMenuButton asChild><button type="submit" className="w-full"><LogOut />Logout</button></SidebarMenuButton></form></SidebarMenuItem></SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
-                <h1 className="text-xl font-bold tracking-tight flex items-center gap-3">
-                    User Management
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] font-bold uppercase">
-                        {marketType === 'all' ? 'Universal' : marketType === 'indian' ? 'Indian' : 'Forex'}
-                    </Badge>
-                </h1>
+                <h1 className="text-xl font-bold tracking-tight">User management</h1>
            </div>
            <div className="flex items-center gap-3">
             {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-            
-            <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={downloadHourlyReport} 
-                disabled={isGeneratingHourly}
-                className="hidden lg:flex h-9 border-amber-500/20 text-amber-500 hover:bg-amber-500/5 font-bold text-[10px] uppercase tracking-widest"
-            >
-                {isGeneratingHourly ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <FileBarChart className="mr-2 h-3 w-3" />}
-                Hourly Report (IST)
+            <Button variant="outline" size="sm" onClick={downloadHourlyReport} disabled={isGeneratingHourly} className="hidden lg:flex h-9 text-[10px] font-bold uppercase tracking-widest border-amber-500/20 text-amber-600">
+                {isGeneratingHourly ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <FileBarChart className="mr-2 h-3 w-3" />} Hourly report (IST)
             </Button>
-
-            <Button asChild variant="outline" size="sm" className={cn("h-9 font-bold text-[10px] uppercase tracking-widest", masterView ? "bg-amber-500 text-white border-amber-600" : "border-white/10")}>
-                <Link href={masterView ? "/admin/dashboard" : "/admin/dashboard?master_view=true"}>
-                    <Archive className="mr-2 h-3 w-3" />
-                    {masterView ? "View Leads" : "View Archive"}
-                </Link>
-            </Button>
-
             <ThemeToggle />
-            <CreateAdminForm className="hidden md:flex"/>
-            <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}><AdminNav /></ClientOnly>
+            <CreateAdminForm />
            </div>
         </header>
         <main className="p-4 md:p-8 bg-muted/40 space-y-8">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {stats.map(stat => (
-                    <Card key={stat.title} className="shadow-sm border-white/5 bg-card">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.title}</CardTitle><stat.icon className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                        <CardContent><div className="text-3xl font-bold text-foreground">{stat.value}</div></CardContent>
-                    </Card>
-                ))}
-                
-                <Card className={cn("shadow-sm border-white/5", isBridgeConfigured ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20")}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Hub Bridge Status</CardTitle>
-                        {isBridgeConfigured ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
-                    </CardHeader>
-                    <CardContent>
-                        <div className={cn("text-lg font-bold uppercase tracking-tighter", isBridgeConfigured ? "text-green-400" : "text-red-400")}>
-                            {isBridgeConfigured ? "SECURE TUNNEL" : "BRIDGE OFFLINE"}
-                        </div>
-                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">
-                            {isBridgeConfigured ? "Handshake Key Detected" : "Secret Missing in .env"}
-                        </p>
-                    </CardContent>
-                </Card>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader className="pb-2"><CardDescription className="uppercase text-[10px] font-bold">Total traders</CardDescription></CardHeader><CardContent><div className="text-3xl font-bold">{totalDbCount}</div></CardContent></Card>
+                <Card className={cn(isBridgeConfigured ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20")}><CardHeader className="pb-2"><CardDescription className="uppercase text-[10px] font-bold">Hub sync status</CardDescription></CardHeader><CardContent><div className={cn("text-lg font-bold uppercase", isBridgeConfigured ? "text-green-500" : "text-red-500")}>{isBridgeConfigured ? "Connected" : "Offline"}</div></CardContent></Card>
+                <Card><CardHeader className="pb-2"><CardDescription className="uppercase text-[10px] font-bold">Active view</CardDescription></CardHeader><CardContent><div className="text-lg font-bold capitalize">{marketType} participants</div></CardContent></Card>
             </div>
             
-            <div className="flex gap-2 md:hidden">
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={downloadHourlyReport} 
-                    disabled={isGeneratingHourly}
-                    className="flex-1 h-11 border-amber-500/20 text-amber-500 hover:bg-amber-500/5 font-bold text-[10px] uppercase tracking-widest"
-                >
-                    {isGeneratingHourly ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <FileBarChart className="mr-2 h-3 w-3" />}
-                    Hourly IST
-                </Button>
-                <CreateAdminForm className="flex-1" />
-            </div>
-            
-            <ClientOnly fallback={<UserTableSkeleton />}>
+            <ClientOnly fallback={<div className="h-96 w-full animate-pulse bg-card rounded-xl" />}>
                 <UserTable 
                     profiles={profiles || []} 
-                    onUserDelete={onUserDelete} 
-                    onUserDeleteError={handleUserDeleteError} 
-                    onUserUpdate={handleUserUpdate} 
+                    onUserDelete={() => fetchProfiles()} 
+                    onUserUpdate={() => fetchProfiles()} 
                 />
             </ClientOnly>
         </main>
