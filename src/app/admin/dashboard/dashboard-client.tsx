@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -33,17 +32,14 @@ import {
     XCircle,
     FileBarChart
 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createAdmin, getSignupHourlyStats } from './actions';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { UserTable } from './user-table';
 import { ClientOnly } from '@/components/ui/client-only';
-import { Skeleton } from '@/components/ui/skeleton';
 import { FundedStockLogo } from '@/components/ui/logo';
 import { signOut } from '@/app/actions';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -106,7 +102,7 @@ function CreateAdminForm({ className }: { className?: string }) {
                 </form>
             </DialogContent>
         </Dialog>
-    )
+    );
 }
 
 export default function AdminDashboardClient({ 
@@ -164,7 +160,7 @@ export default function AdminDashboardClient({
     } finally {
         setIsRefreshing(false);
     }
-  }
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('fs_admin_market') as any;
@@ -176,7 +172,7 @@ export default function AdminDashboardClient({
       setMarketType(type);
       localStorage.setItem('fs_admin_market', type);
       fetchProfiles(type);
-  }
+  };
 
   const downloadHourlyReport = async () => {
     setIsGeneratingHourly(true);
@@ -222,7 +218,7 @@ export default function AdminDashboardClient({
             <SidebarMenuItem><SidebarMenuButton href="/admin/competition" tooltip="Competitions"><Swords />Competition</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/coupons" tooltip="Coupons"><Ticket />Coupons</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/blog" tooltip="Blog"><Newspaper />Blog</SidebarMenuButton></SidebarMenuItem>
-            <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet"><Wallet />Wallet requests</SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton href="/admin/wallet-requests" tooltip="Wallet"><Wallet />Wallet requests</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/payouts" tooltip="Payouts"><Banknote />Payouts</SidebarMenuButton></SidebarMenuItem>
             <SidebarMenuItem><SidebarMenuButton href="/admin/reports" tooltip="Reports"><LineChart />Reports</SidebarMenuButton></SidebarMenuItem>
           </SidebarMenu>
