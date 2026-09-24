@@ -18,9 +18,9 @@ export default function LeadTerminalPage() {
     const [loading, setLoading] = useState(true);
     const [isPending, startTransition] = useTransition();
 
-    // Protocol: Only show signups from now onwards (Feb 13, 2025)
-    // and only those not yet marked as 'Done' on this specific page.
-    const START_TIME = '2025-02-13T00:00:00Z';
+    // STRICT PROTOCOL: Only show signups from this exact moment onwards (Feb 14, 2025)
+    // This ensures the calling agents start with a clean slate.
+    const START_TIME = '2025-02-14T02:15:00Z';
 
     const fetchLeads = async () => {
         setLoading(true);
@@ -74,7 +74,7 @@ export default function LeadTerminalPage() {
         <main className="min-h-screen bg-slate-950 text-gray-200 font-poppins p-4 md:p-12">
             <header className="max-w-4xl mx-auto flex items-center justify-between mb-12 border-b border-white/5 pb-8">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white">Call list</h1>
+                    <h1 className="text-4xl font-bold tracking-tight text-white">Call list</h1>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">New signups from today</p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={fetchLeads} disabled={loading} className="text-gray-500 hover:text-white">
@@ -86,7 +86,7 @@ export default function LeadTerminalPage() {
                 <Card className="bg-white/5 border-white/10 rounded-[32px] overflow-hidden shadow-2xl">
                     <CardHeader className="bg-white/[0.02] border-b border-white/5 py-6 px-8">
                         <div className="flex justify-between items-center">
-                            <CardTitle className="text-sm font-bold text-gray-400 uppercase tracking-widest">Awaiting call</CardTitle>
+                            <CardTitle className="text-xs font-bold text-gray-400 uppercase tracking-widest">Awaiting call</CardTitle>
                             <span className="bg-primary/10 text-primary px-4 py-1 rounded-full text-[10px] font-black uppercase">{leads.length} Pending</span>
                         </div>
                     </CardHeader>
