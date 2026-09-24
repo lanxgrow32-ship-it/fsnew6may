@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useActionState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -32,7 +31,8 @@ import {
     Link2,
     ShieldCheck,
     XCircle,
-    FileBarChart
+    FileBarChart,
+    Archive
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -352,7 +352,7 @@ export default function AdminDashboardClient({
           <SidebarMenu>
             <SidebarMenuItem>
                 <div className="px-2 py-4 space-y-4">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-2">Market Context</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">Market Context</p>
                     <div className="flex flex-col gap-1">
                          <Button 
                             variant="ghost" 
@@ -407,9 +407,9 @@ export default function AdminDashboardClient({
         <header className="flex h-[57px] items-center justify-between p-4 border-b bg-card sticky top-0 z-10">
            <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
-                <h1 className="text-xl font-bold uppercase tracking-tight flex items-center gap-3">
+                <h1 className="text-xl font-bold tracking-tight flex items-center gap-3">
                     User Management
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] font-black uppercase">
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] font-bold uppercase">
                         {marketType === 'all' ? 'Universal' : marketType === 'indian' ? 'Indian' : 'Forex'}
                     </Badge>
                 </h1>
@@ -422,10 +422,17 @@ export default function AdminDashboardClient({
                 size="sm" 
                 onClick={downloadHourlyReport} 
                 disabled={isGeneratingHourly}
-                className="hidden lg:flex h-9 border-amber-500/20 text-amber-500 hover:bg-amber-500/5 font-black text-[10px] uppercase tracking-widest"
+                className="hidden lg:flex h-9 border-amber-500/20 text-amber-500 hover:bg-amber-500/5 font-bold text-[10px] uppercase tracking-widest"
             >
                 {isGeneratingHourly ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <FileBarChart className="mr-2 h-3 w-3" />}
                 Hourly Report (IST)
+            </Button>
+
+            <Button asChild variant="outline" size="sm" className={cn("h-9 font-bold text-[10px] uppercase tracking-widest", masterView ? "bg-amber-500 text-white border-amber-600" : "border-white/10")}>
+                <Link href={masterView ? "/admin/dashboard" : "/admin/dashboard?master_view=true"}>
+                    <Archive className="mr-2 h-3 w-3" />
+                    {masterView ? "View Leads" : "View Archive"}
+                </Link>
             </Button>
 
             <ThemeToggle />
@@ -438,18 +445,17 @@ export default function AdminDashboardClient({
                 {stats.map(stat => (
                     <Card key={stat.title} className="shadow-sm border-white/5 bg-card">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.title}</CardTitle><stat.icon className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                        <CardContent><div className="text-3xl font-black text-foreground">{stat.value}</div></CardContent>
+                        <CardContent><div className="text-3xl font-bold text-foreground">{stat.value}</div></CardContent>
                     </Card>
                 ))}
                 
-                {/* SSO Bridge Status Widget */}
                 <Card className={cn("shadow-sm border-white/5", isBridgeConfigured ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20")}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Hub Bridge Status</CardTitle>
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Hub Bridge Status</CardTitle>
                         {isBridgeConfigured ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
                     </CardHeader>
                     <CardContent>
-                        <div className={cn("text-lg font-black uppercase tracking-tighter", isBridgeConfigured ? "text-green-400" : "text-red-400")}>
+                        <div className={cn("text-lg font-bold uppercase tracking-tighter", isBridgeConfigured ? "text-green-400" : "text-red-400")}>
                             {isBridgeConfigured ? "SECURE TUNNEL" : "BRIDGE OFFLINE"}
                         </div>
                         <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">
@@ -465,7 +471,7 @@ export default function AdminDashboardClient({
                     size="sm" 
                     onClick={downloadHourlyReport} 
                     disabled={isGeneratingHourly}
-                    className="flex-1 h-11 border-amber-500/20 text-amber-500 hover:bg-amber-500/5 font-black text-[10px] uppercase tracking-widest"
+                    className="flex-1 h-11 border-amber-500/20 text-amber-500 hover:bg-amber-500/5 font-bold text-[10px] uppercase tracking-widest"
                 >
                     {isGeneratingHourly ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <FileBarChart className="mr-2 h-3 w-3" />}
                     Hourly IST

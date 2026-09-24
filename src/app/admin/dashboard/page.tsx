@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import AdminDashboardClient from './dashboard-client';
 
@@ -8,8 +7,8 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
   const isMasterView = master_view === 'true';
 
   // Fetch profiles based on visibility
-  // Standard view: role != admin AND is_hidden != true
-  // Master view: role != admin AND is_hidden == true
+  // Standard view: Show uncalled leads (is_hidden != true)
+  // Master view: Show archive of called leads (is_hidden == true)
   let query = supabase.from('profiles')
     .select('*', { count: 'exact' })
     .or('role.neq.admin,role.is.null');

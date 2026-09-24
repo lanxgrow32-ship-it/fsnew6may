@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -23,8 +22,7 @@ export default function LeadTerminalPage() {
         setLoading(true);
         const client = await supabase;
         
-        // Fetch only active, non-hidden users who are not admins
-        // Logic: (Role is not admin OR Role is null) AND (is_hidden is false OR is_hidden is null)
+        // Fetch only uncalled, non-hidden users who are not admins
         const { data, error } = await client
             .from('profiles')
             .select('id, full_name, mobile_number, created_at')
@@ -72,8 +70,8 @@ export default function LeadTerminalPage() {
         <main className="min-h-screen bg-slate-950 text-white font-poppins p-4 md:p-8">
             <header className="max-w-4xl mx-auto flex items-center justify-between mb-8 border-b border-white/5 pb-6">
                 <div>
-                    <h1 className="text-2xl font-black tracking-tighter text-white uppercase">Lead Terminal</h1>
-                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.4em]">Real-time Call Queue</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-white">Lead Terminal</h1>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Real-time call queue</p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={fetchLeads} disabled={loading} className="text-gray-500 hover:text-white">
                     <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -85,7 +83,7 @@ export default function LeadTerminalPage() {
                     <CardHeader className="bg-white/[0.02] border-b border-white/5 py-4">
                         <div className="flex justify-between items-center">
                             <CardTitle className="text-sm font-bold text-gray-400 uppercase tracking-widest">Active Signups</CardTitle>
-                            <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase">{leads.length} Pending</span>
+                            <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase">{leads.length} Pending</span>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -99,14 +97,13 @@ export default function LeadTerminalPage() {
                                     <TableHeader className="bg-black/20">
                                         <TableRow className="border-white/5 h-12">
                                             <TableHead className="text-[10px] font-bold text-gray-600 uppercase pl-6">Trader Name</TableHead>
-                                            <TableHead className="text-[10px] font-bold text-gray-600 uppercase">Mobile / Contact</TableHead>
+                                            <TableHead className="text-[10px] font-bold text-gray-600 uppercase">Mobile Number</TableHead>
                                             <TableHead className="text-[10px] font-bold text-gray-600 uppercase">Joined (IST)</TableHead>
                                             <TableHead className="text-right text-[10px] font-bold text-gray-600 uppercase pr-6">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {leads.map((lead) => {
-                                            // Convert to IST: UTC + 5.5 hours
                                             const utcDate = new Date(lead.created_at);
                                             const istDate = new Date(utcDate.getTime() + (5.5 * 60 * 60 * 1000));
                                             
@@ -116,7 +113,7 @@ export default function LeadTerminalPage() {
                                                         <p className="font-bold text-white text-sm">{lead.full_name || 'Anonymous'}</p>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <div className="flex items-center gap-2 text-primary font-black font-mono text-sm">
+                                                        <div className="flex items-center gap-2 text-primary font-bold font-mono text-sm">
                                                             <Phone className="h-3 w-3 opacity-50" />
                                                             {lead.mobile_number || 'N/A'}
                                                         </div>
@@ -132,7 +129,7 @@ export default function LeadTerminalPage() {
                                                             size="sm" 
                                                             onClick={() => handleDone(lead.id)}
                                                             disabled={isPending}
-                                                            className="bg-green-600 hover:bg-green-500 text-white font-black text-[10px] uppercase tracking-widest h-9 px-4 rounded-xl shadow-lg shadow-green-900/20"
+                                                            className="bg-green-600 hover:bg-green-500 text-white font-bold text-[10px] uppercase tracking-widest h-9 px-4 rounded-xl shadow-lg"
                                                         >
                                                             {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3 mr-1.5" />}
                                                             Called
@@ -148,7 +145,7 @@ export default function LeadTerminalPage() {
                             <div className="py-32 text-center space-y-4">
                                 <Inbox className="h-12 w-12 text-slate-900 mx-auto" />
                                 <div className="space-y-1">
-                                    <h3 className="text-lg font-bold text-white uppercase tracking-tight">Queue empty</h3>
+                                    <h3 className="text-lg font-bold text-white">Queue empty</h3>
                                     <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest">No new signups to call right now</p>
                                 </div>
                             </div>
@@ -158,7 +155,7 @@ export default function LeadTerminalPage() {
             </div>
 
             <footer className="max-w-4xl mx-auto mt-20 pt-8 border-t border-white/5 text-center">
-                <p className="text-[9px] text-gray-800 font-black uppercase tracking-[0.5em]">Internal calling grid · secure environment</p>
+                <p className="text-[9px] text-gray-800 font-bold uppercase tracking-[0.5em]">Internal lead queue</p>
             </footer>
         </main>
     );
