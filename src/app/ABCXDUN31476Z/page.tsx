@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Phone, Check, Inbox, RefreshCw, Clock } from 'lucide-react';
@@ -11,10 +11,6 @@ import { format } from 'date-fns';
 import { markLeadAsDone } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-// Metadata to prevent indexing
-// Note: Metadata in client components is handled differently, but we'll use robots.txt logic or headers if needed.
-// For now, we rely on the obfuscated URL.
 
 export default function LeadTerminalPage() {
     const supabase = createClient();
@@ -28,13 +24,14 @@ export default function LeadTerminalPage() {
         const client = await supabase;
         
         // Fetch only active, non-hidden users who are not admins
+        // Logic: (Role is not admin OR Role is null) AND (is_hidden is false OR is_hidden is null)
         const { data, error } = await client
             .from('profiles')
             .select('id, full_name, mobile_number, created_at')
             .or('role.neq.admin,role.is.null')
-            .or('is_hidden.is.false,is_hidden.is.null')
+            .or('is_hidden.eq.false,is_hidden.is.null')
             .order('created_at', { ascending: false })
-            .range(0, 500); // Only show most recent 500 active leads
+            .range(0, 500);
 
         if (error) {
             console.error("Fetch Failure:", error);
@@ -47,9 +44,10 @@ export default function LeadTerminalPage() {
 
     useEffect(() => {
         fetchLeads();
-        // Subscribe to new signups in real-time
+        
+        // Real-time listener for new signups
         const channel = supabase
-            .channel('lead-stream')
+            .channel('lead-stream-terminal')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
                 fetchLeads();
             })
@@ -62,9 +60,8 @@ export default function LeadTerminalPage() {
         startTransition(async () => {
             const res = await markLeadAsDone(userId);
             if (res.success) {
-                // Instantly remove from local state for the "vanish" effect
                 setLeads(prev => prev.filter(l => l.id !== userId));
-                toast({ title: "Lead Cleared" });
+                toast({ title: "Lead Processed", description: "Entry removed from queue." });
             } else {
                 toast({ title: "Error", description: res.error, variant: "destructive" });
             }
@@ -75,8 +72,8 @@ export default function LeadTerminalPage() {
         <main className="min-h-screen bg-slate-950 text-white font-poppins p-4 md:p-8">
             <header className="max-w-4xl mx-auto flex items-center justify-between mb-8 border-b border-white/5 pb-6">
                 <div>
-                    <h1 className="text-2xl font-black tracking-tighter">LEAD TERMINAL</h1>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em]">Real-time Call Queue</p>
+                    <h1 className="text-2xl font-black tracking-tighter text-white uppercase">Lead Terminal</h1>
+                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.4em]">Real-time Call Queue</p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={fetchLeads} disabled={loading} className="text-gray-500 hover:text-white">
                     <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -88,7 +85,7 @@ export default function LeadTerminalPage() {
                     <CardHeader className="bg-white/[0.02] border-b border-white/5 py-4">
                         <div className="flex justify-between items-center">
                             <CardTitle className="text-sm font-bold text-gray-400 uppercase tracking-widest">Active Signups</CardTitle>
-                            <Badge className="bg-primary/20 text-primary border-none text-[10px] font-black">{leads.length} Pending</Badge>
+                            <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase">{leads.length} Pending</span>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -109,7 +106,7 @@ export default function LeadTerminalPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {leads.map((lead) => {
-                                            // Convert to IST
+                                            // Convert to IST: UTC + 5.5 hours
                                             const utcDate = new Date(lead.created_at);
                                             const istDate = new Date(utcDate.getTime() + (5.5 * 60 * 60 * 1000));
                                             
@@ -164,13 +161,5 @@ export default function LeadTerminalPage() {
                 <p className="text-[9px] text-gray-800 font-black uppercase tracking-[0.5em]">Internal calling grid · secure environment</p>
             </footer>
         </main>
-    );
-}
-
-function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
-    return (
-        <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", className)}>
-            {children}
-        </span>
     );
 }
