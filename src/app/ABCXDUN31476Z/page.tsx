@@ -18,9 +18,9 @@ export default function LeadTerminalPage() {
     const [loading, setLoading] = useState(true);
     const [isPending, startTransition] = useTransition();
 
-    // STRICT PROTOCOL: Only show signups from this exact moment onwards (Feb 14, 2025)
+    // START PROTOCOL: Only show signups from this exact moment onwards (Sep 24, 2026, 2:30 PM IST)
     // This ensures the calling agents start with a clean slate.
-    const START_TIME = '2025-02-14T02:15:00Z';
+    const START_TIME = '2026-09-24T09:00:00Z';
 
     const fetchLeads = async () => {
         setLoading(true);
@@ -61,7 +61,7 @@ export default function LeadTerminalPage() {
         startTransition(async () => {
             const res = await markLeadAsDone(userId);
             if (res.success) {
-                // Instantly vanish from THIS list
+                // Instantly vanish from THIS list only
                 setLeads(prev => prev.filter(l => l.id !== userId));
                 toast({ title: "Entry cleared" });
             } else {
